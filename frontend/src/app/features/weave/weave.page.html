@@ -1,0 +1,86 @@
+<div class="lw-page">
+  @if (!store.weaveEnabled()) {
+    <lw-empty-state
+      icon="network"
+      title="The Weave Is Currently Disabled for This Campaign"
+      description="The Loom Campaign Memory remains 100% active. Enable The Weave in the top bar whenever you want Creative AI drafting or the interactive Neo4j World Graph."
+      actionLabel="Enable The Weave"
+      (actionTriggered)="store.toggleWeave()" />
+  } @else {
+    <lw-panel
+      eyebrow="Neo4j Polyglot Graph Projections (Database: loomweaver)"
+      title="The Weave · Interactive World Graph & Creative AI Review"
+      subtitle="Visualizes canonical relationships from the loomweaver Neo4j graph. Click any node to open its contextual inspector and deep links."
+      icon="network"
+      [elevated]="true">
+      <div panelActions>
+        <lw-badge [label]="positionedNodes().length + ' Nodes · ' + positionedEdges().length + ' Edges'" tone="gold" />
+        <a class="lw-action-link" routerLink="/loom">Switch to The Loom</a>
+        <a class="lw-action-link" routerLink="/campaigns">Open Campaign Dossiers</a>
+      </div>
+
+      <div class="lw-graph-canvas">
+        <svg class="lw-graph-svg" viewBox="0 0 840 400" aria-label="Neo4j World Graph">
+          @for (edge of positionedEdges(); track edge.id) {
+            <g>
+              <line
+                [attr.x1]="edge.x1"
+                [attr.y1]="edge.y1"
+                [attr.x2]="edge.x2"
+                [attr.y2]="edge.y2"
+                class="lw-graph-edge" />
+              <text
+                [attr.x]="edge.midX"
+                [attr.y]="edge.midY - 4"
+                text-anchor="middle"
+                class="lw-graph-edge-label">
+                {{ edge.label }}
+              </text>
+            </g>
+          }
+
+          @for (node of positionedNodes(); track node.compositeKey) {
+            <g
+              class="lw-graph-node"
+              [class.lw-graph-node--selected]="store.inspectedEntityKey() === node.compositeKey"
+              (click)="store.inspectEntity(node.compositeKey)">
+              <circle
+                [attr.cx]="node.x"
+                [attr.cy]="node.y"
+                r="18"
+                [attr.data-vis]="node.visibility" />
+              <text [attr.x]="node.x" [attr.y]="node.y + 30" text-anchor="middle" class="lw-graph-node-name">
+                {{ node.name }}
+              </text>
+              <text [attr.x]="node.x" [attr.y]="node.y + 4" text-anchor="middle" class="lw-graph-node-type">
+                {{ node.entityType.slice(0, 3) }}
+              </text>
+            </g>
+          }
+        </svg>
+      </div>
+    </lw-panel>
+
+    <lw-panel
+      eyebrow="100% GM Authorship Gate"
+      title="The Weave · Draft Queue Awaiting Canon Approval"
+      subtitle="Every AI generation starts as a non-canonical draft. Only the GM can approve a draft into MySQL canon and project it to Neo4j."
+      icon="sparkles">
+      <div class="lw-draft-grid">
+        @for (draft of draftEntities(); track draft.compositeKey) {
+          <lw-entity-card
+            [entity]="draft"
+            variant="detailed"
+            [canApprove]="store.viewerRole() === 'gm'"
+            (inspectRequested)="store.inspectEntity($event.compositeKey)"
+            (approveRequested)="store.approveDraftEntity($event.compositeKey)" />
+        } @empty {
+          <lw-empty-state
+            icon="check"
+            title="All Weave Drafts Reviewed & Committed to Canon"
+            description="Every draft entity in this campaign has been approved by the GM and projected into the loomweaver Neo4j graph." />
+        }
+      </div>
+    </lw-panel>
+  }
+</div>

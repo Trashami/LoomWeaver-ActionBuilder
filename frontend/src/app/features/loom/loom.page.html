@@ -1,0 +1,82 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Zero-Generation Living Campaign Memory"
+    title="The Loom · Full Recall & Citation Explorer"
+    subtitle="Included free for both GMs and Players. Never invents fiction—synthesizes only established canon and role-isolated session notes."
+    icon="book-open"
+    [elevated]="true">
+    <div panelActions>
+      <lw-badge
+        [label]="store.viewerRole() === 'gm' ? 'Scope: GM Canon + Secrets' : 'Scope: Player-Safe Canon Only'"
+        [tone]="store.viewerRole() === 'gm' ? 'gm' : 'emerald'" />
+      @if (store.weaveEnabled()) {
+        <a class="lw-action-link" routerLink="/weave">Open Neo4j World Graph</a>
+      }
+    </div>
+
+    <div class="lw-search-box">
+      <input
+        type="text"
+        class="lw-search-input"
+        [ngModel]="store.loomQuery()"
+        (ngModelChange)="store.loomQuery.set($event)"
+        placeholder="Ask The Loom any question about sessions, NPCs, locations, quests, or secrets..." />
+
+      <div class="lw-prompt-list">
+        @for (prompt of presetPrompts; track prompt) {
+          <lw-button
+            variant="secondary"
+            size="sm"
+            (pressed)="store.loomQuery.set(prompt)">
+            {{ prompt }}
+          </lw-button>
+        }
+      </div>
+    </div>
+
+    <div class="lw-synthesis-card">
+      <div class="lw-synthesis-head">
+        <lw-icon name="check" [size]="16" />
+        <strong>Verified Canon Synthesis ({{ store.loomCitations().length }} Citations Matched)</strong>
+      </div>
+      <p>
+        Synthesized strictly from authorized <code>loomweaver.lw_entities</code> and Neo4j
+        <code>:Entity</code> records for <strong>{{ store.activeCampaign().name }}</strong>.
+        Click any citation below to inspect its graph edges or jump directly to its workspace.
+      </p>
+    </div>
+
+    <div class="lw-citation-grid">
+      @for (cit of store.loomCitations(); track cit.compositeKey) {
+        <article class="lw-citation-card">
+          <div class="lw-citation-card__top">
+            <div>
+              <h4>{{ cit.title }}</h4>
+              <code>{{ cit.compositeKey }}</code>
+            </div>
+            <div class="lw-citation-card__badges">
+              <lw-badge [label]="cit.entityType" tone="neutral" />
+              <lw-badge [label]="cit.visibility" [tone]="cit.visibility === 'gm' ? 'gm' : 'emerald'" />
+            </div>
+          </div>
+
+          <p class="lw-citation-card__excerpt">{{ cit.excerpt }}</p>
+
+          <div class="lw-citation-card__footer">
+            <lw-button
+              variant="secondary"
+              size="sm"
+              icon="network"
+              (pressed)="store.inspectEntity(cit.compositeKey)">
+              Inspect in Graph Drawer
+            </lw-button>
+            <a class="lw-cite-open" [routerLink]="cit.routeLink">
+              <span>Open {{ cit.routeLink }}</span>
+              <lw-icon name="arrow-right" [size]="14" />
+            </a>
+          </div>
+        </article>
+      }
+    </div>
+  </lw-panel>
+</div>

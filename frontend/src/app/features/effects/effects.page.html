@@ -1,0 +1,59 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Visual Rule & Shader Pipeline"
+    title="Action & Effect Builder"
+    subtitle="Author guided When / If / Then combat automation paired with projectile arcs, cones, beams, and impact decals."
+    icon="flame"
+    [elevated]="true">
+    <div panelActions>
+      <a class="lw-action-link" routerLink="/arcane-screen">Bind to Arcane Screen</a>
+      <a class="lw-action-link" routerLink="/maps">Preview on Map Canvas</a>
+    </div>
+
+    <div class="lw-fx-log">
+      <lw-badge label="Live FX Sandbox" tone="emerald" />
+      <span>{{ lastFiredLog() }}</span>
+    </div>
+
+    <div class="lw-preset-grid">
+      @for (preset of presets; track preset.id) {
+        <div
+          class="lw-preset-card"
+          [class.lw-preset-card--active]="activePresetId() === preset.id">
+          <div class="lw-preset-card__head">
+            <strong>{{ preset.name }}</strong>
+            <lw-badge [label]="preset.trajectory" tone="gold" />
+          </div>
+          <div class="lw-rule-steps">
+            <code>{{ preset.triggerWhen }}</code>
+            <code>{{ preset.conditionIf }}</code>
+            <code>{{ preset.executeThen }}</code>
+          </div>
+          <lw-button
+            variant="secondary"
+            size="sm"
+            icon="sparkles"
+            (pressed)="triggerPreset(preset)">
+            Test Trajectory & Rule
+          </lw-button>
+        </div>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Spell & Shader Library"
+    title="Cosmetic Spell Effect Packs"
+    subtitle="Rendered via the shared lw-asset-card component."
+    icon="sparkles">
+    <div class="lw-fx-assets">
+      @for (asset of spellAssets(); track asset.id) {
+        <lw-asset-card
+          [asset]="asset"
+          [config]="{ variant: 'detailed', showPrice: true, showUnlockAction: true }"
+          (assetSelected)="store.unlockAsset($event.id)"
+          (unlockRequested)="store.unlockAsset($event.id)" />
+      }
+    </div>
+  </lw-panel>
+</div>

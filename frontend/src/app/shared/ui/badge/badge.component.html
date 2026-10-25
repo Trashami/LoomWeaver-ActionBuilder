@@ -1,0 +1,6 @@
+<span class="lw-badge" [attr.data-tone]="tone()">
+  @if (icon(); as iconName) {
+    <lw-icon [name]="iconName" [size]="12" />
+  }
+  <span>{{ label() }}</span>
+</span>

@@ -1,0 +1,27 @@
+<div class="lw-rules-selector" [attr.data-variant]="variant()">
+  @if (title()) {
+    <span class="lw-rules-selector__label">{{ title() }}</span>
+  }
+  <div class="lw-rules-selector__items">
+    @for (opt of options(); track opt.id) {
+      <button
+        type="button"
+        class="lw-rules-option"
+        [class.lw-rules-option--selected]="selectedId() === opt.id"
+        (click)="selectionChanged.emit(opt.id)">
+        <div class="lw-rules-option__head">
+          @if (opt.icon; as ic) {
+            <lw-icon [name]="ic" [size]="15" />
+          }
+          <strong>{{ opt.label }}</strong>
+          @if (opt.badge; as b) {
+            <lw-badge [label]="b" [tone]="opt.badgeTone ?? 'gold'" />
+          }
+        </div>
+        @if (opt.subtitle && variant() === 'cards') {
+          <span class="lw-rules-option__sub">{{ opt.subtitle }}</span>
+        }
+      </button>
+    }
+  </div>
+</div>

@@ -1,0 +1,61 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Creator-First Economy & Tiers"
+    title="LoomWeaver Marketplace & Subscription Matrix"
+    subtitle="Players join tables 100% free via invite links. Creators keep up to 85% royalty on adventures, maps, dice skins, and spell packs."
+    icon="shopping-bag"
+    [elevated]="true">
+    <div panelActions>
+      <lw-badge label="85 / 15 Creator Royalty Split" tone="emerald" icon="sparkles" />
+      <a class="lw-action-link" routerLink="/assets">Open My Asset Library</a>
+    </div>
+
+    <div class="lw-tier-grid">
+      @for (tier of store.subscriptionTiers(); track tier.code) {
+        <div
+          class="lw-tier-card"
+          [class.lw-tier-card--active]="activeTierCode() === tier.code">
+          <div class="lw-tier-card__top">
+            <h4>{{ tier.name }}</h4>
+            <lw-badge
+              [label]="tier.includesWeave ? 'The Loom + The Weave' : 'The Loom Included'"
+              [tone]="tier.includesWeave ? 'gold' : 'emerald'" />
+          </div>
+          <div class="lw-tier-card__price">
+            <strong>{{ tier.monthlyPrice }}</strong>
+            <span>/ mo ({{ tier.annualPrice }})</span>
+          </div>
+          <p class="lw-tier-card__summary">{{ tier.summary }}</p>
+          <ul class="lw-tier-card__list">
+            <li>Campaigns: {{ tier.maxCampaigns }}</li>
+            <li>Cloud Vault: {{ tier.storageLimit }}</li>
+            <li>Creator Royalty: {{ tier.royaltySplit }}</li>
+          </ul>
+          <lw-button
+            [variant]="activeTierCode() === tier.code ? 'gold' : 'secondary'"
+            size="sm"
+            (pressed)="activeTierCode.set(tier.code)">
+            {{ activeTierCode() === tier.code ? 'Current Active Plan' : 'Select ' + tier.name }}
+          </lw-button>
+        </div>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="One-Click Module & Cosmetic Storefront"
+    title="Featured Creator Releases"
+    subtitle="Every storefront card is an instance of the shared lw-asset-card component."
+    icon="sparkles">
+    <div class="lw-store-grid">
+      @for (asset of store.assets(); track asset.id) {
+        <lw-asset-card
+          [asset]="asset"
+          primaryActionLabel="Import into Campaign"
+          [config]="{ variant: 'detailed', showPrice: true, showUnlockAction: true }"
+          (assetSelected)="store.unlockAsset($event.id)"
+          (unlockRequested)="store.unlockAsset($event.id)" />
+      }
+    </div>
+  </lw-panel>
+</div>

@@ -1,0 +1,65 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Event-Backed Combat & Narrative Telemetry"
+    title="Party Statistics & Roll Ledgers"
+    subtitle="Every metric is derived from immutable combat, dice, and clue discovery ledgers stored in loomweaver.lw_combat_telemetry."
+    icon="bar-chart"
+    [elevated]="true">
+    <div panelActions>
+      <a class="lw-action-link" routerLink="/characters">Open Character Sheets</a>
+      <a class="lw-action-link" routerLink="/dice">Open Dice Forge</a>
+    </div>
+
+    <div class="lw-telemetry-table">
+      <div class="lw-telemetry-head">
+        <span>Hero</span>
+        <span>Total Damage</span>
+        <span>vs Dragons / Undead / Constructs</span>
+        <span>Last Hits</span>
+        <span>Nat 20 / Nat 1</span>
+        <span>Healing & Clues</span>
+      </div>
+
+      @for (row of store.telemetry(); track row.characterKey) {
+        <div class="lw-telemetry-row" (click)="store.inspectEntity('1:Character:' + row.characterKey)">
+          <div class="lw-telemetry-hero">
+            <strong>{{ row.characterName }}</strong>
+            <span>{{ row.classSummary }}</span>
+          </div>
+          <div class="lw-telemetry-num">{{ row.totalDamageDealt }}</div>
+          <div class="lw-telemetry-tags">
+            <lw-badge [label]="'Dragons: ' + row.damageVsDragons" tone="gold" />
+            <lw-badge [label]="'Undead: ' + row.damageVsUndead" tone="emerald" />
+            <lw-badge [label]="'Constructs: ' + row.damageVsConstructs" tone="neutral" />
+          </div>
+          <div class="lw-telemetry-num">{{ row.lastHits }}</div>
+          <div class="lw-telemetry-tags">
+            <lw-badge [label]="'Nat 20: ' + row.natural20Count" tone="gold" />
+            <lw-badge [label]="'Nat 1: ' + row.natural1Count" tone="crimson" />
+          </div>
+          <div class="lw-telemetry-tags">
+            <lw-badge [label]="'Heal: ' + row.healingDone" tone="emerald" />
+            <lw-badge [label]="'Clues: ' + row.cluesDiscovered" tone="neutral" />
+          </div>
+        </div>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Hexagonal Capability Comparison"
+    title="Party Radar Breakdown"
+    subtitle="Shared lw-stat-radar component instances."
+    icon="sparkles">
+    <div class="lw-radar-grid">
+      @for (row of store.telemetry(); track row.characterKey) {
+        <div class="lw-radar-box">
+          <lw-stat-radar
+            [title]="row.characterName"
+            [subtitle]="row.classSummary"
+            [axes]="row.radarAxes" />
+        </div>
+      }
+    </div>
+  </lw-panel>
+</div>

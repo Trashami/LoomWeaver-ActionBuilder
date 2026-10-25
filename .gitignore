@@ -1,0 +1,22 @@
+# Node / Angular
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+*.log
+
+# .NET
+bin/
+obj/
+publish/
+backend/publish/
+*.user
+*.suo
+
+# OS / IDE
+.vs/
+.vscode/
+.DS_Store
+Thumbs.db
+*.zip
+*.tar.gz

@@ -1,0 +1,58 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="3D Physics & Cosmetic Studio"
+    title="3D Dice Forge & Authoritative Roller"
+    subtitle="Server-authoritative cryptographic RNG paired with deterministic 3D rigid-body trays, material shaders, and critical burst FX."
+    icon="dice"
+    [elevated]="true">
+    <div panelActions>
+      <lw-button variant="gold" size="sm" icon="dice" (pressed)="rollDice(20, 1, 8, 'Attack Roll')">
+        Roll 1d20 + 8
+      </lw-button>
+      <lw-button variant="secondary" size="sm" (pressed)="rollDice(8, 2, 4, 'Radiant Smite')">
+        Roll 2d8 + 4
+      </lw-button>
+      <lw-button variant="secondary" size="sm" (pressed)="rollDice(6, 8, 0, 'Fireball Burst')">
+        Roll 8d6
+      </lw-button>
+      <a class="lw-action-link" routerLink="/statistics">View Roll Telemetry</a>
+    </div>
+
+    <div class="lw-roll-feed">
+      @for (entry of rollHistory(); track entry.id) {
+        <div class="lw-roll-card">
+          <div class="lw-roll-card__main">
+            <strong>{{ entry.formula }}</strong>
+            <span>Skin: {{ entry.skinName }} · Faces: [{{ entry.values.join(', ') }}]</span>
+          </div>
+          <div class="lw-roll-card__right">
+            <lw-badge [label]="entry.outcome" tone="gold" />
+            <span class="lw-roll-total">{{ entry.total }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Reusable lw-asset-card Component"
+    title="Cosmetic Dice Skins, Trail Shaders & Acoustic Profiles"
+    subtitle="Configured via lw-asset-card without duplicating card markup."
+    icon="sparkles">
+    <div panelActions>
+      <a class="lw-action-link" routerLink="/marketplace">Get More Skins in Marketplace</a>
+    </div>
+    <div class="lw-skin-grid">
+      @for (skin of diceSkins(); track skin.id) {
+        <lw-asset-card
+          [asset]="skin"
+          [selected]="activeSkinId() === skin.id"
+          primaryActionLabel="Equip Skin"
+          [config]="{ variant: 'detailed', showPrice: true, showUnlockAction: true }"
+          (assetSelected)="activeSkinId.set($event.id)"
+          (unlockRequested)="store.unlockAsset($event.id)"
+          (previewRequested)="activeSkinId.set($event.id)" />
+      }
+    </div>
+  </lw-panel>
+</div>

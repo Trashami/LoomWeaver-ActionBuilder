@@ -1,0 +1,168 @@
+import { Injectable, computed, signal } from '@angular/core';
+import {
+  AssetCardVm,
+  CampaignVm,
+  CombatTelemetryVm,
+  EntityCardVm,
+  GraphEdgeVm,
+  LoomCitationVm,
+  NavDestination,
+  QualityProfile,
+  SceneVm,
+  SubscriptionTierVm,
+  ViewerRole,
+} from '../models/loomweaver.models';
+import {
+  LW_ASSETS,
+  LW_GRAPH_EDGES,
+  LW_SCENES,
+  LW_SUBSCRIPTION_TIERS,
+  LW_TELEMETRY,
+} from './loomweaver-catalog.data';
+import { LW_CAMPAIGNS, LW_ENTITIES, LW_NAVIGATION } from './loomweaver-seed.data';
+
+@Injectable({ providedIn: 'root' })
+export class LoomWeaverStoreService {
+  readonly navigationItems = signal<readonly NavDestination[]>(LW_NAVIGATION);
+  readonly campaigns = signal<readonly CampaignVm[]>(LW_CAMPAIGNS);
+  readonly activeCampaignId = signal<number>(1);
+  readonly viewerRole = signal<ViewerRole>('gm');
+  readonly weaveEnabled = signal<boolean>(true);
+  readonly loomDrawerOpen = signal<boolean>(false);
+  readonly loomQuery = signal<string>('What did Kildrid sense beneath the mountain on the road to Cinth?');
+  readonly qualityProfile = signal<QualityProfile>('Balanced');
+  readonly inspectedEntityKey = signal<string | null>('1:NPC:npc-emrys');
+  private readonly rawEntities = signal<readonly EntityCardVm[]>(LW_ENTITIES);
+  private readonly rawAssets = signal<readonly AssetCardVm[]>(LW_ASSETS);
+  private readonly rawScenes = signal<readonly SceneVm[]>(LW_SCENES);
+  private readonly rawEdges = signal<readonly GraphEdgeVm[]>(LW_GRAPH_EDGES);
+  readonly telemetry = signal<readonly CombatTelemetryVm[]>(LW_TELEMETRY);
+  readonly subscriptionTiers = signal<readonly SubscriptionTierVm[]>(LW_SUBSCRIPTION_TIERS);
+
+  readonly activeCampaign = computed<CampaignVm>(() => {
+    const id = this.activeCampaignId();
+    return this.campaigns().find((c) => c.id === id) ?? this.campaigns()[0];
+  });
+
+  readonly visibleNavigation = computed<readonly NavDestination[]>(() => {
+    const weaveOn = this.weaveEnabled();
+    return this.navigationItems().filter((item) => !item.requiresWeave || weaveOn);
+  });
+
+  readonly authorizedEntities = computed<readonly EntityCardVm[]>(() => {
+    const isGm = this.viewerRole() === 'gm';
+    return this.rawEntities().filter(
+      (e) => isGm || e.visibility === 'public' || e.visibility === 'players',
+    );
+  });
+
+  readonly authorizedScenes = computed<readonly SceneVm[]>(() => {
+    const isGm = this.viewerRole() === 'gm';
+    return this.rawScenes().filter(
+      (s) => isGm || s.visibility === 'public' || s.visibility === 'players',
+    );
+  });
+
+  readonly authorizedGraphEdges = computed<readonly GraphEdgeVm[]>(() => {
+    const isGm = this.viewerRole() === 'gm';
+    return this.rawEdges().filter(
+      (edge) => isGm || edge.visibility === 'public' || edge.visibility === 'players',
+    );
+  });
+
+  readonly assets = computed<readonly AssetCardVm[]>(() => this.rawAssets());
+
+  readonly inspectedEntity = computed<EntityCardVm | null>(() => {
+    const key = this.inspectedEntityKey();
+    if (!key) return null;
+    return (
+      this.authorizedEntities().find(
+        (e) => e.compositeKey === key || e.entityKey === key,
+      ) ?? null
+    );
+  });
+
+  readonly inspectedEntityEdges = computed(() => {
+    const entity = this.inspectedEntity();
+    if (!entity) return [];
+    const entities = this.authorizedEntities();
+    return this.authorizedGraphEdges()
+      .filter((edge) => edge.sourceKey === entity.compositeKey || edge.targetKey === entity.compositeKey)
+      .map((edge) => {
+        const isOutgoing = edge.sourceKey === entity.compositeKey;
+        const peerKey = isOutgoing ? edge.targetKey : edge.sourceKey;
+        const peer = entities.find((e) => e.compositeKey === peerKey);
+        return {
+          relationshipType: edge.relationshipType,
+          direction: isOutgoing ? ('outgoing' as const) : ('incoming' as const),
+          peerKey,
+          peerName: peer?.name ?? peerKey,
+          peerType: peer?.entityType ?? 'Entity',
+          peerRoute: peer?.routeLink ?? '/weave',
+        };
+      });
+  });
+
+  readonly loomCitations = computed<readonly LoomCitationVm[]>(() => {
+    const q = this.loomQuery().trim().toLowerCase();
+    const pool = this.authorizedEntities();
+    const matched = pool.filter(
+      (e) =>
+        !q ||
+        e.name.toLowerCase().includes(q) ||
+        e.summary.toLowerCase().includes(q) ||
+        e.subtitle.toLowerCase().includes(q) ||
+        e.entityType.toLowerCase().includes(q),
+    );
+    const results = matched.length > 0 ? matched.slice(0, 5) : pool.slice(0, 4);
+    return results.map((e) => ({
+      compositeKey: e.compositeKey,
+      title: e.name,
+      entityType: e.entityType,
+      excerpt: e.summary,
+      routeLink: e.routeLink,
+      visibility: e.visibility,
+    }));
+  });
+
+  setCampaign(id: number): void {
+    this.activeCampaignId.set(Number(id));
+    const found = this.campaigns().find((c) => c.id === Number(id));
+    if (found) {
+      this.weaveEnabled.set(found.weaveEnabled);
+    }
+  }
+
+  setViewerRole(role: ViewerRole): void {
+    this.viewerRole.set(role);
+  }
+
+  toggleWeave(): void {
+    this.weaveEnabled.update((v) => !v);
+  }
+
+  toggleLoomDrawer(open?: boolean): void {
+    this.loomDrawerOpen.update((cur) => (open !== undefined ? open : !cur));
+  }
+
+  inspectEntity(keyOrComposite: string | null): void {
+    this.inspectedEntityKey.set(keyOrComposite);
+  }
+
+  approveDraftEntity(compositeKey: string): void {
+    if (this.viewerRole() !== 'gm') return;
+    this.rawEntities.update((list) =>
+      list.map((e) =>
+        e.compositeKey === compositeKey ? { ...e, canonStatus: 'approved', visibility: 'players' } : e,
+      ),
+    );
+  }
+
+  unlockAsset(assetId: string): void {
+    this.rawAssets.update((list) =>
+      list.map((a) =>
+        a.id === assetId ? { ...a, entitlement: 'purchased', priceLabel: 'Owned (Unlocked)' } : a,
+      ),
+    );
+  }
+}

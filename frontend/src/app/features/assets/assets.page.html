@@ -1,0 +1,53 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Synchronized Audio & Media"
+    title="Asset Library & Ambience Controller"
+    subtitle="Manage confidential creator uploads, licensed bundles, and multi-stem spatial soundscapes."
+    icon="music"
+    [elevated]="true">
+    <div panelActions>
+      <lw-badge [label]="'Playing: ' + activeTrack()" tone="emerald" icon="music" />
+      <a class="lw-action-link" routerLink="/marketplace">Expand Library in Marketplace</a>
+    </div>
+
+    <div class="lw-stem-grid">
+      @for (stem of audioStems; track stem.name) {
+        <button
+          type="button"
+          class="lw-stem-card"
+          [class.lw-stem-card--active]="activeTrack() === stem.name"
+          (click)="activeTrack.set(stem.name)">
+          <strong>{{ stem.name }}</strong>
+          <span>{{ stem.mood }} · {{ stem.bpm }}</span>
+        </button>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Unified Asset Registry"
+    title="Installed & Entitlement-Aware Assets"
+    subtitle="Rendered with the shared lw-asset-card component across all asset categories."
+    icon="layers">
+    <div panelActions>
+      @for (cat of categories; track cat) {
+        <lw-button
+          [variant]="selectedCategory() === cat ? 'gold' : 'secondary'"
+          size="sm"
+          (pressed)="selectedCategory.set(cat)">
+          {{ cat }}
+        </lw-button>
+      }
+    </div>
+
+    <div class="lw-asset-grid">
+      @for (asset of filteredAssets(); track asset.id) {
+        <lw-asset-card
+          [asset]="asset"
+          [config]="{ variant: 'detailed', showPrice: true, showUnlockAction: true }"
+          (assetSelected)="store.unlockAsset($event.id)"
+          (unlockRequested)="store.unlockAsset($event.id)" />
+      }
+    </div>
+  </lw-panel>
+</div>

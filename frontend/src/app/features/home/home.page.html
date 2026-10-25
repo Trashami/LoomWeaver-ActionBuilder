@@ -1,0 +1,104 @@
+<div class="lw-page">
+  <section class="lw-hero">
+    <div class="lw-hero__brand">
+      <img src="/LoomWeaver.png" alt="LoomWeaver Official Crest" class="lw-hero__logo" />
+      <div class="lw-hero__copy">
+        <div class="lw-hero__badges">
+          <lw-badge label="LoomWeaver V2 Architecture" tone="gold" icon="sparkles" />
+          <lw-badge [label]="'MySQL + Neo4j: loomweaver'" tone="emerald" icon="database" />
+          <lw-badge [label]="store.activeCampaign().systemLabel" tone="neutral" />
+        </div>
+        <h1 class="lw-hero__title">{{ store.activeCampaign().name }}</h1>
+        <p class="lw-hero__subtitle">
+          {{ store.activeCampaign().subtitle }} · {{ store.activeCampaign().currentAct }} ·
+          Session {{ store.activeCampaign().currentSessionNumber }} ({{ store.activeCampaign().currentLocationName }})
+        </p>
+        <div class="lw-hero__cta">
+          <a class="lw-hero__primary-link" routerLink="/arcane-screen">
+            <lw-icon name="shield" [size]="16" />
+            <span>Launch Arcane Screen</span>
+          </a>
+          <a class="lw-hero__secondary-link" routerLink="/maps">
+            <lw-icon name="map" [size]="16" />
+            <span>Open Map Studio</span>
+          </a>
+          <lw-button variant="secondary" icon="book-open" (pressed)="store.toggleLoomDrawer(true)">
+            Ask The Loom
+          </lw-button>
+          @if (store.weaveEnabled()) {
+            <a class="lw-hero__secondary-link" routerLink="/weave">
+              <lw-icon name="network" [size]="16" />
+              <span>Explore Neo4j World Graph</span>
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <lw-panel
+    eyebrow="Platform Navigation Matrix"
+    title="All 13 LoomWeaver Workspaces"
+    subtitle="Every route below is live and connected to the unified loomweaver MySQL + Neo4j state store."
+    icon="compass">
+    <div class="lw-workspace-grid">
+      @for (dest of store.visibleNavigation(); track dest.id) {
+        <a class="lw-workspace-card" [routerLink]="dest.route">
+          <div class="lw-workspace-card__icon">
+            <lw-icon [name]="dest.icon" [size]="18" />
+          </div>
+          <div class="lw-workspace-card__body">
+            <div class="lw-workspace-card__top">
+              <strong>{{ dest.label }}</strong>
+              <lw-badge [label]="dest.group" tone="neutral" />
+            </div>
+            <span>{{ dest.subtitle }}</span>
+          </div>
+          <lw-icon name="arrow-right" [size]="15" />
+        </a>
+      }
+    </div>
+  </lw-panel>
+
+  <div class="lw-two-col">
+    <lw-panel
+      eyebrow="Canonical Graph Entities"
+      title="Featured Campaign Dossiers"
+      subtitle="Role-filtered entities from the loomweaver database. Click Inspect to view Neo4j edges."
+      icon="users">
+      <div panelActions>
+        <a class="lw-inline-link" routerLink="/campaigns">View All in Campaigns</a>
+      </div>
+      <div class="lw-stack">
+        @for (entity of featuredEntities(); track entity.compositeKey) {
+          <lw-entity-card
+            [entity]="entity"
+            [active]="store.inspectedEntityKey() === entity.compositeKey"
+            [canApprove]="store.viewerRole() === 'gm'"
+            (inspectRequested)="store.inspectEntity($event.compositeKey)"
+            (approveRequested)="store.approveDraftEntity($event.compositeKey)" />
+        }
+      </div>
+    </lw-panel>
+
+    <lw-panel
+      eyebrow="Reusable Asset Card System"
+      title="Featured Tabletop & Cosmetic Assets"
+      subtitle="Shared lw-asset-card component configured for standard overview presentation."
+      icon="layers">
+      <div panelActions>
+        <a class="lw-inline-link" routerLink="/marketplace">Browse Marketplace</a>
+      </div>
+      <div class="lw-asset-grid">
+        @for (asset of featuredAssets(); track asset.id) {
+          <lw-asset-card
+            [asset]="asset"
+            [config]="{ variant: 'standard', showPrice: true, showUnlockAction: true }"
+            (assetSelected)="store.unlockAsset($event.id)"
+            (unlockRequested)="store.unlockAsset($event.id)"
+            (previewRequested)="store.unlockAsset($event.id)" />
+        }
+      </div>
+    </lw-panel>
+  </div>
+</div>

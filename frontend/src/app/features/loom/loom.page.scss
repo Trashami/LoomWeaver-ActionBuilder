@@ -1,0 +1,129 @@
+:host {
+  display: block;
+}
+
+.lw-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lw-action-link {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--lw-radius-md);
+  border: 1px solid var(--lw-border-gold);
+  color: var(--lw-accent-gold);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.lw-search-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.lw-search-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--lw-radius-md);
+  border: 1px solid var(--lw-border-gold);
+  background: var(--lw-bg-surface);
+  color: var(--lw-text-primary);
+  font-size: 0.94rem;
+}
+
+.lw-prompt-list {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.lw-synthesis-card {
+  padding: 0.9rem 1.05rem;
+  margin-bottom: 1rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-accent-emerald-soft);
+  border: 1px solid rgba(45, 212, 167, 0.35);
+
+  p {
+    margin: 0.35rem 0 0;
+    font-size: 0.84rem;
+    color: var(--lw-text-primary);
+  }
+}
+
+.lw-synthesis-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--lw-accent-emerald);
+  font-size: 0.88rem;
+}
+
+.lw-citation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 0.9rem;
+}
+
+.lw-citation-card {
+  padding: 1rem;
+  border-radius: var(--lw-radius-lg);
+  background: var(--lw-bg-surface);
+  border: 1px solid var(--lw-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.lw-citation-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+
+  h4 {
+    margin: 0;
+    font-size: 0.96rem;
+    color: var(--lw-text-primary);
+  }
+
+  code {
+    font-family: var(--lw-font-mono);
+    font-size: 0.72rem;
+    color: var(--lw-text-muted);
+  }
+}
+
+.lw-citation-card__badges {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.lw-citation-card__excerpt {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--lw-text-secondary);
+  line-height: 1.5;
+}
+
+.lw-citation-card__footer {
+  margin-top: auto;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--lw-border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lw-cite-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--lw-accent-gold);
+}

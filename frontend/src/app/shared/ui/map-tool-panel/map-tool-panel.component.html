@@ -1,0 +1,78 @@
+<div class="lw-tool-panel">
+  <div class="lw-tool-panel__header">
+    <span>Authoring Tool Palette</span>
+    <lw-badge [label]="'Active: ' + activeToolId()" tone="gold" />
+  </div>
+
+  <div class="lw-tool-panel__list">
+    @for (tool of tools(); track tool.id) {
+      <button
+        type="button"
+        class="lw-tool-item"
+        [class.lw-tool-item--active]="activeToolId() === tool.id"
+        (click)="toolChanged.emit(tool.id)">
+        <lw-icon [name]="tool.icon" [size]="16" />
+        <div class="lw-tool-item__copy">
+          <strong>{{ tool.label }}</strong>
+          <span>{{ tool.description }}</span>
+        </div>
+      </button>
+    }
+  </div>
+
+  <div class="lw-tool-panel__sliders">
+    <label class="lw-slider-row">
+      <div class="lw-slider-row__meta">
+        <span>Brush Radius</span>
+        <strong>{{ brushRadius() }}m</strong>
+      </div>
+      <input
+        type="range"
+        min="1"
+        max="16"
+        [ngModel]="brushRadius()"
+        (ngModelChange)="emitBrush($event, brushIntensity(), deterministicSeed())" />
+    </label>
+
+    <label class="lw-slider-row">
+      <div class="lw-slider-row__meta">
+        <span>Elevation / Scatter Density</span>
+        <strong>{{ brushIntensity() }}%</strong>
+      </div>
+      <input
+        type="range"
+        min="10"
+        max="100"
+        [ngModel]="brushIntensity()"
+        (ngModelChange)="emitBrush(brushRadius(), $event, deterministicSeed())" />
+    </label>
+
+    <label class="lw-slider-row">
+      <div class="lw-slider-row__meta">
+        <span>Deterministic PRNG Seed</span>
+        <code>#{{ deterministicSeed() }}</code>
+      </div>
+      <input
+        type="number"
+        class="lw-seed-input"
+        [ngModel]="deterministicSeed()"
+        (ngModelChange)="emitBrush(brushRadius(), brushIntensity(), $event)" />
+    </label>
+  </div>
+
+  <div class="lw-tool-panel__actions">
+    <lw-button
+      variant="gold"
+      size="sm"
+      icon="sparkles"
+      (pressed)="commandRequested.emit('apply-' + activeToolId())">
+      Execute on Babylon Scene
+    </lw-button>
+    <lw-button
+      variant="secondary"
+      size="sm"
+      (pressed)="commandRequested.emit('undo')">
+      Undo Last Stroke
+    </lw-button>
+  </div>
+</div>

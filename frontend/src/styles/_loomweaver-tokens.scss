@@ -1,0 +1,51 @@
+:root {
+  --lw-color-bg: #060f0c;
+  --lw-color-bg-elevated: #0a1813;
+  --lw-color-surface: #0d211b;
+  --lw-color-surface-alt: #122b23;
+  --lw-color-surface-glass: rgba(13, 33, 27, 0.86);
+  --lw-color-border: rgba(85, 201, 147, 0.24);
+  --lw-color-border-strong: rgba(201, 175, 116, 0.45);
+  --lw-color-text: #e8eee8;
+  --lw-color-text-muted: #9eb3a6;
+  --lw-color-text-subtle: #6d8577;
+  --lw-color-emerald: #2ed39a;
+  --lw-color-emerald-dim: rgba(46, 211, 154, 0.14);
+  --lw-color-gold: #c9af74;
+  --lw-color-gold-dim: rgba(201, 175, 116, 0.16);
+  --lw-color-danger: #f06565;
+  --lw-color-focus: #7ddebd;
+
+  --lw-bg-canvas: #070d0b;
+  --lw-bg-surface: #0d1d18;
+  --lw-bg-elevated: #122821;
+  --lw-border-subtle: rgba(85, 201, 147, 0.22);
+  --lw-border-gold: rgba(201, 175, 116, 0.45);
+  --lw-text-primary: #ecf3ef;
+  --lw-text-secondary: #a5b9ad;
+  --lw-text-muted: #6e8779;
+  --lw-accent-gold: #d4a853;
+  --lw-accent-gold-soft: rgba(212, 168, 83, 0.16);
+  --lw-accent-emerald: #2ed39a;
+  --lw-accent-emerald-soft: rgba(46, 211, 154, 0.14);
+  --lw-accent-crimson: #ef5d72;
+  --lw-accent-crimson-soft: rgba(239, 93, 114, 0.16);
+
+  --lw-radius-sm: 6px;
+  --lw-radius-md: 10px;
+  --lw-radius-lg: 14px;
+  --lw-radius-xl: 18px;
+  --lw-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.35);
+
+  --lw-space-xs: 6px;
+  --lw-space-sm: 10px;
+  --lw-space-md: 16px;
+  --lw-space-lg: 24px;
+  --lw-space-xl: 32px;
+
+  --lw-font-serif: Georgia, 'Times New Roman', serif;
+  --lw-font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --lw-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --lw-font-mono: 'JetBrains Mono', Consolas, monospace;
+  color-scheme: dark;
+}

@@ -1,0 +1,102 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Live VTT & Session Command"
+    title="Arcane Screen · Round {{ activeRound() }}"
+    [subtitle]="store.activeCampaign().name + ' · Active Scene: Cinth Grand Masquerade Ballroom'"
+    icon="shield"
+    [elevated]="true">
+    <div panelActions>
+      <lw-button variant="gold" size="sm" icon="swords" (pressed)="nextTurn()">
+        Advance Turn
+      </lw-button>
+      <a class="lw-link-pill" routerLink="/dice">Roll in Dice Forge</a>
+      <a class="lw-link-pill" routerLink="/effects">Trigger Spell FX</a>
+      <a class="lw-link-pill" routerLink="/maps">Edit Map</a>
+    </div>
+
+    <div class="lw-screen-grid">
+      <div class="lw-initiative-table">
+        <div class="lw-initiative-head">
+          <span>Combatant</span>
+          <span>Init / AC / HP</span>
+          <span>Action Economy (Action · Bonus · Reaction · Move)</span>
+          <span>Graph</span>
+        </div>
+
+        @for (row of combatants(); track row.key; let idx = $index) {
+          <div class="lw-initiative-row" [class.lw-initiative-row--active]="idx === activeTurnIndex()">
+            <div class="lw-initiative-row__id">
+              <strong>{{ row.name }}</strong>
+              <span>{{ row.role }}</span>
+            </div>
+            <div class="lw-initiative-row__stats">
+              <lw-badge [label]="'Init ' + row.initiative" tone="gold" />
+              <lw-badge [label]="'AC ' + row.ac" tone="neutral" />
+              <lw-badge [label]="'HP ' + row.hp" tone="emerald" />
+            </div>
+            <div class="lw-initiative-row__economy">
+              <lw-button
+                [variant]="row.actionUsed ? 'danger' : 'secondary'"
+                size="sm"
+                (pressed)="toggleActionSlot(idx, 'actionUsed')">
+                {{ row.actionUsed ? 'Action Spent' : 'Action Ready' }}
+              </lw-button>
+              <lw-button
+                [variant]="row.bonusUsed ? 'danger' : 'secondary'"
+                size="sm"
+                (pressed)="toggleActionSlot(idx, 'bonusUsed')">
+                {{ row.bonusUsed ? 'Bonus Spent' : 'Bonus Ready' }}
+              </lw-button>
+              <lw-button
+                [variant]="row.reactionUsed ? 'danger' : 'secondary'"
+                size="sm"
+                (pressed)="toggleActionSlot(idx, 'reactionUsed')">
+                {{ row.reactionUsed ? 'Reaction Spent' : 'Reaction Ready' }}
+              </lw-button>
+              <span class="lw-move-tag">{{ row.movementFeet }}ft</span>
+            </div>
+            <div>
+              <lw-button variant="ghost" size="sm" icon="network" (pressed)="store.inspectEntity(row.key)">
+                Inspect
+              </lw-button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="lw-side-cards">
+        <lw-panel eyebrow="Story Beat & Pacing" title="Act II · Scene Guide" icon="compass">
+          <p class="lw-guide-copy">
+            Emrys converses with the party to confirm their return route toward Vandia. When the vampire coven strikes,
+            Kildrid's stone sense and Kycius's modified Dolly Gullet can contain the ambush without revealing the two Luminaries.
+          </p>
+          <div class="lw-guide-links">
+            <button type="button" class="lw-cite-btn" (click)="store.inspectEntity('1:NPC:npc-emrys')">
+              Inspect Emrys
+            </button>
+            <button type="button" class="lw-cite-btn" (click)="store.inspectEntity('1:Quest:quest-cinth-party')">
+              Inspect Cinth Masquerade Quest
+            </button>
+            <a class="lw-cite-link" routerLink="/loom">Open in The Loom</a>
+          </div>
+        </lw-panel>
+
+        <lw-panel eyebrow="Scoped Session Journal" title="Live Table Note" icon="book-open">
+          <textarea
+            class="lw-note-box"
+            rows="4"
+            [ngModel]="sessionNote()"
+            (ngModelChange)="sessionNote.set($event)"></textarea>
+          <div class="lw-guide-links">
+            <lw-badge
+              [label]="store.viewerRole() === 'gm' ? 'Scope: GM Private Canon' : 'Scope: Shared Party Note'"
+              tone="gold" />
+            <lw-button variant="secondary" size="sm" (pressed)="store.toggleLoomDrawer(true)">
+              Index in The Loom
+            </lw-button>
+          </div>
+        </lw-panel>
+      </div>
+    </div>
+  </lw-panel>
+</div>

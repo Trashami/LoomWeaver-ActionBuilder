@@ -1,0 +1,12 @@
+<div class="lw-empty">
+  <div class="lw-empty__icon">
+    <lw-icon [name]="icon()" [size]="24" />
+  </div>
+  <h4 class="lw-empty__title">{{ title() }}</h4>
+  <p class="lw-empty__description">{{ description() }}</p>
+  @if (actionLabel(); as cta) {
+    <lw-button variant="secondary" size="sm" (pressed)="actionTriggered.emit()">
+      {{ cta }}
+    </lw-button>
+  }
+</div>

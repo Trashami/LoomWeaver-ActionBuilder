@@ -1,0 +1,214 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.lw-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--lw-bg-canvas);
+}
+
+.lw-topbar {
+  min-height: 68px;
+  padding: 0.65rem 1.35rem;
+  background: rgba(13, 17, 24, 0.96);
+  border-bottom: 1px solid var(--lw-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.lw-topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lw-topbar__logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: var(--lw-radius-md);
+  border: 1px solid var(--lw-border-gold);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px;
+}
+
+.lw-topbar__titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.lw-topbar__name {
+  font-family: var(--lw-font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--lw-accent-gold);
+  letter-spacing: 0.03em;
+}
+
+.lw-topbar__tag {
+  font-size: 0.72rem;
+  color: var(--lw-text-secondary);
+}
+
+.lw-topbar__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lw-control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--lw-text-secondary);
+}
+
+.lw-select {
+  padding: 0.42rem 0.65rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-bg-surface);
+  border: 1px solid var(--lw-border-subtle);
+  color: var(--lw-text-primary);
+  font-size: 0.82rem;
+}
+
+.lw-role-switch {
+  display: inline-flex;
+  border-radius: var(--lw-radius-md);
+  border: 1px solid var(--lw-border-subtle);
+  overflow: hidden;
+}
+
+.lw-role-btn {
+  padding: 0.4rem 0.7rem;
+  border: none;
+  background: var(--lw-bg-surface);
+  color: var(--lw-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lw-role-btn--active {
+  background: var(--lw-accent-gold-soft);
+  color: var(--lw-accent-gold);
+}
+
+.lw-market-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.75rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-accent-emerald-soft);
+  border: 1px solid rgba(45, 212, 167, 0.35);
+  color: var(--lw-accent-emerald);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.lw-workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 255px 1fr auto;
+  min-height: calc(100vh - 68px);
+}
+
+@media (max-width: 1180px) {
+  .lw-workspace {
+    grid-template-columns: 230px 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .lw-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lw-sidebar {
+  background: var(--lw-bg-surface);
+  border-right: 1px solid var(--lw-border-subtle);
+  padding: 1rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.lw-sidebar__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lw-sidebar__heading {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lw-text-muted);
+  padding: 0 0.5rem 0.25rem;
+}
+
+.lw-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--lw-radius-md);
+  color: var(--lw-text-secondary);
+  border: 1px solid transparent;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+
+  strong {
+    display: block;
+    font-size: 0.84rem;
+    color: var(--lw-text-primary);
+  }
+
+  span {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--lw-text-muted);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--lw-border-subtle);
+  }
+}
+
+.lw-nav-link--active {
+  background: var(--lw-accent-gold-soft);
+  border-color: var(--lw-border-gold);
+  color: var(--lw-accent-gold);
+
+  strong {
+    color: var(--lw-accent-gold);
+  }
+}
+
+.lw-sidebar__footer {
+  margin-top: auto;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--lw-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lw-main {
+  padding: 1.35rem 1.5rem;
+  overflow-y: auto;
+}

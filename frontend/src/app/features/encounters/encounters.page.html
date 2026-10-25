@@ -1,0 +1,48 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Tactical Encounter Authoring"
+    title="Encounter Builder & Threat Roster"
+    subtitle="Build balanced encounters, bind map scenes, and launch directly into the Arcane Screen with automated XP rewards."
+    icon="swords"
+    [elevated]="true">
+    <div panelActions>
+      <a class="lw-action-link" routerLink="/arcane-screen">Deploy to Arcane Screen</a>
+      <a class="lw-action-link" routerLink="/maps">Bind Scene in Map Studio</a>
+      <a class="lw-action-link" routerLink="/effects">Configure Boss FX</a>
+    </div>
+
+    <div class="lw-budget-grid">
+      <div class="lw-budget-card">
+        <span>Active Party Composition</span>
+        <strong>5 Heroes · Level 7 (D&D 5e)</strong>
+        <lw-badge label="Threshold: 8,500 XP Deadly" tone="gold" />
+      </div>
+      <div class="lw-budget-card">
+        <span>Act II Ballroom Ambush</span>
+        <strong>CR 11 · 7,200 XP Award</strong>
+        <lw-badge label="Hard / High Tension" tone="emerald" />
+      </div>
+      <div class="lw-budget-card">
+        <span>Act III Mountain Sanctum</span>
+        <strong>CR 18 · 20,000 XP Award</strong>
+        <lw-badge label="Mythic Finale" tone="crimson" />
+      </div>
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Encounter & Adversary Dossiers"
+    title="Configured Encounters & Key Adversaries"
+    subtitle="Every encounter card links to its canonical Neo4j node and target workspace."
+    icon="shield">
+    <div class="lw-encounter-grid">
+      @for (enc of encounters(); track enc.compositeKey) {
+        <lw-entity-card
+          [entity]="enc"
+          variant="detailed"
+          [active]="store.inspectedEntityKey() === enc.compositeKey"
+          (inspectRequested)="store.inspectEntity($event.compositeKey)" />
+      }
+    </div>
+  </lw-panel>
+</div>

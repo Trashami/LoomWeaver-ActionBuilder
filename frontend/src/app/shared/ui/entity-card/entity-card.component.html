@@ -1,0 +1,53 @@
+<article
+  class="lw-entity-card"
+  [attr.data-variant]="variant()"
+  [class.lw-entity-card--active]="active()">
+  <div class="lw-entity-card__top">
+    <div class="lw-entity-card__identity" (click)="inspectRequested.emit(entity())">
+      <span class="lw-entity-card__icon">
+        <lw-icon [name]="entityIcon()" [size]="16" />
+      </span>
+      <div>
+        <h4 class="lw-entity-card__name">{{ entity().name }}</h4>
+        <span class="lw-entity-card__subtitle">{{ entity().subtitle }}</span>
+      </div>
+    </div>
+    <div class="lw-entity-card__badges">
+      <lw-badge [label]="entity().entityType" tone="neutral" />
+      <lw-badge [label]="entity().visibility" [tone]="visibilityTone()" />
+      @if (entity().canonStatus === 'draft') {
+        <lw-badge label="Draft" tone="draft" />
+      }
+      @if (entity().levelUpEligible) {
+        <lw-badge label="Level Up Ready" tone="gold" icon="sparkles" />
+      }
+    </div>
+  </div>
+
+  @if (variant() !== 'compact') {
+    <p class="lw-entity-card__summary">{{ entity().summary }}</p>
+  }
+
+  <div class="lw-entity-card__footer">
+    @if (entity().statsLabel; as stats) {
+      <span class="lw-entity-card__stats">{{ stats }}</span>
+    } @else {
+      <span class="lw-entity-card__stats">{{ entity().compositeKey }}</span>
+    }
+
+    <div class="lw-entity-card__actions">
+      @if (entity().canonStatus === 'draft' && canApprove()) {
+        <lw-button variant="gold" size="sm" icon="check" (pressed)="approveRequested.emit(entity())">
+          Approve Canon
+        </lw-button>
+      }
+      <lw-button variant="ghost" size="sm" icon="network" (pressed)="inspectRequested.emit(entity())">
+        Inspect
+      </lw-button>
+      <a class="lw-entity-card__link" [routerLink]="entity().routeLink">
+        <span>Open</span>
+        <lw-icon name="arrow-right" [size]="14" />
+      </a>
+    </div>
+  </div>
+</article>

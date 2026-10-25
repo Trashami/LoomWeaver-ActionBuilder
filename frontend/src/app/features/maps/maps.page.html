@@ -1,0 +1,119 @@
+<div class="lw-page">
+  <lw-panel
+    eyebrow="Module 2 · Babylon.js 2D/3D Map Engine"
+    title="LoomMaps · Terrain, Water Splines, Stamping, Scatter & 2.5D Lighting"
+    subtitle="Interactive Babylon.js WebGL stage backed by a single canonical scene graph. Click anywhere on the map canvas to apply the active brush or stamp."
+    icon="map"
+    [elevated]="true">
+    <div panelActions>
+      <a class="lw-inline-btn" routerLink="/arcane-screen">Push Scene to Arcane Screen</a>
+      <a class="lw-inline-btn" routerLink="/encounters">Bind Encounter</a>
+    </div>
+
+    <div class="lw-top-controls">
+      <div class="lw-scene-tabs">
+        @for (scene of store.authorizedScenes(); track scene.sceneKey) {
+          <button
+            type="button"
+            class="lw-scene-tab"
+            [class.lw-scene-tab--active]="scene.sceneKey === activeScene().sceneKey"
+            (click)="selectScene(scene.sceneKey, scene.name, scene.biome)">
+            <strong>{{ scene.name }}</strong>
+            <span>{{ scene.regionName }} · {{ scene.gridCols }}x{{ scene.gridRows }}</span>
+          </button>
+        }
+      </div>
+
+      <lw-rules-option-selector
+        [options]="renderModeOptions"
+        [selectedId]="renderMode()"
+        variant="pills"
+        (selectionChanged)="setRenderMode($event)" />
+    </div>
+
+    <div class="lw-studio-layout">
+      <lw-map-tool-panel
+        [tools]="tools"
+        [activeToolId]="activeToolId()"
+        [brushRadius]="brushRadius()"
+        [brushIntensity]="brushIntensity()"
+        [deterministicSeed]="deterministicSeed()"
+        (toolChanged)="activeToolId.set($event)"
+        (brushChanged)="onBrushChanged($event)"
+        (commandRequested)="onToolCommand($event)" />
+
+      <div class="lw-canvas-viewport">
+        <div class="lw-canvas-hud">
+          <lw-badge [label]="renderMode()" tone="gold" />
+          <lw-badge [label]="'Rev ' + sceneGraph().revision" tone="emerald" />
+          <lw-badge [label]="'Babylon Meshes: ' + stage.activeInstanceCount()" tone="neutral" />
+          <lw-badge [label]="stage.fps() + ' FPS · Profile: ' + store.qualityProfile()" tone="neutral" />
+          <lw-badge
+            [label]="'Cursor: (' + stage.lastPickedCoords().x + ', ' + stage.lastPickedCoords().z + ')'"
+            tone="gold" />
+        </div>
+
+        <div class="lw-canvas-wrapper">
+          <canvas
+            #babylonCanvas
+            class="lw-babylon-canvas"
+            aria-label="Interactive Babylon.js 2D and 3D Map Canvas"></canvas>
+
+          <div class="lw-canvas-overlay">
+            @for (st of sceneGraph().stamps; track st.id) {
+              @if (st.entityCompositeKey; as entityKey) {
+                <button
+                  type="button"
+                  class="lw-poi-chip"
+                  (click)="store.inspectEntity(entityKey)">
+                  <lw-icon name="map-pin" [size]="14" />
+                  <span>{{ st.label }}</span>
+                </button>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="lw-bottom-bar">
+          <div class="lw-quality-selector">
+            <span>Adaptive Quality Profile:</span>
+            @for (prof of qualityProfiles; track prof) {
+              <button
+                type="button"
+                class="lw-quality-pill"
+                [class.lw-quality-pill--active]="store.qualityProfile() === prof"
+                (click)="store.qualityProfile.set(prof)">
+                {{ prof }}
+              </button>
+            }
+          </div>
+
+          <div class="lw-command-feed">
+            @for (cmd of commandLog(); track cmd.id) {
+              <div class="lw-command-item">
+                <code>{{ cmd.timestamp }}</code>
+                <span>{{ cmd.summary }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Stamp & Biome Catalog"
+    title="Compatible Map & Audio Packs"
+    subtitle="Rendered with the shared lw-asset-card component."
+    icon="layers">
+    <div class="lw-asset-row">
+      @for (asset of mapAssets(); track asset.id) {
+        <lw-asset-card
+          [asset]="asset"
+          [config]="{ variant: 'standard', showPrice: true, showUnlockAction: true }"
+          (assetSelected)="store.unlockAsset($event.id)"
+          (unlockRequested)="store.unlockAsset($event.id)" />
+      }
+    </div>
+  </lw-panel>
+</div>

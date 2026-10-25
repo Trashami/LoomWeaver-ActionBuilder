@@ -1,0 +1,216 @@
+:host {
+  display: block;
+}
+
+.lw-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lw-action-link {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--lw-radius-md);
+  border: 1px solid var(--lw-border-gold);
+  color: var(--lw-accent-gold);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.lw-studio-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.15rem;
+}
+
+@media (max-width: 1024px) {
+  .lw-studio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lw-roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.lw-roster-item {
+  text-align: left;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-bg-elevated);
+  border: 1px solid var(--lw-border-subtle);
+  color: var(--lw-text-primary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  span {
+    font-size: 0.75rem;
+    color: var(--lw-text-secondary);
+  }
+}
+
+.lw-roster-item--active {
+  border-color: var(--lw-accent-gold);
+  background: var(--lw-accent-gold-soft);
+}
+
+.lw-roster-item__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lw-creator-box {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--lw-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  h4 {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--lw-accent-gold);
+  }
+}
+
+.lw-input {
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--lw-radius-sm);
+  background: var(--lw-bg-elevated);
+  border: 1px solid var(--lw-border-subtle);
+  color: var(--lw-text-primary);
+  font-size: 0.8rem;
+}
+
+.lw-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.lw-kpi {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-bg-elevated);
+  border: 1px solid var(--lw-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  span {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--lw-text-muted);
+  }
+
+  strong {
+    font-family: var(--lw-font-display);
+    font-size: 1.15rem;
+    color: var(--lw-accent-gold);
+  }
+}
+
+.lw-ability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+}
+
+.lw-ability-card {
+  padding: 0.65rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-bg-elevated);
+  border: 1px solid var(--lw-border-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.lw-ability-card__code {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--lw-text-muted);
+}
+
+.lw-ability-card__score {
+  font-size: 1.25rem;
+  color: var(--lw-text-primary);
+}
+
+.lw-ability-card__mod {
+  font-family: var(--lw-font-mono);
+  font-size: 0.78rem;
+  color: var(--lw-accent-emerald);
+}
+
+.lw-ability-card__btns {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+
+  button {
+    width: 24px;
+    height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--lw-border-subtle);
+    background: var(--lw-bg-surface);
+    color: var(--lw-text-primary);
+    cursor: pointer;
+  }
+}
+
+.lw-section-block {
+  padding-top: 0.95rem;
+  margin-top: 0.95rem;
+  border-top: 1px solid var(--lw-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lw-levelup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  h4 {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--lw-text-primary);
+  }
+
+  span {
+    font-size: 0.78rem;
+    color: var(--lw-text-secondary);
+  }
+}
+
+.lw-feature-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.lw-radar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1rem;
+}
+
+.lw-radar-card {
+  padding: 1rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-bg-elevated);
+  border: 1px solid var(--lw-border-subtle);
+}

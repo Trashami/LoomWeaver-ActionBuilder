@@ -1,0 +1,79 @@
+@if (store.inspectedEntity(); as entity) {
+  <aside class="lw-inspector" aria-label="Contextual Entity Inspector">
+    <header class="lw-inspector__header">
+      <div>
+        <span class="lw-inspector__eyebrow">Contextual Inspector</span>
+        <h3 class="lw-inspector__title">{{ entity.name }}</h3>
+        <span class="lw-inspector__subtitle">{{ entity.subtitle }}</span>
+      </div>
+      <lw-button variant="ghost" size="sm" icon="x" (pressed)="store.inspectEntity(null)">
+        Close
+      </lw-button>
+    </header>
+
+    <div class="lw-inspector__badges">
+      <lw-badge [label]="entity.entityType" tone="gold" />
+      <lw-badge [label]="entity.visibility" [tone]="entity.visibility === 'gm' ? 'gm' : 'emerald'" />
+      <lw-badge [label]="entity.canonStatus" [tone]="entity.canonStatus === 'draft' ? 'draft' : 'approved'" />
+    </div>
+
+    <p class="lw-inspector__summary">{{ entity.summary }}</p>
+
+    <div class="lw-inspector__meta">
+      <div class="lw-inspector__meta-row">
+        <span>Composite Graph Key</span>
+        <code>{{ entity.compositeKey }}</code>
+      </div>
+      @if (entity.statsLabel) {
+        <div class="lw-inspector__meta-row">
+          <span>System Telemetry</span>
+          <code>{{ entity.statsLabel }}</code>
+        </div>
+      }
+    </div>
+
+    <div class="lw-inspector__actions">
+      <a class="lw-inspector__route-btn" [routerLink]="entity.routeLink">
+        <lw-icon name="arrow-right" [size]="14" />
+        <span>Open Workspace ({{ entity.routeLink }})</span>
+      </a>
+      @if (entity.canonStatus === 'draft' && store.viewerRole() === 'gm') {
+        <lw-button
+          variant="gold"
+          size="sm"
+          icon="check"
+          (pressed)="store.approveDraftEntity(entity.compositeKey)">
+          Approve Draft into Canon
+        </lw-button>
+      }
+    </div>
+
+    <section class="lw-inspector__graph">
+      <h4 class="lw-inspector__section-title">
+        <lw-icon name="network" [size]="15" />
+        <span>Neo4j Graph Relationships ({{ store.inspectedEntityEdges().length }})</span>
+      </h4>
+      <div class="lw-inspector__edges">
+        @for (edge of store.inspectedEntityEdges(); track edge.peerKey + edge.relationshipType) {
+          <div class="lw-inspector__edge">
+            <div class="lw-inspector__edge-top">
+              <span class="lw-inspector__edge-rel">{{ edge.relationshipType }}</span>
+              <span class="lw-inspector__edge-dir">{{ edge.direction }}</span>
+            </div>
+            <div class="lw-inspector__edge-Links">
+              <button
+                type="button"
+                class="lw-inspector__peer-btn"
+                (click)="store.inspectEntity(edge.peerKey)">
+                {{ edge.peerName }} ({{ edge.peerType }})
+              </button>
+              <a class="lw-inspector__peer-route" [routerLink]="edge.peerRoute">Go</a>
+            </div>
+          </div>
+        } @empty {
+          <p class="lw-inspector__empty">No visible edges for current role scope.</p>
+        }
+      </div>
+    </section>
+  </aside>
+}

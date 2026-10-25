@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LoomWeaver.Api/LoomWeaver.Api.csproj" />
+    <Project Path="src/LoomWeaver.Domain/LoomWeaver.Domain.csproj" />
+    <Project Path="src/LoomWeaver.GameSystems/LoomWeaver.GameSystems.csproj" />
+    <Project Path="src/LoomWeaver.Infrastructure/LoomWeaver.Infrastructure.csproj" />
+    <Project Path="src/LoomWeaver.Modules/LoomWeaver.Modules.csproj" />
+  </Folder>
+</Solution>
