@@ -122,6 +122,8 @@ def push_repos() -> None:
 
     shutil.rmtree(os.path.join(EB_ROOT, ".git"), ignore_errors=True)
 
+    lw_remote = f"https://github.com/{username}/LoomWeaverV2.git"
+    run_git(ROOT, "remote", "set-url", "origin", lw_remote)
     run_git(ROOT, "config", "user.name", username)
     run_git(ROOT, "config", "user.email", f"{username}@users.noreply.github.com")
     run_git(ROOT, "add", "-A")
@@ -135,7 +137,7 @@ def push_repos() -> None:
             "-m",
             "Bring existing EffectBuilder (EffectBuilder.client + EffectBuilder.server) over as-is",
         )
-    run_git(ROOT, "push", "-u", "origin", "master")
+    run_git(ROOT, "push", "-u", "origin", "master", "--force")
     run_git(ROOT, "push", "origin", "master:dev", "--force")
     print("Pushed LoomWeaverV2 to origin (master + dev)")
 
