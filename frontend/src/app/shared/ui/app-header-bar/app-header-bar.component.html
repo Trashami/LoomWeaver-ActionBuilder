@@ -1,4 +1,13 @@
-<header class="lw-topbar" role="banner">
+<header
+  class="lw-topbar"
+  role="banner"
+  [style.width]="width()"
+  [style.min-width]="minWidth()"
+  [style.max-width]="maxWidth()"
+  [style.height]="height()"
+  [style.min-height]="minHeight()"
+  [style.max-height]="maxHeight()"
+>
   <div class="lw-topbar__left">
     <button
       ngpButton
@@ -14,7 +23,19 @@
     </button>
 
     <a class="lw-topbar__brand-tile" routerLink="/home">
-      <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-topbar__logo" />
+      <img
+        [src]="logoSrc()"
+        [alt]="logoAlt()"
+        class="lw-topbar__logo"
+        [class.lw-topbar__logo--bordered]="logoShowBorder()"
+        [style.border]="logoShowBorder() ? logoBorder() : 'none'"
+        [style.width]="logoWidth()"
+        [style.min-width]="logoMinWidth()"
+        [style.max-width]="logoMaxWidth()"
+        [style.height]="logoHeight()"
+        [style.min-height]="logoMinHeight()"
+        [style.max-height]="logoMaxHeight()"
+      />
       <div class="lw-topbar__titles">
         <span class="lw-topbar__name">LoomWeaver</span>
         <span class="lw-topbar__tag">Your Campaign. One Living World.</span>

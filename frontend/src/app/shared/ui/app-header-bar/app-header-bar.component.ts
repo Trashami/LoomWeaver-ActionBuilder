@@ -37,6 +37,26 @@ export class LwAppHeaderBarComponent {
   readonly navCollapsed = input<boolean>(false);
   readonly collapseIcon = input<'apps' | 'menu'>('apps');
 
+  // Component dimension properties (width/height + min/max)
+  readonly width = input<string>('100%');
+  readonly minWidth = input<string>('0');
+  readonly maxWidth = input<string>('100%');
+  readonly height = input<string>('62px');
+  readonly minHeight = input<string>('62px');
+  readonly maxHeight = input<string>('62px');
+
+  // Logo customization properties (border + width/height + min/max, 100px wider default: 136px)
+  readonly logoSrc = input<string>('/LoomWeaver.png');
+  readonly logoAlt = input<string>('LoomWeaver Crest');
+  readonly logoShowBorder = input<boolean>(false);
+  readonly logoBorder = input<string>('none');
+  readonly logoWidth = input<string>('136px');
+  readonly logoMinWidth = input<string>('136px');
+  readonly logoMaxWidth = input<string>('180px');
+  readonly logoHeight = input<string>('42px');
+  readonly logoMinHeight = input<string>('32px');
+  readonly logoMaxHeight = input<string>('54px');
+
   readonly searchText = model<string>('');
 
   readonly navToggleRequested = output<void>();

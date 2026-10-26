@@ -1,5 +1,7 @@
 export type EffectStudioMode = 'design' | 'preview' | 'ingame';
 
+export type EffectLibrarySectionId = 'effects' | 'appearances' | 'presets';
+
 export type EffectRailToolId =
   | 'emitters'
   | 'forces'
@@ -16,11 +18,75 @@ export type EffectCameraPreset = 'Isometric' | 'Top-Down' | 'Tactical Orbit' | '
 
 export type EffectGizmoToolId = 'move' | 'rotate' | 'scale' | 'grid' | 'bounds' | 'particles';
 
+export type EffectAppearanceId =
+  | 'Fire'
+  | 'Ice'
+  | 'Lightning'
+  | 'Acid'
+  | 'Shadow'
+  | 'Radiant'
+  | 'Spectral'
+  | 'Chokrah'
+  | 'Custom';
+
+export type EffectBuildingBlockKind =
+  | 'Projectile'
+  | 'Projectile Volley'
+  | 'Object Projectile'
+  | 'Trail'
+  | 'Beam'
+  | 'Cone Spray'
+  | 'Energy Column'
+  | 'Burst'
+  | 'Box Burst'
+  | 'Shockwave'
+  | 'Casting Charge'
+  | 'Magic Circle'
+  | 'Swirling Aura'
+  | 'Smoke / Mist'
+  | 'Sparks / Embers'
+  | 'Debris'
+  | 'Light'
+  | 'Surface Mark'
+  | 'Chain Lightning'
+  | 'Wall'
+  | 'Shield / Dome'
+  | 'Ground Area'
+  | 'Particle Emitter'
+  | 'Sound';
+
+export type EffectAnimationModifierId =
+  | 'None'
+  | 'Move Along Path'
+  | 'Attach / Follow'
+  | 'Grow / Shrink'
+  | 'Rotate / Orbit'
+  | 'Fade / Pulse'
+  | 'Change Color'
+  | 'Dissolve / Reform'
+  | 'Reveal / Conceal'
+  | 'Change Appearance'
+  | 'Duplicate / Afterimage';
+
+export type EffectLayerAnchor = 'caster' | 'path' | 'target' | 'area';
+
+export interface EffectAppearancePresetVm {
+  readonly id: EffectAppearanceId;
+  readonly name: string;
+  readonly subtitle: string;
+  readonly shaderElement: 'force' | 'fire' | 'ice' | 'gas' | 'radiant' | 'lightning' | 'acid' | 'shadow';
+  readonly colorPrimaryHex: string;
+  readonly colorSecondaryHex: string;
+  readonly smokeHex: string;
+  readonly materialName: string;
+  readonly blendMode: string;
+}
+
 export interface EffectEmitterCardVm {
   readonly id: string;
   readonly name: string;
   readonly category: string;
-  readonly emitterType: string;
+  readonly emitterType: EffectBuildingBlockKind | string;
   readonly shape: string;
   readonly radius: number;
   readonly height: number;
@@ -39,12 +105,19 @@ export interface EffectEmitterCardVm {
   readonly lightIntensity: number;
   readonly receiveShadows: boolean;
   readonly previewAccentHex: string;
+  readonly appearanceId?: EffectAppearanceId;
+  readonly count?: number;
+  readonly scale?: number;
+  readonly objectModel?: string;
+  readonly circlePattern?: string;
+  readonly debrisMaterial?: string;
+  readonly animationModifier?: EffectAnimationModifierId;
 }
 
 export interface EffectTimelineTrackVm {
   readonly id: string;
   readonly label: string;
-  readonly trackType: 'Beam' | 'Particle' | 'Sigil' | 'Atmospheric' | 'Audio' | string;
+  readonly trackType: EffectBuildingBlockKind | 'Beam' | 'Particle' | 'Sigil' | 'Atmospheric' | 'Audio' | string;
   readonly visible: boolean;
   readonly expanded: boolean;
   readonly startTimeSeconds: number;
@@ -52,6 +125,27 @@ export interface EffectTimelineTrackVm {
   readonly colorHex: string;
   readonly accentHex: string;
   readonly emitterId: string;
+  readonly parentGroupLabel?: string;
+  readonly appearanceId?: EffectAppearanceId;
+  readonly anchor?: EffectLayerAnchor;
+  readonly count?: number;
+  readonly scale?: number;
+  readonly opacityPercent?: number;
+  readonly variant?: string;
+  readonly animationModifier?: EffectAnimationModifierId;
+}
+
+export interface EffectCompositePresetVm {
+  readonly id: string;
+  readonly name: string;
+  readonly category: string;
+  readonly description: string;
+  readonly appearanceId: EffectAppearanceId;
+  readonly colorPrimaryHex: string;
+  readonly colorSecondaryHex: string;
+  readonly totalDurationSeconds: number;
+  readonly baseEmitterId: string;
+  readonly tracks: readonly EffectTimelineTrackVm[];
 }
 
 export interface EffectMotionForceConfigVm {
@@ -132,31 +226,4 @@ export interface CampaignEffectAssignmentVm {
   readonly assignedByRole: string;
   readonly updatedAt: string;
   readonly effectDocument?: EffectStudioDocumentVm;
-}
-
-export interface EffectBuilderLayerVm {
-  readonly id: string;
-  readonly kind?: 'beam' | 'projectile' | 'burst' | 'rune' | 'cone' | 'aura' | 'wave' | 'whip' | 'sigil';
-  readonly type?: string;
-  readonly variant?: string;
-  readonly color?: string;
-  readonly primaryColor?: string;
-  readonly secondaryColor?: string;
-  readonly delay?: number;
-  readonly startTimeMs?: number;
-  readonly duration?: number;
-  readonly durationMs?: number;
-  readonly opacity?: number;
-  readonly scale?: number;
-  readonly count?: number;
-  readonly enabled?: boolean;
-  readonly anchor?: 'caster' | 'target' | 'path';
-}
-
-export interface EffectBuilderDefinitionVm {
-  readonly id: string;
-  readonly name: string;
-  readonly spellName?: string;
-  readonly description?: string;
-  readonly layers: readonly EffectBuilderLayerVm[];
 }

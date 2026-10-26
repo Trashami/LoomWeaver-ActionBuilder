@@ -158,6 +158,31 @@ export class BabylonEffectStudioStageService {
     });
   }
 
+  triggerTimelineComposition(
+    tracks: readonly EffectTimelineTrackVm[],
+    activeProps: EffectEmitterCardVm,
+    soundVolumePercent: number = 85,
+  ): void {
+    if (!this.scene || !this.dungeonNodes) return;
+    this.zone.runOutsideAngular(() => {
+      if (!this.scene || !this.dungeonNodes) return;
+      const sceneRef = this.scene;
+      const casterPos = this.dungeonNodes.casterToken.root.position.clone();
+      const targetTokens = this.dungeonNodes.targetTokens;
+      this.structuralFx.playTimelineComposition(
+        sceneRef,
+        tracks,
+        activeProps,
+        casterPos,
+        targetTokens,
+        soundVolumePercent,
+        (hitTarget) => {
+          this.dungeonBuilder.triggerTargetRecoil(sceneRef, hitTarget);
+        },
+      );
+    });
+  }
+
   applyCameraPreset(preset: EffectCameraPreset): void {
     if (!this.camera) return;
     switch (preset) {
