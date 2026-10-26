@@ -19,3 +19,5 @@ backend/publish/
 Thumbs.db
 *.zip
 *.tar.gz
+
+effectbuilder-studio/public/models-3d/*.glb
