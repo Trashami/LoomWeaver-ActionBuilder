@@ -21,10 +21,13 @@
 ## Stage Progression
 
 - **Stage 1 (Verified):** Site architecture, global shell with `/LoomWeaver.png`, 13 working routes, core reusable UI primitives (`lw-icon`, `lw-button`, `lw-badge`, `lw-panel`, `lw-asset-card`, `lw-entity-card`, `lw-stat-radar`, `lw-inspector-drawer`, `lw-loom-launcher`), and `loomweaver` MySQL + Neo4j provisioning.
-- **Stage 2 (Active):**
+- **Stage 2 (Verified):**
   - **Character Studio**: Pluggable server-side character/rules engine (`Dnd5e`, `Pathfinder2e`, `VampireV5`), interactive character creation wizard, ability score & modifier calculator, equipment loadout manager, and XP level-up execution.
   - **LoomMaps Engine**: Real Babylon.js 2D/3D viewport (`engine/terrain`, `engine/water`, `engine/scatter`, `engine/lighting`, `engine/rendering`), interactive canvas click-to-stamp/scatter/sculpt/water-spline tools, quality profile switching, and server-backed scene command persistence.
   - **Shared Catalog Expansion**: `lw-rules-option-selector`, `lw-map-tool-panel`, and `lw-asset-picker`.
-- **Stage 3 (Next):** **Arcane Screen VTT + ActionBuilder + EffectBuilder** (linking live Babylon map scenes with combat tokens, range targeting, server-evaluated attacks/saves, and Babylon particle spell trajectories).
-- **Stage 4:** **Dice Forge 3D + Music & Ambience Web Audio Engine + Campaign Analytics Ledgers**.
+- **Stage 3 (Verified):**
+  - **Arcane Screen VTT + Encounters**: Live Babylon.js 3D/2D tactical combat stage, token targeting & range tether, per-turn Action Economy (`Action`, `Bonus Action`, `Reaction`, `Movement`), server-evaluated AC/DC hit and save resolution, and automated XP awards on encounter completion.
+  - **ActionBuilder + EffectBuilder**: Guided When / If / Then rules composer paired with Babylon.js 3D spell trajectories (`arc`, `cone`, `beam`, `sigil`), timeline keyframe preview, and reduced-motion accessibility fallback.
+  - **Shared Catalog Expansion**: `lw-npc-card`, `lw-creature-card`, and `lw-encounter-card`.
+- **Stage 4 (Next):** **Dice Forge 3D + Music & Ambience Web Audio Engine + Campaign Analytics Ledgers**.
 - **Stage 5:** **The Loom GraphRAG + The Weave Authoring + Marketplace Entitlements & Module Packager**.

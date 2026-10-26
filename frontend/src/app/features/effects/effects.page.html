@@ -1,41 +1,153 @@
 <div class="lw-page">
   <lw-panel
-    eyebrow="Visual Rule & Shader Pipeline"
-    title="Action & Effect Builder"
-    subtitle="Author guided When / If / Then combat automation paired with projectile arcs, cones, beams, and impact decals."
+    eyebrow="Modules 4 & 5 · .NET ActionBuilder + Babylon.js EffectBuilder"
+    title="ActionBuilder & 3D Spell Effect Studio"
+    subtitle="Author guided When / If / Then combat actions and bind them to real-time Babylon.js 3D projectile arcs, cones, beams, and runic sigils."
     icon="flame"
     [elevated]="true">
     <div panelActions>
-      <a class="lw-action-link" routerLink="/arcane-screen">Bind to Arcane Screen</a>
-      <a class="lw-action-link" routerLink="/maps">Preview on Map Canvas</a>
+      <lw-button
+        [variant]="stage.reducedMotion() ? 'gold' : 'secondary'"
+        size="sm"
+        (pressed)="toggleReducedMotion()">
+        {{ stage.reducedMotion() ? 'Reduced Motion: ON' : 'Reduced Motion: OFF' }}
+      </lw-button>
+      <a class="lw-action-link" routerLink="/arcane-screen">Fire Actions in Arcane Screen</a>
     </div>
 
-    <div class="lw-fx-log">
-      <lw-badge label="Live FX Sandbox" tone="emerald" />
-      <span>{{ lastFiredLog() }}</span>
-    </div>
-
-    <div class="lw-preset-grid">
-      @for (preset of presets; track preset.id) {
-        <div
-          class="lw-preset-card"
-          [class.lw-preset-card--active]="activePresetId() === preset.id">
-          <div class="lw-preset-card__head">
-            <strong>{{ preset.name }}</strong>
-            <lw-badge [label]="preset.trajectory" tone="gold" />
-          </div>
-          <div class="lw-rule-steps">
-            <code>{{ preset.triggerWhen }}</code>
-            <code>{{ preset.conditionIf }}</code>
-            <code>{{ preset.executeThen }}</code>
-          </div>
+    <div class="lw-builder-grid">
+      <div class="lw-effect-stage">
+        <div class="lw-effect-hud">
+          <lw-badge [label]="activeEffectPreset().name" tone="gold" />
+          <lw-badge [label]="'Keyframe: ' + stage.activeKeyframeLabel()" tone="emerald" />
           <lw-button
-            variant="secondary"
+            variant="gold"
             size="sm"
             icon="sparkles"
-            (pressed)="triggerPreset(preset)">
-            Test Trajectory & Rule
+            (pressed)="previewEffect(activeEffectPreset())">
+            Replay 3D Trajectory
           </lw-button>
+        </div>
+
+        <canvas
+          #effectCanvas
+          class="lw-effect-canvas"
+          aria-label="Babylon.js 3D Spell Effect and Trajectory Sandbox"></canvas>
+
+        <div class="lw-keyframe-bar">
+          @for (kf of activeEffectPreset().keyframes; track kf) {
+            <span
+              class="lw-keyframe-pill"
+              [class.lw-keyframe-pill--active]="stage.activeKeyframeLabel() === kf">
+              {{ kf }}
+            </span>
+          }
+        </div>
+
+        <lw-rules-option-selector
+          title="EffectBuilder · Babylon.js Trajectory & Timeline Presets"
+          [options]="trajectoryOptions()"
+          [selectedId]="selectedEffectId()"
+          variant="cards"
+          (selectionChanged)="onSelectEffect($event)" />
+      </div>
+
+      <div class="lw-composer-card">
+        <h4>ActionBuilder · When / If / Then Rule Composer</h4>
+        <p class="lw-composer-sub">
+          New actions saved here are immediately added to the Arcane Screen combat bar.
+        </p>
+
+        <label class="lw-field">
+          <span>Action / Ability Name</span>
+          <input
+            type="text"
+            class="lw-input"
+            [ngModel]="newActionName()"
+            (ngModelChange)="newActionName.set($event)" />
+        </label>
+
+        <div class="lw-field-row">
+          <label class="lw-field">
+            <span>Range (ft)</span>
+            <input
+              type="number"
+              class="lw-input"
+              [ngModel]="newActionRange()"
+              (ngModelChange)="newActionRange.set($event)" />
+          </label>
+          <label class="lw-field">
+            <span>Damage Formula</span>
+            <input
+              type="text"
+              class="lw-input"
+              [ngModel]="newActionFormula()"
+              (ngModelChange)="newActionFormula.set($event)" />
+          </label>
+        </div>
+
+        <label class="lw-field">
+          <span>WHEN Trigger</span>
+          <input
+            type="text"
+            class="lw-input"
+            [ngModel]="newActionWhen()"
+            (ngModelChange)="newActionWhen.set($event)" />
+        </label>
+
+        <label class="lw-field">
+          <span>IF Condition (Range / AC / Save DC)</span>
+          <input
+            type="text"
+            class="lw-input"
+            [ngModel]="newActionIf()"
+            (ngModelChange)="newActionIf.set($event)" />
+        </label>
+
+        <label class="lw-field">
+          <span>THEN Execution Payload</span>
+          <input
+            type="text"
+            class="lw-input"
+            [ngModel]="newActionThen()"
+            (ngModelChange)="newActionThen.set($event)" />
+        </label>
+
+        <lw-button variant="gold" size="sm" icon="plus" (pressed)="saveNewActionRule()">
+          Save Action & Bind to {{ activeEffectPreset().name }}
+        </lw-button>
+      </div>
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Registered ActionBuilder Rules"
+    title="Active Campaign Actions & Homebrew Abilities ({{ vtt.actionRules().length }})"
+    subtitle="Click Test on any rule to preview its bound Babylon.js trajectory."
+    icon="swords">
+    <div class="lw-preset-grid">
+      @for (rule of vtt.actionRules(); track rule.id) {
+        <div class="lw-preset-card">
+          <div class="lw-preset-card__head">
+            <div>
+              <strong>{{ rule.name }}</strong>
+              <span class="lw-preset-meta">{{ rule.category }} · {{ rule.actionCost }} · {{ rule.rangeFeet }}ft</span>
+            </div>
+            <lw-badge
+              [label]="rule.canonStatus"
+              [tone]="rule.canonStatus === 'approved' ? 'emerald' : 'draft'" />
+          </div>
+          <div class="lw-rule-steps">
+            <code>{{ rule.triggerWhen }}</code>
+            <code>{{ rule.conditionIf }}</code>
+            <code>{{ rule.executeThen }}</code>
+          </div>
+          <div class="lw-preset-card__foot">
+            <lw-badge [label]="rule.damageFormula" tone="gold" />
+            <lw-button variant="secondary" size="sm" icon="sparkles" (pressed)="previewRule(rule)">
+              Test 3D Effect
+            </lw-button>
+          </div>
         </div>
       }
     </div>

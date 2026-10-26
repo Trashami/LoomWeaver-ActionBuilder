@@ -2,7 +2,9 @@ using LoomWeaver.Domain;
 using LoomWeaver.GameSystems;
 using LoomWeaver.Infrastructure.MySql;
 using LoomWeaver.Infrastructure.Neo4j;
+using LoomWeaver.Modules.Actions;
 using LoomWeaver.Modules.Characters;
+using LoomWeaver.Modules.Encounters;
 using LoomWeaver.Modules.Maps;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +21,8 @@ public static class LoomWeaverEndpoints
             var api = app.MapGroup(prefix);
             api.MapCharacterStudioEndpoints();
             api.MapLoomMapsEndpoints();
+            api.MapCombatEncounterEndpoints();
+            api.MapActionAndEffectEndpoints();
             MapCoreEndpoints(api);
         }
 

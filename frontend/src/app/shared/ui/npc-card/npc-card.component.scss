@@ -1,0 +1,106 @@
+:host {
+  display: block;
+}
+
+.lw-npc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--lw-radius-lg);
+  background: var(--lw-bg-surface);
+  border: 1px solid var(--lw-border-subtle);
+  transition: border-color 150ms ease;
+
+  &:hover {
+    border-color: var(--lw-border-gold);
+  }
+}
+
+.lw-npc-card--selected {
+  border-color: var(--lw-accent-gold);
+  background: var(--lw-bg-elevated);
+}
+
+.lw-npc-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lw-npc-card__id {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.lw-npc-card__avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-accent-gold-soft);
+  color: var(--lw-accent-gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lw-npc-card__name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--lw-text-primary);
+}
+
+.lw-npc-card__title {
+  font-size: 0.76rem;
+  color: var(--lw-text-secondary);
+}
+
+.lw-npc-card__badges {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.lw-npc-card__summary {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--lw-text-secondary);
+  line-height: 1.45;
+}
+
+.lw-npc-card__secret {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--lw-radius-md);
+  background: var(--lw-accent-gold-soft);
+  border: 1px solid var(--lw-border-gold);
+  font-size: 0.78rem;
+  color: var(--lw-text-primary);
+}
+
+.lw-npc-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--lw-border-subtle);
+
+  code {
+    font-family: var(--lw-font-mono);
+    font-size: 0.72rem;
+    color: var(--lw-text-muted);
+  }
+}
+
+.lw-npc-card__actions {
+  display: flex;
+  gap: 0.4rem;
+}

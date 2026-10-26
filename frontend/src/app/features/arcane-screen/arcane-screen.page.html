@@ -1,63 +1,129 @@
 <div class="lw-page">
   <lw-panel
-    eyebrow="Live VTT & Session Command"
-    title="Arcane Screen · Round {{ activeRound() }}"
-    [subtitle]="store.activeCampaign().name + ' · Active Scene: Cinth Grand Masquerade Ballroom'"
+    eyebrow="Module 3 · Live VTT, Combat Engine & Babylon.js Renderer"
+    title="Arcane Screen · Round {{ vtt.activeRound() }}"
+    [subtitle]="store.activeCampaign().name + ' · Target Range, AC/DC Hit & Save Resolver, Action Economy & Automated XP'"
     icon="shield"
     [elevated]="true">
     <div panelActions>
       <lw-button variant="gold" size="sm" icon="swords" (pressed)="nextTurn()">
         Advance Turn
       </lw-button>
-      <a class="lw-link-pill" routerLink="/dice">Roll in Dice Forge</a>
-      <a class="lw-link-pill" routerLink="/effects">Trigger Spell FX</a>
-      <a class="lw-link-pill" routerLink="/maps">Edit Map</a>
+      @if (store.viewerRole() === 'gm') {
+        <lw-button
+          variant="primary"
+          size="sm"
+          icon="sparkles"
+          (pressed)="vtt.concludeEncounterAndAwardXp(vtt.activeEncounterId())">
+          Conclude Combat & Award XP
+        </lw-button>
+      }
+      <a class="lw-link-pill" routerLink="/effects">Action & Effect Builder</a>
+      <a class="lw-link-pill" routerLink="/maps">Edit Scene in LoomMaps</a>
+    </div>
+
+    @if (vtt.xpAwardBanner(); as banner) {
+      <div class="lw-xp-banner">
+        <lw-badge label="Automated XP Engine" tone="gold" icon="sparkles" />
+        <span>{{ banner }}</span>
+        <a class="lw-link-pill" routerLink="/characters">Promote Heroes in Character Studio</a>
+      </div>
+    }
+
+    <div class="lw-vtt-top">
+      <div class="lw-vtt-stage">
+        <div class="lw-vtt-hud">
+          <lw-badge [label]="'Attacker: ' + vtt.selectedAttacker().name" tone="emerald" />
+          <lw-badge [label]="'Target: ' + vtt.selectedTarget().name + ' (AC ' + vtt.selectedTarget().armorClass + ')'" tone="crimson" />
+          <lw-badge [label]="'Range: ' + vtt.targetDistanceFeet() + ' ft'" tone="gold" />
+          <lw-badge [label]="'FX Timeline: ' + stage.activeKeyframeLabel()" tone="neutral" />
+        </div>
+
+        <canvas
+          #vttCanvas
+          class="lw-vtt-canvas"
+          aria-label="Babylon.js Live VTT Combat Stage"></canvas>
+
+        <div class="lw-action-bar">
+          @for (rule of vtt.actionRules(); track rule.id) {
+            <button
+              type="button"
+              class="lw-action-chip"
+              (click)="fireAction(rule)">
+              <strong>{{ rule.name }}</strong>
+              <span>{{ rule.actionCost }} · {{ rule.rangeFeet }}ft · {{ rule.damageFormula }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="lw-combat-log-panel">
+        <h4>Authoritative Combat & Roll Resolution Feed</h4>
+        <div class="lw-combat-logs">
+          @for (log of vtt.combatLogs(); track log.id) {
+            <div class="lw-log-entry" [class.lw-log-entry--hit]="log.hit">
+              <div class="lw-log-entry__head">
+                <lw-badge [label]="'R' + log.round + ' · ' + log.actionName" [tone]="log.hit ? 'gold' : 'neutral'" />
+                <span>{{ log.distanceFeet }}ft</span>
+              </div>
+              <p>{{ log.message }}</p>
+            </div>
+          }
+        </div>
+      </div>
     </div>
 
     <div class="lw-screen-grid">
       <div class="lw-initiative-table">
         <div class="lw-initiative-head">
-          <span>Combatant</span>
+          <span>Combatant (Click to Target)</span>
           <span>Init / AC / HP</span>
           <span>Action Economy (Action · Bonus · Reaction · Move)</span>
-          <span>Graph</span>
+          <span>Role</span>
         </div>
 
-        @for (row of combatants(); track row.key; let idx = $index) {
-          <div class="lw-initiative-row" [class.lw-initiative-row--active]="idx === activeTurnIndex()">
+        @for (row of vtt.tokens(); track row.key; let idx = $index) {
+          <div
+            class="lw-initiative-row"
+            [class.lw-initiative-row--active]="idx === vtt.activeTurnIndex()">
             <div class="lw-initiative-row__id">
               <strong>{{ row.name }}</strong>
-              <span>{{ row.role }}</span>
+              <span>{{ row.roleLabel }}</span>
             </div>
             <div class="lw-initiative-row__stats">
               <lw-badge [label]="'Init ' + row.initiative" tone="gold" />
-              <lw-badge [label]="'AC ' + row.ac" tone="neutral" />
-              <lw-badge [label]="'HP ' + row.hp" tone="emerald" />
+              <lw-badge [label]="'AC ' + row.armorClass" tone="neutral" />
+              <lw-badge
+                [label]="'HP ' + row.currentHp + '/' + row.maxHp"
+                [tone]="row.currentHp === 0 ? 'crimson' : 'emerald'" />
             </div>
             <div class="lw-initiative-row__economy">
               <lw-button
                 [variant]="row.actionUsed ? 'danger' : 'secondary'"
                 size="sm"
-                (pressed)="toggleActionSlot(idx, 'actionUsed')">
-                {{ row.actionUsed ? 'Action Spent' : 'Action Ready' }}
+                (pressed)="vtt.toggleEconomySlot(row.key, 'actionUsed')">
+                {{ row.actionUsed ? 'Action Spent' : 'Action' }}
               </lw-button>
               <lw-button
                 [variant]="row.bonusUsed ? 'danger' : 'secondary'"
                 size="sm"
-                (pressed)="toggleActionSlot(idx, 'bonusUsed')">
-                {{ row.bonusUsed ? 'Bonus Spent' : 'Bonus Ready' }}
+                (pressed)="vtt.toggleEconomySlot(row.key, 'bonusUsed')">
+                {{ row.bonusUsed ? 'Bonus Spent' : 'Bonus' }}
               </lw-button>
               <lw-button
                 [variant]="row.reactionUsed ? 'danger' : 'secondary'"
                 size="sm"
-                (pressed)="toggleActionSlot(idx, 'reactionUsed')">
-                {{ row.reactionUsed ? 'Reaction Spent' : 'Reaction Ready' }}
+                (pressed)="vtt.toggleEconomySlot(row.key, 'reactionUsed')">
+                {{ row.reactionUsed ? 'React Spent' : 'Reaction' }}
               </lw-button>
               <span class="lw-move-tag">{{ row.movementFeet }}ft</span>
             </div>
-            <div>
-              <lw-button variant="ghost" size="sm" icon="network" (pressed)="store.inspectEntity(row.key)">
-                Inspect
+            <div class="lw-initiative-row__targets">
+              <lw-button variant="ghost" size="sm" (pressed)="selectAttacker(row.key)">
+                Set Attacker
+              </lw-button>
+              <lw-button variant="gold" size="sm" (pressed)="selectTarget(row.key)">
+                Target
               </lw-button>
             </div>
           </div>
@@ -65,26 +131,22 @@
       </div>
 
       <div class="lw-side-cards">
-        <lw-panel eyebrow="Story Beat & Pacing" title="Act II · Scene Guide" icon="compass">
-          <p class="lw-guide-copy">
-            Emrys converses with the party to confirm their return route toward Vandia. When the vampire coven strikes,
-            Kildrid's stone sense and Kycius's modified Dolly Gullet can contain the ambush without revealing the two Luminaries.
-          </p>
-          <div class="lw-guide-links">
-            <button type="button" class="lw-cite-btn" (click)="store.inspectEntity('1:NPC:npc-emrys')">
-              Inspect Emrys
-            </button>
-            <button type="button" class="lw-cite-btn" (click)="store.inspectEntity('1:Quest:quest-cinth-party')">
-              Inspect Cinth Masquerade Quest
-            </button>
-            <a class="lw-cite-link" routerLink="/loom">Open in The Loom</a>
+        <lw-panel eyebrow="Scene NPCs & Secrets" title="Active Scene Dossiers" icon="users">
+          <div class="lw-npc-stack">
+            @for (npc of vtt.npcs(); track npc.compositeKey) {
+              <lw-npc-card
+                [npc]="npc"
+                variant="detailed"
+                [showGmSecret]="store.viewerRole() === 'gm'"
+                (npcSelected)="store.inspectEntity($event.compositeKey)" />
+            }
           </div>
         </lw-panel>
 
         <lw-panel eyebrow="Scoped Session Journal" title="Live Table Note" icon="book-open">
           <textarea
             class="lw-note-box"
-            rows="4"
+            rows="3"
             [ngModel]="sessionNote()"
             (ngModelChange)="sessionNote.set($event)"></textarea>
           <div class="lw-guide-links">
@@ -92,7 +154,7 @@
               [label]="store.viewerRole() === 'gm' ? 'Scope: GM Private Canon' : 'Scope: Shared Party Note'"
               tone="gold" />
             <lw-button variant="secondary" size="sm" (pressed)="store.toggleLoomDrawer(true)">
-              Index in The Loom
+              Search in The Loom
             </lw-button>
           </div>
         </lw-panel>

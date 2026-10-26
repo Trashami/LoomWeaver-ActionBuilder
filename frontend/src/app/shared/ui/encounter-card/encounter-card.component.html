@@ -1,0 +1,36 @@
+<article class="lw-encounter-card" [class.lw-encounter-card--active]="active()">
+  <div class="lw-encounter-card__header">
+    <div>
+      <span class="lw-encounter-card__act">{{ encounter().actLabel }}</span>
+      <h4 class="lw-encounter-card__title">{{ encounter().name }}</h4>
+    </div>
+    <div class="lw-encounter-card__badges">
+      <lw-badge [label]="encounter().difficulty" [tone]="difficultyTone()" />
+      <lw-badge [label]="encounter().totalXp + ' XP'" tone="gold" icon="sparkles" />
+      @if (encounter().completed) {
+        <lw-badge label="XP Awarded" tone="emerald" icon="check" />
+      }
+    </div>
+  </div>
+
+  <p class="lw-encounter-card__summary">{{ encounter().summary }}</p>
+
+  <div class="lw-encounter-card__meta">
+    <span><lw-icon name="map" [size]="13" /> Scene: {{ encounter().sceneName }}</span>
+    <span><lw-icon name="swords" [size]="13" /> Hostiles: {{ encounter().enemyCount }}</span>
+  </div>
+
+  <div class="lw-encounter-card__footer">
+    <a class="lw-encounter-card__map-link" routerLink="/maps">
+      Edit Scene in LoomMaps
+    </a>
+    <div class="lw-encounter-card__actions">
+      <lw-button variant="ghost" size="sm" icon="network" (pressed)="encounterSelected.emit(encounter())">
+        Inspect
+      </lw-button>
+      <lw-button variant="gold" size="sm" icon="shield" (pressed)="startRequested.emit(encounter())">
+        {{ active() ? 'Active on Screen' : 'Launch in Arcane Screen' }}
+      </lw-button>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,43 @@
+<article
+  class="lw-npc-card"
+  [attr.data-variant]="variant()"
+  [class.lw-npc-card--selected]="selected()">
+  <div class="lw-npc-card__header">
+    <div class="lw-npc-card__id" (click)="npcSelected.emit(npc())">
+      <span class="lw-npc-card__avatar">
+        <lw-icon name="user" [size]="16" />
+      </span>
+      <div>
+        <h4 class="lw-npc-card__name">{{ npc().name }}</h4>
+        <span class="lw-npc-card__title">{{ npc().title }} · {{ npc().faction }}</span>
+      </div>
+    </div>
+    <div class="lw-npc-card__badges">
+      <lw-badge [label]="npc().disposition" [tone]="dispositionTone()" />
+      <lw-badge [label]="npc().locationName" tone="neutral" icon="map-pin" />
+    </div>
+  </div>
+
+  @if (variant() !== 'compact') {
+    <p class="lw-npc-card__summary">{{ npc().summary }}</p>
+  }
+
+  @if (variant() === 'detailed' && showGmSecret() && npc().gmSecret; as secret) {
+    <div class="lw-npc-card__secret">
+      <lw-badge label="GM Canon Secret" tone="gm" icon="lock" />
+      <span>{{ secret }}</span>
+    </div>
+  }
+
+  <div class="lw-npc-card__footer">
+    <code>{{ npc().compositeKey }}</code>
+    <div class="lw-npc-card__actions">
+      <lw-button variant="ghost" size="sm" icon="network" (pressed)="npcSelected.emit(npc())">
+        Inspect
+      </lw-button>
+      <lw-button variant="secondary" size="sm" icon="shield" (pressed)="spawnRequested.emit(npc())">
+        Send to VTT
+      </lw-button>
+    </div>
+  </div>
+</article>
