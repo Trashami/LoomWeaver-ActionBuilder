@@ -1,0 +1,20 @@
+{
+  "pipeline": 2,
+  "id": "obj-d1b2213cca684627",
+  "name": "Riverbank Terrain Mod",
+  "category": "floors",
+  "group": "Floors & ground",
+  "url": "/assets/object-library/models/obj-d1b2213cca684627.glb",
+  "model3dUrl": "/assets/models-3d/Meshy_AI_Riverbank_Terrain_Mod_1023195705_texture.glb",
+  "sourceFile": "Meshy_AI_Riverbank_Terrain_Mod_1023195705_texture.glb",
+  "aliases": [],
+  "sourceHash": "d1b2213cca6846273d62eac1be229a67cfe530754036714c82a2a3aeb6041e7e",
+  "bytes": 9075172,
+  "originalBytes": 292518792,
+  "sourceTriangles": 6497531,
+  "parts": 1,
+  "animated": false,
+  "credit": {},
+  "defaultWidthFt": 60,
+  "previewUrl": "/assets/object-library/previews/obj-d1b2213cca684627.webp"
+}

@@ -4,6 +4,7 @@ import {
   Color3,
   HemisphericLight,
   Mesh,
+  Ray,
   Scene,
   SceneLoader,
   TransformNode,
@@ -11,9 +12,16 @@ import {
 } from '@babylonjs/core';
 import { FxPoint } from '../fireball-motion';
 
-export const FOREST_MAP_GLB = '/models-3d/a_forest_3_with_a_road_at_night_for_game.glb';
+export const RIVERBANK_MAP_GLB = '/models-3d/Meshy_AI_Riverbank_Terrain_Mod_1023195705_texture.glb';
 export const SORCERESS_GLB = '/models-3d/Meshy_AI_Eclipse_Abyss_Sorcere_1026221004_texture.glb';
 export const GOBLIN_MALE_GLB = '/models-3d/Meshy_AI_Goblin_Male_1026221232_texture.glb';
+
+export interface MapTransformState {
+  offsetX: number;
+  offsetZ: number;
+  rotationY: number;
+  scale: number;
+}
 
 interface NormalizedModel {
   wrapper: TransformNode;
@@ -33,6 +41,13 @@ export class Scene3dAssetController {
   private loading = false;
   private loaded = false;
 
+  mapTransform: MapTransformState = {
+    offsetX: 0,
+    offsetZ: 0,
+    rotationY: 0,
+    scale: 1,
+  };
+
   constructor(private readonly scene: Scene) {
     this.fillLight = new HemisphericLight('eb-3d-model-fill', new Vector3(0.25, 1, -0.35), this.scene);
     this.fillLight.intensity = 0.85;
@@ -49,16 +64,16 @@ export class Scene3dAssetController {
   private async loadAll(onReady?: () => void): Promise<void> {
     try {
       const [env, caster, goblin0] = await Promise.all([
-        this.loadNormalizedModel('forest-night-map', FOREST_MAP_GLB, 1),
-        this.loadNormalizedModel('caster-sorceress', SORCERESS_GLB, 1.65),
-        this.loadNormalizedModel('target-goblin-0', GOBLIN_MALE_GLB, 1.32),
+        this.loadNormalizedModel('riverbank-terrain-map', RIVERBANK_MAP_GLB, 1.35, 'terrain', true),
+        this.loadNormalizedModel('caster-sorceress', SORCERESS_GLB, 1.55, 'caster', false),
+        this.loadNormalizedModel('target-goblin-0', GOBLIN_MALE_GLB, 1.25, 'target-0', false),
       ]);
       if (this.disposed) return;
       this.envModel = env;
       this.casterModel = caster;
       if (goblin0) {
-        const goblin1 = this.cloneNormalizedModel(goblin0, 'target-goblin-1');
-        const goblin2 = this.cloneNormalizedModel(goblin0, 'target-goblin-2');
+        const goblin1 = this.cloneNormalizedModel(goblin0, 'target-goblin-1', 'target-1');
+        const goblin2 = this.cloneNormalizedModel(goblin0, 'target-goblin-2', 'target-2');
         this.goblinModels = [goblin0, goblin1, goblin2];
       }
       this.loaded = true;
@@ -70,10 +85,55 @@ export class Scene3dAssetController {
     }
   }
 
+  private pruneDetachedSideMeshes(meshes: AbstractMesh[]): AbstractMesh[] {
+    const geomMeshes = meshes.filter((m) => m.getTotalVertices() > 0);
+    if (geomMeshes.length <= 1) return meshes;
+
+    let largest: AbstractMesh = geomMeshes[0];
+    let maxVolume = -1;
+    for (const m of geomMeshes) {
+      m.computeWorldMatrix(true);
+      const b = m.getBoundingInfo().boundingBox;
+      const size = b.maximumWorld.subtract(b.minimumWorld);
+      const vol = Math.max(0.001, size.x) * Math.max(0.001, size.z);
+      if (vol > maxVolume) {
+        maxVolume = vol;
+        largest = m;
+      }
+    }
+
+    const mainBox = largest.getBoundingInfo().boundingBox;
+    const padX = (mainBox.maximumWorld.x - mainBox.minimumWorld.x) * 0.15;
+    const padZ = (mainBox.maximumWorld.z - mainBox.minimumWorld.z) * 0.15;
+
+    const kept: AbstractMesh[] = [];
+    for (const m of meshes) {
+      if (m.getTotalVertices() === 0) {
+        kept.push(m);
+        continue;
+      }
+      const c = m.getBoundingInfo().boundingBox.centerWorld;
+      const insideMain =
+        c.x >= mainBox.minimumWorld.x - padX &&
+        c.x <= mainBox.maximumWorld.x + padX &&
+        c.z >= mainBox.minimumWorld.z - padZ &&
+        c.z <= mainBox.maximumWorld.z + padZ;
+      if (insideMain) {
+        kept.push(m);
+      } else {
+        m.setEnabled(false);
+        m.dispose(false, false);
+      }
+    }
+    return kept;
+  }
+
   private async loadNormalizedModel(
     name: string,
     url: string,
-    targetHeight: number
+    targetHeight: number,
+    dragRole: string,
+    pruneSideProps: boolean
   ): Promise<NormalizedModel | undefined> {
     const lastSlash = url.lastIndexOf('/');
     const rootUrl = url.slice(0, lastSlash + 1);
@@ -91,13 +151,16 @@ export class Scene3dAssetController {
     if (rootMesh) {
       rootMesh.parent = pivot;
     }
-    for (const m of result.meshes) {
-      m.isPickable = false;
+
+    const activeMeshes = pruneSideProps ? this.pruneDetachedSideMeshes(result.meshes) : result.meshes;
+    for (const m of activeMeshes) {
+      m.isPickable = m.getTotalVertices() > 0;
       m.receiveShadows = true;
+      m.metadata = { ...(m.metadata || {}), ebDragRole: dragRole };
     }
 
     pivot.computeWorldMatrix(true);
-    result.meshes.forEach((m) => m.computeWorldMatrix(true));
+    activeMeshes.forEach((m) => m.computeWorldMatrix(true));
     const bounds = pivot.getHierarchyBoundingVectors(true);
     const size = bounds.max.subtract(bounds.min);
     const height = Math.max(0.001, size.y);
@@ -112,20 +175,21 @@ export class Scene3dAssetController {
     return {
       wrapper,
       pivot,
-      meshes: result.meshes,
+      meshes: activeMeshes,
       unitScale,
       spanX: spanX * unitScale,
       spanZ: spanZ * unitScale,
     };
   }
 
-  private cloneNormalizedModel(source: NormalizedModel, name: string): NormalizedModel {
+  private cloneNormalizedModel(source: NormalizedModel, name: string, dragRole: string): NormalizedModel {
     const wrapper = new TransformNode(`eb-3d-wrap-${name}`, this.scene);
     const pivot = source.pivot.clone(`eb-3d-pivot-${name}`, wrapper)!;
     const meshes = pivot.getChildMeshes(false);
     for (const m of meshes) {
-      m.isPickable = false;
+      m.isPickable = m.getTotalVertices() > 0;
       m.receiveShadows = true;
+      m.metadata = { ...(m.metadata || {}), ebDragRole: dragRole };
     }
     return {
       wrapper,
@@ -135,6 +199,20 @@ export class Scene3dAssetController {
       spanX: source.spanX,
       spanZ: source.spanZ,
     };
+  }
+
+  terrainElevationAt(x: number, z: number): number {
+    if (!this.envModel || !this.envModel.wrapper.isEnabled()) return 0;
+    const ray = new Ray(new Vector3(x, 15, z), new Vector3(0, -1, 0), 30);
+    let highest = 0;
+    for (const m of this.envModel.meshes) {
+      if (!m.isEnabled() || m.getTotalVertices() === 0) continue;
+      const hit = ray.intersectsMesh(m, false);
+      if (hit.hit && hit.pickedPoint && hit.pickedPoint.y > highest) {
+        highest = hit.pickedPoint.y;
+      }
+    }
+    return highest;
   }
 
   sync(
@@ -153,13 +231,25 @@ export class Scene3dAssetController {
     if (this.envModel) {
       this.envModel.wrapper.setEnabled(options.showForestMap);
       if (options.showForestMap) {
-        const targetSpanX = Math.max(wUnits * 1.35, 14);
-        const targetSpanZ = Math.max(hUnits * 1.45, 8);
-        const envScale = Math.max(targetSpanX / this.envModel.spanX, targetSpanZ / this.envModel.spanZ);
-        this.envModel.wrapper.position.set(wUnits / 2, -0.04, hUnits / 2);
+        const targetSpanX = Math.max(wUnits * 1.18, 11.5);
+        const targetSpanZ = Math.max(hUnits * 1.25, 6.8);
+        const envScale =
+          Math.max(targetSpanX / this.envModel.spanX, targetSpanZ / this.envModel.spanZ) *
+          Math.max(0.4, this.mapTransform.scale);
+        this.envModel.wrapper.position.set(
+          wUnits / 2 + this.mapTransform.offsetX,
+          -0.06,
+          hUnits / 2 + this.mapTransform.offsetZ
+        );
+        this.envModel.wrapper.rotation.y = this.mapTransform.rotationY;
         this.envModel.wrapper.scaling.setAll(envScale);
+        this.envModel.wrapper.computeWorldMatrix(true);
+        this.envModel.meshes.forEach((m) => m.computeWorldMatrix(true));
       }
     }
+
+    const resolveY = (x: number, z: number) =>
+      options.showForestMap ? this.terrainElevationAt(x, z) + 0.03 : surfaceHeight(x, z) + 0.04;
 
     const shadowCasters: AbstractMesh[] = [];
     const primaryTarget = targetPositions[0] ?? { x: casterPos.x + 200, y: casterPos.y };
@@ -172,7 +262,7 @@ export class Scene3dAssetController {
         const cz = casterPos.y / 66;
         const tx = primaryTarget.x / 66;
         const tz = primaryTarget.y / 66;
-        const y = options.showForestMap ? 0.02 : surfaceHeight(cx, cz) + 0.04;
+        const y = resolveY(cx, cz);
         this.casterModel.wrapper.position.set(cx, y, cz);
         this.casterModel.wrapper.scaling.setAll(Math.max(0.65, scale));
         this.casterModel.wrapper.rotation.y = Math.atan2(tx - cx, tz - cz);
@@ -193,7 +283,7 @@ export class Scene3dAssetController {
         const gz = pos.y / 66;
         const cx = casterPos.x / 66;
         const cz = casterPos.y / 66;
-        const y = options.showForestMap ? 0.02 : surfaceHeight(gx, gz) + 0.04;
+        const y = resolveY(gx, gz);
         goblin.wrapper.position.set(gx, y, gz);
         goblin.wrapper.scaling.setAll(Math.max(0.65, scale));
         const faceAngle = Math.atan2(cx - gx, cz - gz);

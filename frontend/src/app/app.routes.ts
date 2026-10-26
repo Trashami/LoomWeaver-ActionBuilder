@@ -28,6 +28,24 @@ export const APP_ROUTES: Routes = [
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
   {
+    path: 'effect-builder',
+    data: { seoPage: 'effect-builder' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'encounter-builder',
+    data: { seoPage: 'encounter-builder' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: '3d-assets',
+    data: { seoPage: '3d-assets' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
     path: 'ai-campaign-assistant',
     data: { seoPage: 'ai-campaign-assistant' },
     loadComponent: () =>

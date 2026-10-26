@@ -52,6 +52,7 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   readonly view3d = signal(true);
   readonly forestMap = signal(true);
   readonly tokens3d = signal(true);
+  readonly moveMapMode = signal(false);
   readonly background = signal(true);
   readonly ambient = signal(0.38);
   readonly bump = signal(2.2);
@@ -66,6 +67,14 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   toggleView(): void {
     this.view3d.update((v) => !v);
     this.native?.setView(this.view3d());
+  }
+
+  rotateTerrain(dRad: number): void {
+    this.native?.rotateTerrainBy(dRad);
+  }
+
+  resetTerrain(): void {
+    this.native?.resetTerrainTransform();
   }
 
   projectPoint(p: { x: number; y: number }) {
@@ -85,6 +94,67 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
     event.stopPropagation();
     const factor = event.deltaY > 0 ? 1.1 : 0.9;
     this.inspect(0, 0, factor);
+  }
+
+  onSurfacePointerDown(event: PointerEvent): void {
+    if (this.editHandPath) {
+      this.pathPoint(event);
+      return;
+    }
+    if (event.button !== 0 || !this.native) return;
+
+    const bounds = this.surface.nativeElement.getBoundingClientRect();
+    const localX = event.clientX - bounds.left;
+    const localY = event.clientY - bounds.top;
+
+    // 1. Check if the user clicked directly on a 3D token model (Sorceress / Goblin 1-3)
+    const pickedRole = this.native.pickDraggableRole(localX, localY);
+    if (!this.moveMapMode() && pickedRole && pickedRole !== 'terrain') {
+      const targetIdx =
+        pickedRole === 'caster'
+          ? -1
+          : pickedRole === 'target-0'
+            ? 0
+            : pickedRole === 'target-1'
+              ? 1
+              : pickedRole === 'target-2'
+                ? 2
+                : -99;
+      if (targetIdx >= -1) {
+        this.drag(event, targetIdx, this.surface.nativeElement);
+        return;
+      }
+    }
+
+    // 2. If Move 3D Map mode is active (or Shift+drag on terrain), drag the 3D terrain model
+    if (this.moveMapMode() || (event.shiftKey && this.forestMap())) {
+      event.preventDefault();
+      const surfaceEl = this.surface.nativeElement;
+      const startDesign = this.native.designPoint(localX, localY);
+      let lastX = startDesign.x;
+      let lastY = startDesign.y;
+      surfaceEl.setPointerCapture(event.pointerId);
+
+      const move = (e: PointerEvent) => {
+        if (e.pointerId !== event.pointerId || !this.native) return;
+        const cur = this.native.designPoint(e.clientX - bounds.left, e.clientY - bounds.top);
+        this.native.moveTerrainBy((cur.x - lastX) / 66, (cur.y - lastY) / 66);
+        lastX = cur.x;
+        lastY = cur.y;
+      };
+      const end = (e: PointerEvent) => {
+        if (e.pointerId !== event.pointerId) return;
+        surfaceEl.removeEventListener('pointermove', move);
+        surfaceEl.removeEventListener('pointerup', end);
+        surfaceEl.removeEventListener('pointercancel', end);
+        surfaceEl.removeEventListener('lostpointercapture', end);
+        if (surfaceEl.hasPointerCapture(e.pointerId)) surfaceEl.releasePointerCapture(e.pointerId);
+      };
+      surfaceEl.addEventListener('pointermove', move);
+      surfaceEl.addEventListener('pointerup', end);
+      surfaceEl.addEventListener('pointercancel', end);
+      surfaceEl.addEventListener('lostpointercapture', end);
+    }
   }
 
   ngOnChanges(): void {
@@ -255,11 +325,12 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
     if (this.multiTarget && target >= 0 && target < 3) this.targetSelected.emit(target);
   }
 
-  drag(event: PointerEvent, targetIndex: number): void {
+  drag(event: PointerEvent, targetIndex: number, captureTarget?: HTMLElement): void {
     if (event.button !== 0) return;
     event.preventDefault();
+    event.stopPropagation();
     this.suppressClick = false;
-    const button = event.currentTarget as HTMLElement;
+    const button = captureTarget ?? (event.currentTarget as HTMLElement);
     const bounds = this.surface.nativeElement.getBoundingClientRect();
     const before = structuredClone(this.definition.previewScene);
     const initial =

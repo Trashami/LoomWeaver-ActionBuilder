@@ -151,7 +151,233 @@ EOF
 
 systemctl daemon-reload
 systemctl restart loom-weaver.service mythweaver.service
-systemctl reload nginx
+
+echo "7. Upgrading Nginx SEO canonical redirects, subdomain SSR entry points, and EffectBuilder SEO metadata..."
+python3 - << 'PYEOF'
+import os, re
+
+# 1. Patch /var/www/effectbuilder/current/client/index.html with clean UTF-8 title, canonical, JSON-LD, and pre-rendered links
+eb_index = "/var/www/effectbuilder/current/client/index.html"
+if os.path.exists(eb_index):
+    with open(eb_index, "rb") as f:
+        raw = f.read().decode("utf-8", errors="replace")
+    raw = re.sub(
+        r"<title>.*?</title>",
+        "<title>LoomWeaver Effect Builder Studio | TTRPG Spell Animations &amp; VTT Shaders</title>",
+        raw,
+        flags=re.DOTALL,
+    )
+    seo_head = (
+        '<link rel="canonical" href="https://loom-weaver.com/effect-builder">'
+        '<meta property="og:type" content="website">'
+        '<meta property="og:site_name" content="LoomWeaver">'
+        '<meta property="og:title" content="LoomWeaver Effect Builder Studio | TTRPG Spell Animations &amp; VTT Shaders">'
+        '<meta property="og:description" content="Build custom TTRPG spell animations with layered particles, 35+ effect styles, and a draggable composition timeline in LoomWeaver Effect Builder Studio.">'
+        '<meta property="og:url" content="https://effectbuilder.loom-weaver.com/">'
+        '<script type="application/ld+json">'
+        '{"@context":"https://schema.org","@type":"WebApplication","name":"LoomWeaver Effect Builder Studio",'
+        '"applicationCategory":"GameApplication","operatingSystem":"Web Browser","url":"https://effectbuilder.loom-weaver.com/",'
+        '"isPartOf":{"@type":"WebSite","@id":"https://loom-weaver.com/#website","name":"LoomWeaver","url":"https://loom-weaver.com/"}}'
+        '</script>'
+    )
+    if 'rel="canonical"' not in raw:
+        raw = raw.replace("</head>", seo_head + "</head>")
+    ssr_mw = (
+        '<mw-root>'
+        '<div style="background:#05100c;color:#e7eee9;padding:32px;font-family:Inter,system-ui,sans-serif;">'
+        '<a href="https://loom-weaver.com/" style="color:#49e892;font-weight:700;">LoomWeaver — Your Campaign. One Living World.</a>'
+        '<h1>LoomWeaver Effect Builder Studio — TTRPG Spell Animations &amp; VTT Shaders</h1>'
+        '<p>Design custom TTRPG spell animations and particle shaders for <a href="https://loom-weaver.com/vtt">LoomWeaver VTT</a> and <a href="https://loom-weaver.com/effect-builder">LoomWeaver Effect Builder</a>.</p>'
+        '</div>'
+        '</mw-root>'
+    )
+    raw = raw.replace("<mw-root></mw-root>", ssr_mw)
+    with open(eb_index, "w", encoding="utf-8") as f:
+        f.write(raw)
+
+# 2. Configure canonical 301 redirect for www.loom-weaver.com -> loom-weaver.com (preserving /google-sso.html)
+loom_nginx = """server {
+    listen 80;
+    listen [::]:80;
+    server_name loom-weaver.com www.loom-weaver.com;
+    return 301 https://loom-weaver.com$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.loom-weaver.com;
+
+    ssl_certificate /etc/ssl/certs/loom-weaver.pem;
+    ssl_certificate_key /etc/ssl/private/loom-weaver.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    root /var/www/loom-weaver/client;
+
+    location = /google-sso.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        try_files /google-sso.html =404;
+    }
+
+    location / {
+        return 301 https://loom-weaver.com$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name loom-weaver.com;
+
+    ssl_certificate /etc/ssl/certs/loom-weaver.pem;
+    ssl_certificate_key /etc/ssl/private/loom-weaver.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    root /var/www/loom-weaver/client;
+    index index.html;
+
+    client_max_body_size 100M;
+
+    location ^~ /img/ {
+        alias "/var/www/jane-assets/5etools/img/";
+        expires 7d;
+        add_header Cache-Control "public, no-transform";
+        add_header Access-Control-Allow-Origin "*";
+        try_files $uri $uri/ =404;
+    }
+
+    location ^~ /5etools/ {
+        alias "/var/www/jane-assets/5etools/img/";
+        expires 7d;
+        add_header Cache-Control "public, no-transform";
+        add_header Access-Control-Allow-Origin "*";
+        try_files $uri $uri/ =404;
+    }
+
+    location ^~ /uploads/ {
+        proxy_pass http://127.0.0.1:5000/uploads/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /map-studio/ {
+        return 301 https://maps.loom-weaver.com/;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+
+    location /hubs/ {
+        proxy_pass http://127.0.0.1:5000/hubs/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+
+    location = /maps {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        try_files /index.html =404;
+    }
+    location = /maps/ {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        try_files /index.html =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        add_header Pragma "no-cache";
+        expires -1;
+    }
+
+    location ~* \\.(?:js|css|woff2?|ttf|eot|png|jpe?g|webp|gif|svg|ico|map)$ {
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000, immutable";
+        try_files $uri =404;
+    }
+
+    location / {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        try_files $uri $uri/ /index.html;
+    }
+}
+"""
+with open("/etc/nginx/sites-available/loom-weaver", "w", encoding="utf-8") as f:
+    f.write(loom_nginx)
+
+# 3. Redirect legacy loomweaver.geo-gamers.com and maps.loomweaver.geo-gamers.com with 301 to loom-weaver.com
+geo_gamers_nginx = """server {
+    listen 80;
+    listen 443 ssl http2;
+    server_name loomweaver.geo-gamers.com www.loomweaver.geo-gamers.com;
+
+    ssl_certificate /etc/ssl/certs/loomweaver-geo-gamers.pem;
+    ssl_certificate_key /etc/ssl/private/loomweaver-geo-gamers.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    return 301 https://loom-weaver.com$request_uri;
+}
+
+server {
+    listen 80;
+    listen 443 ssl http2;
+    server_name maps.loomweaver.geo-gamers.com;
+
+    ssl_certificate /etc/ssl/certs/loomweaver-geo-gamers.pem;
+    ssl_certificate_key /etc/ssl/private/loomweaver-geo-gamers.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    return 301 https://maps.loom-weaver.com$request_uri;
+}
+"""
+with open("/etc/nginx/sites-available/loomweaver-geo-gamers", "w", encoding="utf-8") as f:
+    f.write(geo_gamers_nginx)
+
+# 4. Copy dedicated pre-rendered index.html to subdomain root folders so each subdomain serves its own SSR metadata
+# Wait: since /var/www/loommaps/client etc. are symlinks to /var/www/loomweaver/client, we can configure Nginx `index` or `location = /` on each subdomain!
+subdomain_routes = [
+    ("/etc/nginx/sites-available/maps-loom-weaver", "/battlemap-builder/index.html"),
+    ("/etc/nginx/sites-available/vtt-loom-weaver", "/vtt/index.html"),
+    ("/etc/nginx/sites-available/actionbuilder-loom-weaver", "/encounter-builder/index.html"),
+    ("/etc/nginx/sites-available/3dassets-loom-weaver", "/3d-assets/index.html"),
+    ("/etc/nginx/sites-available/generator-loom-weaver", "/3d-assets/index.html"),
+]
+for conf_path, ssr_index in subdomain_routes:
+    if os.path.exists(conf_path):
+        with open(conf_path, "r", encoding="utf-8") as f:
+            conf = f.read()
+        if f"try_files $uri $uri/ {ssr_index};" not in conf:
+            conf = conf.replace("try_files $uri $uri/ /index.html;", f"try_files $uri $uri/ {ssr_index} /index.html;")
+            if "location = / {" not in conf:
+                conf = conf.replace(
+                    f"try_files $uri $uri/ {ssr_index} /index.html;",
+                    f"try_files $uri $uri/ {ssr_index} /index.html;\n    }}\n    location = / {{\n        add_header Cache-Control \"no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0\";\n        try_files {ssr_index} /index.html =404;",
+                )
+            with open(conf_path, "w", encoding="utf-8") as f:
+                f.write(conf)
+PYEOF
+
+nginx -t && systemctl reload nginx
 sleep 2
 systemctl is-active loom-weaver.service mythweaver.service nginx
 curl -s http://127.0.0.1:5000/api/v2/health

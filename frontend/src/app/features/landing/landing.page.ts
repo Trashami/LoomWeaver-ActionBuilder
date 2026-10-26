@@ -65,6 +65,9 @@ export class LandingPageComponent implements OnInit {
     SEO_LANDING_PAGES['vtt'],
     SEO_LANDING_PAGES['campaign-manager'],
     SEO_LANDING_PAGES['battlemap-builder'],
+    SEO_LANDING_PAGES['effect-builder'],
+    SEO_LANDING_PAGES['encounter-builder'],
+    SEO_LANDING_PAGES['3d-assets'],
     SEO_LANDING_PAGES['ai-campaign-assistant'],
     SEO_LANDING_PAGES['features'],
   ];
@@ -183,7 +186,11 @@ export class LandingPageComponent implements OnInit {
         void this.router.navigateByUrl(resolveDefaultStudioRouteForHost());
         return;
       }
-      this.auth.openAuthModal('login', resolveDefaultStudioRouteForHost());
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const isCrawler = /bot|crawl|spider|slurp|google|bing|duckduck|baidu|yandex|facebookexternalhit|twitterbot/i.test(ua);
+      if (!isCrawler) {
+        this.auth.openAuthModal('login', resolveDefaultStudioRouteForHost());
+      }
     } else if (currentPath === '/login' || queryAuth === 'login') {
       this.auth.openAuthModal('login', returnUrl);
     } else if (currentPath === '/register' || queryAuth === 'register') {
@@ -211,6 +218,16 @@ export class LandingPageComponent implements OnInit {
     legacySlug: string | null,
     currentPath: string,
   ): string {
+    try {
+      const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+      if (!currentPath || currentPath === '/' || currentPath === '/welcome') {
+        if (host.startsWith('maps.')) return 'battlemap-builder';
+        if (host.startsWith('vtt.') || host.startsWith('vtt3d.')) return 'vtt';
+        if (host.startsWith('effectbuilder.')) return 'effect-builder';
+        if (host.startsWith('actionbuilder.')) return 'encounter-builder';
+        if (host.startsWith('3dassets.') || host.startsWith('generator.')) return '3d-assets';
+      }
+    } catch {}
     if (routeDataSeo && SEO_LANDING_PAGES[routeDataSeo]) {
       return routeDataSeo;
     }

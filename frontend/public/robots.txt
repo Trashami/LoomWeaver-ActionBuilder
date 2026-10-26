@@ -1,6 +1,13 @@
 User-agent: *
 Allow: /
-Allow: /features/
+Allow: /vtt
+Allow: /campaign-manager
+Allow: /battlemap-builder
+Allow: /effect-builder
+Allow: /encounter-builder
+Allow: /3d-assets
+Allow: /ai-campaign-assistant
+Allow: /features
 Allow: /login
 Allow: /register
 Allow: /welcome

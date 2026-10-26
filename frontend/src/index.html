@@ -33,9 +33,29 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": "https://loom-weaver.com/#website",
     "name": "LoomWeaver",
     "alternateName": ["LoomWeaver TTRPG", "LoomWeaver VTT", "Loom-Weaver", "Loom Weaver"],
-    "url": "https://loom-weaver.com/"
+    "url": "https://loom-weaver.com/",
+    "publisher": {
+      "@id": "https://loom-weaver.com/#organization"
+    },
+    "hasPart": [
+      { "@type": "WebPage", "name": "LoomWeaver VTT | 2D & 3D Virtual Tabletop", "url": "https://loom-weaver.com/vtt" },
+      { "@type": "WebPage", "name": "LoomWeaver Campaign Manager | TTRPG Worldbuilding & Lore Graph", "url": "https://loom-weaver.com/campaign-manager" },
+      { "@type": "WebPage", "name": "LoomWeaver Battlemap Builder | 2D & 3D RPG Map Maker (LoomMaps)", "url": "https://loom-weaver.com/battlemap-builder" },
+      { "@type": "WebPage", "name": "LoomWeaver Effect Builder | TTRPG Spell Animation & Shader Studio", "url": "https://loom-weaver.com/effect-builder" },
+      { "@type": "WebPage", "name": "LoomWeaver Encounter & Action Builder | D&D 5e & TTRPG Combat Designer", "url": "https://loom-weaver.com/encounter-builder" },
+      { "@type": "WebPage", "name": "LoomWeaver 3D Assets & Dice Forge | TTRPG Miniatures, Props & 3D Dice", "url": "https://loom-weaver.com/3d-assets" },
+      { "@type": "WebPage", "name": "The Loom | Free TTRPG Campaign Memory & Lore Assistant", "url": "https://loom-weaver.com/ai-campaign-assistant" },
+      { "@type": "WebPage", "name": "LoomWeaver Features | Integrated VTT, Maps, Lore Graph & 3D Dice", "url": "https://loom-weaver.com/features" },
+      { "@type": "WebApplication", "name": "LoomMaps Battlemap Studio", "url": "https://maps.loom-weaver.com/" },
+      { "@type": "WebApplication", "name": "LoomWeaver Effect Builder Studio", "url": "https://effectbuilder.loom-weaver.com/" },
+      { "@type": "WebApplication", "name": "LoomWeaver 2.5D & 3D VTT Studio", "url": "https://vtt.loom-weaver.com/" },
+      { "@type": "WebApplication", "name": "LoomWeaver Action & Encounter Builder", "url": "https://actionbuilder.loom-weaver.com/" },
+      { "@type": "WebApplication", "name": "LoomWeaver 3D Asset Studio", "url": "https://3dassets.loom-weaver.com/" },
+      { "@type": "WebApplication", "name": "LoomWeaver 3D Miniature Generator", "url": "https://generator.loom-weaver.com/" }
+    ]
   }
   </script>
 
@@ -56,13 +76,22 @@
           "url": "https://loom-weaver.com/landing-assets/brand/logo-wordmark.png"
         },
         "image": "https://loom-weaver.com/landing-assets/brand/raven-emblem.png",
-        "description": "LoomWeaver — Your Campaign. One Living World. Build living tabletop RPG worlds with an integrated 2D & 3D Virtual Tabletop (VTT), LoomMaps battlemap builder, character sheets, and The Loom campaign memory."
+        "sameAs": [
+          "https://loom-weaver.com/",
+          "https://maps.loom-weaver.com/",
+          "https://effectbuilder.loom-weaver.com/",
+          "https://vtt.loom-weaver.com/",
+          "https://actionbuilder.loom-weaver.com/",
+          "https://3dassets.loom-weaver.com/",
+          "https://generator.loom-weaver.com/"
+        ],
+        "description": "LoomWeaver — Your Campaign. One Living World. Build living tabletop RPG worlds with an integrated 2D & 3D Virtual Tabletop (VTT), LoomMaps battlemap builder, Effect Builder spell shader studio, character sheets, and The Loom campaign memory."
       },
       {
         "@type": "SoftwareApplication",
         "@id": "https://loom-weaver.com/#application",
         "name": "LoomWeaver",
-        "alternateName": ["LoomWeaver VTT", "LoomWeaver TTRPG", "Loom-Weaver", "LoomMaps"],
+        "alternateName": ["LoomWeaver VTT", "LoomWeaver TTRPG", "Loom-Weaver", "LoomMaps", "LoomWeaver Effect Builder"],
         "applicationCategory": "GameApplication",
         "applicationSubCategory": "Virtual Tabletop (VTT) & TTRPG Campaign Manager",
         "operatingSystem": "Web Browser",
@@ -75,11 +104,13 @@
           { "@type": "Offer", "name": "The Archweaver", "price": "24", "priceCurrency": "USD" }
         ],
         "featureList": [
-          "LoomWeaver VTT: Integrated 2D & 3D Virtual Tabletop with gradual lighting, line-of-sight fog of war, 3D physics dice, and per-turn action economy tracking",
-          "LoomWeaver Campaign Manager: Connected NPCs, factions, quests, character sheets, and Neo4j lore graphs",
-          "The Loom: Free natural-language campaign memory with per-player witness isolation and zero hallucination",
-          "The Weave: Optional creative worldbuilding companion with 100% GM review and authorship control",
-          "LoomMaps Battlemap Builder: 2D/3D battlemap and World Atlas studio with cutaway walls, spline ribbons, and POI secrets"
+          "LoomWeaver VTT (loom-weaver.com/vtt & vtt.loom-weaver.com): Integrated 2D & 3D Virtual Tabletop with gradual lighting, line-of-sight fog of war, 3D physics dice, and per-turn action economy tracking",
+          "LoomWeaver Campaign Manager (loom-weaver.com/campaign-manager): Connected NPCs, factions, quests, character sheets, and Neo4j lore graphs",
+          "The Loom (loom-weaver.com/ai-campaign-assistant): Free natural-language campaign memory with per-player witness isolation and zero hallucination",
+          "LoomMaps Battlemap Builder (loom-weaver.com/battlemap-builder & maps.loom-weaver.com): 2D/3D battlemap and World Atlas studio with cutaway walls, spline ribbons, and POI secrets",
+          "LoomWeaver Effect Builder (loom-weaver.com/effect-builder & effectbuilder.loom-weaver.com): 35+ WebGL spell shader styles and particle timeline composer",
+          "LoomWeaver Action & Encounter Builder (loom-weaver.com/encounter-builder & actionbuilder.loom-weaver.com): Tactical monster statblocks, saving throw DCs, and automated XP awards",
+          "LoomWeaver 3D Asset Studio & Dice Forge (loom-weaver.com/3d-assets, 3dassets.loom-weaver.com & generator.loom-weaver.com): GLB 3D miniatures, cutaway dungeon props, and custom 3D polyhedral dice"
         ]
       },
       {
@@ -91,7 +122,15 @@
             "name": "What is LoomWeaver and how does LoomWeaver VTT compare to a traditional virtual tabletop?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "LoomWeaver (https://loom-weaver.com) is an integrated Virtual Tabletop (LoomWeaver VTT) and TTRPG Campaign Manager. Unlike standalone VTTs that separate your battlemaps from your campaign notes, LoomWeaver connects your 2D/3D tactical combat map, 3D physics dice, Character Studio, World Atlas, and living campaign memory (The Loom) into one living world."
+              "text": "LoomWeaver (https://loom-weaver.com) is an integrated Virtual Tabletop (LoomWeaver VTT) and TTRPG Campaign Manager. Unlike standalone VTTs or simple campaign wikis that separate your battlemaps from your story notes, LoomWeaver connects your 2D/3D tactical combat map, 3D physics dice, LoomMaps battlemap builder (maps.loom-weaver.com), Effect Builder spell shader studio (effectbuilder.loom-weaver.com), Character Studio, World Atlas, and living campaign memory (The Loom) into one living world."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What are the official LoomWeaver TTRPG & VTT domains and studio tools?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The official LoomWeaver TTRPG & Virtual Tabletop platform is hosted at https://loom-weaver.com and unites specialized web studios under one shared Single Sign-On account: LoomWeaver VTT (vtt.loom-weaver.com), LoomMaps Battlemap & World Atlas Builder (maps.loom-weaver.com), Effect Builder Studio for spell shaders (effectbuilder.loom-weaver.com), Action & Encounter Builder (actionbuilder.loom-weaver.com), and 3D Asset & Miniature Generator Studio (3dassets.loom-weaver.com and generator.loom-weaver.com)."
             }
           },
           {
@@ -99,7 +138,7 @@
             "name": "Does LoomWeaver write my story or replace the Game Master?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Never. The Loom only searches and synthesizes your established campaign notes and session history—it never invents new canon. When you optionally use The Weave to draft NPCs, quests, or encounters, every draft requires 100% GM review to edit, re-weave, or reject before anything enters your world."
+              "text": "Never. The Loom only searches and synthesizes your established campaign notes and session history—it never invents new canon. Generative AI is 100% opt-in and off by default."
             }
           },
           {
@@ -163,10 +202,11 @@
             <a href="/vtt">LoomWeaver VTT</a>
             <a href="/campaign-manager">Campaign Manager</a>
             <a href="/battlemap-builder">Battlemap Builder</a>
+            <a href="/effect-builder">Effect Builder</a>
+            <a href="/encounter-builder">Encounter Builder</a>
+            <a href="/3d-assets">3D Assets &amp; Dice</a>
             <a href="/ai-campaign-assistant">The Loom</a>
             <a href="/features">Features</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#faq">FAQ</a>
           </nav>
           <div class="ssr-actions">
             <a class="ssr-btn" href="/login">Sign In</a>
@@ -215,7 +255,19 @@
           </article>
           <article class="ssr-card">
             <h3><a href="/battlemap-builder">LoomMaps Battlemap Builder</a></h3>
-            <p>Draw in 2D, explore in 3D, sculpt cutaway walls and spline paths, and link every regional map marker to multi-step quests.</p>
+            <p>Draw in 2D, explore in 3D on <a href="https://maps.loom-weaver.com">maps.loom-weaver.com</a>, sculpt cutaway walls and spline paths, and link every regional map marker to multi-step quests.</p>
+          </article>
+          <article class="ssr-card">
+            <h3><a href="/effect-builder">LoomWeaver Effect Builder Studio</a></h3>
+            <p>Craft custom TTRPG spell animations, particle emitters, and combat shaders on <a href="https://effectbuilder.loom-weaver.com">effectbuilder.loom-weaver.com</a> for live VTT battles.</p>
+          </article>
+          <article class="ssr-card">
+            <h3><a href="/encounter-builder">Action &amp; Encounter Builder</a></h3>
+            <p>Design D&amp;D 5e monster statblocks, boss actions, and automated AC/DC saving throws on <a href="https://actionbuilder.loom-weaver.com">actionbuilder.loom-weaver.com</a>.</p>
+          </article>
+          <article class="ssr-card">
+            <h3><a href="/3d-assets">3D Assets, Generator &amp; Dice Forge</a></h3>
+            <p>Place GLB 3D miniatures, cutaway dungeon props, and custom 3D physics dice across <a href="https://3dassets.loom-weaver.com">3dassets.loom-weaver.com</a> and <a href="https://generator.loom-weaver.com">generator.loom-weaver.com</a>.</p>
           </article>
         </section>
       </main>

@@ -15,6 +15,7 @@
         <a routerLink="/vtt" href="/vtt" [class.active-nav]="activeSeoPageSlug() === 'vtt'" (click)="mobileMenuOpen.set(false)">LoomWeaver VTT</a>
         <a routerLink="/campaign-manager" href="/campaign-manager" [class.active-nav]="activeSeoPageSlug() === 'campaign-manager'" (click)="mobileMenuOpen.set(false)">Campaign Manager</a>
         <a routerLink="/battlemap-builder" href="/battlemap-builder" [class.active-nav]="activeSeoPageSlug() === 'battlemap-builder'" (click)="mobileMenuOpen.set(false)">Battlemap Builder</a>
+        <a routerLink="/effect-builder" href="/effect-builder" [class.active-nav]="activeSeoPageSlug() === 'effect-builder'" (click)="mobileMenuOpen.set(false)">Effect Builder</a>
         <a routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant" [class.active-nav]="activeSeoPageSlug() === 'ai-campaign-assistant'" (click)="mobileMenuOpen.set(false)">The Loom</a>
         <a routerLink="/features" href="/features" [class.active-nav]="activeSeoPageSlug() === 'features'" (click)="mobileMenuOpen.set(false)">Features</a>
         <a href="#pricing" (click)="scrollToSection('pricing', $event)">Pricing</a>
@@ -175,7 +176,15 @@
             <div class="spotlight-frame">
               <img [src]="activeSeoPage().screenshot" [alt]="activeSeoPage().screenshotAlt" />
               <div class="spotlight-caption">
-                <strong>{{ activeSeoPage().navLabel }} — Live Studio Preview</strong>
+                <div>
+                  <strong>{{ activeSeoPage().navLabel }} — Live Studio Preview</strong>
+                  @if (activeSeoPage().subdomainUrl) {
+                    <small style="display:block;margin-top:2px;">
+                      Dedicated Studio Domain:
+                      <a [href]="activeSeoPage().subdomainUrl" style="color:#49e892;text-decoration:underline;">{{ activeSeoPage().subdomainLabel }}</a>
+                    </small>
+                  }
+                </div>
                 <a class="btn green btn-sm" href="/login" (click)="openAuth('login', activeSeoPage().studioRoute, $event)">
                   <span>Open in Studio</span><lw-icon name="arrow-right" [size]="13" />
                 </a>
@@ -373,9 +382,15 @@
                     <span>{{ m }}</span>
                   }
                 </div>
-                <button ngpButton type="button" class="btn green btn-sm" (click)="openAuth('login', engine.route)">
-                  <span>Sign In to Open {{ engine.tag }}</span>
-                </button>
+                <div class="feature-footer" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                  <button ngpButton type="button" class="btn green btn-sm" (click)="openAuth('login', engine.route)">
+                    <span>Open {{ engine.tag }}</span>
+                  </button>
+                  <div style="display:flex;gap:12px;align-items:center;font-size:12px;">
+                    <a class="seo-deep-link" [routerLink]="engine.seoPath" [href]="engine.seoPath">Overview</a>
+                    <a class="seo-deep-link" [href]="engine.subdomainUrl" style="color:#d9b77a;">{{ engine.subdomainHost }}</a>
+                  </div>
+                </div>
               </div>
             </article>
           }
@@ -479,8 +494,17 @@
         <a routerLink="/vtt" href="/vtt">LoomWeaver VTT</a>
         <a routerLink="/campaign-manager" href="/campaign-manager">Campaign Manager</a>
         <a routerLink="/battlemap-builder" href="/battlemap-builder">Battlemap Builder</a>
+        <a routerLink="/effect-builder" href="/effect-builder">Effect Builder</a>
+        <a routerLink="/encounter-builder" href="/encounter-builder">Encounter Builder</a>
+        <a routerLink="/3d-assets" href="/3d-assets">3D Assets &amp; Dice</a>
         <a routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant">The Loom AI</a>
         <a routerLink="/features" href="/features">Features</a>
+        <a href="https://maps.loom-weaver.com">maps.loom-weaver.com</a>
+        <a href="https://effectbuilder.loom-weaver.com">effectbuilder.loom-weaver.com</a>
+        <a href="https://vtt.loom-weaver.com">vtt.loom-weaver.com</a>
+        <a href="https://actionbuilder.loom-weaver.com">actionbuilder.loom-weaver.com</a>
+        <a href="https://3dassets.loom-weaver.com">3dassets.loom-weaver.com</a>
+        <a href="https://generator.loom-weaver.com">generator.loom-weaver.com</a>
         <a href="/login" (click)="openAuth('login', undefined, $event)">Sign In</a>
         <a href="/register" (click)="openAuth('register', undefined, $event)">Create Free Account</a>
       </div>

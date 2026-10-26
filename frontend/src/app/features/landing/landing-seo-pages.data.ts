@@ -20,6 +20,8 @@ export interface SeoLandingPageConfig {
   readonly plannedNext: readonly string[];
   readonly studioRoute: string;
   readonly primaryCtaLabel: string;
+  readonly subdomainUrl?: string;
+  readonly subdomainLabel?: string;
 }
 
 export const SEO_LANDING_PAGES: Record<string, SeoLandingPageConfig> = {
@@ -90,6 +92,8 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPageConfig> = {
     ],
     studioRoute: '/arcane-screen',
     primaryCtaLabel: 'Launch LoomWeaver VTT — Free',
+    subdomainUrl: 'https://vtt.loom-weaver.com',
+    subdomainLabel: 'vtt.loom-weaver.com',
   },
   'campaign-manager': {
     slug: 'campaign-manager',
@@ -156,6 +160,113 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPageConfig> = {
     ],
     studioRoute: '/maps',
     primaryCtaLabel: 'Open Battlemap Builder — Free',
+    subdomainUrl: 'https://maps.loom-weaver.com',
+    subdomainLabel: 'maps.loom-weaver.com',
+  },
+  'effect-builder': {
+    slug: 'effect-builder',
+    path: '/effect-builder',
+    navLabel: 'Effect Builder',
+    title: 'LoomWeaver Effect Builder | TTRPG Spell Animation & Shader Studio',
+    description:
+      'Build custom TTRPG spell animations, particle effects, and combat shaders with the LoomWeaver Effect Builder (effectbuilder.loom-weaver.com) for LoomWeaver VTT.',
+    canonical: 'https://loom-weaver.com/effect-builder',
+    eyebrow: 'LoomWeaver Effect Builder · effectbuilder.loom-weaver.com Shader Studio',
+    h1Line1: 'Craft Custom Spell Animations &',
+    h1Highlight: 'VTT Particle Shaders.',
+    leadHtml:
+      'Design layered spell animations, projectile arcs, impact shockwaves, and persistent auras in the <strong>LoomWeaver Effect Builder</strong> (<em>effectbuilder.loom-weaver.com</em>) and trigger them live during combat on <strong>LoomWeaver VTT</strong>.',
+    spotlightTitle: 'Effect Builder Studio — 35+ Shader Styles & Timeline Composition',
+    spotlightSubtitle: 'Layered Particle Emitters · Projectile & Impact Timelines · Live VTT Binding',
+    spotlightDescription:
+      'Bind custom visual effects directly to D&D 5e spells, homebrew monster abilities, and environmental hazards across your entire LoomWeaver campaign.',
+    screenshot: LANDING_ASSET_PATHS.engineDiceShaderFx,
+    screenshotAlt: 'LoomWeaver Effect Builder Studio showing layered spell particle emitters and shader timeline',
+    availableToday: [
+      '35+ procedural WebGL shader and particle styles for beams, projectiles, cones, bursts, and auras',
+      'Multi-track draggable composition timeline with cast, travel, impact, and lingering phases',
+      'Custom color palettes, bloom intensity, turbulence, and audio cue synchronization',
+      'Direct action binding so spells and attacks automatically trigger your custom effect on LoomWeaver VTT',
+      'Shared Single Sign-On across loom-weaver.com and effectbuilder.loom-weaver.com',
+    ],
+    plannedNext: [
+      'Node-based custom GLSL shader graph editor for advanced Creator Marketplace publishers',
+      'Reactive lighting coupling that tints surrounding 2.5D VTT walls with your spell’s emission color',
+    ],
+    studioRoute: '/effects',
+    primaryCtaLabel: 'Open Effect Builder — Free',
+    subdomainUrl: 'https://effectbuilder.loom-weaver.com',
+    subdomainLabel: 'effectbuilder.loom-weaver.com',
+  },
+  'encounter-builder': {
+    slug: 'encounter-builder',
+    path: '/encounter-builder',
+    navLabel: 'Encounter Builder',
+    title: 'LoomWeaver Encounter & Action Builder | D&D 5e & TTRPG Combat Designer',
+    description:
+      'Design tactical TTRPG encounters, custom monster actions, and automated AC/DC saving throws with the LoomWeaver Action & Encounter Builder (actionbuilder.loom-weaver.com).',
+    canonical: 'https://loom-weaver.com/encounter-builder',
+    eyebrow: 'LoomWeaver Action & Encounter Builder · actionbuilder.loom-weaver.com',
+    h1Line1: 'Design Tactical Encounters &',
+    h1Highlight: 'Automated Boss Actions.',
+    leadHtml:
+      'Build balanced D&amp;D 5e and custom TTRPG combat encounters in the <strong>LoomWeaver Action &amp; Encounter Builder</strong> (<em>actionbuilder.loom-weaver.com</em>). Configure multi-attack routines, saving throw DCs, spell shaders, and automated XP rewards.',
+    spotlightTitle: 'Action & Encounter Studio — From Statblock to Live VTT Combat',
+    spotlightSubtitle: 'Custom Monster Actions · Automated AC/DC Resolution · Post-Combat XP',
+    spotlightDescription:
+      'Every monster, trap, and boss action you author links directly to your LoomMaps battlemaps, Effect Builder spell shaders, and Arcane Screen initiative tracker.',
+    screenshot: LANDING_ASSET_PATHS.engineVttCombat,
+    screenshotAlt: 'LoomWeaver Action and Encounter Builder showing monster statblocks, action economy, and VTT deployment',
+    availableToday: [
+      'Complete monster & NPC action designer with attack bonuses, damage dice, range checks, and saving throw DCs',
+      'Per-turn Action, Bonus Action, Reaction, Legendary Action, and Lair Action economy configuration',
+      'Encounter difficulty balancing against your active campaign party roster and character levels',
+      'One-click deployment to LoomWeaver VTT with pre-placed tokens, initiative order, and XP rewards',
+      'Direct integration with Effect Builder animations for every attack and spell action',
+    ],
+    plannedNext: [
+      'Conditional boss-phase triggers that swap monster action sets and map lighting at 50% HP',
+      'Exportable statblock cards formatted for print and Creator Marketplace adventure modules',
+    ],
+    studioRoute: '/encounters',
+    primaryCtaLabel: 'Open Encounter Builder — Free',
+    subdomainUrl: 'https://actionbuilder.loom-weaver.com',
+    subdomainLabel: 'actionbuilder.loom-weaver.com',
+  },
+  '3d-assets': {
+    slug: '3d-assets',
+    path: '/3d-assets',
+    navLabel: '3D Assets & Dice',
+    title: 'LoomWeaver 3D Assets & Dice Forge | TTRPG Miniatures, Props & 3D Dice',
+    description:
+      'Explore the LoomWeaver 3D Asset Studio (3dassets.loom-weaver.com & generator.loom-weaver.com) and 3D Polyhedral Dice Forge for tabletop RPG miniatures, dungeon props, and physics dice.',
+    canonical: 'https://loom-weaver.com/3d-assets',
+    eyebrow: 'LoomWeaver 3D Asset Studio & Dice Forge · 3dassets.loom-weaver.com',
+    h1Line1: '3D Tabletop Miniatures,',
+    h1Highlight: 'Props & Physics Dice.',
+    leadHtml:
+      'Populate your virtual tabletop with GLB 3D miniatures, light-aware dungeon architecture, and weighted-fair 3D polyhedral physics dice across <strong>LoomWeaver</strong>, <em>3dassets.loom-weaver.com</em>, and <em>generator.loom-weaver.com</em>.',
+    spotlightTitle: '3D Asset Vault, Miniature Generator & Polyhedral Dice Forge',
+    spotlightSubtitle: 'GLB Miniatures · Cutaway Dungeon Props · Custom 3D Rigid-Body Dice',
+    spotlightDescription:
+      'Manage your personal 3D miniature library, inspect materials and lighting in real time, and customize shared 3D dice sets for your entire tabletop party.',
+    screenshot: LANDING_ASSET_PATHS.engineDiceShaderFx,
+    screenshotAlt: 'LoomWeaver 3D Asset Studio and 3D Polyhedral Dice Forge preview',
+    availableToday: [
+      'Curated 3D object library (GLB miniatures, furniture, pillars, portals, and light-aware dungeon props)',
+      '3D Polyhedral Dice Forge (d4, d6, d8, d10, d12, d20, d100) with custom materials, engravings, and roll telemetry',
+      'Paired 2D top-down stamps and 3D models that switch seamlessly between 2D drafting and 2.5D/3D VTT views',
+      'Strict creator asset privacy: personal uploaded and generated 3D assets remain isolated to your account',
+      'Unified access via loom-weaver.com/assets, 3dassets.loom-weaver.com, and generator.loom-weaver.com',
+    ],
+    plannedNext: [
+      'In-browser hero miniature pose and equipment kitbashing studio',
+      'Custom metallic, gemstone, and liquid-core shader presets for party-wide commemorative dice',
+    ],
+    studioRoute: '/assets',
+    primaryCtaLabel: 'Explore 3D Assets & Dice — Free',
+    subdomainUrl: 'https://3dassets.loom-weaver.com',
+    subdomainLabel: '3dassets.loom-weaver.com',
   },
   'ai-campaign-assistant': {
     slug: 'ai-campaign-assistant',

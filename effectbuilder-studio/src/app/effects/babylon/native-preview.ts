@@ -37,7 +37,7 @@ export interface PreviewRenderSettings {
   ground: boolean;
 }
 
-/** Standalone editor host for the exact world-space VTT runtime + 3D Forest Map & 3D GLB Tokens. */
+/** Standalone editor host for the exact world-space VTT runtime + 3D Riverbank Terrain & 3D GLB Tokens. */
 export class BabylonEffectPreview {
   readonly engine: Engine;
   readonly scene: Scene;
@@ -62,8 +62,12 @@ export class BabylonEffectPreview {
   private shadow?: ShadowGenerator;
   private shadowSource?: PointLight;
   private perspective = true;
+  private using3dTerrain = true;
 
   private surfaceHeight(x: number, z: number): number {
+    if (this.using3dTerrain) {
+      return this.assets3d.terrainElevationAt(x, z);
+    }
     if (!this.heightPixels) return 0;
     const u = (((x / 4) % 1) + 1) % 1;
     const v = (((1 - z / 4) % 1) + 1) % 1;
@@ -83,6 +87,28 @@ export class BabylonEffectPreview {
     this.tilt = 0.62;
     this.zoom = 1;
     this.resize();
+  }
+
+  moveTerrainBy(dxUnits: number, dzUnits: number): void {
+    this.assets3d.mapTransform.offsetX += dxUnits;
+    this.assets3d.mapTransform.offsetZ += dzUnits;
+  }
+
+  rotateTerrainBy(dRad: number): void {
+    this.assets3d.mapTransform.rotationY += dRad;
+  }
+
+  resetTerrainTransform(): void {
+    this.assets3d.mapTransform = { offsetX: 0, offsetZ: 0, rotationY: 0, scale: 1 };
+  }
+
+  pickDraggableRole(x: number, y: number): string | null {
+    const rw = this.engine.getRenderWidth();
+    const rh = this.engine.getRenderHeight();
+    const sx = (x * rw) / Math.max(1, this.width());
+    const sy = (y * rh) / Math.max(1, this.height());
+    const hit = this.scene.pick(sx, sy, (m) => !!m.isPickable && !!m.metadata?.ebDragRole);
+    return hit?.hit ? (hit.pickedMesh?.metadata?.ebDragRole ?? null) : null;
   }
 
   constructor(
@@ -144,10 +170,10 @@ export class BabylonEffectPreview {
     };
     image.src = '/lighting/dungeon_pavers.png';
 
+    this.assets3d = new Scene3dAssetController(this.scene);
     this.runtime = new BabylonEffectRuntime(this.scene, {
       elevationAt: (x, z) => this.surfaceHeight(x, z),
     });
-    this.assets3d = new Scene3dAssetController(this.scene);
 
     const pipeline = new DefaultRenderingPipeline('effectbuilder-hdr', true, this.scene, [this.camera]);
     pipeline.bloomEnabled = true;
@@ -169,8 +195,11 @@ export class BabylonEffectPreview {
     if (!this.perspective) return p;
     const w = this.width();
     const h = this.height();
+    const wx = (p.x * w) / 66;
+    const wz = (p.y * h) / 66;
+    const wy = this.surfaceHeight(wx, wz) + 0.14;
     const q = Vector3.Project(
-      new Vector3((p.x * w) / 66, this.surfaceHeight((p.x * w) / 66, (p.y * h) / 66) + 0.12, (p.y * h) / 66),
+      new Vector3(wx, wy, wz),
       Matrix.Identity(),
       this.scene.getTransformMatrix(),
       this.camera.viewport.toGlobal(w, h)
@@ -181,8 +210,8 @@ export class BabylonEffectPreview {
   designPoint(x: number, y: number): FxPoint {
     if (!this.perspective) return { x, y };
     const ray = this.scene.createPickingRay(
-      (x * this.engine.getRenderWidth()) / this.width(),
-      (y * this.engine.getRenderHeight()) / this.height(),
+      (x * this.engine.getRenderWidth()) / Math.max(1, this.width()),
+      (y * this.engine.getRenderHeight()) / Math.max(1, this.height()),
       Matrix.Identity(),
       this.camera
     );
@@ -244,6 +273,7 @@ export class BabylonEffectPreview {
     const h = this.height();
     const showForestMap = settings.forestMap !== false;
     const show3dTokens = settings.tokens3d !== false;
+    this.using3dTerrain = showForestMap;
     this.heightDepth = showForestMap ? 0.02 : (settings.height ?? 0.18);
 
     const terrainKey = JSON.stringify([w, h, this.heightDepth, !!this.heightPixels, showForestMap]);
@@ -263,6 +293,30 @@ export class BabylonEffectPreview {
       this.lastLayout = '';
     }
 
+    const teleport = def.previewScene.teleport;
+    const landing = teleport ? { x: teleport.destination.x * w, y: teleport.destination.y * h } : from;
+    const pose = teleportFrame(teleport, time, from, landing);
+    const allTargets = targets.slice(0, 3).map((raw, idx) =>
+      idx === 0 ? riderPoint(def.gameplay, time, from, raw, 66 * scale) : raw
+    );
+
+    const proneFirstTarget = !!def.gameplay?.enabled && !!def.gameplay.prone && time >= def.gameplay.impactMs;
+    const modelShadows = this.assets3d.sync(
+      w / 66,
+      h / 66,
+      pose.point,
+      pose.alpha,
+      allTargets,
+      scale,
+      (x, z) => this.surfaceHeight(x, z),
+      {
+        showForestMap,
+        show3dTokens,
+        proneFirstTarget,
+        ambient: settings.ambient,
+      }
+    );
+
     const key = JSON.stringify([w, h, settings.grid, world.walls, this.terrainKey]);
     this.ambientLight.intensity = settings.ambient;
     this.floorMaterial.bumpTexture!.level = settings.bump;
@@ -280,16 +334,16 @@ export class BabylonEffectPreview {
         for (let x = (w / 2) % cell; x < w; x += cell) {
           lines.push(
             Array.from(
-              { length: 121 },
-              (_, i) => new Vector3(x / 66, this.surfaceHeight(x / 66, ((h / 66) * i) / 120) + 0.025, ((h / 66) * i) / 120)
+              { length: 61 },
+              (_, i) => new Vector3(x / 66, 0.025, ((h / 66) * i) / 60)
             )
           );
         }
         for (let y = (h / 2) % cell; y < h; y += cell) {
           lines.push(
             Array.from(
-              { length: 121 },
-              (_, i) => new Vector3(((w / 66) * i) / 120, this.surfaceHeight(((w / 66) * i) / 120, y / 66) + 0.025, y / 66)
+              { length: 61 },
+              (_, i) => new Vector3(((w / 66) * i) / 60, 0.025, y / 66)
             )
           );
         }
@@ -318,13 +372,6 @@ export class BabylonEffectPreview {
       }
     }
 
-    const teleport = def.previewScene.teleport;
-    const landing = teleport ? { x: teleport.destination.x * w, y: teleport.destination.y * h } : from;
-    const pose = teleportFrame(teleport, time, from, landing);
-    const allTargets = targets.slice(0, 3).map((raw, idx) =>
-      idx === 0 ? riderPoint(def.gameplay, time, from, raw, 66 * scale) : raw
-    );
-
     const points = [pose.point, ...allTargets];
     points.forEach((p, i) => {
       let m = this.markers[i];
@@ -336,34 +383,20 @@ export class BabylonEffectPreview {
         mat.specularColor = new Color3(0.25, 0.3, 0.3);
         m.material = mat;
         m.receiveShadows = true;
-        m.isPickable = false;
+        m.isPickable = true;
+        m.metadata = { ebDragRole: i === 0 ? 'caster' : `target-${i - 1}` };
         this.markers.push(m);
       }
       (m.material as StandardMaterial).alpha = (i ? 1 : pose.alpha) * (show3dTokens ? 0.55 : 1);
       m.setEnabled(i > 0 || pose.alpha > 0.001);
-      m.position.set(p.x / 66, (showForestMap ? 0 : this.surfaceHeight(p.x / 66, p.y / 66)) + 0.03, p.y / 66);
+      const wx = p.x / 66;
+      const wz = p.y / 66;
+      m.position.set(wx, this.surfaceHeight(wx, wz) + 0.03, wz);
       m.scaling.setAll(scale);
     });
     for (let i = points.length; i < this.markers.length; i++) {
       this.markers[i].setEnabled(false);
     }
-
-    const proneFirstTarget = !!def.gameplay?.enabled && !!def.gameplay.prone && time >= def.gameplay.impactMs;
-    const modelShadows = this.assets3d.sync(
-      w / 66,
-      h / 66,
-      pose.point,
-      pose.alpha,
-      allTargets,
-      scale,
-      (x, z) => this.surfaceHeight(x, z),
-      {
-        showForestMap,
-        show3dTokens,
-        proneFirstTarget,
-        ambient: settings.ambient,
-      }
-    );
 
     const effectTarget = teleport?.enabled ? { x: teleport.destination.x * w, y: teleport.destination.y * h } : allTargets[0];
     this.runtime.draw(

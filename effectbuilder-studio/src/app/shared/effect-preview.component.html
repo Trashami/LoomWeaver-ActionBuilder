@@ -2,15 +2,27 @@
   <button type="button" (click)="toggleView()" [attr.aria-pressed]="view3d()">
     {{ view3d() ? 'Overhead 2D view' : '3D perspective view' }}
   </button>
-  <label title="a_forest_3_with_a_road_at_night_for_game.glb">
+  <label title="Meshy_AI_Riverbank_Terrain_Mod_1023195705_texture.glb">
     <input type="checkbox" [checked]="forestMap()" (change)="forestMap.set($any($event.target).checked)" />
-    3D Forest Road Map
+    3D Riverbank Terrain
   </label>
   <label title="Eclipse Abyss Sorceress &amp; 3 Male Goblins">
     <input type="checkbox" [checked]="tokens3d()" (change)="tokens3d.set($any($event.target).checked)" />
     3D Tokens (Sorceress &amp; 3 Goblins)
   </label>
-  @if (!forestMap()) {
+  @if (forestMap()) {
+    <button
+      type="button"
+      [class.active-mode]="moveMapMode()"
+      [attr.aria-pressed]="moveMapMode()"
+      title="Drag the 3D Riverbank Terrain model on the stage (or hold Shift and drag)"
+      (click)="moveMapMode.set(!moveMapMode())"
+    >
+      {{ moveMapMode() ? 'Moving 3D Map (Drag)' : 'Move 3D Map' }}
+    </button>
+    <button type="button" title="Rotate 3D Terrain 45 degrees" (click)="rotateTerrain(0.785398)">Rotate Map</button>
+    <button type="button" title="Reset 3D Terrain position and rotation" (click)="resetTerrain()">Reset Map</button>
+  } @else {
     <label>
       <input type="checkbox" [checked]="background()" (change)="background.set($any($event.target).checked)" />
       Stone sample
@@ -52,10 +64,18 @@
     <button type="button" (click)="reveal()">Reappear now</button>
   </div>
 }
-<span class="renderer-status" role="status" title="Native Babylon meshes, 3D GLB map &amp; tokens, shader materials, depth testing and scene lighting.">
+<span class="renderer-status" role="status" title="Native Babylon meshes, 3D GLB Riverbank Terrain &amp; tokens, shader materials, depth testing and scene lighting.">
   {{ rendererStatus() }}
 </span>
-<div #surface class="surface" (pointerdown)="pathPoint($event)" (wheel)="onSurfaceWheel($event)" role="img" aria-label="Spell animation preview"></div>
+<div
+  #surface
+  class="surface"
+  [class.map-drag-active]="moveMapMode()"
+  (pointerdown)="onSurfacePointerDown($event)"
+  (wheel)="onSurfaceWheel($event)"
+  role="img"
+  aria-label="Spell animation preview"
+></div>
 @for (token of tokens; track token.id) {
   <button
     class="token"

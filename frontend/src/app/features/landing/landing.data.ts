@@ -32,6 +32,9 @@ export interface StudioEngineShowcaseVm {
   readonly image: string;
   readonly metrics: readonly string[];
   readonly route: string;
+  readonly seoPath: string;
+  readonly subdomainUrl: string;
+  readonly subdomainHost: string;
 }
 
 export interface SessionIntelItemVm {
@@ -135,46 +138,86 @@ export const LANDING_STUDIO_ENGINES: readonly StudioEngineShowcaseVm[] = [
   {
     id: 'engine-vtt',
     tag: '2.5D Virtual Tabletop (VTT)',
-    title: 'Tactical Combat Engine & Arcane Screen',
+    title: 'LoomWeaver VTT & Arcane Screen',
     subtitle: 'Dynamic Lighting · Line-of-Sight Fog · Automated Action Economy',
     description:
-      'Run smooth D&D 5e and custom RPG encounters in browser without heavy plugins. Track every combatant’s Action, Bonus Action, Reaction, and Movement, trigger particle/shader spell effects, and award XP automatically when encounters conclude.',
+      'Run smooth D&D 5e and custom TTRPG encounters in browser without heavy plugins. Track every combatant’s Action, Bonus Action, Reaction, and Movement, trigger particle/shader spell effects, and award XP automatically when encounters conclude.',
     image: LANDING_ASSET_PATHS.engineVttCombat,
     metrics: ['2.5D Gradual Lighting', 'Automated AC/DC & XP', 'Zero Player Paywall'],
-    route: '/encounters',
+    route: '/arcane-screen',
+    seoPath: '/vtt',
+    subdomainUrl: 'https://vtt.loom-weaver.com',
+    subdomainHost: 'vtt.loom-weaver.com',
   },
   {
     id: 'engine-weave',
     tag: 'Polyglot Lore Graph',
-    title: 'The Loom Memory & The Weave Graph Studio',
+    title: 'The Loom Memory & Campaign Manager',
     subtitle: 'MySQL Canonical Ledger + Neo4j Relationship Web',
     description:
-      'Every NPC bloodline, faction rivalry, Luminary artifact, and session log is indexed by witness scope. Players query what their character has seen; Game Masters orchestrate hidden truths across the entire campaign graph.',
+      'Every NPC bloodline, faction rivalry, Luminary artifact, and session log is indexed by witness scope. Players query what their character has seen; Game Masters orchestrate hidden truths across the entire TTRPG campaign graph.',
     image: LANDING_ASSET_PATHS.engineLoomWeaveGraph,
     metrics: ['Per-Player Isolation', '100% GM Review Gate', 'Deep-Linked Dossiers'],
     route: '/loom',
+    seoPath: '/campaign-manager',
+    subdomainUrl: 'https://loom-weaver.com/campaign-manager',
+    subdomainHost: 'loom-weaver.com/campaign-manager',
   },
   {
     id: 'engine-atlas',
     tag: 'LoomMaps & World Atlas',
-    title: 'Continental Cartography & Battlemap Authoring',
+    title: 'LoomMaps Battlemap & World Atlas Studio',
     subtitle: 'Cutaway Walls · Spline Ribbons · Multi-Step Quests',
     description:
-      'Chart overland expeditions from Vandia to Cinth, pin GM-only POI secrets, and sculpt multi-layer tactical dungeons with wall-portal cutouts, biome brushes, and synchronized 2D/3D camera perspectives.',
+      'Chart overland expeditions, pin GM-only POI secrets, and sculpt multi-layer tactical dungeons on maps.loom-weaver.com with wall-portal cutouts, biome brushes, and synchronized 2D/3D camera perspectives.',
     image: LANDING_ASSET_PATHS.engineLoomMapsAtlas,
     metrics: ['2D + 3D Hybrid Canvas', 'Quest Clue Chains', 'Private Creator Assets'],
     route: '/maps',
+    seoPath: '/battlemap-builder',
+    subdomainUrl: 'https://maps.loom-weaver.com',
+    subdomainHost: 'maps.loom-weaver.com',
   },
   {
     id: 'engine-dice-fx',
-    tag: 'Physics Dice & Shader FX',
-    title: '3D Polyhedral Dice Forge & Visual Effect Builder',
-    subtitle: 'Custom Materials · Roll Telemetry · Spell Particle Shaders',
+    tag: 'Effect Builder & Shader FX',
+    title: 'Effect Builder Studio & Spell Shaders',
+    subtitle: '35+ Shader Styles · Layered Particles · Composition Timeline',
     description:
-      'Roll weighted-fair 3D physics dice across shared table trays, customize raven-emerald and arcane-gold dice sets, and bind custom projectile, aura, and impact shaders directly to character actions.',
+      'Design custom TTRPG spell animations on effectbuilder.loom-weaver.com with layered particle emitters, projectile arcs, impact shockwaves, and persistent auras bound directly to character actions and VTT combat rolls.',
     image: LANDING_ASSET_PATHS.engineDiceShaderFx,
-    metrics: ['3D Rigid-Body Dice', 'Live Roll Telemetry', 'Custom Spell Shaders'],
-    route: '/dice',
+    metrics: ['35+ Shader Styles', 'Timeline Composer', 'Live VTT Binding'],
+    route: '/effects',
+    seoPath: '/effect-builder',
+    subdomainUrl: 'https://effectbuilder.loom-weaver.com',
+    subdomainHost: 'effectbuilder.loom-weaver.com',
+  },
+  {
+    id: 'engine-actions',
+    tag: 'Action & Encounter Builder',
+    title: 'Tactical Action & Encounter Studio',
+    subtitle: 'Monster Statblocks · Boss Phases · Automated Saves & Damage',
+    description:
+      'Author custom monster actions, multi-attack routines, saving throw DCs, and balanced TTRPG encounter rosters on actionbuilder.loom-weaver.com—ready to launch directly onto the 2.5D Virtual Tabletop.',
+    image: LANDING_ASSET_PATHS.engineVttCombat,
+    metrics: ['Custom Action Economy', 'Automated Save DCs', 'Instant VTT Launch'],
+    route: '/encounters',
+    seoPath: '/encounter-builder',
+    subdomainUrl: 'https://actionbuilder.loom-weaver.com',
+    subdomainHost: 'actionbuilder.loom-weaver.com',
+  },
+  {
+    id: 'engine-3d-assets',
+    tag: '3D Assets & Dice Forge',
+    title: '3D Asset Studio, Generator & Dice Forge',
+    subtitle: 'GLB Miniatures · Cutaway Props · 3D Rigid-Body Polyhedral Dice',
+    description:
+      'Browse and generate 3D tabletop miniatures, light-aware dungeon props, and custom raven-emerald polyhedral dice sets across 3dassets.loom-weaver.com and generator.loom-weaver.com.',
+    image: LANDING_ASSET_PATHS.engineDiceShaderFx,
+    metrics: ['GLB 3D Miniatures', '3D Physics Dice', 'Shared Asset Vault'],
+    route: '/assets',
+    seoPath: '/3d-assets',
+    subdomainUrl: 'https://3dassets.loom-weaver.com',
+    subdomainHost: '3dassets.loom-weaver.com',
   },
 ];
 
@@ -320,5 +363,11 @@ export const LANDING_FAQS: readonly LandingFaqItemVm[] = [
     question: 'How does the 85/15 Creator Marketplace revenue split work?',
     answer:
       'Independent creators keep 85% of revenue on custom campaigns, adventure modules, LoomMaps asset packs, and ready-to-run VTT encounters—with one-click module importing directly into any Game Master account.',
+  },
+  {
+    id: 'faq-ecosystem-domains',
+    question: 'What are the official LoomWeaver TTRPG & VTT domains and studio tools?',
+    answer:
+      'The official LoomWeaver TTRPG & Virtual Tabletop platform is hosted at https://loom-weaver.com and unites specialized web studios under one shared Single Sign-On account: LoomWeaver VTT (vtt.loom-weaver.com), LoomMaps Battlemap & World Atlas Builder (maps.loom-weaver.com), Effect Builder Studio for spell shaders (effectbuilder.loom-weaver.com), Action & Encounter Builder (actionbuilder.loom-weaver.com), and 3D Asset & Miniature Generator Studio (3dassets.loom-weaver.com and generator.loom-weaver.com).',
   },
 ];

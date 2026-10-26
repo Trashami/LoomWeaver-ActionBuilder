@@ -177,8 +177,11 @@ for a in catalog['assets']:
         f"file_url=VALUES(file_url), model_3d_url=VALUES(model_3d_url), byte_size=VALUES(byte_size), source_triangles=VALUES(source_triangles);"
     )
 
-# Also ensure the 3 EffectBuilder showcase 3D assets are in loomweaver.lw_assets
+# Also ensure the EffectBuilder showcase 3D assets are in loomweaver.lw_assets
 sql_lines.extend([
+    "INSERT INTO loomweaver.lw_assets (id, name, category, creator_name, entitlement, price_label, price_cents, preview_url, summary, system_code, tags_json) "
+    "VALUES ('ast-riverbank-terrain-3d', 'Riverbank Terrain Mod 3D Scene', 'map-pack', 'LoomWeaver Studio', 'free', 'Free', 0, '/assets/models-3d/Meshy_AI_Riverbank_Terrain_Mod_1023195705_texture.glb', '3D riverbank terrain environment for EffectBuilder and VTT.', 'dnd5e', '[\"3d-glb\", \"scene\", \"riverbank\", \"terrain\"]') "
+    "ON DUPLICATE KEY UPDATE preview_url=VALUES(preview_url), summary=VALUES(summary);",
     "INSERT INTO loomweaver.lw_assets (id, name, category, creator_name, entitlement, price_label, price_cents, preview_url, summary, system_code, tags_json) "
     "VALUES ('ast-forest-road-night-3d', 'Forest (3) with a Road at Night 3D Scene', 'map-pack', 'LoomWeaver Studio', 'free', 'Free', 0, '/assets/models-3d/a_forest_3_with_a_road_at_night_for_game.glb', '3D night forest road environment for EffectBuilder and VTT.', 'dnd5e', '[\"3d-glb\", \"scene\", \"forest\", \"night\"]') "
     "ON DUPLICATE KEY UPDATE preview_url=VALUES(preview_url), summary=VALUES(summary);",
@@ -264,7 +267,7 @@ sleep 3
 
 echo "6. Verifying unified loom-weaver.service and 3D GLB assets..."
 systemctl is-active loom-weaver.service nginx
-curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/models-3d/a_forest_3_with_a_road_at_night_for_game.glb | head -n 5
+curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/models-3d/Meshy_AI_Riverbank_Terrain_Mod_1023195705_texture.glb | head -n 5
 curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/models-3d/Meshy_AI_Eclipse_Abyss_Sorcere_1026221004_texture.glb | head -n 5
 curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/models-3d/Meshy_AI_Goblin_Male_1026221232_texture.glb | head -n 5
 """
