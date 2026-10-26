@@ -65,31 +65,10 @@
         "url": "https://loom-weaver.com/",
         "screenshot": "https://loom-weaver.com/tactical-combat-live-ui.jpg",
         "offers": [
-          {
-            "@type": "Offer",
-            "name": "The Spark (Free Tier & Free Player Seats)",
-            "price": "0",
-            "priceCurrency": "USD",
-            "description": "Free forever for players via invite links, core 2.5D VTT, Character Studio, and free Loom campaign memory search."
-          },
-          {
-            "@type": "Offer",
-            "name": "The Threadkeeper",
-            "price": "6",
-            "priceCurrency": "USD"
-          },
-          {
-            "@type": "Offer",
-            "name": "The Weaver",
-            "price": "12",
-            "priceCurrency": "USD"
-          },
-          {
-            "@type": "Offer",
-            "name": "The Archweaver",
-            "price": "24",
-            "priceCurrency": "USD"
-          }
+          { "@type": "Offer", "name": "The Spark (Free Tier & Free Player Seats)", "price": "0", "priceCurrency": "USD" },
+          { "@type": "Offer", "name": "The Threadkeeper", "price": "6", "priceCurrency": "USD" },
+          { "@type": "Offer", "name": "The Weaver", "price": "12", "priceCurrency": "USD" },
+          { "@type": "Offer", "name": "The Archweaver", "price": "24", "priceCurrency": "USD" }
         ],
         "featureList": [
           "2.5D Virtual Tabletop (VTT) with dynamic gradual lighting, line-of-sight fog of war, 3D physics dice, and per-turn action economy tracking",
@@ -126,14 +105,6 @@
               "@type": "Answer",
               "text": "No. Players join via frictionless invite links for 100% free and never need a paid subscription to access character sheets, the 2.5D Virtual Tabletop, 3D dice, or player-scoped Loom memory."
             }
-          },
-          {
-            "@type": "Question",
-            "name": "How does LoomWeaver protect GM secrets from players?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Every note, NPC dossier, location, and session log enforces granular privacy scoping—private to an individual player, shared with the GM only, or revealed to the party. When a player queries The Loom, it only synthesizes facts their character has witnessed."
-            }
           }
         ]
       }
@@ -145,33 +116,102 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#05100c;color:#e7eee9;font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}a{color:inherit;text-decoration:none}
+    .ssr-lw-shell{min-height:100vh;background:radial-gradient(ellipse 88% 34% at 50% 0%,rgba(28,110,68,.34),transparent 82%),#05100c}
+    .ssr-wrap{max-width:1320px;margin:0 auto;padding:0 34px}
+    .ssr-topnav{height:78px;border-bottom:1px solid rgba(57,130,94,.42);display:flex;align-items:center;justify-content:space-between;gap:24px;background:rgba(5,17,13,.94)}
+    .ssr-brand{display:flex;align-items:center;gap:12px}
+    .ssr-emblem{width:44px;height:44px;border-radius:50%;border:1px solid rgba(73,232,146,.55);background:radial-gradient(circle,rgba(24,92,57,.65),#06140f);display:grid;place-items:center}
+    .ssr-navlinks{display:flex;gap:24px;color:#c0d4c9;font-size:13px;font-weight:500}
+    .ssr-actions{display:flex;gap:10px}
+    .ssr-btn{border-radius:7px;padding:11px 18px;border:1px solid #3c6b55;color:#ecf7f0;background:#102920;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600}
+    .ssr-btn-primary{border-color:#c7a463;background:linear-gradient(135deg,#f3d7a2,#c89f5d);color:#101c14}
+    .ssr-hero{min-height:615px;border-bottom:1px solid #214536;background:linear-gradient(180deg,rgba(5,17,13,.78),rgba(5,16,12,.94)),url('/LoomWeaverWallpaper.png') center/cover no-repeat;display:flex;align-items:center}
+    .ssr-hero-grid{display:grid;grid-template-columns:.94fr 1.06fr;gap:34px;align-items:center;padding:52px 34px 62px}
+    .ssr-eyebrow{display:inline-flex;align-items:center;gap:8px;color:#7df2b2;border:1px solid #2b7d57;border-radius:99px;background:rgba(14,59,41,.55);padding:7px 13px;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700}
+    .ssr-h1{font-family:Cinzel,Georgia,serif;font-weight:500;font-size:clamp(40px,4.5vw,68px);line-height:1.08;letter-spacing:-1.4px;margin:22px 0;color:#f5efe2}
+    .ssr-h1 em{font-style:normal;color:#5bf09d}
+    .ssr-lead{font-size:15.5px;line-height:1.75;color:#bdd1c5;max-width:540px;margin:0 0 28px}
+    .ssr-pillars{padding:64px 34px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .ssr-card{padding:22px 20px;background:linear-gradient(140deg,#0c231b,#071611);border:1px solid #2c5441;border-radius:12px}
+    .ssr-card h3{font:21px Georgia,serif;color:#f2dfbc;margin:0 0 8px}
+    .ssr-card p{font-size:12.5px;color:#adc4b8;line-height:1.62;margin:0}
+    @media(max-width:960px){.ssr-hero-grid,.ssr-pillars{grid-template-columns:1fr}.ssr-navlinks{display:none}}
+  </style>
 </head>
-<body style="margin:0;background:#05100c;color:#e7eee9;">
+<body>
   <lw-root>
-    <!-- Pre-rendered semantic SEO shell for search engine crawlers & instant First Contentful Paint -->
-    <main style="max-width:1280px;margin:0 auto;padding:2.5rem 1.75rem;color:#e7eee9;font-family:'Inter',system-ui,sans-serif;background:#05100c;">
-      <header style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;border-bottom:1px solid rgba(73,232,146,0.28);padding-bottom:1.25rem;margin-bottom:2.25rem;">
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <img src="/LoomWeaverCrow.png" alt="LoomWeaver Raven Emblem" width="42" height="42" style="border-radius:50%;border:1px solid #49e892;">
-          <img src="/LoomWeaver.png" alt="LoomWeaver (Loom-Weaver) Virtual Tabletop" height="28">
-        </div>
-        <nav aria-label="Crawler Navigation" style="display:flex;gap:1.25rem;font-size:0.9rem;">
-          <a href="/features/virtual-tabletop" style="color:#58f29c;">2.5D Virtual Tabletop (VTT)</a>
-          <a href="/features/campaign-memory" style="color:#58f29c;">The Loom Memory</a>
-          <a href="/features/worldbuilding-ai" style="color:#58f29c;">The Weave Studio</a>
-          <a href="/features/world-atlas-quests" style="color:#58f29c;">LoomMaps &amp; Atlas</a>
-          <a href="/features/creator-marketplace" style="color:#58f29c;">Creator Marketplace</a>
-          <a href="/login" style="color:#f3d7a2;">Sign In</a>
+    <!-- Server-Side Pre-Rendered Raven & Logo Green Marketing Surface (Instant FCP + Crawler Indexing, Hydrated by Angular) -->
+    <div class="ssr-lw-shell">
+      <header class="ssr-topnav ssr-wrap">
+        <a class="ssr-brand" href="/">
+          <span class="ssr-emblem"><img src="/LoomWeaverCrow.png" alt="LoomWeaver Raven" width="36" height="36"></span>
+          <span>
+            <img src="/LoomWeaver.png" alt="LoomWeaver (Loom-Weaver) Virtual Tabletop" height="28"><br>
+            <small style="font-size:10px;color:#9ec2b0;">Your Campaign. One Living World. · 2.5D VTT &amp; Lore OS</small>
+          </span>
+        </a>
+        <nav class="ssr-navlinks" aria-label="Primary Navigation">
+          <a href="#why-loomweaver">Why LoomWeaver</a>
+          <a href="#features">Features</a>
+          <a href="#engines">2.5D VTT &amp; Engines</a>
+          <a href="#experience">How It Works</a>
+          <a href="#pricing">Plans &amp; Pricing</a>
+          <a href="#marketplace">Creator Marketplace</a>
+          <a href="#faq">FAQ</a>
         </nav>
+        <div class="ssr-actions">
+          <a class="ssr-btn" href="/login">Sign In</a>
+          <a class="ssr-btn ssr-btn-primary" href="/register">Start Free</a>
+        </div>
       </header>
-      <section>
-        <p style="text-transform:uppercase;letter-spacing:0.15em;font-size:0.75rem;color:#58f29c;margin:0 0 0.5rem;">LoomWeaver (Loom-Weaver) — 2.5D Virtual Tabletop (VTT) &amp; Living Campaign OS</p>
-        <h1 style="font-family:'Cinzel',Georgia,serif;font-size:2.75rem;line-height:1.12;margin:0 0 1rem;color:#f5efe2;">Your Campaign. <span style="color:#58f29c;">One Living World.</span></h1>
-        <p style="font-size:1.1rem;line-height:1.7;color:#bdd1c5;max-width:70ch;margin:0 0 2rem;">
-          LoomWeaver (also searched as Loom-Weaver and Loom Weaver) unifies a 2.5D Virtual Tabletop (VTT), free living campaign memory (The Loom), optional GM-authored worldbuilding (The Weave), and LoomMaps battlemap cartography into one dark-fantasy tabletop RPG studio. Built for D&amp;D 5e and custom RPG worlds—100% free for your players.
-        </p>
-      </section>
-    </main>
+      <main>
+        <section class="ssr-hero">
+          <div class="ssr-wrap ssr-hero-grid">
+            <div>
+              <span class="ssr-eyebrow">A new chapter in tabletop storytelling · Next-Gen VTT</span>
+              <h1 class="ssr-h1">Your Campaign.<br><em>One Living World.</em></h1>
+              <p class="ssr-lead">
+                Build worlds. Run unforgettable sessions on an integrated <strong>2.5D Virtual Tabletop (VTT)</strong>.
+                Let every character, secret, battlemap, and decision stay connected in <strong>LoomWeaver</strong>
+                (<em>Loom-Weaver</em>)—without juggling a dozen disconnected tools when the story gets good.
+              </p>
+              <div style="display:flex;gap:11px;flex-wrap:wrap;">
+                <a class="ssr-btn ssr-btn-primary" href="/register">Begin Your Story — Free</a>
+                <a class="ssr-btn" href="/login">Sign In to Studio</a>
+                <a class="ssr-btn" href="#features">Explore LoomWeaver</a>
+              </div>
+            </div>
+            <div style="position:relative;min-height:380px;border:1px solid #3c6e56;border-radius:13px;overflow:hidden;background:#071712;display:flex;align-items:flex-end;padding:24px;">
+              <img src="/LoomWeaverCrow.png" alt="LoomWeaver Emerald Raven" style="position:absolute;right:5%;top:8%;width:65%;max-width:420px;object-fit:contain;">
+              <div style="position:relative;z-index:2;">
+                <strong style="font:22px Georgia,serif;color:#fff1d6;display:block;">The Ashen Vale &amp; Icrandor</strong>
+                <small style="color:#b5cfc0;">14 sessions · 5 heroes · 2.5D VTT &amp; Neo4j Lore Graph</small>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="ssr-wrap ssr-pillars" id="features">
+          <article class="ssr-card">
+            <h3>The Loom — Free Living Memory</h3>
+            <p>Your campaign-aware companion. Recall decisions, find a forgotten name, and explore campaign canon with role-aware answers that keep unrevealed secrets GM-only.</p>
+          </article>
+          <article class="ssr-card">
+            <h3>The Weave — Optional Worldbuilding</h3>
+            <p>Connect NPCs, factions, lore, quests, and locations into a living Neo4j web with 100% Game Master review and authorship control.</p>
+          </article>
+          <article class="ssr-card">
+            <h3>Arcane Screen &amp; 2.5D VTT</h3>
+            <p>Run tactical encounters with 2.5D gradual lighting, line-of-sight fog of war, 3D physics dice, per-turn action economy tracking, and automated XP awards.</p>
+          </article>
+          <article class="ssr-card">
+            <h3>LoomMaps &amp; World Atlas</h3>
+            <p>Draw in 2D, explore in 3D, sculpt cutaway walls and spline paths, and link every regional map marker to multi-step quests.</p>
+          </article>
+        </section>
+      </main>
+    </div>
   </lw-root>
 </body>
 </html>

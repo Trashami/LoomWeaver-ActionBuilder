@@ -82,6 +82,9 @@ export class AuthSessionService {
 
   constructor() {
     this.restoreSharedSession();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('lw:unauthorized', () => this.logout());
+    }
   }
 
   private restoreSharedSession(): void {
