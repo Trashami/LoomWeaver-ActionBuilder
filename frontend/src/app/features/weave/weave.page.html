@@ -81,13 +81,16 @@
         [breadcrumbs]="worldLore.mapHierarchyBreadcrumbs()"
         [isGm]="worldLore.isGm()"
         [journeySessionFilter]="worldLore.journeySessionFilter()"
+        [playerVisibilityMode]="worldLore.playerVisibilityMode()"
         (layerToggled)="worldLore.toggleLayer($event)"
         (showAllRequested)="worldLore.showAllLayers()"
         (clearAllRequested)="worldLore.clearAllLayers()"
         (resetRequested)="worldLore.resetDefaultLayers()"
         (mapSelected)="worldLore.selectMap($event)"
         (sessionFilterChanged)="worldLore.journeySessionFilter.set($event)"
+        (playerVisibilityModeChanged)="worldLore.setPlayerVisibilityMode($event)"
         (createLocationRequested)="openAddLocationModal()"
+        (editMapRequested)="worldLore.openMapEditor()"
       />
 
       <lw-world-atlas
@@ -96,8 +99,11 @@
         [markers]="worldLore.visibleMapMarkers()"
         [waypoints]="worldLore.visibleJourneyWaypoints()"
         [selectedLocationKey]="worldLore.selectedLocationKey()"
+        [repositioningLocationKey]="worldLore.repositioningLocationKey()"
         [isGm]="worldLore.isGm()"
         (markerSelected)="onMarkerSelected($event)"
+        (markerPositionCommitted)="onMarkerPositionCommitted($event)"
+        (repositionCancelled)="worldLore.startRepositioningLocation(null)"
         (childMapRequested)="worldLore.selectMap($event)"
         (parentMapRequested)="worldLore.selectMap($event)"
         (createMapRequested)="worldLore.assignWorldMap($event)"
@@ -276,4 +282,20 @@
       </footer>
     </div>
   </div>
+}
+
+@if (worldLore.mapEditorOpen() && worldLore.activeMap(); as activeMap) {
+  <lw-world-map-editor
+    [map]="activeMap"
+    [maps]="ws.maps"
+    [overlays]="worldLore.visibleMapOverlays()"
+    [markers]="worldLore.visibleMapMarkers()"
+    [selectedLocation]="worldLore.selectedLocation()"
+    (closeRequested)="worldLore.closeMapEditor()"
+    (markerSelected)="worldLore.selectLocation($event)"
+    (childMapRequested)="worldLore.selectMap($event)"
+    (relatedEntitySelected)="onEditorRelatedSelected($event)"
+    (loreSelected)="onEditorLoreSelected($event)"
+    (locationSaved)="worldLore.saveLocation($event)"
+  />
 }

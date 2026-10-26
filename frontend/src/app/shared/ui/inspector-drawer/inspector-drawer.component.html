@@ -120,7 +120,7 @@
                 <lw-button variant="guide-pill" size="xs" shape="pill" [active]="g.activeScopeId === 'session-15'" label="Session 15" (pressed)="selectScope('session', 'session-15')" />
                 <lw-button variant="guide-pill" size="xs" shape="pill" [active]="g.activeScopeId === 'node-loc-ruined-chapel'" label="Chapel Site" (pressed)="selectScope('location', 'node-loc-ruined-chapel')" />
                 @for (room of g.availableRooms; track room.id) {
-                  <lw-button variant="guide-pill" size="xs" shape="pill" [active]="g.activeScopeId === room.id" [label]="room.areaKey" (pressed)="selectScope('room', room.id)" />
+                  <lw-button variant="guide-pill" size="xs" shape="pill" [active]="g.activeScopeId === room.id" [label]="room.areaKey || room.title" (pressed)="selectScope('room', room.id)" />
                 }
               </div>
 
@@ -341,7 +341,7 @@
                       <span class="lw-inspector__why-tag">{{ trs.whyIncluded }}</span>
                       <div class="lw-inspector__npc-links">
                         <lw-button variant="guide-action" size="xs" label="View Artifact" [routerLink]="trs.routeLink" />
-                        <lw-button variant="gold" size="xs" [disabled]="trs.rewardAwarded" [label]="trs.rewardAwarded ? 'Reward Recorded' : 'Award Party XP & Loot'" (pressed)="advGuide.awardReward(trs.nodeId, 'reward-c3-star-arrow', trs.xpReward ?? 1200, trs.currencyOrItemLabel ?? trs.title)" />
+                        <lw-button variant="gold" size="xs" [disabled]="!!trs.rewardAwarded" [label]="trs.rewardAwarded ? 'Reward Recorded' : 'Award Party XP & Loot'" (pressed)="advGuide.awardReward(trs.nodeId, 'reward-c3-star-arrow', trs.xpReward ?? 1200, trs.currencyOrItemLabel ?? trs.title)" />
                       </div>
                     </div>
                   }

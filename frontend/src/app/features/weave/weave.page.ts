@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  LocationRelatedEntityVm,
   RecentWorldDiscoveryVm,
   WorldHierarchyScope,
   WorldMapMarkerVm,
@@ -15,6 +16,7 @@ import {
   LwWeaveRelationshipsGraphComponent,
   LwWorldAtlasComponent,
   LwWorldHistoryComponent,
+  LwWorldMapEditorComponent,
 } from '../../shared/ui/public-api';
 
 @Component({
@@ -29,6 +31,7 @@ import {
     LwLoreLibraryComponent,
     LwWorldHistoryComponent,
     LwWeaveRelationshipsGraphComponent,
+    LwWorldMapEditorComponent,
   ],
   templateUrl: './weave.page.html',
   styleUrl: './weave.page.scss',
@@ -55,6 +58,47 @@ export class WeavePageComponent {
 
   onMarkerSelected(marker: WorldMapMarkerVm): void {
     this.worldLore.selectLocation(marker.locationKey);
+  }
+
+  onMarkerPositionCommitted(ev: { locationKey: string; xPercent: number; yPercent: number }): void {
+    const loc = this.worldLore.locationsState().find((l) => l.locationKey === ev.locationKey);
+    if (!loc) return;
+    this.worldLore.saveLocation({
+      locationKey: loc.locationKey,
+      name: loc.name,
+      locationType: loc.locationType,
+      hierarchyLevel: loc.hierarchyLevel,
+      parentLocationKey: loc.parentLocationKey,
+      mapId: loc.mapId,
+      childMapId: loc.childMapId,
+      linkedSceneKey: loc.linkedSceneKey,
+      attachedSessionId: loc.attachedSessionId,
+      attachedSessionLabel: loc.attachedSessionLabel,
+      playerVisibilityPolicy: loc.playerVisibilityPolicy,
+      style: loc.style,
+      xPercent: ev.xPercent,
+      yPercent: ev.yPercent,
+      discoveryStatus: loc.discoveryStatus,
+      visibility: loc.visibility,
+      artworkUrl: loc.artworkUrl,
+      description: loc.description,
+    });
+  }
+
+  onEditorRelatedSelected(rel: LocationRelatedEntityVm): void {
+    this.worldLore.closeMapEditor();
+    if (rel.entityType === 'Location') {
+      const key = rel.compositeKey.split(':').pop() ?? rel.compositeKey;
+      this.worldLore.selectLocation(key);
+    } else {
+      this.store.inspectEntity(rel.compositeKey);
+    }
+  }
+
+  onEditorLoreSelected(loreId: string): void {
+    this.worldLore.closeMapEditor();
+    this.worldLore.selectLoreEntry(loreId);
+    this.worldLore.setPrimaryTab('lore');
   }
 
   onInspectLocationFromChild(locationKey: string): void {

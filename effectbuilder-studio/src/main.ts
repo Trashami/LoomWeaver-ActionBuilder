@@ -1,4 +1,4 @@
-import { provideZoneChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
@@ -9,7 +9,7 @@ document.title = 'Effect Builder Studio · LoomWeaver';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideZoneChangeDetection(),
+    provideZonelessChangeDetection(),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter([
       { path: 'effect-builder', redirectTo: '', pathMatch: 'full' },

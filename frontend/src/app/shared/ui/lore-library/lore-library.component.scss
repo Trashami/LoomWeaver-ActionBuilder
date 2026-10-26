@@ -12,95 +12,27 @@
   border-radius: 10px;
 
   &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    h3 {
-      margin: 0;
-      font-family: 'Cinzel', serif;
-      font-size: 0.9rem;
-      letter-spacing: 0.08em;
-      color: #f3e5c8;
-    }
+    display: flex; align-items: center; justify-content: space-between;
+    h3 { margin: 0; font-family: 'Cinzel', serif; font-size: 0.9rem; letter-spacing: 0.08em; color: #f3e5c8; }
   }
-
-  &__header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  &__search-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.45rem;
-  }
-
-  &__pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.28rem;
-  }
-
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
-  }
+  &__header-actions { display: flex; align-items: center; gap: 0.5rem; }
+  &__search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; }
+  &__pills { display: flex; flex-wrap: wrap; gap: 0.28rem; }
+  &__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
 }
 
 .lw-lore-search-box {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.6rem;
-  background: rgba(4, 12, 9, 0.88);
-  border: 1px solid rgba(217, 183, 122, 0.22);
-  border-radius: 6px;
-  color: #8fa99b;
-  min-width: 170px;
-
-  input {
-    border: none;
-    background: transparent;
-    color: #e8f3ec;
-    font-size: 0.76rem;
-    width: 100%;
-    outline: none;
-  }
-
-  &--wide {
-    flex: 1;
-    min-width: 240px;
-  }
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.6rem;
+  background: rgba(4, 12, 9, 0.88); border: 1px solid rgba(217, 183, 122, 0.22); border-radius: 6px; color: #8fa99b; min-width: 170px;
+  input { border: none; background: transparent; color: #e8f3ec; font-size: 0.76rem; width: 100%; outline: none; }
+  &--wide { flex: 1; min-width: 240px; }
 }
 
 .lw-lore-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.22rem 0.52rem;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 26, 19, 0.72);
-  color: #b8cdc1;
-  font-size: 0.7rem;
-  cursor: pointer;
-  transition: all 140ms ease;
-
-  &:hover {
-    border-color: rgba(217, 183, 122, 0.35);
-    color: #f3e5c8;
-  }
-
-  &--active {
-    background: rgba(217, 183, 122, 0.18);
-    border-color: rgba(217, 183, 122, 0.55);
-    color: #f3e5c8;
-    font-weight: 600;
-  }
+  display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.22rem 0.52rem; border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(10, 26, 19, 0.72); color: #b8cdc1; font-size: 0.7rem; cursor: pointer;
+  &:hover { border-color: rgba(217, 183, 122, 0.35); color: #f3e5c8; }
+  &--active { background: rgba(217, 183, 122, 0.18); border-color: rgba(217, 183, 122, 0.55); color: #f3e5c8; font-weight: 600; }
 }
 
 .lw-lore-mini-card {
@@ -323,8 +255,45 @@
 .lw-lore-reader {
   padding: 1rem;
   border-radius: 10px;
-  background: rgba(7, 20, 15, 0.94);
-  border: 1px solid rgba(217, 183, 122, 0.28);
+  background: linear-gradient(180deg, rgba(10, 26, 19, 0.96), rgba(6, 17, 13, 0.96));
+  border: 1px solid rgba(217, 183, 122, 0.36);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.52);
+
+  &__banner {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.65rem;
+    border-bottom: 1px solid rgba(73, 232, 146, 0.24);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #49e892;
+  }
+
+  &__art-wrap {
+    height: 130px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(217, 183, 122, 0.28);
+    margin-bottom: 0.65rem;
+  }
+
+  &__art {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__placeholder {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #9cb5a8;
+    h4 { margin: 0.4rem 0 0.25rem; color: #f3e5c8; font-family: 'Cinzel', serif; }
+    p { margin: 0; font-size: 0.76rem; }
+  }
 
   &__header {
     display: flex;

@@ -48,3 +48,4 @@ export * from './world-overview/world-overview.component';
 export * from './lore-library/lore-library.component';
 export * from './world-history/world-history.component';
 export * from './weave-relationships-graph/weave-relationships-graph.component';
+export * from './world-map-editor/world-map-editor.component';

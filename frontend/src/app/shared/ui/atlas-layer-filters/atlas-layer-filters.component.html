@@ -1,32 +1,80 @@
-<div class="lw-atlas-filters" role="toolbar" aria-label="World Atlas Layer Filters and Hierarchy">
+<div class="lw-atlas-filters" role="toolbar" aria-label="World Atlas Top Menu and Layer Filter Controls">
   <div class="lw-atlas-filters__primary-row">
-    <div class="lw-atlas-filters__pills">
-      @for (filter of filters().slice(0, 8); track filter.id) {
+    <div class="lw-atlas-filters__left">
+      <!-- Single Compact Filter Dropdown Button -->
+      <div class="lw-filter-menu-wrap">
         <button
           ngpButton
           type="button"
-          class="lw-filter-pill"
-          [class.lw-filter-pill--active]="isLayerActive(filter.id)"
-          [class.lw-filter-pill--gm]="filter.gmOnly"
-          [attr.aria-pressed]="isLayerActive(filter.id)"
-          (click)="layerToggled.emit(filter.id)"
+          class="lw-filter-trigger"
+          [class.lw-filter-trigger--open]="filterMenuOpen()"
+          [attr.aria-expanded]="filterMenuOpen()"
+          (click)="filterMenuOpen.set(!filterMenuOpen())"
         >
-          <lw-icon [name]="filter.icon" [size]="14" />
-          <span>{{ filter.label }}</span>
+          <lw-icon name="filter" [size]="14" />
+          <span>Filter ({{ activeLayerIds().length }}/{{ filters().length }})</span>
+          <lw-icon [name]="filterMenuOpen() ? 'chevron-up' : 'chevron-down'" [size]="12" />
         </button>
-      }
-      <button
-        ngpButton
-        type="button"
-        class="lw-filter-pill lw-filter-pill--more"
-        (click)="showExtendedFilters.set(!showExtendedFilters())"
-      >
-        <lw-icon name="filter" [size]="14" />
-        <span>{{ showExtendedFilters() ? 'Less Layers' : 'More Layers' }}</span>
-      </button>
-    </div>
 
-    <div class="lw-atlas-filters__actions">
+        @if (filterMenuOpen()) {
+          <div class="lw-filter-popover" role="dialog" aria-label="Toggle Atlas Map Layers">
+            <div class="lw-filter-popover__head">
+              <strong>Map Layers & Visibility</strong>
+              <div class="lw-filter-popover__bulk">
+                <button ngpButton type="button" class="lw-text-btn" (click)="showAllRequested.emit()">
+                  Select All
+                </button>
+                <button ngpButton type="button" class="lw-text-btn" (click)="clearAllRequested.emit()">
+                  Deselect All
+                </button>
+                <button ngpButton type="button" class="lw-text-btn" (click)="resetRequested.emit()">
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div class="lw-filter-popover__grid">
+              @for (filter of filters(); track filter.id) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="lw-layer-check-item"
+                  [class.lw-layer-check-item--checked]="isLayerActive(filter.id)"
+                  [class.lw-layer-check-item--gm]="filter.gmOnly"
+                  (click)="layerToggled.emit(filter.id)"
+                >
+                  <span class="lw-layer-check-item__box">
+                    @if (isLayerActive(filter.id)) {
+                      <lw-icon name="check" [size]="11" />
+                    }
+                  </span>
+                  <lw-icon [name]="filter.icon" [size]="13" />
+                  <span class="lw-layer-check-item__label">{{ filter.label }}</span>
+                </button>
+              }
+            </div>
+
+            <div class="lw-filter-popover__foot">
+              <label class="lw-route-session-filter">
+                <span>Journey Route Filter:</span>
+                <select
+                  [value]="journeySessionFilter()"
+                  (change)="onSessionSelect($any($event.target).value)"
+                >
+                  <option value="all">All Sessions</option>
+                  <option value="12">Up to Session 12</option>
+                  <option value="14">Up to Session 14</option>
+                  <option value="15">Up to Session 15</option>
+                </select>
+              </label>
+              <button ngpButton type="button" class="lw-text-btn" (click)="filterMenuOpen.set(false)">
+                Done
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
       @if (maps().length > 1) {
         <select
           class="lw-map-select"
@@ -40,7 +88,49 @@
         </select>
       }
 
+      @if (breadcrumbs().length > 1) {
+        <nav class="lw-map-breadcrumbs" aria-label="Map Hierarchy">
+          @for (crumb of breadcrumbs(); track crumb.mapId; let last = $last) {
+            <button
+              ngpButton
+              type="button"
+              class="lw-crumb-btn"
+              [class.lw-crumb-btn--current]="last"
+              (click)="mapSelected.emit(crumb.mapId)"
+            >
+              {{ crumb.scopeLevel }}: {{ crumb.name }}
+            </button>
+            @if (!last) {
+              <span class="lw-crumb-sep">/</span>
+            }
+          }
+        </nav>
+      }
+    </div>
+
+    <div class="lw-atlas-filters__actions">
       @if (isGm()) {
+        <label class="lw-visibility-policy" title="Control how player visibility is enforced across map markers and lore">
+          <span>Player View:</span>
+          <select
+            [value]="playerVisibilityMode()"
+            (change)="onVisibilityPolicyChange($any($event.target).value)"
+          >
+            <option value="auto_lore_revealed">Auto (Respects Lore & Revealed Only)</option>
+            <option value="manual_dm">Manual DM Override</option>
+          </select>
+        </label>
+
+        <button
+          ngpButton
+          type="button"
+          class="lw-filter-action-btn lw-filter-action-btn--emerald"
+          (click)="editMapRequested.emit()"
+        >
+          <lw-icon name="compass" [size]="14" />
+          <span>Edit Map</span>
+        </button>
+
         <button
           ngpButton
           type="button"
@@ -53,68 +143,4 @@
       }
     </div>
   </div>
-
-  @if (showExtendedFilters() || breadcrumbs().length > 1) {
-    <div class="lw-atlas-filters__secondary-row">
-      <div class="lw-atlas-filters__pills">
-        @for (filter of filters().slice(8); track filter.id) {
-          <button
-            ngpButton
-            type="button"
-            class="lw-filter-pill lw-filter-pill--sm"
-            [class.lw-filter-pill--active]="isLayerActive(filter.id)"
-            (click)="layerToggled.emit(filter.id)"
-          >
-            <span>{{ filter.label }}</span>
-          </button>
-        }
-
-        <label class="lw-route-session-filter">
-          <span>Route Session:</span>
-          <select
-            [value]="journeySessionFilter()"
-            (change)="onSessionSelect($any($event.target).value)"
-          >
-            <option value="all">All Sessions</option>
-            <option value="12">Up to Session 12</option>
-            <option value="14">Up to Session 14</option>
-            <option value="15">Up to Session 15</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="lw-atlas-filters__preset-controls">
-        @if (breadcrumbs().length > 0) {
-          <nav class="lw-map-breadcrumbs" aria-label="Map Hierarchy">
-            @for (crumb of breadcrumbs(); track crumb.mapId; let last = $last) {
-              <button
-                ngpButton
-                type="button"
-                class="lw-crumb-btn"
-                [class.lw-crumb-btn--current]="last"
-                (click)="mapSelected.emit(crumb.mapId)"
-              >
-                {{ crumb.scopeLevel }}: {{ crumb.name }}
-              </button>
-              @if (!last) {
-                <span class="lw-crumb-sep">/</span>
-              }
-            }
-          </nav>
-        }
-
-        <div class="lw-bulk-btns">
-          <button ngpButton type="button" class="lw-text-btn" (click)="showAllRequested.emit()">
-            Show All
-          </button>
-          <button ngpButton type="button" class="lw-text-btn" (click)="clearAllRequested.emit()">
-            Clear
-          </button>
-          <button ngpButton type="button" class="lw-text-btn" (click)="resetRequested.emit()">
-            Reset
-          </button>
-        </div>
-      </div>
-    </div>
-  }
 </div>

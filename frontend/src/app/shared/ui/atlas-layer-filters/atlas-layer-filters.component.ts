@@ -3,6 +3,7 @@ import { NgpButton } from 'ng-primitives/button';
 import {
   AtlasLayerFilterId,
   AtlasLayerFilterOption,
+  PlayerVisibilityMode,
   WorldMapSummaryVm,
 } from '../../../core/models/world-lore.models';
 import { LwIconComponent } from '../icon/icon.component';
@@ -23,6 +24,7 @@ export class LwAtlasLayerFiltersComponent {
   readonly breadcrumbs = input<readonly WorldMapSummaryVm[]>([]);
   readonly isGm = input<boolean>(false);
   readonly journeySessionFilter = input<number | 'all'>('all');
+  readonly playerVisibilityMode = input<PlayerVisibilityMode>('auto_lore_revealed');
 
   readonly layerToggled = output<AtlasLayerFilterId>();
   readonly showAllRequested = output<void>();
@@ -30,9 +32,11 @@ export class LwAtlasLayerFiltersComponent {
   readonly resetRequested = output<void>();
   readonly mapSelected = output<string>();
   readonly sessionFilterChanged = output<number | 'all'>();
+  readonly playerVisibilityModeChanged = output<PlayerVisibilityMode>();
   readonly createLocationRequested = output<void>();
+  readonly editMapRequested = output<void>();
 
-  readonly showExtendedFilters = signal<boolean>(false);
+  readonly filterMenuOpen = signal<boolean>(false);
 
   isLayerActive(id: AtlasLayerFilterId): boolean {
     return this.activeLayerIds().includes(id);
@@ -40,5 +44,11 @@ export class LwAtlasLayerFiltersComponent {
 
   onSessionSelect(value: string): void {
     this.sessionFilterChanged.emit(value === 'all' ? 'all' : Number(value));
+  }
+
+  onVisibilityPolicyChange(value: string): void {
+    this.playerVisibilityModeChanged.emit(
+      value === 'manual_dm' ? 'manual_dm' : 'auto_lore_revealed',
+    );
   }
 }

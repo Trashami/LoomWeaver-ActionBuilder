@@ -114,7 +114,7 @@ export function buildFallbackLocationVm(
     historicalBackground?: string;
     cultureAndTraditions?: string;
     localMyths?: string;
-    attachedSessionId?: number | null;
+    attachedSessionId?: string | number | null;
     attachedSessionLabel?: string | null;
     playerVisibilityPolicy?: PlayerVisibilityMode;
     style?: MarkerVisualStyleVm;

@@ -427,74 +427,23 @@ public static class WorldLoreStateStore
                 12,
                 "Session 12 · Sanctuary of the Well of Life"
             ),
-            new(
-                "loc-crimson-ambush",
-                "1:Location:loc-crimson-ambush",
-                1,
-                "Crimson Court Road Ambush",
-                "Active Encounter",
-                "Building",
-                "loc-plains-red",
-                "The Plains of Red",
-                "/tactical-combat-engine.jpg",
+            new("loc-crimson-ambush", "1:Location:loc-crimson-ambush", 1, "Crimson Court Road Ambush", "Active Encounter", "Building", "loc-plains-red", "The Plains of Red", "/tactical-combat-engine.jpg",
                 "A shattered wayside watchtower along the southern edge of the Plains of Red where vampire outriders of the Crimson Court waylay envoys traveling to and from Cinth.",
-                "known",
-                "67.5° E, 55.0° S",
-                "map-icrandor-world",
-                null,
-                "scene-cinth-gala",
-                "players",
-                [
-                    new("Parent Region", "The Plains of Red", "loc-plains-red", "location"),
-                    new("Linked Quest", "Masquerade of the Crimson Court", "lore-kingdom-cinth", "lore")
-                ],
+                "known", "67.5° E, 55.0° S", "map-icrandor-world", null, "scene-cinth-gala", "players",
+                [new("Parent Region", "The Plains of Red", "loc-plains-red", "location"), new("Linked Quest", "Masquerade of the Crimson Court", "lore-kingdom-cinth", "lore")],
                 "Once a border toll-post of Cinth, now used by nocturnal thralls loyal to the vampire conspirators.",
-                "Carriages avoid the southern mile-markers after sundown.",
-                "Broken wine crates stamped with Cinth noble seals litter the ditch.",
-                ["Encounters", "Cinth", "Crimson Court"],
-                ["lore-kingdom-cinth"],
-                [
-                    new("1:Quest:quest-cinth-gala", "Masquerade of the Crimson Court", "Main Quest", "Quest", "Ambush Site", "/campaigns?inspect=quest-cinth-gala", "players"),
-                    new("1:Location:loc-plains-red", "The Plains of Red", "Crimson Steppe", "Location", "Surrounding Region", "/weave", "players")
-                ],
-                [],
-                [],
-                15,
-                "Session 15 · Shadows Beneath the Ruined Chapel"
-            )
+                "Carriages avoid the southern mile-markers after sundown.", "Broken wine crates stamped with Cinth noble seals litter the ditch.",
+                ["Encounters", "Cinth", "Crimson Court"], ["lore-kingdom-cinth"],
+                [new("1:Quest:quest-cinth-gala", "Masquerade of the Crimson Court", "Main Quest", "Quest", "Ambush Site", "/campaigns?inspect=quest-cinth-gala", "players"), new("1:Location:loc-plains-red", "The Plains of Red", "Crimson Steppe", "Location", "Surrounding Region", "/weave", "players")],
+                [], [], 15, "Session 15 · Shadows Beneath the Ruined Chapel")
         ],
         [2] =
         [
-            new(
-                "loc-absalom-bazaar",
-                "2:Location:loc-absalom-bazaar",
-                2,
-                "Absalom Grand Bazaar & Clockwork Vaults",
-                "Metropolis Hub",
-                "Settlement",
-                null,
-                "Isle of Kortos",
-                "/landing-assets/engines/engine-3-loommaps-atlas.jpg",
-                "The bustling commercial heart of Absalom above the sealed Starstone clockwork vaults.",
-                "visited",
-                "Center of the Inner Sea",
-                "map-absalom-isle",
-                null,
-                null,
-                "players",
-                [
-                    new("Region", "Isle of Kortos"),
-                    new("System", "Pathfinder 2e Remaster")
-                ],
-                "Founded around the Starstone Cathedral.",
-                "Merchants and pathfinders from every nation trade beneath brass awnings.",
-                "The lower gear-vaults hum in resonance with the cathedral spire.",
-                ["Settlements", "Absalom", "Starstone"],
-                [],
-                [],
-                [],
-                []
-            )
+            new("loc-absalom-bazaar", "2:Location:loc-absalom-bazaar", 2, "Absalom Grand Bazaar & Clockwork Vaults", "Metropolis Hub", "Settlement", null, "Isle of Kortos", "/landing-assets/engines/engine-3-loommaps-atlas.jpg",
+                "The bustling commercial heart of Absalom above the sealed Starstone clockwork vaults.", "visited", "Center of the Inner Sea", "map-absalom-isle", null, null, "players",
+                [new("Region", "Isle of Kortos"), new("System", "Pathfinder 2e Remaster")],
+                "Founded around the Starstone Cathedral.", "Merchants and pathfinders from every nation trade beneath brass awnings.", "The lower gear-vaults hum in resonance with the cathedral spire.",
+                ["Settlements", "Absalom", "Starstone"], [], [], [], [])
         ],
         [3] = []
     };

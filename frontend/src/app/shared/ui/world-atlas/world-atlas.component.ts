@@ -33,9 +33,12 @@ export class LwWorldAtlasComponent {
   readonly markers = input<readonly WorldMapMarkerVm[]>([]);
   readonly waypoints = input<readonly PartyJourneyWaypointVm[]>([]);
   readonly selectedLocationKey = input<string | null>(null);
+  readonly repositioningLocationKey = input<string | null>(null);
   readonly isGm = input<boolean>(false);
 
   readonly markerSelected = output<WorldMapMarkerVm>();
+  readonly markerPositionCommitted = output<{ locationKey: string; xPercent: number; yPercent: number }>();
+  readonly repositionCancelled = output<void>();
   readonly childMapRequested = output<string>();
   readonly parentMapRequested = output<string>();
   readonly createMapRequested = output<{
@@ -49,6 +52,8 @@ export class LwWorldAtlasComponent {
   readonly panX = signal<number>(0);
   readonly panY = signal<number>(0);
   readonly isPanning = signal<boolean>(false);
+  readonly isDraggingMarker = signal<boolean>(false);
+  readonly pendingCoords = signal<{ xPercent: number; yPercent: number } | null>(null);
   readonly pinPlacementMode = signal<boolean>(false);
   readonly newMapName = signal<string>('Nocturne Domain City Atlas');
   readonly newMapScope = signal<'World' | 'Region' | 'Settlement'>('Region');
@@ -59,6 +64,8 @@ export class LwWorldAtlasComponent {
   readonly transformStyle = computed(
     () => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.zoom()})`,
   );
+
+  readonly zoomPercentLabel = computed(() => `${Math.round(this.zoom() * 100)}%`);
 
   readonly playerRoutePolyline = computed(() => {
     const pts = this.waypoints().filter((w) => w.status !== 'gm_planned');
@@ -86,11 +93,18 @@ export class LwWorldAtlasComponent {
   });
 
   zoomIn(): void {
-    this.zoom.update((z) => Math.min(2.4, +(z + 0.2).toFixed(2)));
+    this.zoom.update((z) => Math.min(12.0, +(z * 1.25).toFixed(2)));
   }
 
   zoomOut(): void {
-    this.zoom.update((z) => Math.max(0.85, +(z - 0.2).toFixed(2)));
+    this.zoom.update((z) => Math.max(0.65, +(z / 1.25).toFixed(2)));
+  }
+
+  onWheel(event: WheelEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const factor = event.deltaY < 0 ? 1.14 : 1 / 1.14;
+    this.zoom.update((z) => Math.max(0.65, Math.min(12.0, +(z * factor).toFixed(3))));
   }
 
   resetViewport(): void {
@@ -99,29 +113,91 @@ export class LwWorldAtlasComponent {
     this.panY.set(0);
   }
 
+  markerX(marker: WorldMapMarkerVm): number {
+    const pending = this.pendingCoords();
+    if (pending && this.repositioningLocationKey() === marker.locationKey) {
+      return pending.xPercent;
+    }
+    return marker.xPercent;
+  }
+
+  markerY(marker: WorldMapMarkerVm): number {
+    const pending = this.pendingCoords();
+    if (pending && this.repositioningLocationKey() === marker.locationKey) {
+      return pending.yPercent;
+    }
+    return marker.yPercent;
+  }
+
+  onMarkerMouseDown(marker: WorldMapMarkerVm, event: MouseEvent): void {
+    if (this.repositioningLocationKey() === marker.locationKey && this.isGm()) {
+      event.stopPropagation();
+      this.isDraggingMarker.set(true);
+      this.pendingCoords.set({ xPercent: marker.xPercent, yPercent: marker.yPercent });
+    }
+  }
+
   onPointerDown(event: MouseEvent): void {
     if ((event.target as HTMLElement)?.closest('button, a, .lw-atlas-marker')) return;
+    const viewportEl = (event.currentTarget as HTMLElement).querySelector('.lw-atlas-viewport') as HTMLElement | null;
+    const rect = (viewportEl ?? (event.currentTarget as HTMLElement)).getBoundingClientRect();
+    const xPct = Math.max(2, Math.min(98, Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 10));
+    const yPct = Math.max(2, Math.min(98, Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 10));
+
+    if (this.repositioningLocationKey() && this.isGm()) {
+      this.pendingCoords.set({ xPercent: xPct, yPercent: yPct });
+      this.isDraggingMarker.set(true);
+      return;
+    }
+
     if (this.pinPlacementMode() && this.isGm()) {
-      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      const xPct = Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 10;
-      const yPct = Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 10;
       this.pinPlacementMode.set(false);
       this.canvasPinPlaced.emit({ xPercent: xPct, yPercent: yPct });
       return;
     }
+
     this.isPanning.set(true);
     this.dragStartX = event.clientX - this.panX();
     this.dragStartY = event.clientY - this.panY();
   }
 
   onPointerMove(event: MouseEvent): void {
+    if (this.isDraggingMarker() && this.repositioningLocationKey()) {
+      const viewportEl = (event.currentTarget as HTMLElement).querySelector('.lw-atlas-viewport') as HTMLElement | null;
+      if (viewportEl) {
+        const rect = viewportEl.getBoundingClientRect();
+        const xPct = Math.max(2, Math.min(98, Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 10));
+        const yPct = Math.max(2, Math.min(98, Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 10));
+        this.pendingCoords.set({ xPercent: xPct, yPercent: yPct });
+      }
+      return;
+    }
     if (!this.isPanning()) return;
-    this.panX.set(Math.max(-260, Math.min(260, event.clientX - this.dragStartX)));
-    this.panY.set(Math.max(-180, Math.min(180, event.clientY - this.dragStartY)));
+    const maxPanX = Math.max(380, (this.zoom() - 0.5) * 650);
+    const maxPanY = Math.max(260, (this.zoom() - 0.5) * 450);
+    this.panX.set(Math.max(-maxPanX, Math.min(maxPanX, event.clientX - this.dragStartX)));
+    this.panY.set(Math.max(-maxPanY, Math.min(maxPanY, event.clientY - this.dragStartY)));
   }
 
   onPointerUp(): void {
     this.isPanning.set(false);
+    this.isDraggingMarker.set(false);
+  }
+
+  commitReposition(): void {
+    const key = this.repositioningLocationKey();
+    if (!key) return;
+    const existing = this.markers().find((m) => m.locationKey === key);
+    const coords = this.pendingCoords() ?? (existing ? { xPercent: existing.xPercent, yPercent: existing.yPercent } : null);
+    if (coords) {
+      this.markerPositionCommitted.emit({ locationKey: key, xPercent: coords.xPercent, yPercent: coords.yPercent });
+    }
+    this.pendingCoords.set(null);
+  }
+
+  cancelReposition(): void {
+    this.pendingCoords.set(null);
+    this.repositionCancelled.emit();
   }
 
   selectMarker(marker: WorldMapMarkerVm, event: MouseEvent): void {
@@ -138,8 +214,9 @@ export class LwWorldAtlasComponent {
     });
   }
 
-  markerIcon(category: string): string {
-    switch (category) {
+  markerIcon(marker: WorldMapMarkerVm): string {
+    if (marker.style?.defaultIconName) return marker.style.defaultIconName;
+    switch (marker.category) {
       case 'Settlements':
         return 'landmark';
       case 'Quests':

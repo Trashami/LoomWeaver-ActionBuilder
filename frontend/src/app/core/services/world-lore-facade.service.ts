@@ -293,7 +293,7 @@ export class WorldLoreFacadeService {
     mapId?: string | null;
     childMapId?: string | null;
     linkedSceneKey?: string | null;
-    attachedSessionId?: number | null;
+    attachedSessionId?: string | number | null;
     attachedSessionLabel?: string | null;
     playerVisibilityPolicy?: PlayerVisibilityMode;
     style?: MarkerVisualStyleVm;

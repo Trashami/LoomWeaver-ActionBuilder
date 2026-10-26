@@ -171,11 +171,22 @@
         }
       </div>
 
-      @if (worldLore.selectedLoreEntry(); as activeEntry) {
-        <aside class="lw-lore-reader">
+      <aside class="lw-lore-reader" aria-label="Selected Lore Codex Reader">
+        <div class="lw-lore-reader__banner">
+          <lw-icon name="book-open" [size]="14"></lw-icon>
+          <span>SELECTED LORE ENTRY · ENCYCLOPEDIA READER</span>
+        </div>
+
+        @if (worldLore.selectedLoreEntry(); as activeEntry) {
+          @if (activeEntry.artworkUrl) {
+            <div class="lw-lore-reader__art-wrap">
+              <img [src]="activeEntry.artworkUrl" [alt]="activeEntry.title" class="lw-lore-reader__art" />
+            </div>
+          }
+
           <div class="lw-lore-reader__header">
             <div>
-              <span class="lw-lore-reader__kicker">{{ activeEntry.category }}</span>
+              <span class="lw-lore-reader__kicker">{{ activeEntry.category }} · {{ activeEntry.subtitle }}</span>
               <h3>{{ activeEntry.title }}</h3>
             </div>
             @if (worldLore.isGm()) {
@@ -200,7 +211,7 @@
 
           @if (activeEntry.linkedEntityKeys.length > 0) {
             <div class="lw-lore-reader__section">
-              <h5>LINKED ATLAS LOCATIONS</h5>
+              <h5>LINKED ATLAS LOCATIONS & ENTITIES</h5>
               <div class="lw-lore-reader__links">
                 @for (locKey of activeEntry.linkedEntityKeys; track locKey) {
                   <button
@@ -220,13 +231,19 @@
               <h5>TAGS</h5>
               <div class="lw-lore-reader__links">
                 @for (tag of activeEntry.tags; track tag) {
-                  <span class="lw-lore-tag">#{{ tag }}</span>
+                  <button type="button" class="lw-lore-pill" (click)="worldLore.loreTagFilter.set(tag)">#{{ tag }}</button>
                 }
               </div>
             </div>
           }
-        </aside>
-      }
+        } @else {
+          <div class="lw-lore-reader__placeholder">
+            <lw-icon name="menu_book" [size]="30"></lw-icon>
+            <h4>Select a Lore Article</h4>
+            <p>Click any encyclopedia card on the left to read its full canon article, linked locations, and tags here.</p>
+          </div>
+        }
+      </aside>
     </div>
   </section>
 }
