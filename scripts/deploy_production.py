@@ -196,7 +196,7 @@ if os.path.exists(eb_index):
         f.write(raw)
 
 # 2. Configure canonical 301 redirect for www.loom-weaver.com -> loom-weaver.com (preserving /google-sso.html)
-loom_nginx = """server {
+loom_nginx = '''server {
     listen 80;
     listen [::]:80;
     server_name loom-weaver.com www.loom-weaver.com;
@@ -321,12 +321,12 @@ server {
         try_files $uri $uri/ /index.html;
     }
 }
-"""
+'''
 with open("/etc/nginx/sites-available/loom-weaver", "w", encoding="utf-8") as f:
     f.write(loom_nginx)
 
 # 3. Redirect legacy loomweaver.geo-gamers.com and maps.loomweaver.geo-gamers.com with 301 to loom-weaver.com
-geo_gamers_nginx = """server {
+geo_gamers_nginx = '''server {
     listen 80;
     listen 443 ssl http2;
     server_name loomweaver.geo-gamers.com www.loomweaver.geo-gamers.com;
@@ -349,7 +349,7 @@ server {
 
     return 301 https://maps.loom-weaver.com$request_uri;
 }
-"""
+'''
 with open("/etc/nginx/sites-available/loomweaver-geo-gamers", "w", encoding="utf-8") as f:
     f.write(geo_gamers_nginx)
 
