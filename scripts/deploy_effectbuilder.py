@@ -245,6 +245,8 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location /uploads/ { proxy_pass http://127.0.0.1:5000/uploads/; }
+    location /assets/models-3d/ { alias /var/www/loomweaver/assets/models-3d/; }
+    location /assets/object-library/ { alias /var/www/loomweaver/assets/object-library/; }
     location /assets/ { alias /var/www/loom-weaver/client/assets/; }
     location /tokens/ { proxy_pass http://127.0.0.1:5000/tokens/; }
     location /img/ { proxy_pass http://127.0.0.1:5000/img/; }

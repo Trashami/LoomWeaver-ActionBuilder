@@ -1,4 +1,5 @@
 node_modules/
 dist/
 .angular/
+public/models-3d/*.glb
 *.tar.gz
