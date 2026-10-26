@@ -93,8 +93,8 @@
           <div class="lw-tier-card__top">
             <h4>{{ tier.name }}</h4>
             <lw-badge
-              [label]="tier.includesWeave ? 'The Loom + The Weave' : 'The Loom Included'"
-              [tone]="tier.includesWeave ? 'gold' : 'emerald'"
+              [label]="isWeaveEnabled() && tier.includesWeave ? 'The Loom + The Weave' : 'The Loom Included'"
+              [tone]="isWeaveEnabled() && tier.includesWeave ? 'gold' : 'emerald'"
             />
           </div>
           <div class="lw-tier-card__price">

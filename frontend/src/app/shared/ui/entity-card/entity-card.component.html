@@ -12,7 +12,7 @@
     <div class="lw-entity-card__badges">
       <lw-badge [label]="entity().entityType" tone="neutral" />
       <lw-badge [label]="entity().visibility" [tone]="visibilityTone()" />
-      @if (entity().canonStatus === 'draft') {
+      @if (generativeAiEnabled() && entity().canonStatus === 'draft') {
         <lw-badge label="Draft" tone="draft" />
       }
       @if (entity().levelUpEligible) {
@@ -33,7 +33,7 @@
     }
 
     <div class="lw-entity-card__actions">
-      @if (entity().canonStatus === 'draft' && canApprove()) {
+      @if (generativeAiEnabled() && entity().canonStatus === 'draft' && canApprove()) {
         <lw-button variant="gold" size="sm" icon="check" (pressed)="approveRequested.emit(entity())">
           Approve Canon
         </lw-button>
@@ -41,7 +41,7 @@
       <lw-button variant="ghost" size="sm" icon="network" (pressed)="inspectRequested.emit(entity())">
         Inspect
       </lw-button>
-      <a class="lw-entity-card__link" [routerLink]="entity().routeLink">
+      <a class="lw-entity-card__link" [routerLink]="resolvedRouteLink()">
         <span>Open</span>
         <lw-icon name="arrow-right" [size]="14" />
       </a>

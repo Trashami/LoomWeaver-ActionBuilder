@@ -71,7 +71,7 @@ export class AppComponent {
 
   readonly primarySidebarNav: readonly StudioPrimaryNavItem[] = [
     { id: 'dashboard', label: 'Dashboard', route: '/home' },
-    { id: 'world-lore', label: 'World & Lore', route: '/weave' },
+    { id: 'world-lore', label: 'World & Lore', route: '/world-lore' },
     { id: 'quests-story', label: 'Quests & Story', route: '/campaigns' },
     { id: 'characters', label: 'Characters', route: '/characters' },
     { id: 'maps-scenes', label: 'Maps & Scenes', route: '/maps' },
@@ -80,13 +80,23 @@ export class AppComponent {
     { id: 'timelines', label: 'Timelines', route: '/statistics' },
   ];
 
-  readonly engineSidebarNav: readonly StudioPrimaryNavItem[] = [
+  private readonly baseEngineSidebarNav: readonly StudioPrimaryNavItem[] = [
     { id: 'arcane-vtt', label: 'Arcane Screen VTT', route: '/arcane-screen' },
     { id: 'encounters', label: 'Encounters & Bestiary', route: '/encounters' },
     { id: 'dice-forge', label: '3D Dice Forge', route: '/dice' },
     { id: 'effects-rules', label: 'Actions & FX Studio', route: '/effects' },
     { id: 'marketplace', label: 'Creator Marketplace', route: '/marketplace' },
   ];
+
+  readonly engineSidebarNav = computed<readonly StudioPrimaryNavItem[]>(() => {
+    if (!this.store.weaveEnabled()) {
+      return this.baseEngineSidebarNav;
+    }
+    return [
+      ...this.baseEngineSidebarNav,
+      { id: 'the-weave', label: 'The Weave (AI Drafts)', route: '/weave' },
+    ];
+  });
 
   constructor() {
     this.router.events

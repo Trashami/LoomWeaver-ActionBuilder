@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   RecentWorldDiscoveryVm,
@@ -37,6 +37,11 @@ import {
 export class WeavePageComponent {
   readonly store = inject(LoomWeaverStoreService);
   readonly worldLore = inject(WorldLoreFacadeService);
+
+  readonly generativeAiEnabled = input<boolean>(false);
+  readonly isWeaveEnabled = computed(
+    () => this.generativeAiEnabled() || this.store.weaveEnabled(),
+  );
 
   readonly createLocationModalOpen = signal<boolean>(false);
   readonly newLocName = signal<string>('');

@@ -219,7 +219,11 @@
             <span class="why-icon" aria-hidden="true"><lw-icon name="book-open" [size]="19" /></span>
             <div>
               <h3>One Loom, wherever you play—zero forced AI</h3>
-              <p>A free, zero-hallucination campaign memory assistant on every page for GMs and players. The Weave’s creative drafting studio remains 100% optional and requires explicit GM review.</p>
+              @if (isWeaveEnabled()) {
+                <p>A free, zero-hallucination campaign memory assistant on every page for GMs and players. The Weave’s creative drafting studio remains 100% optional and requires explicit GM review.</p>
+              } @else {
+                <p>A free, zero-hallucination campaign memory assistant on every page for GMs and players—grounded strictly in your established canon with generative AI off by default.</p>
+              }
             </div>
           </article>
         </div>
@@ -236,7 +240,7 @@
       </p>
 
       <div class="features">
-        @for (pillar of primaryPillars; track pillar.id) {
+        @for (pillar of primaryPillars(); track pillar.id) {
           <article class="feature" [class.feature-gold]="pillar.accent === 'gold'">
             @if (pillar.flag) {
               <span class="flag">{{ pillar.flag }}</span>
@@ -354,7 +358,7 @@
           character roster, and campaign graph across every subdomain.
         </p>
         <div class="engine-grid">
-          @for (engine of studioEngines; track engine.id) {
+          @for (engine of studioEngines(); track engine.id) {
             <article class="engine-card">
               <div class="engine-img-wrap">
                 <img [src]="engine.image" [alt]="engine.title" loading="lazy" />
@@ -395,7 +399,7 @@
           </div>
         </div>
         <div class="plans">
-          @for (plan of pricingPlans; track plan.id) {
+          @for (plan of pricingPlans(); track plan.id) {
             <article class="plan" [class.popular]="plan.popular">
               @if (plan.popular && plan.popularLabel) {
                 <span class="popular-label">{{ plan.popularLabel }}</span>
@@ -449,7 +453,7 @@
       <div class="section-kicker">Frequently Asked Questions</div>
       <h2 id="faq-heading">Everything about LoomWeaver &amp; LoomWeaver VTT.</h2>
       <div class="faq-list">
-        @for (item of faqs; track item.id) {
+        @for (item of faqs(); track item.id) {
           <article class="faq-item" [class.open]="openFaqId() === item.id">
             <button type="button" class="faq-question" [attr.aria-expanded]="openFaqId() === item.id" (click)="toggleFaq(item.id)">
               <span>{{ item.question }}</span>

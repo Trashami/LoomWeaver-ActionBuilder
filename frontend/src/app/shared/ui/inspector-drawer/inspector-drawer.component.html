@@ -3,7 +3,7 @@
   ngpTabset
   [ngpTabsetValue]="activeTab()"
   class="lw-inspector"
-  aria-label="Contextual World Inspector and Session Adventure Guide"
+  aria-label="Contextual World Inspector and Playable Session & Location Adventure Guide"
 >
   @if (isWorldLoreRoute()) {
     <div class="lw-inspector__context-switcher" role="group" aria-label="Right Panel Mode">
@@ -13,7 +13,6 @@
         [class.lw-inspector__context-btn--active]="worldLore.inspectorContextMode() === 'world'"
         (click)="worldLore.inspectorContextMode.set('world')"
       >
-        <lw-icon name="public" [size]="13" />
         <span>{{ worldLore.selectedLocation() ? 'Location Inspector' : 'World Overview' }}</span>
       </button>
       <button
@@ -22,7 +21,6 @@
         [class.lw-inspector__context-btn--active]="worldLore.inspectorContextMode() === 'session-guide'"
         (click)="worldLore.inspectorContextMode.set('session-guide')"
       >
-        <lw-icon name="menu_book" [size]="13" />
         <span>Session Guide</span>
       </button>
     </div>
@@ -59,7 +57,52 @@
     </lw-scroll-area>
   } @else {
     <header class="lw-inspector__act-header">
+      <div class="lw-inspector__breadcrumbs" aria-label="Adventure Scope Breadcrumbs">
+        @for (crumb of g.breadcrumbs; track crumb.nodeId; let last = $last) {
+          <button
+            type="button"
+            class="lw-inspector__crumb"
+            [class.lw-inspector__crumb--active]="last"
+            (click)="selectScope(crumb.scopeKind, crumb.nodeId)"
+          >
+            {{ crumb.label }}
+          </button>
+          @if (!last) {
+            <span class="lw-inspector__crumb-sep">/</span>
+          }
+        }
+      </div>
       <h2 class="lw-inspector__act-title">{{ g.headerTitle }}</h2>
+      <p class="lw-inspector__act-sub">{{ g.headerSubtitle }}</p>
+
+      <div class="lw-inspector__scope-bar" role="group" aria-label="Session and Room Scope Selector">
+        <button
+          type="button"
+          class="lw-inspector__scope-pill"
+          [class.lw-inspector__scope-pill--active]="g.activeScopeId === 'session-15'"
+          (click)="selectScope('session', 'session-15')"
+        >
+          Session 15
+        </button>
+        <button
+          type="button"
+          class="lw-inspector__scope-pill"
+          [class.lw-inspector__scope-pill--active]="g.activeScopeId === 'node-loc-ruined-chapel'"
+          (click)="selectScope('location', 'node-loc-ruined-chapel')"
+        >
+          Chapel Site
+        </button>
+        @for (room of g.availableRooms; track room.id) {
+          <button
+            type="button"
+            class="lw-inspector__scope-pill"
+            [class.lw-inspector__scope-pill--active]="g.activeScopeId === room.id"
+            (click)="selectScope('room', room.id)"
+          >
+            {{ room.areaKey }}
+          </button>
+        }
+      </div>
     </header>
 
     <nav ngpTabList class="lw-inspector__tabs" role="tablist">
@@ -80,12 +123,25 @@
       }
     </nav>
 
+    <div class="lw-inspector__filter-strip" role="group" aria-label="Play Progress Filter">
+      @for (pf of progressFilters; track pf.id) {
+        <button
+          type="button"
+          class="lw-inspector__filter-chip"
+          [class.lw-inspector__filter-chip--active]="advGuide.activeProgressFilter() === pf.id"
+          (click)="advGuide.setProgressFilter(pf.id)"
+        >
+          {{ pf.label }}
+        </button>
+      }
+    </div>
+
     <lw-scroll-area
       tone="emerald"
       [scrollbarWidth]="4"
       thumbColor="#49e892"
       trackColor="rgba(6, 22, 16, 0.78)"
-      padding="0.85rem 0.95rem 1.25rem"
+      padding="0.8rem 0.95rem 1.25rem"
     >
       <div class="lw-inspector__scroll">
         <div class="lw-inspector__hero-card">
@@ -94,10 +150,32 @@
             [style.background-image]="'linear-gradient(180deg, rgba(6, 10, 12, 0.15) 0%, rgba(8, 12, 14, 0.92) 100%), url(' + g.artworkUrl + ')'"
           >
             <div class="lw-inspector__hero-glow"></div>
+            <div class="lw-inspector__map-overlay">
+              <span class="lw-inspector__map-badge">{{ g.assignedBattlemap.title }}</span>
+              <div class="lw-inspector__map-links">
+                <a class="lw-inspector__map-link" [routerLink]="g.assignedBattlemap.routeLink">Open Map</a>
+                <a class="lw-inspector__map-link" [routerLink]="g.assignedBattlemap.vttRouteLink">Launch VTT</a>
+              </div>
+            </div>
           </div>
           <blockquote class="lw-inspector__epigraph">
             {{ g.epigraph }}
           </blockquote>
+          @if (g.assignedBattlemap.clickableRegions.length > 0) {
+            <div class="lw-inspector__region-bar">
+              <span class="lw-inspector__region-label">Map Areas:</span>
+              @for (reg of g.assignedBattlemap.clickableRegions; track reg.regionId) {
+                <button
+                  type="button"
+                  class="lw-inspector__region-chip"
+                  [class.lw-inspector__region-chip--active]="g.activeScopeId === reg.roomNodeId"
+                  (click)="selectScope('room', reg.roomNodeId)"
+                >
+                  {{ reg.areaKey }} · {{ reg.title.replace(reg.areaKey + ': ', '') }}
+                </button>
+              }
+            </div>
+          }
         </div>
 
         @if (store.inspectedEntity(); as entity) {
@@ -122,7 +200,9 @@
             <div class="lw-inspector__badges">
               <lw-badge [label]="entity.entityType" tone="gold" />
               <lw-badge [label]="entity.visibility" [tone]="entity.visibility === 'gm' ? 'gm' : 'emerald'" />
-              <lw-badge [label]="entity.canonStatus" [tone]="entity.canonStatus === 'draft' ? 'draft' : 'approved'" />
+              @if (isWeaveEnabled() || entity.canonStatus !== 'draft') {
+                <lw-badge [label]="entity.canonStatus" [tone]="entity.canonStatus === 'draft' ? 'draft' : 'approved'" />
+              }
             </div>
 
             <p class="lw-inspector__summary-text">{{ entity.summary }}</p>
@@ -131,7 +211,7 @@
               <a ngpButton class="lw-inspector__route-btn" [routerLink]="entity.routeLink">
                 <span>Open {{ entity.routeLink }}</span>
               </a>
-              @if (entity.canonStatus === 'draft' && store.viewerRole() === 'gm') {
+              @if (isWeaveEnabled() && entity.canonStatus === 'draft' && store.viewerRole() === 'gm') {
                 <lw-button
                   variant="gold"
                   size="sm"
@@ -166,15 +246,78 @@
               ngpButton
               type="button"
               class="lw-inspector__section-header"
+              (click)="atTableExpanded.set(!atTableExpanded())"
+            >
+              <span>AT THE TABLE · READ-ALOUD, EXITS & CHECKS</span>
+              <lw-icon [name]="atTableExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+            </button>
+            @if (atTableExpanded()) {
+              <p class="lw-inspector__summary-text">{{ g.immediateSituation }}</p>
+
+              @for (block of g.readAloudBlocks; track block.blockId) {
+                <div class="lw-inspector__readaloud">
+                  <div class="lw-inspector__readaloud-head">
+                    <strong>{{ block.title }}</strong>
+                    @if (store.viewerRole() === 'gm') {
+                      <button
+                        type="button"
+                        class="lw-inspector__mini-btn"
+                        (click)="advGuide.shareWithPlayers(block.blockId, block.title)"
+                      >
+                        {{ block.sharedWithPlayers ? 'Shared' : 'Share to Party' }}
+                      </button>
+                    }
+                  </div>
+                  <p>{{ block.content }}</p>
+                </div>
+              }
+
+              <div class="lw-inspector__exits">
+                @for (ex of g.exits; track ex.targetNodeId) {
+                  <button
+                    type="button"
+                    class="lw-inspector__exit-btn"
+                    (click)="selectScope('room', ex.targetNodeId)"
+                  >
+                    <span>{{ ex.directionLabel }}</span>
+                    <small>Focus Room</small>
+                  </button>
+                }
+              </div>
+
+              @for (chk of g.skillChecks; track chk.blockId) {
+                <div class="lw-inspector__check-card">
+                  <div class="lw-inspector__check-top">
+                    <strong>DC {{ chk.dc }} {{ chk.skillLabel }} · {{ chk.title }}</strong>
+                    <button
+                      type="button"
+                      class="lw-inspector__mini-btn"
+                      (click)="toggleCheckOutcome(chk.blockId)"
+                    >
+                      {{ isCheckRevealed(chk.blockId) ? 'Hide Outcome' : 'Resolve Check' }}
+                    </button>
+                  </div>
+                  @if (isCheckRevealed(chk.blockId)) {
+                    <p class="lw-inspector__check-pass"><strong>Pass:</strong> {{ chk.passOutcome }}</p>
+                    <p class="lw-inspector__check-fail"><strong>Fail:</strong> {{ chk.failOutcome }}</p>
+                  }
+                </div>
+              }
+            }
+          </section>
+
+          <section class="lw-inspector__section">
+            <button
+              ngpButton
+              type="button"
+              class="lw-inspector__section-header"
               (click)="summaryExpanded.set(!summaryExpanded())"
             >
               <span>SUMMARY</span>
               <lw-icon [name]="summaryExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
             </button>
             @if (summaryExpanded()) {
-              <p class="lw-inspector__summary-text">
-                {{ g.summary }}
-              </p>
+              <p class="lw-inspector__summary-text">{{ g.summary }}</p>
             }
           </section>
 
@@ -191,22 +334,107 @@
             @if (beatsExpanded()) {
               <div class="lw-inspector__checklist">
                 @for (beat of g.beats; track beat.id) {
-                  <button
-                    ngpButton
-                    ngpCheckbox
-                    [ngpCheckboxChecked]="beat.done"
-                    type="button"
-                    class="lw-inspector__check-row"
-                    [class.lw-inspector__check-row--done]="beat.done"
-                    (click)="toggleBeat(beat.id)"
-                  >
-                    <span class="lw-inspector__checkbox" [class.lw-inspector__checkbox--checked]="beat.done">
-                      @if (beat.done) {
-                        <lw-icon name="check" [size]="12" />
-                      }
-                    </span>
-                    <span class="lw-inspector__check-label">{{ beat.label }}</span>
-                  </button>
+                  <div class="lw-inspector__beat-wrap">
+                    <button
+                      ngpButton
+                      ngpCheckbox
+                      [ngpCheckboxChecked]="beat.done"
+                      type="button"
+                      class="lw-inspector__check-row"
+                      [class.lw-inspector__check-row--done]="beat.done"
+                      (click)="toggleBeat(beat.id)"
+                    >
+                      <span class="lw-inspector__checkbox" [class.lw-inspector__checkbox--checked]="beat.done">
+                        @if (beat.done) {
+                          <lw-icon name="check" [size]="12" />
+                        }
+                      </span>
+                      <span class="lw-inspector__check-label">{{ beat.label }}</span>
+                    </button>
+                    @if (beat.linkedRoomNodeId; as roomNode) {
+                      <button
+                        type="button"
+                        class="lw-inspector__mini-btn"
+                        (click)="selectScope('room', roomNode)"
+                      >
+                        Room
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </section>
+
+          <section class="lw-inspector__section">
+            <div class="lw-inspector__section-bar">
+              <button
+                ngpButton
+                type="button"
+                class="lw-inspector__section-header"
+                (click)="keyNpcsExpanded.set(!keyNpcsExpanded())"
+              >
+                <span>KEY NPCS & PARTY CAST ({{ advGuide.filteredKeyNpcs().length }})</span>
+                <lw-icon [name]="keyNpcsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+              </button>
+              <button
+                type="button"
+                class="lw-inspector__mini-btn"
+                (click)="showQuickNpcCreator.set(!showQuickNpcCreator())"
+              >
+                {{ showQuickNpcCreator() ? 'Cancel' : '+ Add NPC' }}
+              </button>
+            </div>
+
+            @if (showQuickNpcCreator()) {
+              <div class="lw-inspector__quick-form">
+                <input
+                  type="text"
+                  class="lw-inspector__input"
+                  placeholder="NPC or Character Name"
+                  [ngModel]="quickNpcName()"
+                  (ngModelChange)="quickNpcName.set($event)"
+                />
+                <input
+                  type="text"
+                  class="lw-inspector__input"
+                  placeholder="Role (e.g. Chapel Warden)"
+                  [ngModel]="quickNpcRole()"
+                  (ngModelChange)="quickNpcRole.set($event)"
+                />
+                <button type="button" class="lw-inspector__route-btn" (click)="submitQuickNpc()">
+                  Populate into Session & Room
+                </button>
+              </div>
+            }
+
+            @if (keyNpcsExpanded()) {
+              <div class="lw-inspector__npc-list">
+                @for (npc of advGuide.filteredKeyNpcs(); track npc.nodeId) {
+                  <div class="lw-inspector__npc-card">
+                    <button
+                      ngpButton
+                      type="button"
+                      class="lw-inspector__npc-row"
+                      (click)="inspectNpc(npc.compositeKey, npc.name, npc.role, npc.motive, npc.routeLink)"
+                    >
+                      <span
+                        ngpAvatar
+                        class="lw-inspector__npc-avatar"
+                        [style.border-color]="npc.ringColor"
+                      >
+                        <span ngpAvatarFallback>{{ npc.initials }}</span>
+                      </span>
+                      <span class="lw-inspector__npc-copy">
+                        <strong>{{ npc.name }}</strong>
+                        <small [attr.data-tone]="npc.dispositionTone">{{ npc.role }}</small>
+                        <span class="lw-inspector__why-tag">{{ npc.whyIncluded }}</span>
+                      </span>
+                    </button>
+                    <div class="lw-inspector__npc-links">
+                      <a class="lw-inspector__mini-link" [routerLink]="npc.routeLink">Open Dossier</a>
+                    </div>
+                  </div>
                 }
               </div>
             }
@@ -217,34 +445,68 @@
               ngpButton
               type="button"
               class="lw-inspector__section-header"
-              (click)="keyNpcsExpanded.set(!keyNpcsExpanded())"
+              (click)="encountersExpanded.set(!encountersExpanded())"
             >
-              <span>KEY NPCS</span>
-              <lw-icon [name]="keyNpcsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+              <span>ENCOUNTERS, CLUES & REWARDS</span>
+              <lw-icon [name]="encountersExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
             </button>
-            @if (keyNpcsExpanded()) {
-              <div class="lw-inspector__npc-list">
-                @for (npc of g.keyNpcs; track npc.compositeKey) {
-                  <button
-                    ngpButton
-                    type="button"
-                    class="lw-inspector__npc-row"
-                    (click)="inspectNpc(npc.compositeKey)"
-                  >
-                    <span
-                      ngpAvatar
-                      class="lw-inspector__npc-avatar"
-                      [style.border-color]="npc.ringColor"
+            @if (encountersExpanded()) {
+              @for (enc of advGuide.filteredEncounters(); track enc.nodeId) {
+                <div class="lw-inspector__item-card">
+                  <div class="lw-inspector__item-head">
+                    <strong>{{ enc.title }}</strong>
+                    <lw-badge [label]="enc.difficulty + ' · ' + enc.xpReward + ' XP'" tone="crimson" />
+                  </div>
+                  <span class="lw-inspector__why-tag">{{ enc.whyIncluded }}</span>
+                  <p class="lw-inspector__summary-text">{{ enc.tacticsSummary }}</p>
+                  <div class="lw-inspector__npc-links">
+                    <a class="lw-inspector__mini-link" [routerLink]="enc.routeLink">Open Encounter</a>
+                    <a class="lw-inspector__mini-link" [routerLink]="enc.vttRouteLink">Launch Combat VTT</a>
+                  </div>
+                </div>
+              }
+
+              @for (item of advGuide.filteredCluesAndHazards(); track item.nodeId) {
+                <div class="lw-inspector__item-card">
+                  <div class="lw-inspector__item-head">
+                    <strong>{{ item.title }}</strong>
+                    <lw-badge [label]="item.progressState" tone="gold" />
+                  </div>
+                  <span class="lw-inspector__why-tag">{{ item.whyIncluded }}</span>
+                  <p class="lw-inspector__summary-text">{{ item.summary }}</p>
+                  <div class="lw-inspector__npc-links">
+                    <a class="lw-inspector__mini-link" [routerLink]="item.routeLink">Inspect Content</a>
+                    <button
+                      type="button"
+                      class="lw-inspector__mini-btn"
+                      (click)="advGuide.updateNodeState(item.nodeId, item.progressState === 'discovered' ? 'completed' : 'discovered')"
                     >
-                      <span ngpAvatarFallback>{{ npc.initials }}</span>
-                    </span>
-                    <span class="lw-inspector__npc-copy">
-                      <strong>{{ npc.name }}</strong>
-                      <small [attr.data-tone]="npc.dispositionTone">{{ npc.role }}</small>
-                    </span>
-                  </button>
-                }
-              </div>
+                      {{ item.progressState === 'discovered' ? 'Mark Completed' : 'Mark Discovered' }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @for (trs of g.treasuresAndRewards; track trs.nodeId) {
+                <div class="lw-inspector__item-card">
+                  <div class="lw-inspector__item-head">
+                    <strong>{{ trs.title }}</strong>
+                    <lw-badge [label]="trs.rewardAwarded ? 'Awarded' : '+' + (trs.xpReward ?? 1200) + ' XP'" tone="emerald" />
+                  </div>
+                  <span class="lw-inspector__why-tag">{{ trs.whyIncluded }}</span>
+                  <div class="lw-inspector__npc-links">
+                    <a class="lw-inspector__mini-link" [routerLink]="trs.routeLink">View Artifact</a>
+                    <button
+                      type="button"
+                      class="lw-inspector__mini-btn"
+                      [disabled]="trs.rewardAwarded"
+                      (click)="advGuide.awardReward(trs.nodeId, 'reward-c3-star-arrow', trs.xpReward ?? 1200, trs.currencyOrItemLabel ?? trs.title)"
+                    >
+                      {{ trs.rewardAwarded ? 'Reward Recorded' : 'Award Party XP & Loot' }}
+                    </button>
+                  </div>
+                </div>
+              }
             }
           </section>
 
@@ -271,24 +533,64 @@
               }
             </section>
           }
+        } @else if (activeTab() === 'npcs') {
+          <section class="lw-inspector__section">
+            <div class="lw-inspector__tab-list">
+              @for (npc of g.npcsTabItems; track npc.nodeId) {
+                <div class="lw-inspector__npc-card">
+                  <button
+                    ngpButton
+                    type="button"
+                    class="lw-inspector__npc-row"
+                    (click)="inspectNpc(npc.compositeKey, npc.name, npc.role, npc.motive, npc.routeLink)"
+                  >
+                    <span ngpAvatar class="lw-inspector__npc-avatar" [style.border-color]="npc.ringColor">
+                      <span ngpAvatarFallback>{{ npc.initials }}</span>
+                    </span>
+                    <span class="lw-inspector__npc-copy">
+                      <strong>{{ npc.name }}</strong>
+                      <small>{{ npc.role }}</small>
+                      <span class="lw-inspector__why-tag">{{ npc.whyIncluded }}</span>
+                    </span>
+                  </button>
+                  <div class="lw-inspector__npc-links">
+                    <a class="lw-inspector__mini-link" [routerLink]="npc.routeLink">Open {{ npc.routeLink }}</a>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
         } @else {
           <section class="lw-inspector__section">
             <div class="lw-inspector__tab-list">
-              @for (entity of tabEntities(); track entity.compositeKey) {
-                <button
-                  ngpButton
-                  type="button"
-                  class="lw-inspector__npc-row"
-                  (click)="store.inspectEntity(entity.compositeKey)"
-                >
-                  <span ngpAvatar class="lw-inspector__npc-avatar">
-                    <span ngpAvatarFallback>{{ entity.name.slice(0, 2).toUpperCase() }}</span>
-                  </span>
-                  <span class="lw-inspector__npc-copy">
-                    <strong>{{ entity.name }}</strong>
-                    <small>{{ entity.subtitle }}</small>
-                  </span>
-                </button>
+              @for (item of filteredTabItems(); track item.nodeId) {
+                <div class="lw-inspector__item-card">
+                  <div class="lw-inspector__item-head">
+                    <button
+                      type="button"
+                      class="lw-inspector__item-title-btn"
+                      (click)="inspectGuideElement(item)"
+                    >
+                      <strong>{{ item.title }}</strong>
+                    </button>
+                    <lw-badge [label]="item.progressState" tone="gold" />
+                  </div>
+                  <small class="lw-inspector__entity-sub">{{ item.subtitle }}</small>
+                  <span class="lw-inspector__why-tag">{{ item.whyIncluded }}</span>
+                  <p class="lw-inspector__summary-text">{{ item.summary }}</p>
+                  <div class="lw-inspector__npc-links">
+                    <a class="lw-inspector__mini-link" [routerLink]="item.routeLink">Open {{ item.routeLink }}</a>
+                    @if (item.elementKind === 'room' || item.elementKind === 'location') {
+                      <button
+                        type="button"
+                        class="lw-inspector__mini-btn"
+                        (click)="inspectGuideElement(item)"
+                      >
+                        Focus in Guide
+                      </button>
+                    }
+                  </div>
+                </div>
               }
             </div>
           </section>

@@ -12,8 +12,10 @@
         [tone]="store.viewerRole() === 'gm' ? 'gm' : 'emerald'"
       />
       <lw-badge [label]="'Witness Filter: ' + activeWitness()" tone="gold" />
-      @if (store.weaveEnabled()) {
+      @if (isWeaveEnabled()) {
         <a class="lw-action-link" routerLink="/weave">Open Neo4j World Graph</a>
+      } @else {
+        <a class="lw-action-link" routerLink="/world-lore">Open World &amp; Lore Atlas</a>
       }
     </div>
 

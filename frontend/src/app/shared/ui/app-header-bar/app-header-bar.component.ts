@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpInput } from 'ng-primitives/input';
 import { NgpToolbar } from 'ng-primitives/toolbar';
 import { CampaignVm, ViewerRole } from '../../../core/models/loomweaver.models';
+import { LwExperienceMode } from '../../../core/services/loomweaver-store.service';
 import { LwIconComponent } from '../icon/icon.component';
+import { LwUserMenuComponent } from '../user-menu/user-menu.component';
 
 @Component({
   selector: 'lw-app-header-bar',
@@ -16,10 +17,9 @@ import { LwIconComponent } from '../icon/icon.component';
     RouterLink,
     NgpButton,
     NgpInput,
-    NgpAvatar,
-    NgpAvatarFallback,
     NgpToolbar,
     LwIconComponent,
+    LwUserMenuComponent,
   ],
   templateUrl: './app-header-bar.component.html',
   styleUrl: './app-header-bar.component.scss',
@@ -34,6 +34,11 @@ export class LwAppHeaderBarComponent {
   readonly quickRollBanner = input<string>('1d20 Ready');
   readonly loomOpen = input<boolean>(false);
   readonly userDisplayName = input<string>('Dungeon Master');
+  readonly userEmail = input<string>('gm@loom-weaver.com');
+  readonly userTierCode = input<string>('weaver');
+  readonly generativeAiEnabled = input<boolean>(false);
+  readonly hideAiContent = input<boolean>(true);
+  readonly experienceMode = input<LwExperienceMode>('advanced');
   readonly navCollapsed = input<boolean>(false);
   readonly collapseIcon = input<'apps' | 'menu'>('apps');
 
@@ -66,13 +71,13 @@ export class LwAppHeaderBarComponent {
   readonly quickRollRequested = output<void>();
   readonly viewerRoleToggled = output<void>();
   readonly loomToggled = output<void>();
+  readonly generativeAiToggled = output<boolean>();
+  readonly hideAiContentToggled = output<boolean>();
+  readonly experienceModeChanged = output<LwExperienceMode>();
+  readonly syncProfileRequested = output<void>();
   readonly logoutRequested = output<void>();
 
   onSubmitSearch(): void {
     this.searchSubmitted.emit(this.searchText().trim());
-  }
-
-  userInitials(): string {
-    return (this.userDisplayName() || 'LW').slice(0, 2).toUpperCase();
   }
 }

@@ -74,7 +74,7 @@ const DEFAULT_SKINS: readonly DiceSkinPreset[] = [
     roughness: 0.12,
     nat20ShaderName: 'Astral Singularity',
     nat1ShaderName: 'Void Fracture',
-    unlockTier: 'Weave Tier',
+    unlockTier: 'Worldsmith Tier',
   },
   {
     id: 'skin-vampire-bloodstone',

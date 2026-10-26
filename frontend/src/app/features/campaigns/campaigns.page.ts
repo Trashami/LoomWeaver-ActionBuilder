@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
@@ -135,6 +135,10 @@ const DEFAULT_QUESTS: readonly LwQuestTrackerItem[] = [
 export class CampaignsPageComponent {
   private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
+  readonly generativeAiEnabled = input<boolean>(false);
+  readonly isWeaveEnabled = computed(
+    () => this.generativeAiEnabled() || this.store.weaveEnabled(),
+  );
 
   readonly selectedCategory = signal<string>('All');
   readonly categories = ['All', 'Quest', 'NPC', 'Location', 'Faction', 'Clue', 'Secret'];
@@ -145,9 +149,15 @@ export class CampaignsPageComponent {
 
   readonly filteredEntities = computed(() => {
     const cat = this.selectedCategory();
+    const weaveOn = this.isWeaveEnabled();
     return this.store
       .authorizedEntities()
-      .filter((e) => e.entityType !== 'Character' && (cat === 'All' || e.entityType === cat));
+      .filter(
+        (e) =>
+          e.entityType !== 'Character' &&
+          (weaveOn || e.canonStatus !== 'draft') &&
+          (cat === 'All' || e.entityType === cat),
+      );
   });
 
   constructor() {

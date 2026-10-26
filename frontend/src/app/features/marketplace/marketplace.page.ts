@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
@@ -95,6 +95,10 @@ export class MarketplacePageComponent {
   private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
   readonly auth = inject(AuthSessionService);
+  readonly generativeAiEnabled = input<boolean>(false);
+  readonly isWeaveEnabled = computed(
+    () => this.generativeAiEnabled() || this.store.weaveEnabled(),
+  );
 
   readonly activeTierCode = signal<string>('weaver');
   readonly creatorModules = signal<readonly LwCreatorModuleItem[]>(DEFAULT_CREATOR_MODULES);

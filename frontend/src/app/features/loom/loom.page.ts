@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -107,6 +107,10 @@ const DEFAULT_NOTES: readonly LwScopedNoteItem[] = [
 export class LoomPageComponent {
   private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
+  readonly generativeAiEnabled = input<boolean>(false);
+  readonly isWeaveEnabled = computed(
+    () => this.generativeAiEnabled() || this.store.weaveEnabled(),
+  );
 
   readonly witnessOptions = ['All Party', 'Dal', 'Fivi', 'Kildrid', 'Kycius', 'Munk'];
   readonly activeWitness = signal<string>('All Party');

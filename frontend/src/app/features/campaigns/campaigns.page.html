@@ -76,6 +76,7 @@
           variant="detailed"
           [active]="store.inspectedEntityKey() === entity.compositeKey"
           [canApprove]="store.viewerRole() === 'gm'"
+          [generativeAiEnabled]="isWeaveEnabled()"
           (inspectRequested)="store.inspectEntity($event.compositeKey)"
           (approveRequested)="store.approveDraftEntity($event.compositeKey)"
         />

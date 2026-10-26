@@ -40,7 +40,7 @@
         <span>History</span>
       </button>
 
-      @if (store.weaveEnabled()) {
+      @if (isWeaveEnabled()) {
         <button
           type="button"
           role="tab"
@@ -191,7 +191,7 @@
     }
 
     @case ('relationships') {
-      @if (store.weaveEnabled()) {
+      @if (isWeaveEnabled()) {
         <lw-weave-relationships-graph
           (inspectLocationRequested)="onInspectLocationFromChild($event)"
         />

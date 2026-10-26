@@ -12,6 +12,11 @@
       [quickRollBanner]="store.quickRollBanner()"
       [loomOpen]="store.loomDrawerOpen()"
       [userDisplayName]="auth.activeProfile().displayName"
+      [userEmail]="auth.activeProfile().email || 'gm@loom-weaver.com'"
+      [userTierCode]="auth.activeProfile().tierCode || 'weaver'"
+      [generativeAiEnabled]="store.weaveEnabled()"
+      [hideAiContent]="store.hideAiContent()"
+      [experienceMode]="store.experienceMode()"
       [navCollapsed]="leftNavCollapsed()"
       collapseIcon="apps"
       width="100%"
@@ -36,10 +41,14 @@
       (quickRollRequested)="store.rollGlobalQuickD20()"
       (viewerRoleToggled)="store.setViewerRole(store.viewerRole() === 'gm' ? 'players' : 'gm')"
       (loomToggled)="store.toggleLoomDrawer()"
+      (generativeAiToggled)="store.setGenerativeAiOptIn($event)"
+      (hideAiContentToggled)="store.setHideAiContent($event)"
+      (experienceModeChanged)="store.setExperienceMode($event)"
+      (syncProfileRequested)="store.refreshCampaignDashboard()"
       (logoutRequested)="auth.logout()"
     />
 
-    <lw-loom-launcher />
+    <lw-loom-launcher [generativeAiEnabled]="store.weaveEnabled()" />
 
     <div
       class="lw-workspace"
@@ -83,7 +92,7 @@
 
                 @if (showAllModules()) {
                   <div class="lw-sidebar__nav-list">
-                    @for (item of engineSidebarNav; track item.id) {
+                    @for (item of engineSidebarNav(); track item.id) {
                       <a
                         ngpButton
                         class="lw-nav-link lw-nav-link--compact"
@@ -121,7 +130,7 @@
         </lw-scroll-area>
       </main>
 
-      <lw-inspector-drawer />
+      <lw-inspector-drawer [generativeAiEnabled]="store.weaveEnabled()" />
     </div>
   </div>
   <lw-auth-modal />

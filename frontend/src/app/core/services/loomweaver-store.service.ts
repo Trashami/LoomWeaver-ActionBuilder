@@ -383,6 +383,13 @@ export class LoomWeaverStoreService {
     this.inspectedEntityKey.set(keyOrComposite);
   }
 
+  registerEntity(entity: EntityCardVm): void {
+    this.rawEntities.update((list) => [
+      entity,
+      ...list.filter((e) => e.compositeKey !== entity.compositeKey),
+    ]);
+  }
+
   approveDraftEntity(compositeKey: string): void {
     if (this.viewerRole() !== 'gm') return;
     this.rawEntities.update((list) =>

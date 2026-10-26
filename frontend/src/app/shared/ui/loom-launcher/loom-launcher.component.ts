@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
@@ -17,6 +17,7 @@ import { LwButtonComponent } from '../button/button.component';
 })
 export class LwLoomLauncherComponent {
   readonly store = inject(LoomWeaverStoreService);
+  readonly generativeAiEnabled = input<boolean>(false);
 
   setPrompt(prompt: string): void {
     this.store.loomQuery.set(prompt);

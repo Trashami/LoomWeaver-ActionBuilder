@@ -20,9 +20,18 @@ export class LwEntityCardComponent {
   readonly variant = input<EntityCardVariant>('standard');
   readonly active = input<boolean>(false);
   readonly canApprove = input<boolean>(false);
+  readonly generativeAiEnabled = input<boolean>(false);
 
   readonly inspectRequested = output<EntityCardVm>();
   readonly approveRequested = output<EntityCardVm>();
+
+  readonly resolvedRouteLink = computed<string>(() => {
+    const link = this.entity().routeLink;
+    if (!this.generativeAiEnabled() && link.startsWith('/weave')) {
+      return link.replace(/^\/weave/, '/world-lore');
+    }
+    return link;
+  });
 
   readonly visibilityTone = computed<LwBadgeTone>(() => {
     const vis = this.entity().visibility;

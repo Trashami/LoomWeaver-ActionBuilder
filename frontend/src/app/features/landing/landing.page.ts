@@ -6,6 +6,7 @@ import {
   OnInit,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
@@ -16,6 +17,7 @@ import {
   isSubdomainHost,
   resolveDefaultStudioRouteForHost,
 } from '../../core/services/cookie-sso.helper';
+import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import { LwIconComponent } from '../../shared/ui/public-api';
 import {
   LANDING_ASSET_PATHS,
@@ -37,12 +39,18 @@ import { SEO_LANDING_PAGES, SeoLandingPageConfig } from './landing-seo-pages.dat
 })
 export class LandingPageComponent implements OnInit {
   readonly auth = inject(AuthSessionService);
+  readonly store = inject(LoomWeaverStoreService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly titleSvc = inject(Title);
   private readonly metaSvc = inject(Meta);
   private readonly doc = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly generativeAiEnabled = input<boolean>(false);
+  readonly isWeaveEnabled = computed(
+    () => this.generativeAiEnabled() || this.store.weaveEnabled(),
+  );
 
   readonly assets = LANDING_ASSET_PATHS;
   readonly mobileMenuOpen = signal<boolean>(false);
@@ -82,11 +90,71 @@ export class LandingPageComponent implements OnInit {
     return `translate3d(${xOffset.toFixed(1)}px, ${yOffset.toFixed(1)}px, 0)`;
   });
 
-  readonly primaryPillars = LANDING_PRIMARY_PILLARS;
-  readonly studioEngines = LANDING_STUDIO_ENGINES;
+  readonly primaryPillars = computed(() => {
+    const weaveOn = this.isWeaveEnabled();
+    if (weaveOn) return LANDING_PRIMARY_PILLARS;
+    return LANDING_PRIMARY_PILLARS.map((p) =>
+      p.id === 'weave'
+        ? {
+            ...p,
+            id: 'world-lore',
+            title: 'World & Lore Atlas',
+            flag: undefined,
+            description:
+              'Connect NPCs, factions, lore, quests, and regional locations into one living campaign atlas with strict GM and player visibility controls.',
+            bullets: [
+              '100% GM-authored canon and worldbuilding hierarchy',
+              'Connected faction histories, regional maps, and lore entries',
+              'Role-isolated secrets that never leak to players prematurely',
+            ],
+            route: '/world-lore',
+          }
+        : p,
+    );
+  });
+
+  readonly studioEngines = computed(() => {
+    const weaveOn = this.isWeaveEnabled();
+    if (weaveOn) return LANDING_STUDIO_ENGINES;
+    return LANDING_STUDIO_ENGINES.map((e) =>
+      e.id === 'engine-weave'
+        ? {
+            ...e,
+            title: 'The Loom Memory & World Lore Graph',
+            metrics: ['Per-Player Isolation', '100% Canonical Recall', 'Deep-Linked Dossiers'],
+          }
+        : e,
+    );
+  });
+
   readonly sessionIntelItems = LANDING_SESSION_INTEL_ITEMS;
-  readonly pricingPlans = LANDING_PRICING_PLANS;
-  readonly faqs = LANDING_FAQS;
+
+  readonly pricingPlans = computed(() => {
+    const weaveOn = this.isWeaveEnabled();
+    if (weaveOn) return LANDING_PRICING_PLANS;
+    return LANDING_PRICING_PLANS.map((plan) => ({
+      ...plan,
+      features: plan.features.map((f) =>
+        f
+          .replace('The Weave optional AI companion (100% GM authorship)', 'Connected World & Lore Atlas + Faction Graph')
+          .replace('Priority Weave synthesis & multi-campaign universe linking', 'Multi-campaign universe linking & lore indexing'),
+      ),
+    }));
+  });
+
+  readonly faqs = computed(() => {
+    const weaveOn = this.isWeaveEnabled();
+    if (weaveOn) return LANDING_FAQS;
+    return LANDING_FAQS.map((faq) =>
+      faq.id === 'faq-gm-authorship'
+        ? {
+            ...faq,
+            answer:
+              'Never. The Loom has a strict Zero-Generation policy: it only searches and synthesizes your established campaign canon and session history with clickable citations. Generative AI is 100% opt-in and off by default.',
+          }
+        : faq,
+    );
+  });
 
   readonly currentIntel = computed(
     () =>
