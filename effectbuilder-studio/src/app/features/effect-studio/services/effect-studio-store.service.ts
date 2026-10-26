@@ -1,27 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
-  CampaignCharacterOptionVm,
-  CampaignEffectAssignmentVm,
-  CampaignSummaryVm,
-  EffectCameraPreset,
-  EffectEmitterCardVm,
-  EffectGizmoToolId,
-  EffectInGameTestResultVm,
-  EffectInspectorTabId,
-  EffectMotionForceConfigVm,
-  EffectRailToolId,
-  EffectStudioDocumentVm,
-  EffectStudioMode,
-  EffectTimelineTrackVm,
+  CampaignCharacterOptionVm, CampaignEffectAssignmentVm, CampaignSummaryVm,
+  EffectCameraPreset, EffectEmitterCardVm, EffectGizmoToolId, EffectInGameTestResultVm,
+  EffectInspectorTabId, EffectMotionForceConfigVm, EffectRailToolId,
+  EffectStudioDocumentVm, EffectStudioMode, EffectTimelineTrackVm,
 } from '../models/effect-studio.models';
 import {
-  DEFAULT_MOTION_FORCES,
-  DEFAULT_STUDIO_DOCUMENT,
-  DEFAULT_TIMELINE_TRACKS,
-  EFFECT_CAMPAIGNS_SEED,
-  EFFECT_CHARACTERS_SEED,
-  EFFECT_EMITTER_LIBRARY_SEED,
+  DEFAULT_MOTION_FORCES, DEFAULT_STUDIO_DOCUMENT, DEFAULT_TIMELINE_TRACKS,
+  EFFECT_CAMPAIGNS_SEED, EFFECT_CHARACTERS_SEED, EFFECT_EMITTER_LIBRARY_SEED,
 } from '../models/effect-studio.seed';
 
 interface StudioSnapshot {
@@ -35,15 +22,11 @@ interface StudioSnapshot {
 @Injectable({ providedIn: 'root' })
 export class EffectStudioStoreService {
   private readonly http = inject(HttpClient);
-
   readonly campaigns = signal<readonly CampaignSummaryVm[]>(EFFECT_CAMPAIGNS_SEED);
   readonly activeCampaignId = signal<number>(1);
   readonly viewerRole = signal<'gm' | 'players'>('gm');
   readonly viewerUsername = signal<string>('GeoJason');
-
-  private readonly allCampaignCharacters = signal<readonly CampaignCharacterOptionVm[]>(
-    EFFECT_CHARACTERS_SEED,
-  );
+  private readonly allCampaignCharacters = signal<readonly CampaignCharacterOptionVm[]>(EFFECT_CHARACTERS_SEED);
   readonly campaignAssignments = signal<readonly CampaignEffectAssignmentVm[]>([]);
   readonly selectedCharacterKey = signal<string>('pc-kildrid');
   readonly selectedSpellName = signal<string>('Rune Vortex');
@@ -489,13 +472,11 @@ export class EffectStudioStoreService {
       tracks: this.tracks().map((t) => ({ ...t })),
     };
   }
-
   private pushHistorySnapshot(): void {
     const snap = this.captureCurrentSnapshot();
     this.undoStack.update((u) => [snap, ...u.slice(0, 19)]);
     this.redoStack.set([]);
   }
-
   private applySnapshot(snap: StudioSnapshot): void {
     this.effectName.set(snap.name);
     this.activeEmitterId.set(snap.activeEmitterId);
@@ -503,11 +484,8 @@ export class EffectStudioStoreService {
     this.motionAndForces.set(snap.motionAndForces);
     this.tracks.set(snap.tracks);
   }
-
   private showToast(msg: string): void {
     this.toastBanner.set(msg);
-    setTimeout(() => {
-      if (this.toastBanner() === msg) this.toastBanner.set('');
-    }, 4500);
+    setTimeout(() => { if (this.toastBanner() === msg) this.toastBanner.set(''); }, 4500);
   }
 }

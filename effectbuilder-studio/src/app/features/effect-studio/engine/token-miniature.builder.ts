@@ -44,38 +44,14 @@ export class TokenMiniatureBuilder {
     );
 
     const skeletonPositions: { id: string; name: string; pos: Vector3; yaw: number }[] = [
-      {
-        id: 'tok-skeleton-north',
-        name: 'Skeleton Vanguard I',
-        pos: new Vector3(2.55, 0, 2.35),
-        yaw: -Math.PI * 0.68,
-      },
-      {
-        id: 'tok-skeleton-mid',
-        name: 'Skeleton Vanguard II',
-        pos: new Vector3(3.65, 0, 0.15),
-        yaw: -Math.PI * 0.52,
-      },
-      {
-        id: 'tok-skeleton-south',
-        name: 'Skeleton Vanguard III',
-        pos: new Vector3(2.35, 0, -2.45),
-        yaw: -Math.PI * 0.34,
-      },
+      { id: 'tok-skeleton-north', name: 'Skeleton Vanguard I', pos: new Vector3(2.55, 0, 2.35), yaw: -Math.PI * 0.68 },
+      { id: 'tok-skeleton-mid', name: 'Skeleton Vanguard II', pos: new Vector3(3.65, 0, 0.15), yaw: -Math.PI * 0.52 },
+      { id: 'tok-skeleton-south', name: 'Skeleton Vanguard III', pos: new Vector3(2.35, 0, -2.45), yaw: -Math.PI * 0.34 },
     ];
 
     const targets = skeletonPositions.map((cfg) =>
-      this.createSkeletonWarriorMiniature(
-        scene,
-        parent,
-        cfg.id,
-        cfg.name,
-        cfg.pos,
-        cfg.yaw,
-        shadowGenerators,
-      ),
+      this.createSkeletonWarriorMiniature(scene, parent, cfg.id, cfg.name, cfg.pos, cfg.yaw, shadowGenerators),
     );
-
     return { caster, targets };
   }
 
@@ -111,12 +87,7 @@ export class TokenMiniatureBuilder {
 
     const lowerPlinth = MeshBuilder.CreateCylinder(
       `token-plinth-lower-${id}`,
-      {
-        diameterTop: baseRadius * 2.02,
-        diameterBottom: baseRadius * 2.14,
-        height: 0.1,
-        tessellation: 36,
-      },
+      { diameterTop: baseRadius * 2.02, diameterBottom: baseRadius * 2.14, height: 0.1, tessellation: 36 },
       scene,
     );
     lowerPlinth.position.y = 0.05;
@@ -127,12 +98,7 @@ export class TokenMiniatureBuilder {
 
     const upperPlinth = MeshBuilder.CreateCylinder(
       `token-plinth-upper-${id}`,
-      {
-        diameterTop: baseRadius * 1.78,
-        diameterBottom: baseRadius * 1.92,
-        height: 0.1,
-        tessellation: 36,
-      },
+      { diameterTop: baseRadius * 1.78, diameterBottom: baseRadius * 1.92, height: 0.1, tessellation: 36 },
       scene,
     );
     upperPlinth.position.y = 0.14;
@@ -166,7 +132,6 @@ export class TokenMiniatureBuilder {
     selectionRing.material = ringMat;
     selectionRing.isPickable = false;
     selectionRing.parent = root;
-
     return selectionRing;
   }
 
@@ -357,20 +322,8 @@ export class TokenMiniatureBuilder {
     staffLight.intensity = 0.85;
     staffLight.range = 6.5;
 
-    shadowGenerators.forEach((sg) => {
-      allMeshes.forEach((m) => sg.addShadowCaster(m));
-    });
-
-    return {
-      id,
-      name: 'Archmage Caster',
-      role: 'caster',
-      root,
-      figureNode,
-      selectionRing,
-      allMeshes,
-      staffLight,
-    };
+    shadowGenerators.forEach((sg) => allMeshes.forEach((m) => sg.addShadowCaster(m)));
+    return { id, name: 'Archmage Caster', role: 'caster', root, figureNode, selectionRing, allMeshes, staffLight };
   }
 
   private createSkeletonWarriorMiniature(
@@ -391,14 +344,7 @@ export class TokenMiniatureBuilder {
     figureNode.parent = root;
 
     const allMeshes: Mesh[] = [];
-    const selectionRing = this.createDoubleRimmedPedestal(
-      scene,
-      id,
-      root,
-      figureNode,
-      '#dc2626',
-      allMeshes,
-    );
+    const selectionRing = this.createDoubleRimmedPedestal(scene, id, root, figureNode, '#dc2626', allMeshes);
 
     const boneMat = new StandardMaterial(`skel-bone-mat-${id}`, scene);
     boneMat.diffuseColor = new Color3(0.76, 0.71, 0.61);

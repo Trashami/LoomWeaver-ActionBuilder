@@ -175,6 +175,9 @@ echo "2. Deploying standalone EffectBuilder Studio to /var/www/effectbuilder/cur
 rm -rf /var/www/effectbuilder/current/client
 mkdir -p /var/www/effectbuilder/current/client
 tar -xzf /tmp/effectbuilder_client.tar.gz -C /var/www/effectbuilder/current/client
+mkdir -p /var/www/loomweaver/assets/lighting
+cp -rf /var/www/effectbuilder/current/client/lighting/* /var/www/loomweaver/assets/lighting/ 2>/dev/null || true
+rm -rf /var/www/effectbuilder/current/client/assets
 ln -sfn /var/www/loomweaver/assets /var/www/effectbuilder/current/client/assets
 
 chown -R iamtrash:www-data /var/www/effectbuilder /var/www/loomweaver/server
@@ -229,7 +232,7 @@ echo "4. Verifying services and EffectStudio API endpoints..."
 systemctl is-active loom-weaver.service mythweaver.service nginx
 curl -s http://127.0.0.1:5000/api/v2/effects/health
 echo ""
-curl -s http://127.0.0.1:5001/api/v2/effects/health
+curl -s "http://127.0.0.1:5000/api/v2/effects/campaigns/1/context?viewerRole=gm&username=GeoJason" | head -c 400
 echo ""
 curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/ | head -n 5
 """

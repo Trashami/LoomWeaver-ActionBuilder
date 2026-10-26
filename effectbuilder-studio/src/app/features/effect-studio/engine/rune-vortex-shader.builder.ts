@@ -355,7 +355,7 @@ export class RuneVortexShaderBuilder {
   ): DynamicTexture {
     const tex = new DynamicTexture('lw-fx-ray-tex', { width: 256, height: 512 }, scene, false);
     tex.hasAlpha = true;
-    const ctx = tex.getContext();
+    const ctx = tex.getContext() as unknown as CanvasRenderingContext2D;
     ctx.clearRect(0, 0, 256, 512);
 
     const hGrad = ctx.createLinearGradient(0, 0, 256, 0);

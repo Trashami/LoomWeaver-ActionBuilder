@@ -15,16 +15,7 @@ export const FIREBALL_FLIGHT_FRACTION = 0.6;
 export const CINEMATIC_STYLES = ['beam', 'cone', 'column', 'nova', 'cube'] as const;
 export type CinematicStyleKind = (typeof CINEMATIC_STYLES)[number];
 
-export const CINEMATIC_ELEMENTS = [
-  'force',
-  'fire',
-  'ice',
-  'gas',
-  'radiant',
-  'lightning',
-  'acid',
-  'shadow',
-] as const;
+export const CINEMATIC_ELEMENTS = ['force', 'fire', 'ice', 'gas', 'radiant', 'lightning', 'acid', 'shadow'] as const;
 export type CinematicElementKind = (typeof CINEMATIC_ELEMENTS)[number];
 
 export interface ParticleAtlasTextures {
@@ -41,10 +32,6 @@ export function seeded(i: number, seed: number): number {
   return v - Math.floor(v);
 }
 
-/**
- * Exact `fireballCurve` from `MythWeaver/Vtt3d.client/src/app/engine/spell-fx-builder.ts`:
- * Accelerating flight with a curved lateral bow from the caster's hands.
- */
 export function fireballCurveXZ(
   from: { x: number; z: number },
   to: { x: number; z: number },
@@ -57,10 +44,7 @@ export function fireballCurveXZ(
   const d = Math.hypot(dx, dz) || 1;
   const u = p * p * (1.45 - 0.45 * p);
   const bow = Math.sin(u * Math.PI) * arcWorldUnits;
-  return {
-    x: from.x + dx * u - (dz / d) * bow,
-    z: from.z + dz * u + (dx / d) * bow,
-  };
+  return { x: from.x + dx * u - (dz / d) * bow, z: from.z + dz * u + (dx / d) * bow };
 }
 
 export function excludeMeshFromGlow(scene: Scene, mesh: Mesh): void {
@@ -482,30 +466,15 @@ export function createFireHitShaderMaterial(
     {
       attributes: ['position', 'uv'],
       uniforms: [
-        'worldViewProjection',
-        'uColor',
-        'uProgress',
-        'uMode',
-        'uClock',
-        'uBloom',
-        'uDistortion',
-        'uScorch',
-        'uSeed',
-        'uSmoke',
-        'uLight',
-        'uShadow',
-        'uTurbulence',
-        'uEmbers',
-        'uFlame',
-        'uCore',
-        'uSmokeColor',
+        'worldViewProjection', 'uColor', 'uProgress', 'uMode', 'uClock', 'uBloom',
+        'uDistortion', 'uScorch', 'uSeed', 'uSmoke', 'uLight', 'uShadow',
+        'uTurbulence', 'uEmbers', 'uFlame', 'uCore', 'uSmokeColor',
       ],
       needAlphaBlending: true,
     },
   );
   mat.backFaceCulling = false;
   mat.alphaMode = Constants.ALPHA_COMBINE;
-
   mat.setVector4('uColor', { x: 1, y: 1, z: 1, w: 1 } as never);
   mat.setFloat('uProgress', 0);
   mat.setFloat('uMode', mode);
