@@ -1,0 +1,155 @@
+:host {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.lw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--lw-radius-sm, 6px);
+  border: 1px solid var(--lw-border-subtle, rgba(73, 232, 146, 0.24));
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  white-space: nowrap;
+}
+
+.lw-btn__copy {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.lw-btn__sublabel {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #49e892;
+}
+
+.lw-btn--xs {
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  gap: 4px;
+  border-radius: 5px;
+}
+
+.lw-btn--sm {
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  gap: 5px;
+}
+
+.lw-btn--lg {
+  padding: 10px 18px;
+  font-size: 0.88rem;
+}
+
+.lw-btn--pill {
+  border-radius: 999px;
+}
+
+.lw-btn--full {
+  width: 100%;
+}
+
+.lw-btn--icon-only {
+  padding: 4px;
+  min-width: 26px;
+  min-height: 26px;
+}
+
+.lw-btn--emerald {
+  background: linear-gradient(135deg, #1b6b4f 0%, #104935 100%);
+  border-color: rgba(73, 232, 146, 0.55);
+  color: #f2fbf7;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #228462 0%, #165c44 100%);
+    border-color: #49e892;
+  }
+}
+
+.lw-btn--gold {
+  background: linear-gradient(135deg, #c9af74 0%, #a5894d 100%);
+  border-color: #e3cb92;
+  color: #0b1612;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d7be84 0%, #b5985a 100%);
+  }
+}
+
+.lw-btn--secondary {
+  background: rgba(11, 24, 19, 0.88);
+  border-color: rgba(73, 232, 146, 0.25);
+  color: #e4ede8;
+
+  &:hover:not(:disabled) {
+    border-color: #d9b77a;
+    color: #f7ecd5;
+  }
+
+  &.lw-btn--active {
+    border-color: #49e892;
+    background: rgba(46, 230, 107, 0.16);
+    color: #f2fbf7;
+  }
+}
+
+.lw-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #9cb4a8;
+
+  &:hover:not(:disabled) {
+    background: rgba(73, 232, 146, 0.12);
+    color: #f2fbf7;
+  }
+}
+
+.lw-btn--danger {
+  background: rgba(130, 28, 42, 0.35);
+  border-color: rgba(239, 93, 114, 0.45);
+  color: #ffb8c0;
+}
+
+.lw-btn--guide-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 183, 122, 0.28);
+  background: rgba(9, 22, 17, 0.85);
+  color: #c2d4cb;
+  font-size: 0.7rem;
+
+  &.lw-btn--active {
+    border-color: #49e892;
+    background: rgba(46, 230, 107, 0.18);
+    color: #effff5;
+  }
+}
+
+.lw-btn--guide-chip {
+  padding: 4px 9px;
+  border-radius: 5px;
+  border: 1px solid rgba(90, 212, 148, 0.24);
+  background: rgba(10, 24, 18, 0.84);
+  color: #b8cec2;
+  font-size: 0.7rem;
+
+  &.lw-btn--active {
+    border-color: #d9b77a;
+    background: rgba(217, 183, 122, 0.18);
+    color: #f7e6c4;
+  }
+}
+
+.lw-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

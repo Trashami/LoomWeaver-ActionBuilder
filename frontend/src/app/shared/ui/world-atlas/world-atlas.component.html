@@ -39,12 +39,13 @@
         aria-label="Campaign Regions and Party Travel Route"
       >
         @for (ov of overlays(); track ov.id) {
-          <g class="lw-region-group">
+          <g class="lw-region-group" (click)="selectRegion(ov, $event)">
             <path
               [attr.d]="ov.svgPath"
               [attr.stroke]="ov.colorHex"
               [attr.fill]="ov.colorHex"
               [class.lw-region-poly--territory]="ov.overlayType === 'territory'"
+              [class.lw-region-poly--selected]="selectedLocationKey() === ov.id"
               class="lw-region-poly"
             />
             <text
@@ -97,10 +98,9 @@
           [class.lw-atlas-marker--repositioning]="repositioningLocationKey() === marker.locationKey"
           [attr.data-category]="marker.category"
           [attr.data-vis]="marker.visibility"
-          [attr.data-label-pos]="marker.style?.labelPosition || 'right'"
+          [attr.data-label-pos]="marker.style?.labelPosition || 'top'"
           [style.left.%]="markerX(marker)"
           [style.top.%]="markerY(marker)"
-          [style.border-color]="marker.style?.colorHex || null"
           [style.font-family]="marker.style?.fontFamily || null"
           (mousedown)="onMarkerMouseDown(marker, $event)"
           (click)="selectMarker(marker, $event)"
@@ -113,13 +113,20 @@
               >
                 <img [src]="marker.style?.stampImageUrl" [alt]="marker.name" class="lw-atlas-marker__stamp" draggable="false" />
               </span>
+            } @else if (isDotMarker(marker)) {
+              <span
+                class="lw-atlas-marker__dot"
+                [style.background-color]="marker.style?.colorHex || null"
+                [style.transform]="'scale(' + (marker.style?.iconScale || 1) + ')'"
+              ></span>
             } @else {
               <span
                 class="lw-atlas-marker__pin"
                 [style.border-color]="marker.style?.colorHex || null"
+                [style.color]="marker.style?.colorHex || null"
                 [style.transform]="'scale(' + (marker.style?.iconScale || 1) + ')'"
               >
-                <lw-icon [name]="markerIcon(marker)" [size]="15" />
+                <lw-icon [name]="markerIcon(marker)" [size]="13" />
               </span>
             }
           }

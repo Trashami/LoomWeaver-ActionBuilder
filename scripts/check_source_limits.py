@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCAN_DIRS = [
     os.path.join(ROOT, "frontend", "src"),
     os.path.join(ROOT, "effectbuilder-studio", "src"),
+    os.path.join(ROOT, "actionbuilder-studio", "src"),
     os.path.join(ROOT, "backend", "src"),
 ]
 EXTENSIONS = {".ts", ".html", ".scss", ".css", ".cs"}

@@ -38,14 +38,37 @@ public static class WorldLoreStateStore
     {
         [1] =
         [
-            new("reg-cinth-kingdom", "map-icrandor-world", "KINGDOM OF CINTH", "region", "1:Faction:fac-artificers", "#d9b77a", 38, 46, "M 290 190 L 495 175 L 520 315 L 310 330 Z", "players"),
-            new("reg-veldra-wood", "map-icrandor-world", "VELDRA WOOD", "region", null, "#49e892", 58, 36, "M 510 140 L 670 150 L 660 290 L 515 275 Z", "players"),
-            new("reg-red-marches", "map-icrandor-world", "THE PLAINS OF RED", "region", null, "#e26d5c", 56, 68, "M 450 330 L 665 340 L 640 465 L 430 450 Z", "players"),
-            new("reg-blackridge", "map-icrandor-world", "ORDER OF PRIORS DOMAIN", "territory", "1:Faction:fac-priors", "#e06c75", 76, 30, "M 685 110 L 870 125 L 855 255 L 680 240 Z", "gm")
+            new("reg-cinth-kingdom", "map-icrandor-world", "CENTRAL KINGDOMS & CINTH", "region", "1:Faction:fac-artificers", "#d9b77a", 39, 44, "M 290 190 L 495 175 L 520 315 L 310 330 Z", "players",
+                "Heartland Coalition · Seat of Cinth & Plains of Vistagh",
+                "The central realms of Icrandor anchored by the metropolis of Cinth, the Plains of Vistagh, and the trade roads connecting the western holds to the northern forests.",
+                "Capital: City of Cinth · Governance: Noble Council & Chartered Artificer Guilds · Primary Trade: Brass Condensers, Chokrah Trade, Sky-Freight", "lore-kingdom-cinth",
+                [new(29.0, 33.9), new(49.5, 31.3), new(52.0, 56.3), new(31.0, 58.9)]),
+            new("reg-southern-kingdoms", "map-icrandor-world", "SOUTHERN KINGDOMS", "region", null, "#5ccfe6", 27, 62, "M 140 280 L 385 310 L 370 465 L 130 445 Z", "players",
+                "Coastal Marches · Vandia, Bay of Forgotten Treasures & Well of Life",
+                "The maritime kingdoms and cliffside reaches of southwestern Icrandor, stretching from Vandia and the Bay of Forgotten Treasures northeast along the sacred Well of Life triangle.",
+                "Major Port: Vandia · Landmarks: Party Cliff-Edge House & Well of Life Sanctuary · Economy: Maritime Shipping & Lost Isles Expeditions", "lore-vandia-coast",
+                [new(14.0, 50.0), new(38.5, 55.4), new(37.0, 83.0), new(13.0, 79.5)]),
+            new("reg-veldra-wood", "map-icrandor-world", "VELDRA WOOD", "region", null, "#49e892", 58, 36, "M 510 140 L 670 150 L 660 290 L 515 275 Z", "players",
+                "Ancient Fey-Bordered Canopy of Icrandor",
+                "An ancient forest older than the current kingdoms, home to fey remnants, boundary stones, and the Whispering Woods approach to the Ruined Chapel.",
+                "Wardens: Outcast Fey & Hermit Orders · Borders: Whispering Woods & Northern Edhellain Marches", "lore-veldra-wood",
+                [new(51.0, 25.0), new(67.0, 26.8), new(66.0, 51.8), new(51.5, 49.1)]),
+            new("reg-red-marches", "map-icrandor-world", "THE PLAINS OF RED", "region", null, "#e26d5c", 56, 68, "M 450 330 L 665 340 L 640 465 L 430 450 Z", "players",
+                "Ancient Fey Battlefield & Southern Mountain Corridor",
+                "Named for the slaughter of fey by men roughly a thousand years ago. Borders the poisoned roots of the southern mountain where the bound dragon claws at its runic prison.",
+                "Terrain: Crimson Steppe & Fey Cairns · Hazard: Subterranean Runic Tremors beneath the Southern Peaks", "lore-plains-of-red",
+                [new(45.0, 58.9), new(66.5, 60.7), new(64.0, 83.0), new(43.0, 80.4)]),
+            new("reg-blackridge", "map-icrandor-world", "ORDER OF PRIORS DOMAIN", "territory", "1:Faction:fac-priors", "#e06c75", 76, 30, "M 685 110 L 870 125 L 855 255 L 680 240 Z", "gm",
+                "GM Secret Territory · Council & Prior Siphon Network",
+                "Secret jurisdictional reach of the Order of Priors and the Council of Magic's Chokrah titration academies.",
+                "Patron: Emrys Driothe · Secret Function: Pooling siphoned student magic for the dragon-scale Luminary ritual", "lore-priors-rituals",
+                [new(68.5, 19.6), new(87.0, 22.3), new(85.5, 45.5), new(68.0, 42.9)])
         ],
         [2] =
         [
-            new("reg-ascendant", "map-absalom-isle", "ASCENDANT COURT", "region", null, "#d9b77a", 48, 44, "M 360 180 L 580 180 L 580 340 L 360 340 Z", "players")
+            new("reg-ascendant", "map-absalom-isle", "ASCENDANT COURT", "region", null, "#d9b77a", 48, 44, "M 360 180 L 580 180 L 580 340 L 360 340 Z", "players",
+                "Starstone Cathedral & Central District", "Heart of Absalom surrounding the Starstone Cathedral.", "Ruler: Primarch & Grand Council", null,
+                [new(36.0, 32.1), new(58.0, 32.1), new(58.0, 60.7), new(36.0, 60.7)])
         ],
         [3] = []
     };

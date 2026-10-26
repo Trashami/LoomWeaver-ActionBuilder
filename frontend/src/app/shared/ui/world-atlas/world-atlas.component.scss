@@ -8,7 +8,7 @@
   height: 450px;
   overflow: hidden;
   background: #060e0b;
-  cursor: grab;
+  cursor: default;
   user-select: none;
 
   &--panning { cursor: grabbing; }
@@ -50,11 +50,22 @@
   pointer-events: none;
 }
 
+.lw-region-group {
+  pointer-events: all;
+  cursor: pointer;
+}
+
 .lw-region-poly {
   fill-opacity: 0.1;
   stroke-width: 2;
   stroke-dasharray: 7 5;
   vector-effect: non-scaling-stroke;
+  transition: fill-opacity 140ms ease, stroke-width 140ms ease;
+
+  &:hover, &--selected {
+    fill-opacity: 0.22;
+    stroke-width: 3;
+  }
 
   &--territory {
     fill-opacity: 0.18;
@@ -116,53 +127,58 @@
   transform: translate(-50%, -50%) scale(var(--lw-marker-scale, 1));
   transform-origin: center center;
   display: inline-flex;
+  flex-direction: column-reverse;
   align-items: center;
-  gap: 0.42rem;
-  padding: 0.24rem 0.56rem 0.24rem 0.28rem;
-  border-radius: 999px;
-  border: 1px solid rgba(217, 183, 122, 0.55);
-  background: rgba(8, 16, 13, 0.92);
-  color: #f4ead5;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+  gap: 0.18rem;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: #f8efdc;
   cursor: pointer;
-  transition: transform 140ms ease, border-color 140ms ease;
+  transition: transform 140ms ease;
   z-index: 4;
 
   &:hover {
-    transform: translate(-50%, -50%) scale(calc(var(--lw-marker-scale, 1) * 1.06));
-    border-color: #49e892;
+    transform: translate(-50%, -50%) scale(calc(var(--lw-marker-scale, 1) * 1.1));
     z-index: 8;
   }
 
   &--selected {
-    border-color: #d9b77a;
-    background: linear-gradient(90deg, rgba(24, 52, 39, 0.96), rgba(14, 28, 22, 0.96));
-    box-shadow: 0 0 0 2px rgba(217, 183, 122, 0.45), 0 8px 22px rgba(0, 0, 0, 0.78);
+    filter: drop-shadow(0 0 6px rgba(73, 232, 146, 0.85));
     z-index: 9;
   }
 
   &--repositioning {
-    border-color: #49e892;
-    box-shadow: 0 0 0 3px rgba(73, 232, 146, 0.55), 0 10px 26px rgba(0, 0, 0, 0.85);
+    filter: drop-shadow(0 0 8px rgba(73, 232, 146, 0.95));
     cursor: move;
     z-index: 12;
   }
 
-  &[data-label-pos='top'] { flex-direction: column-reverse; border-radius: 10px; padding: 0.25rem 0.45rem; }
-  &[data-label-pos='bottom'] { flex-direction: column; border-radius: 10px; padding: 0.25rem 0.45rem; }
-  &[data-label-pos='left'] { flex-direction: row-reverse; }
-  &[data-label-pos='overlay'] { background: rgba(8, 16, 13, 0.78); border-radius: 8px; }
-  &[data-vis='gm'] { border-color: rgba(224, 150, 255, 0.75); background: rgba(28, 16, 36, 0.94); }
+  &[data-label-pos='top'] { flex-direction: column-reverse; }
+  &[data-label-pos='bottom'] { flex-direction: column; }
+  &[data-label-pos='right'] { flex-direction: row; gap: 0.35rem; }
+  &[data-label-pos='left'] { flex-direction: row-reverse; gap: 0.35rem; }
+  &[data-label-pos='overlay'] { flex-direction: column; }
+}
+
+.lw-atlas-marker__dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #f3d078;
+  border: 2px solid #091510;
+  box-shadow: 0 0 0 1.5px rgba(217, 183, 122, 0.9), 0 2px 6px rgba(0, 0, 0, 0.95);
+  flex-shrink: 0;
+}
+
+.lw-atlas-marker[data-vis='gm'] .lw-atlas-marker__dot {
+  background: #e096ff;
+  box-shadow: 0 0 0 1.5px #e096ff, 0 2px 6px rgba(0, 0, 0, 0.95);
 }
 
 .lw-atlas-marker__stamp-wrap {
-  width: 34px;
-  height: 34px;
-  padding: 3px;
-  border-radius: 50%;
-  border: 1.5px solid #d9b77a;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -173,6 +189,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  filter: drop-shadow(0 0 3px rgba(245, 232, 204, 0.85)) contrast(1.1);
 }
 
 .lw-atlas-reposition-bar {
@@ -222,40 +239,30 @@
 }
 
 .lw-atlas-marker__pin {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 30% 30%, #2b5442, #0e2119);
+  background: rgba(8, 18, 14, 0.92);
   border: 1.5px solid #d9b77a;
   color: #f5dfae;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
   flex-shrink: 0;
-}
-
-.lw-atlas-marker[data-category='Quests'] .lw-atlas-marker__pin {
-  background: radial-gradient(circle at 30% 30%, #6e4e19, #2b1e08);
-  border-color: #f5c469;
-  color: #ffe299;
-}
-
-.lw-atlas-marker[data-category='Factions'] .lw-atlas-marker__pin,
-.lw-atlas-marker[data-category='Encounters'] .lw-atlas-marker__pin {
-  background: radial-gradient(circle at 30% 30%, #682328, #280d10);
-  border-color: #f07b7b;
-  color: #ffd0d0;
 }
 
 .lw-atlas-marker__card {
   display: flex;
   flex-direction: column;
-  text-align: left;
-  line-height: 1.15;
+  align-items: center;
+  text-align: center;
+  line-height: 1.1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.98), 0 0 7px rgba(4, 10, 8, 0.98), 0 0 2px #000000;
 }
 
-.lw-atlas-marker__title { font-size: 0.76rem; font-weight: 700; color: #f6ecd6; white-space: nowrap; }
-.lw-atlas-marker__sub { font-size: 0.65rem; color: #a9bcb2; white-space: nowrap; }
+.lw-atlas-marker__title { font-family: var(--lw-font-display, Georgia, serif); font-size: 0.76rem; font-weight: 700; color: #fbf2dd; white-space: nowrap; letter-spacing: 0.03em; }
+.lw-atlas-marker__sub { font-size: 0.62rem; color: #d8e4dc; white-space: nowrap; }
 
 .lw-atlas-controls {
   position: absolute;

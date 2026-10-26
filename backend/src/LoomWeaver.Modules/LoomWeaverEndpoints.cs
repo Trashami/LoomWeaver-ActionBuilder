@@ -4,6 +4,7 @@ using LoomWeaver.Infrastructure.MySql;
 using MySqlConnector;
 using LoomWeaver.Infrastructure.Neo4j;
 using LoomWeaver.Modules.Actions;
+using LoomWeaver.Modules.ActionStudio;
 using LoomWeaver.Modules.Adventures;
 using LoomWeaver.Modules.Audio;
 using LoomWeaver.Modules.Auth;
@@ -34,6 +35,7 @@ public static class LoomWeaverEndpoints
             api.MapLoomMapsEndpoints();
             api.MapCombatEncounterEndpoints();
             api.MapActionAndEffectEndpoints();
+            api.MapActionStudioEndpoints();
             api.MapEffectStudioEndpoints();
             api.MapDiceForgeEndpoints();
             api.MapAudioAmbienceEndpoints();

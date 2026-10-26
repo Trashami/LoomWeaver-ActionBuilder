@@ -104,6 +104,7 @@ export const OLD_WORLD_STAMP_OPTIONS: readonly OldWorldStampOption[] = [
 ];
 
 export const DEFAULT_MARKER_ICONS: readonly { id: string; label: string }[] = [
+  { id: 'dot', label: 'Map Dot (Default)' },
   { id: 'landmark', label: 'Settlement / Citadel' },
   { id: 'fort', label: 'Fortress / Keep' },
   { id: 'shield', label: 'Faction Stronghold' },

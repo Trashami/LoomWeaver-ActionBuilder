@@ -53,6 +53,27 @@ public static class ConnectedStoryEngine
                   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                   UNIQUE KEY `uk_lw_entity_rel` (`campaign_id`, `from_composite_key`, `relationship_type`, `to_composite_key`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                CREATE TABLE IF NOT EXISTS `lw_world_regions` (
+                  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+                  `campaign_id` BIGINT UNSIGNED NOT NULL,
+                  `map_id` VARCHAR(64) NOT NULL,
+                  `composite_key` VARCHAR(160) NOT NULL,
+                  `name` VARCHAR(160) NOT NULL,
+                  `overlay_type` VARCHAR(32) NOT NULL DEFAULT 'region',
+                  `subtitle` VARCHAR(200) NOT NULL DEFAULT 'Charted Realm',
+                  `faction_key` VARCHAR(160) NULL,
+                  `color_hex` VARCHAR(24) NOT NULL DEFAULT '#d9b77a',
+                  `label_x` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
+                  `label_y` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
+                  `svg_path` TEXT NOT NULL,
+                  `points_json` JSON NOT NULL,
+                  `description` TEXT NOT NULL,
+                  `governance_and_realm` TEXT NOT NULL,
+                  `linked_lore_id` VARCHAR(64) NULL,
+                  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+                  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                 """;
             await using (var cmd = new MySqlCommand(ddl, conn))
             {
@@ -221,23 +242,10 @@ public static class ConnectedStoryEngine
                 : ConnectedStorySeedStore.Relationships.Count + 1L;
 
             created = new EntityRelationshipDto(
-                nextId,
-                campaignId,
-                fromKey,
-                fromKey.Split(':').LastOrDefault() ?? fromKey,
-                fromKey.Split(':').ElementAtOrDefault(1) ?? "Entity",
-                relType,
-                toKey,
-                toKey.Split(':').LastOrDefault() ?? toKey,
-                toKey.Split(':').ElementAtOrDefault(1) ?? "Entity",
-                why,
-                vis,
-                req.SourceRecordId,
-                DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 1000,
-                null,
-                nextRev,
-                false
-            );
+                nextId, campaignId, fromKey, fromKey.Split(':').LastOrDefault() ?? fromKey,
+                fromKey.Split(':').ElementAtOrDefault(1) ?? "Entity", relType, toKey,
+                toKey.Split(':').LastOrDefault() ?? toKey, toKey.Split(':').ElementAtOrDefault(1) ?? "Entity",
+                why, vis, req.SourceRecordId, DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 1000, null, nextRev, false);
 
             if (existingIdx >= 0) ConnectedStorySeedStore.Relationships[existingIdx] = created;
             else ConnectedStorySeedStore.Relationships.Insert(0, created);
@@ -392,30 +400,91 @@ public static class ConnectedStoryEngine
         return results.Take(8).ToList();
     }
 
-    private static IReadOnlyList<StoryConnectedGroupDto> BuildConnectedGroupsForBeat(StoryBeatItemDto beat, bool isGm)
+    public static async Task<WorldMapRegionOverlayDto> UpsertRegionAndSyncAsync(
+        int campaignId,
+        UpsertRegionOverlayRequest req,
+        LoomWeaverMySqlRepository repo,
+        LoomWeaverNeo4jService graph)
     {
-        return new List<StoryConnectedGroupDto>
-        {
-            new("Quests (2)", "compass", "gold", new List<StoryConnectedLinkItemDto>
-            {
-                new("1:Quest:quest-missing-caravan", "The Missing Caravan", "Act I–II Investigation Thread", "/campaigns?beat=beat-1-1", "loc-ruined-chapel"),
-                new("1:Quest:quest-chokrah-ledger", "Secrets Beneath the Chapel", "Crypt C3 & Chokrah Manifest", "/world-lore?tab=lore&loreId=lore-priors-rituals", "loc-ruined-chapel")
-            }),
-            new("Locations (2)", "map-pin", "emerald", new List<StoryConnectedLinkItemDto>
-            {
-                new("1:Location:loc-ruined-chapel", "The Ruined Chapel", "Keyed Rooms C1–C3 · Whispering Woods", "/world-lore?location=loc-ruined-chapel", "loc-ruined-chapel"),
-                new("1:Location:loc-veldra-wood", "Whispering Woods", "Ancient Fey-Bordered Canopy", "/world-lore?location=loc-veldra-wood", "loc-veldra-wood")
-            }),
-            new("NPCs (2)", "users", "gold", new List<StoryConnectedLinkItemDto>
-            {
-                new("1:NPC:npc-malric", "Brother Malric", "Chapel Keeper · Currently in C1 (Was in C3)", "/campaigns?inspect=npc-malric", "loc-ruined-chapel"),
-                new("1:NPC:npc-emrys", "Emrys Driothe", "Implicated by Chokrah Manifest & Priors Claim", "/campaigns?inspect=npc-emrys", "loc-cinth")
-            }),
-            new("Factions (2)", "shield", "emerald", new List<StoryConnectedLinkItemDto>
-            {
-                new("1:Faction:fac-artificers", "Artificers Guild of Cinth", "Allied Brass & Skyship Collective", "/world-lore?tab=lore&loreId=lore-artificers-guild", "loc-artificers-skydock"),
-                new("1:Faction:fac-priors", "The Order of Priors", isGm ? "GM Truth: Siphons student magic via Chokrah" : "Street-Schools of Ekkos (Implicated in C3)", "/world-lore?tab=lore&loreId=lore-priors-rituals", "loc-cinth")
-            })
-        };
+        var overlays = WorldLoreStateStore.OverlaysByCampaign.TryGetValue(campaignId, out var ovList)
+            ? ovList
+            : (WorldLoreStateStore.OverlaysByCampaign[campaignId] = []);
+        var cleanName = string.IsNullOrWhiteSpace(req.Name) ? "NEW REGION" : req.Name.Trim();
+        var slug = string.Join("-", cleanName.ToLowerInvariant().Split([' ', '/', '\'', ':', ',', '&'], StringSplitOptions.RemoveEmptyEntries));
+        var id = string.IsNullOrWhiteSpace(req.Id) ? $"reg-{slug}" : req.Id.Trim();
+        var mapId = string.IsNullOrWhiteSpace(req.MapId) ? "map-icrandor-world" : req.MapId.Trim();
+        var points = req.Points is { Count: >= 3 }
+            ? req.Points.ToList()
+            : [new(30, 30), new(55, 30), new(55, 55), new(30, 55)];
+        var svgPath = !string.IsNullOrWhiteSpace(req.SvgPath) && req.Points is null
+            ? req.SvgPath.Trim()
+            : "M " + string.Join(" L ", points.Select(p => $"{Math.Round(p.X * 10, 1):0.#} {Math.Round(p.Y * 5.6, 1):0.#}")) + " Z";
+        var labelX = req.LabelX > 0 ? req.LabelX : Math.Round(points.Average(p => p.X), 1);
+        var labelY = req.LabelY > 0 ? req.LabelY : Math.Round(points.Average(p => p.Y), 1);
+        var vis = string.Equals(req.Visibility, "gm", StringComparison.OrdinalIgnoreCase) ? "gm" : "players";
+        var loreId = string.IsNullOrWhiteSpace(req.LinkedLoreId) ? $"lore-{id}" : req.LinkedLoreId.Trim();
+        var desc = string.IsNullOrWhiteSpace(req.Description) ? $"Charted region of {cleanName} in the campaign atlas." : req.Description.Trim();
+        var gov = string.IsNullOrWhiteSpace(req.GovernanceAndRealm) ? "Realm governance, settlements, and trade routes recorded by the GM." : req.GovernanceAndRealm.Trim();
+        var sub = string.IsNullOrWhiteSpace(req.Subtitle) ? "Charted Realm & Territory" : req.Subtitle.Trim();
+
+        var dto = new WorldMapRegionOverlayDto(
+            id, mapId, cleanName.ToUpperInvariant(),
+            string.IsNullOrWhiteSpace(req.OverlayType) ? "region" : req.OverlayType.Trim(),
+            req.FactionKey, string.IsNullOrWhiteSpace(req.ColorHex) ? "#d9b77a" : req.ColorHex.Trim(),
+            labelX, labelY, svgPath, vis, sub, desc, gov, loreId, points);
+
+        var idx = overlays.FindIndex(o => o.Id == id);
+        if (idx >= 0) overlays[idx] = dto;
+        else overlays.Add(dto);
+
+        var loreList = WorldLoreCatalogStore.LoreByCampaign.TryGetValue(campaignId, out var lList)
+            ? lList
+            : (WorldLoreCatalogStore.LoreByCampaign[campaignId] = []);
+        var loreContent = string.IsNullOrWhiteSpace(req.LoreContent) ? $"{desc}\n\n{gov}" : req.LoreContent.Trim();
+        var loreEntry = new LoreEntryDto(
+            loreId, $"{campaignId}:Region:{id}", campaignId, cleanName, sub, "Worlds & Regions",
+            desc.Length > 160 ? desc[..157] + "..." : desc, loreContent, "/icrandor_world_dashboard.jpg",
+            ["Regions", cleanName], [$"{campaignId}:Region:{id}"], [], vis, false, "Just now", "Just now", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var lIdx = loreList.FindIndex(l => l.Id == loreId);
+        if (lIdx >= 0) loreList[lIdx] = loreEntry;
+        else loreList.Insert(0, loreEntry);
+
+        var locList = WorldLoreStateStore.LocationsByCampaign.TryGetValue(campaignId, out var locs)
+            ? locs
+            : (WorldLoreStateStore.LocationsByCampaign[campaignId] = []);
+        var regionLoc = new LocationInspectorDetailDto(
+            id, $"{campaignId}:Region:{id}", campaignId, cleanName, sub, "Region", null, "World Atlas",
+            "/icrandor_world_dashboard.jpg", desc, "known", $"{labelY:F1}° N, {labelX:F1}° E", mapId, null, null, vis,
+            [new("Region Scope", sub), new("Governance & Realm", gov)], desc, gov, "Regional lore synchronized with the World & Lore Library.",
+            ["Regions", cleanName], [loreId], [], [], []);
+        var locIdx = locList.FindIndex(l => l.LocationKey == id);
+        if (locIdx >= 0) locList[locIdx] = regionLoc;
+        else locList.Add(regionLoc);
+
+        await SaveRelationshipAndProjectAsync(
+            campaignId,
+            new CreateStoryRelationshipRequest($"{campaignId}:Region:{id}", "DOCUMENTED_IN", $"{campaignId}:Lore:{loreId}", $"Regional Lore for {cleanName}", vis, null, false),
+            repo, graph);
+        return dto;
     }
+
+    private static IReadOnlyList<StoryConnectedGroupDto> BuildConnectedGroupsForBeat(StoryBeatItemDto beat, bool isGm) =>
+    [
+        new("Quests (2)", "compass", "gold", [
+            new("1:Quest:quest-missing-caravan", "The Missing Caravan", "Act I–II Investigation Thread", "/campaigns?beat=beat-1-1", "loc-ruined-chapel"),
+            new("1:Quest:quest-chokrah-ledger", "Secrets Beneath the Chapel", "Crypt C3 & Chokrah Manifest", "/world-lore?tab=lore&loreId=lore-priors-rituals", "loc-ruined-chapel")
+        ]),
+        new("Locations (2)", "map-pin", "emerald", [
+            new("1:Location:loc-ruined-chapel", "The Ruined Chapel", "Keyed Rooms C1–C3 · Whispering Woods", "/world-lore?location=loc-ruined-chapel", "loc-ruined-chapel"),
+            new("1:Location:loc-veldra-wood", "Whispering Woods", "Ancient Fey-Bordered Canopy", "/world-lore?location=loc-veldra-wood", "loc-veldra-wood")
+        ]),
+        new("NPCs (2)", "users", "gold", [
+            new("1:NPC:npc-malric", "Brother Malric", "Chapel Keeper · Currently in C1 (Was in C3)", "/campaigns?inspect=npc-malric", "loc-ruined-chapel"),
+            new("1:NPC:npc-emrys", "Emrys Driothe", "Implicated by Chokrah Manifest & Priors Claim", "/campaigns?inspect=npc-emrys", "loc-cinth")
+        ]),
+        new("Factions (2)", "shield", "emerald", [
+            new("1:Faction:fac-artificers", "Artificers Guild of Cinth", "Allied Brass & Skyship Collective", "/world-lore?tab=lore&loreId=lore-artificers-guild", "loc-artificers-skydock"),
+            new("1:Faction:fac-priors", "The Order of Priors", isGm ? "GM Truth: Siphons student magic via Chokrah" : "Street-Schools of Ekkos (Implicated in C3)", "/world-lore?tab=lore&loreId=lore-priors-rituals", "loc-cinth")
+        ])
+    ];
 }

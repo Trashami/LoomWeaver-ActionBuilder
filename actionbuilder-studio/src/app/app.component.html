@@ -1,0 +1,86 @@
+<div class="ab-shell">
+  <lw-action-top-navbar
+    [dmCampaigns]="studioContext().dmCampaigns"
+    [activeCampaign]="activeCampaign()"
+    [canAccess]="canAccess()"
+    [currentUsername]="studioContext().username"
+    [currentDisplayName]="studioContext().displayName"
+    [demoAccounts]="studioContext().demoAccounts"
+    [selectedAccountId]="selectedAccountId()"
+    [saving]="saving()"
+    [hasUnsavedChanges]="hasUnsavedChanges()"
+    (campaignSelected)="onCampaignSelected($event)"
+    (accountSwitched)="onAccountSwitched($event)"
+    (createNewRule)="onCreateNewRule()"
+    (resetCurrentRule)="onResetCurrentRule()"
+    (applyToCampaign)="onApplyRuleToCampaign()"
+  />
+
+  @if (studioContext().switchedFromPlayerCampaignNotice; as switchedNotice) {
+    <div class="ab-notice ab-notice--gold">
+      <lw-icon name="shield-check" [size]="16" tone="gold" />
+      <span>{{ switchedNotice }}</span>
+      <lw-badge label="Auto-Defaulted to Your DM Campaign" tone="gold" />
+    </div>
+  }
+
+  @if (statusBanner(); as msg) {
+    <div class="ab-notice ab-notice--emerald">
+      <lw-icon name="check-circle" [size]="16" tone="emerald" />
+      <span>{{ msg }}</span>
+    </div>
+  }
+
+  @if (canAccess() && activeCampaign(); as camp) {
+    <main class="ab-workbench">
+      <div class="ab-workbench__left">
+        <lw-rule-catalog-sidebar
+          [rules]="rules()"
+          [selectedRuleId]="activeRule().id"
+          (ruleSelected)="onRuleSelected($event)"
+        />
+      </div>
+
+      <div class="ab-workbench__center">
+        <lw-clause-sentence-editor
+          [clauses]="activeRule().clauses"
+          [keywords]="studioContext().clauseKeywords"
+          [tokenSuggestions]="studioContext().tokenSuggestionsByKeyword"
+          [engineSymbols]="studioContext().engineSymbols"
+          [defaultClassName]="activeRule().primaryClassName"
+          [defaultMethodName]="activeRule().primaryMethodName"
+          (clausesChange)="onClausesChanged($event)"
+        />
+
+        <lw-rule-parameters-editor
+          [rule]="activeRule()"
+          [engineSymbols]="studioContext().engineSymbols"
+          [activeCampaignName]="camp.name"
+          (ruleChange)="onRuleUpdated($event)"
+        />
+      </div>
+
+      <div class="ab-workbench__right">
+        <lw-rule-preview-inspector
+          [rule]="activeRule()"
+          [campaignId]="camp.id"
+          [campaignName]="camp.name"
+          [engineSymbols]="studioContext().engineSymbols"
+          [evaluationResult]="evaluationResult()"
+          [evaluating]="evaluating()"
+          (runSimulation)="onRunSimulation($event)"
+          (applyToCampaign)="onApplyRuleToCampaign()"
+        />
+      </div>
+    </main>
+  } @else {
+    <lw-dm-access-gate
+      [displayName]="studioContext().displayName"
+      [accessDeniedReason]="studioContext().accessDeniedReason || 'Players in a campaign cannot view or edit that campaign\'s ActionBuilder rules.'"
+      [playerOnlyCampaigns]="studioContext().playerOnlyCampaignNames"
+      [creatingCampaign]="creatingCampaign()"
+      (createOwnCampaign)="onCreateOwnDmCampaign($event)"
+      (switchToPrimaryDm)="onAccountSwitched('acc-gm-geojason')"
+    />
+  }
+</div>

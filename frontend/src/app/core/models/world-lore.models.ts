@@ -79,6 +79,11 @@ export interface WorldMapSummaryVm {
   readonly visibility: AudienceVisibility;
 }
 
+export interface RegionPolygonPointVm {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface WorldMapRegionOverlayVm {
   readonly id: string;
   readonly mapId: string;
@@ -90,6 +95,11 @@ export interface WorldMapRegionOverlayVm {
   readonly labelY: number;
   readonly svgPath: string;
   readonly visibility: AudienceVisibility;
+  readonly subtitle?: string;
+  readonly description?: string;
+  readonly governanceAndRealm?: string;
+  readonly linkedLoreId?: string | null;
+  readonly points?: readonly RegionPolygonPointVm[];
 }
 
 export interface WorldMapMarkerVm {

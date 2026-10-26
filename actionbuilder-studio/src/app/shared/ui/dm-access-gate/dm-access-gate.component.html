@@ -1,0 +1,79 @@
+<section class="ab-gate-wrap">
+  <lw-panel
+    eyebrow="Campaign Role Protection · 403 Player Access Restricted"
+    title="Dungeon Master Campaign Required"
+    subtitle="ActionBuilder rules are strictly scoped to campaigns where you are the Dungeon Master."
+    [elevated]="true"
+  >
+    <div class="ab-gate">
+      <div class="ab-gate__alert">
+        <lw-icon name="lock" [size]="22" tone="crimson" [framed]="true" />
+        <div class="ab-gate__alert-copy">
+          <strong>{{ accessDeniedReason() }}</strong>
+          <p>
+            A Dungeon Master can only apply rules to their own campaign, and a player in that campaign cannot see or modify the DM's ActionBuilder workspace. If you have your own campaign where you are the DM, ActionBuilder automatically defaults to your campaign.
+          </p>
+        </div>
+      </div>
+
+      @if (playerOnlyCampaigns().length > 0) {
+        <div class="ab-gate__protected-box">
+          <span class="ab-gate__label">Campaigns Where You Are a Player (Hidden &amp; Protected):</span>
+          <div class="ab-gate__badges">
+            @for (campName of playerOnlyCampaigns(); track campName) {
+              <lw-badge [label]="campName + ' · Read/Write Blocked'" tone="crimson" />
+            }
+          </div>
+        </div>
+      }
+
+      <div class="ab-gate__create-box">
+        <h4 class="ab-gate__create-title">Start Your Own DM Campaign to Use ActionBuilder</h4>
+        <p class="ab-gate__create-desc">
+          Create your own campaign below and ActionBuilder will automatically default to it while keeping other DMs' campaigns isolated.
+        </p>
+
+        <div class="ab-gate__form">
+          <div class="ab-gate__field">
+            <label>Your New DM Campaign Name</label>
+            <input
+              type="text"
+              [ngModel]="newCampaignName()"
+              (ngModelChange)="newCampaignName.set($event)"
+              placeholder="e.g. Chronicles of the Feywild"
+            />
+          </div>
+          <div class="ab-gate__field">
+            <label>Ruleset</label>
+            <select [ngModel]="newCampaignRuleset()" (ngModelChange)="newCampaignRuleset.set($event)">
+              <option value="D&D 5e (2024 + Campaign Rules)">D&amp;D 5e (2024 + Campaign Rules)</option>
+              <option value="D&D 5e (2014 Classic SRD)">D&amp;D 5e (2014 Classic SRD)</option>
+              <option value="Pathfinder 2e Remaster">Pathfinder 2e Remaster</option>
+            </select>
+          </div>
+          <lw-button
+            [label]="creatingCampaign() ? 'Creating...' : 'Create My Own DM Campaign'"
+            icon="plus"
+            variant="gold"
+            size="md"
+            [disabled]="creatingCampaign()"
+            (pressed)="submitCreateCampaign()"
+          />
+        </div>
+      </div>
+
+      <div class="ab-gate__footer">
+        <a class="ab-gate__return-link" href="https://loom-weaver.com">
+          Return to LoomWeaver Main Portal
+        </a>
+        <lw-button
+          label="Switch to Primary DM Account (GeoJason)"
+          icon="shield"
+          variant="secondary"
+          size="sm"
+          (pressed)="switchToPrimaryDm.emit()"
+        />
+      </div>
+    </div>
+  </lw-panel>
+</section>

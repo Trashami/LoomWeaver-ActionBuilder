@@ -1,0 +1,97 @@
+:host {
+  display: block;
+}
+
+.ab-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1.25rem;
+  background: rgba(6, 17, 13, 0.96);
+  border-bottom: 1px solid var(--lw-border-subtle);
+  flex-wrap: wrap;
+}
+
+.ab-navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ab-navbar__home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--lw-text-primary);
+}
+
+.ab-navbar__titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.ab-navbar__eyebrow {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lw-accent-gold);
+}
+
+.ab-navbar__title {
+  font-family: var(--lw-font-display);
+  font-size: 1rem;
+  color: var(--lw-text-primary);
+}
+
+.ab-navbar__selectors {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ab-navbar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ab-navbar__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lw-text-secondary);
+}
+
+.ab-navbar__select-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ab-navbar__select {
+  padding: 0.36rem 0.65rem;
+  border-radius: var(--lw-radius-sm);
+  border: 1px solid var(--lw-border-subtle);
+  background: var(--lw-bg-surface);
+  color: var(--lw-text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 240px;
+}
+
+.ab-navbar__select--account {
+  border-color: rgba(217, 183, 122, 0.38);
+  min-width: 280px;
+}
+
+.ab-navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}

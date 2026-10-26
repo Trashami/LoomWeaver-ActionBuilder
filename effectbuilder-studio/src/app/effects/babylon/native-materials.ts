@@ -50,32 +50,16 @@ const barrier=`precision highp float;varying vec2 vUV;uniform vec3 uMain;uniform
  else if(uVariant<3.5){a=pow(max(0.,1.-abs(sin(p.x*39.+sin(p.y*9.)*3.))),5.);hot=a*.4;}
  else {vec2 brick=fract(p*vec2(12.,5.)+vec2(step(.5,fract(p.y*5.))*.5,0.));float seam=step(.04,brick.x)*step(.04,brick.y);a=.85;hot=seam*.15+detail*.1;}
  gl_FragColor=vec4(mix(uMain*(.4+detail*.6),uCore,clamp(hot,0.,1.)),a*edge);}`;
-const sprite=`precision highp float;varying vec2 vUV;varying vec4 vColor;uniform sampler2D uAtlas;uniform float uTileIndex;uniform vec3 uMain;uniform vec3 uCore;uniform float uClock;
- void main(){
-  float idx=floor(clamp(uTileIndex,0.0,23.0)+0.5);
-  float col=mod(idx,6.0);
-  float row=floor(idx/6.0);
-  vec2 centered=vUV-vec2(0.5);
-  float pulse=1.0+0.04*sin(uClock*6.0);
-  vec2 localUV=clamp(centered/pulse+vec2(0.5),0.02,0.98);
-  vec2 atlasUV=vec2((col+localUV.x)/6.0,1.0-(row+1.0-localUV.y)/4.0);
-  vec4 tex=texture2D(uAtlas,atlasUV);
-  float luma=max(tex.r,max(tex.g,tex.b));
-  vec3 tinted=mix(tex.rgb,tex.rgb*mix(uMain,uCore,clamp(luma,0.0,1.0))*1.45,0.42);
-  float rad=length(centered)*2.0;
-  float mask=smoothstep(1.0,0.58,rad);
-  gl_FragColor=vec4(tinted,tex.a*mask*vColor.a*0.88);
- }`;
 let registered=false;
-function register(){if(registered)return;registered=true;for(const [name,fragment] of Object.entries({fire:FIRE_FRAGMENT,cinematic:CINEMATIC_FRAGMENT,arcane:ARCANE_FRAGMENT,particle,ribbon,barrier,sprite})){
+function register(){if(registered)return;registered=true;for(const [name,fragment] of Object.entries({fire:FIRE_FRAGMENT,cinematic:CINEMATIC_FRAGMENT,arcane:ARCANE_FRAGMENT,particle,ribbon,barrier})){
  Effect.ShadersStore['lwNative'+name+'VertexShader']=vertex;
  const source=fragment.replace(/gl_FragColor\s*=\s*([^;]+);/g,'gl_FragColor = finishLayer($1);');
  Effect.ShadersStore['lwNative'+name+'FragmentShader']=source.replace('void main()',blend+'\nvoid main()');
 }}
 export const nativeBlendModes:EffectBlendMode[]=['normal','add','screen','multiply','overlay','soft-light','hard-light','darken','lighten','difference'];
-export function createNativeMaterial(scene:Scene,family:'fire'|'arcane'|'cinematic'|'particle'|'ribbon'|'barrier'|'sprite',name:string):ShaderMaterial{
- register();const m=new ShaderMaterial(name,scene,{vertex:'lwNative'+family,fragment:'lwNative'+family},{attributes:['position','uv','color'],uniforms:['worldViewProjection','uLayerAlpha','uBlend','uViewport','uMain','uCore','uClock','uProgress','uMode','uVariant','uStrength','uTime','uStyle','uElement','uTurbulence','uAlpha','uColor','uBloom','uDistortion','uScorch','uSeed','uSmoke','uLight','uShadow','uEmbers','uFlame','uSmokeColor','uTileIndex'],samplers:['uBackdrop','uAtlas'],needAlphaBlending:true});
- m.backFaceCulling=false;m.disableDepthWrite=true;m.alphaMode=Constants.ALPHA_COMBINE;m.setFloat('uLayerAlpha',1);m.setFloat('uBlend',0);m.setFloat('uTileIndex',0);m.setVector2('uViewport',new Vector2(scene.getEngine().getRenderWidth(),scene.getEngine().getRenderHeight()));
+export function createNativeMaterial(scene:Scene,family:'fire'|'arcane'|'cinematic'|'particle'|'ribbon'|'barrier',name:string):ShaderMaterial{
+ register();const m=new ShaderMaterial(name,scene,{vertex:'lwNative'+family,fragment:'lwNative'+family},{attributes:['position','uv','color'],uniforms:['worldViewProjection','uLayerAlpha','uBlend','uViewport','uMain','uCore','uClock','uProgress','uMode','uVariant','uStrength','uTime','uStyle','uElement','uTurbulence','uAlpha','uColor','uBloom','uDistortion','uScorch','uSeed','uSmoke','uLight','uShadow','uEmbers','uFlame','uSmokeColor'],samplers:['uBackdrop'],needAlphaBlending:true});
+ m.backFaceCulling=false;m.disableDepthWrite=true;m.alphaMode=Constants.ALPHA_COMBINE;m.setFloat('uLayerAlpha',1);m.setFloat('uBlend',0);m.setVector2('uViewport',new Vector2(scene.getEngine().getRenderWidth(),scene.getEngine().getRenderHeight()));
  m.onBindObservable.add(()=>m.getEffect()?.setVector2('uViewport',new Vector2(scene.getEngine().getRenderWidth(),scene.getEngine().getRenderHeight())));return m;
 }
 /** Artistic blends snapshot the scene plus preceding effect layers. They retain depth-tested

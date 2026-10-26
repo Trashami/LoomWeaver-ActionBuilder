@@ -1,0 +1,49 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.lw-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: inherit;
+
+  &--emerald {
+    color: #49e892;
+  }
+
+  &--gold {
+    color: #d9b77a;
+  }
+
+  &--crimson {
+    color: #f07b88;
+  }
+
+  &--muted {
+    color: #8ea69b;
+  }
+
+  &--framed {
+    padding: 4px;
+    border-radius: 6px;
+    background: rgba(14, 34, 26, 0.78);
+    border: 1px solid rgba(73, 232, 146, 0.28);
+  }
+}
+
+.lw-mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-family: 'Material Icons Outlined', 'Material Icons', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+}

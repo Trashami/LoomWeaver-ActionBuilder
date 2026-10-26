@@ -78,10 +78,8 @@ export const FIRE_FRAGMENT = `
       if (uMode < 1.5) smoke = 0.0;
 
       vec4 result = vec4(0.0);
-      // Analytic ground contact shadow behind the illuminated target, plus soft soot
-      float shadow = exp(-dot((p - vec2(0.3, 0.42)) * vec2(2.4, 4.0), (p - vec2(0.3, 0.42)) * vec2(2.4, 4.0))) * uShadow * tail;
-      float scorch = exp(-dist * dist * 2.4) * smoothstep(0.12, 0.45, t) * tail * uShadow * 0.4;
-      over(result, vec3(0.015, 0.012, 0.018), (uMode > 1.5 ? max(shadow, scorch * uScorch) : 0.0) * 0.8);
+      float scorch = exp(-dist * dist * 2.8) * smoothstep(0.12, 0.45, t) * tail * uShadow * 0.22;
+      over(result, vec3(0.03, 0.02, 0.02), (uMode > 1.5 ? scorch * uScorch : 0.0));
 
       float illumination = exp(-dist * dist * 0.65) * uLight * fireLife;
       over(result, uFlame, illumination * (0.12 + uBloom * 0.18));
@@ -92,7 +90,7 @@ export const FIRE_FRAGMENT = `
       vec3 normal = normalize(vec3(-dx * 8.0, -dy * 8.0, 0.7));
       float diffuse = max(0.0, dot(normal, normalize(vec3(-0.6, -0.65, 1.0))));
       vec3 smokeLit = uSmokeColor * (0.32 + diffuse * 0.55) + uFlame * illumination * 0.32;
-      over(result, smokeLit, smoke * 0.85);
+      over(result, smokeLit, smoke * 0.72);
 
       float heat = clamp(density * 0.7 + detail * 0.65, 0.0, 1.0);
       vec3 fireColor = mix(uFlame * 0.55, uFlame, clamp(heat * 2.0, 0.0, 1.0));
@@ -119,8 +117,6 @@ export const FIRE_FRAGMENT = `
         }
       }
 
-      float rim = exp(-pow((dist - 0.21) * 65.0, 2.0)) * max(0.0, dot(normalize(p + vec2(0.0001)), normalize(vec2(-0.6, -0.8))));
-      over(result, uCore, rim * illumination * 0.7);
       result *= onset;
       vec4 premul = result * uColor;
       gl_FragColor = vec4(premul.rgb / max(premul.a, 0.0001), clamp(premul.a, 0.0, 1.0));

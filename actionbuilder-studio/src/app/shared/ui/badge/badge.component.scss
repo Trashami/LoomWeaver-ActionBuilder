@@ -1,0 +1,48 @@
+:host {
+  display: inline-flex;
+}
+
+.lw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--lw-border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--lw-text-secondary);
+}
+
+.lw-badge[data-tone='gold'] {
+  background: var(--lw-accent-gold-soft);
+  color: var(--lw-accent-gold);
+  border-color: var(--lw-border-gold);
+}
+
+.lw-badge[data-tone='emerald'] {
+  background: var(--lw-accent-emerald-soft);
+  color: var(--lw-accent-emerald);
+  border-color: rgba(73, 232, 146, 0.38);
+}
+
+.lw-badge[data-tone='crimson'] {
+  background: var(--lw-accent-crimson-soft);
+  color: var(--lw-accent-crimson);
+  border-color: rgba(239, 93, 114, 0.38);
+}
+
+.lw-badge[data-tone='violet'] {
+  background: rgba(168, 85, 247, 0.16);
+  color: #d8b4fe;
+  border-color: rgba(168, 85, 247, 0.38);
+}
+
+.lw-badge[data-tone='cyan'] {
+  background: rgba(56, 189, 248, 0.15);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.38);
+}

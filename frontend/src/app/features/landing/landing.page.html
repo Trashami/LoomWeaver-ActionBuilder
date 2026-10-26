@@ -24,16 +24,10 @@
 
       <div class="header-actions">
         @if (auth.isAuthenticated()) {
-          <button ngpButton type="button" class="btn green" (click)="enterStudioOrSignIn('/home')">
-            <span>Enter Studio</span>
-          </button>
+          <button ngpButton type="button" class="btn green" (click)="enterStudioOrSignIn('/home')"><span>Enter Studio</span></button>
         } @else {
-          <a ngpButton class="btn ghost signin" href="/login" (click)="openAuth('login', undefined, $event)">
-            <span>Sign In</span>
-          </a>
-          <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', undefined, $event)">
-            <span>Start Free</span>
-          </a>
+          <a ngpButton class="btn ghost signin" href="/login" (click)="openAuth('login', undefined, $event)"><span>Sign In</span></a>
+          <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', undefined, $event)"><span>Start Free</span></a>
         }
         <button ngpButton type="button" class="mobile-menu" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Toggle navigation menu">
           <lw-icon [name]="mobileMenuOpen() ? 'x' : 'menu'" [size]="18" />
@@ -43,7 +37,6 @@
   </header>
 
   <main id="top" class="landing-main">
-    <!-- HERO SECTION -->
     <section class="hero" aria-labelledby="hero-heading">
       <div class="wrap hero-inner">
         <div class="hero-copy">
@@ -51,15 +44,9 @@
           <h1 id="hero-heading">{{ activeSeoPage().h1Line1 }}<br /><em>{{ activeSeoPage().h1Highlight }}</em></h1>
           <p [innerHTML]="activeSeoPage().leadHtml"></p>
           <div class="hero-ctas">
-            <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', activeSeoPage().studioRoute, $event)">
-              <span>{{ activeSeoPage().primaryCtaLabel }}</span>
-            </a>
-            <a ngpButton class="btn green" href="/login" (click)="openAuth('login', activeSeoPage().studioRoute, $event)">
-              <span>Sign In to Studio</span>
-            </a>
-            <a ngpButton class="btn ghost" routerLink="/vtt" href="/vtt">
-              <span>Explore LoomWeaver VTT</span>
-            </a>
+            <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', activeSeoPage().studioRoute, $event)"><span>{{ activeSeoPage().primaryCtaLabel }}</span></a>
+            <a ngpButton class="btn green" href="/login" (click)="openAuth('login', activeSeoPage().studioRoute, $event)"><span>Sign In to Studio</span></a>
+            <a ngpButton class="btn ghost" routerLink="/vtt" href="/vtt"><span>Explore LoomWeaver VTT</span></a>
           </div>
           <div class="trust" role="list" aria-label="Core Platform Guarantees">
             <span role="listitem"><b>Players join 100% free</b></span>
@@ -455,12 +442,8 @@
         miniatures in the LoomWeaver Marketplace—or publish your own creations and keep <strong>85% of every sale</strong>.
       </p>
       <div class="closing-actions">
-        <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', '/home', $event)">
-          <span>Create Your Free Campaign</span>
-        </a>
-        <a ngpButton class="btn ghost" href="/login" (click)="openAuth('login', '/marketplace', $event)">
-          <span>Explore Creator Marketplace</span>
-        </a>
+        <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', '/home', $event)"><span>Create Your Free Campaign</span></a>
+        <a ngpButton class="btn ghost" href="/login" (click)="openAuth('login', '/marketplace', $event)"><span>Explore Creator Marketplace</span></a>
       </div>
     </section>
 

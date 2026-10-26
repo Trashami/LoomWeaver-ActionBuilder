@@ -239,6 +239,23 @@ public static class WorldLoreEndpoints
             return Results.Ok(BuildWorkspace(campaignId, true, mapId));
         });
 
+        api.MapPost("/campaigns/{campaignId:int}/world-lore/regions", async (
+            int campaignId,
+            string? role,
+            UpsertRegionOverlayRequest req,
+            LoomWeaverMySqlRepository repo,
+            LoomWeaver.Infrastructure.Neo4j.LoomWeaverNeo4jService graph,
+            HttpContext httpContext) =>
+        {
+            if (!IsGm(httpContext, campaignId, role))
+            {
+                return Results.Json(new { message = "GM authorization required to edit regions." }, statusCode: 403);
+            }
+
+            var updated = await ConnectedStoryEngine.UpsertRegionAndSyncAsync(campaignId, req, repo, graph);
+            return Results.Ok(updated);
+        });
+
         MapLoreAndHistoryEndpoints(api);
         return api;
     }
@@ -422,23 +439,10 @@ public static class WorldLoreEndpoints
         );
 
         return new WorldLoreWorkspaceDto(
-            campaign.Id,
-            campaign.Name,
-            campaign.WorldName,
-            campaign.Subtitle,
-            isGm ? "gm" : "players",
-            campaign.WeaveEnabled,
-            activeMapId,
-            maps,
-            overlays,
-            markers,
-            waypoints,
-            lore,
-            WorldLoreStateStore.DefaultCategories,
-            history,
-            discoveries,
-            stats
-        );
+            campaign.Id, campaign.Name, campaign.WorldName, campaign.Subtitle,
+            isGm ? "gm" : "players", campaign.WeaveEnabled, activeMapId,
+            maps, overlays, markers, waypoints, lore,
+            WorldLoreStateStore.DefaultCategories, history, discoveries, stats);
     }
 
     private static LocationInspectorDetailDto SanitizeLocationForViewer(LocationInspectorDetailDto loc, bool isGm)

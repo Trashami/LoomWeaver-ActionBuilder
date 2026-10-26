@@ -1,0 +1,82 @@
+<header class="ab-navbar">
+  <div class="ab-navbar__brand">
+    <a class="ab-navbar__home-link" href="https://loom-weaver.com" title="Return to LoomWeaver">
+      <lw-icon name="shield" [size]="20" tone="emerald" [framed]="true" />
+      <div class="ab-navbar__titles">
+        <span class="ab-navbar__eyebrow">LoomWeaver Studio</span>
+        <strong class="ab-navbar__title">ActionBuilder · Campaign Rules Engine</strong>
+      </div>
+    </a>
+  </div>
+
+  <div class="ab-navbar__selectors">
+    @if (canAccess() && dmCampaigns().length > 0) {
+      <div class="ab-navbar__field">
+        <label class="ab-navbar__label" for="dmCampaignSelect">Your DM Campaign (Scoped)</label>
+        <div class="ab-navbar__select-row">
+          <select
+            id="dmCampaignSelect"
+            class="ab-navbar__select"
+            [ngModel]="activeCampaign()?.id"
+            (ngModelChange)="onCampaignChange($event)"
+          >
+            @for (camp of dmCampaigns(); track camp.id) {
+              <option [value]="camp.id">
+                {{ camp.name }} (DM: {{ camp.dmUsername }} · {{ camp.customizedRuleCount }} custom)
+              </option>
+            }
+          </select>
+          <lw-badge label="DM Owned Only" tone="emerald" />
+        </div>
+      </div>
+    } @else {
+      <div class="ab-navbar__field">
+        <span class="ab-navbar__label">Campaign Scope</span>
+        <lw-badge label="No DM Campaign Found for Player" tone="crimson" />
+      </div>
+    }
+
+    <div class="ab-navbar__field">
+      <label class="ab-navbar__label" for="studioRoleSwitcher">Active User / Role Verification</label>
+      <select
+        id="studioRoleSwitcher"
+        class="ab-navbar__select ab-navbar__select--account"
+        [ngModel]="selectedAccountId()"
+        (ngModelChange)="onAccountChange($event)"
+      >
+        @for (acc of demoAccounts(); track acc.accountId) {
+          <option [value]="acc.accountId">
+            {{ acc.displayName }}
+          </option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="ab-navbar__actions">
+    @if (canAccess() && activeCampaign(); as camp) {
+      <lw-button
+        label="New Custom Rule"
+        icon="plus"
+        variant="secondary"
+        size="sm"
+        (pressed)="createNewRule.emit()"
+      />
+      <lw-button
+        label="Reset to Core SRD"
+        icon="rotate-ccw"
+        variant="ghost"
+        size="sm"
+        (pressed)="resetCurrentRule.emit()"
+      />
+      <lw-button
+        [label]="saving() ? 'Applying...' : 'Apply to ' + camp.name"
+        icon="check"
+        variant="gold"
+        size="md"
+        [disabled]="saving()"
+        (pressed)="applyToCampaign.emit()"
+      />
+    }
+  </div>
+</header>

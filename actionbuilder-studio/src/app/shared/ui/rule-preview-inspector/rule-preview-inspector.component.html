@@ -1,0 +1,161 @@
+<aside class="ab-inspector">
+  <lw-panel
+    eyebrow="Live Campaign Sheet Preview"
+    [title]="rule().name"
+    [subtitle]="'Scoped to DM Campaign: ' + campaignName()"
+    [elevated]="true"
+  >
+    <div panelActions class="ab-inspector__mode-tabs">
+      <lw-button
+        label="Player Sheet"
+        variant="guide-pill"
+        size="xs"
+        [active]="previewMode() === 'player'"
+        (pressed)="previewMode.set('player')"
+      />
+      <lw-button
+        label="GM Engine View"
+        variant="guide-pill"
+        size="xs"
+        [active]="previewMode() === 'gm'"
+        (pressed)="previewMode.set('gm')"
+      />
+    </div>
+
+    <div class="ab-sheet-card">
+      <div class="ab-sheet-card__badges">
+        <lw-badge [label]="rule().actionCost" tone="gold" />
+        <lw-badge [label]="rule().rangeLabel" tone="emerald" />
+        @if (rule().acBonus > 0) {
+          <lw-badge [label]="'+' + rule().acBonus + ' AC'" tone="cyan" />
+        }
+        @if (rule().saveDc > 0) {
+          <lw-badge [label]="'DC ' + rule().saveDc" tone="violet" />
+        }
+      </div>
+
+      <p class="ab-sheet-card__summary">{{ rule().summary }}</p>
+
+      <div class="ab-sheet-card__formula">
+        <span class="ab-sheet-card__label">Outcome / Formula:</span>
+        <strong>{{ rule().damageOrEffectFormula }}</strong>
+      </div>
+
+      @if (previewMode() === 'gm') {
+        <div class="ab-sheet-card__engine">
+          <div class="ab-sheet-card__engine-line">
+            <span>Bound Class:</span>
+            <code>{{ rule().primaryClassName }}.{{ rule().primaryMethodName }}()</code>
+          </div>
+          <div class="ab-sheet-card__engine-line">
+            <span>Source File:</span>
+            <code>{{ rule().sourceFilePath }}</code>
+          </div>
+          @if (activeSymbolInfo().method; as methodInfo) {
+            <div class="ab-sheet-card__engine-line">
+              <span>Signature:</span>
+              <code>{{ methodInfo.signature }} -> {{ methodInfo.returnType }}</code>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="ab-sheet-card__clauses">
+        @for (c of rule().clauses; track c.id) {
+          <div class="ab-sheet-card__clause-line">
+            <strong class="ab-sheet-card__kw">{{ c.keyword.toUpperCase() }}</strong>
+            <span>{{ c.tokens.join(' · ') }}</span>
+          </div>
+        }
+      </div>
+
+      @if (rule().worksWith.length > 0 || rule().conflictsWith.length > 0) {
+        <div class="ab-sheet-card__compat">
+          @if (rule().worksWith.length > 0) {
+            <div>
+              <small class="ab-sheet-card__compat-title">Works With:</small>
+              <span class="ab-sheet-card__compat-items">{{ rule().worksWith.join(', ') }}</span>
+            </div>
+          }
+          @if (rule().conflictsWith.length > 0) {
+            <div>
+              <small class="ab-sheet-card__compat-title ab-sheet-card__compat-title--warn">Conflicts With:</small>
+              <span class="ab-sheet-card__compat-items">{{ rule().conflictsWith.join(', ') }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Rules Engine Combat Sandbox"
+    title="Test Rule in Combat"
+    subtitle="Simulate an incoming attack or spell to verify your clause logic against CombatRuleInterpreter."
+  >
+    <div panelActions>
+      <lw-button
+        [label]="evaluating() ? 'Running...' : 'Test Rule'"
+        icon="play"
+        variant="emerald"
+        size="sm"
+        [disabled]="evaluating()"
+        (pressed)="triggerSimulation()"
+      />
+    </div>
+
+    <div class="ab-sim-grid">
+      <label class="ab-sim-field">
+        <span>Attack Roll</span>
+        <input type="number" [ngModel]="simAttackRoll()" (ngModelChange)="simAttackRoll.set(+$event)" />
+      </label>
+      <label class="ab-sim-field">
+        <span>Target AC</span>
+        <input type="number" [ngModel]="simTargetAc()" (ngModelChange)="simTargetAc.set(+$event)" />
+      </label>
+      <label class="ab-sim-field">
+        <span>Distance (ft)</span>
+        <input type="number" [ngModel]="simDistanceFeet()" (ngModelChange)="simDistanceFeet.set(+$event)" />
+      </label>
+      <label class="ab-sim-field">
+        <span>Base Damage</span>
+        <input type="number" [ngModel]="simDamageRolled()" (ngModelChange)="simDamageRolled.set(+$event)" />
+      </label>
+    </div>
+
+    <div class="ab-sim-toggles">
+      <label class="ab-sim-check">
+        <input type="checkbox" [ngModel]="simReactionAvailable()" (ngModelChange)="simReactionAvailable.set($event)" />
+        <span>Defender Reaction Available</span>
+      </label>
+      <label class="ab-sim-check">
+        <input type="checkbox" [ngModel]="simHasSpellSlot()" (ngModelChange)="simHasSpellSlot.set($event)" />
+        <span>Spell Slot Available</span>
+      </label>
+    </div>
+
+    @if (evaluationResult(); as res) {
+      <div class="ab-sim-result">
+        <div class="ab-sim-result__banner" [class.ab-sim-result__banner--pass]="res.conditionsPassed">
+          <strong>{{ res.finalResolutionSummary }}</strong>
+          <small>{{ res.combatLogPreview }}</small>
+        </div>
+
+        <div class="ab-sim-trace">
+          @for (step of res.traceSteps; track step.stepNumber) {
+            <div class="ab-sim-trace__row">
+              <lw-badge
+                [label]="step.keyword"
+                [tone]="step.passed ? 'emerald' : 'crimson'"
+              />
+              <div class="ab-sim-trace__copy">
+                <code>{{ step.boundSymbol }}</code>
+                <span>{{ step.outcomeDetail }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </lw-panel>
+</aside>

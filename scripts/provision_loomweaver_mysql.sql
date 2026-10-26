@@ -865,7 +865,42 @@ INSERT INTO `lw_entity_relationships` (`campaign_id`, `from_composite_key`, `rel
 (1, '1:PlayerCharacter:pc-kildrid', 'DISCOVERED', '1:Clue:clue-kildrid-tremor', 'Who actually knows this? Kildrid sensed the runic scraping beneath the stone', 'players', NULL, 3, NULL, 1),
 (1, '1:PlayerCharacter:pc-kycius', 'DISCOVERED', '1:Clue:clue-chokrah-manifest', 'Who actually knows this? Kycius inspected the Chokrah manifest seal', 'players', NULL, 3, NULL, 1),
 (1, '1:NPC:npc-malric', 'WAS_IN', '1:Room:room-c3-crypt', 'Historical state: Malric was in Crypt C3 when the Priors arrived (Event 1)', 'players', NULL, 1, 2, 1),
-(1, '1:NPC:npc-malric', 'CURRENTLY_IN', '1:Location:room-c1-nave', 'Current state: Malric is currently keeping vigil in C1 Shattered Nave (Event 2+)', 'players', NULL, 2, NULL, 2)
+(1, '1:NPC:npc-malric', 'CURRENTLY_IN', '1:Location:room-c1-nave', 'Current state: Malric is currently keeping vigil in C1 Shattered Nave (Event 2+)', 'players', NULL, 2, NULL, 2),
+(1, '1:Location:loc-cinth', 'LOCATED_IN_REGION', '1:Region:reg-cinth-kingdom', 'Central Kingdoms & Cinth contains City of Cinth', 'players', NULL, 1, NULL, 1),
+(1, '1:Location:loc-vandia', 'LOCATED_IN_REGION', '1:Region:reg-southern-kingdoms', 'Southern Kingdoms contains Vandia & Cliff House', 'players', NULL, 1, NULL, 1),
+(1, '1:Region:reg-cinth-kingdom', 'DOCUMENTED_IN', '1:Lore:lore-kingdom-cinth', 'Regional lore for Central Kingdoms & Cinth', 'players', NULL, 1, NULL, 1),
+(1, '1:Region:reg-southern-kingdoms', 'DOCUMENTED_IN', '1:Lore:lore-vandia-coast', 'Regional lore for Southern Kingdoms & Coastal Marches', 'players', NULL, 1, NULL, 1)
 ON DUPLICATE KEY UPDATE `why_included_label`=VALUES(`why_included_label`), `visibility`=VALUES(`visibility`), `revision`=VALUES(`revision`);
+
+CREATE TABLE IF NOT EXISTS `lw_world_regions` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `map_id` VARCHAR(64) NOT NULL,
+  `composite_key` VARCHAR(160) NOT NULL,
+  `name` VARCHAR(160) NOT NULL,
+  `overlay_type` VARCHAR(32) NOT NULL DEFAULT 'region',
+  `subtitle` VARCHAR(200) NOT NULL DEFAULT 'Charted Realm',
+  `faction_key` VARCHAR(160) NULL,
+  `color_hex` VARCHAR(24) NOT NULL DEFAULT '#d9b77a',
+  `label_x` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
+  `label_y` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
+  `svg_path` TEXT NOT NULL,
+  `points_json` JSON NOT NULL,
+  `description` TEXT NOT NULL,
+  `governance_and_realm` TEXT NOT NULL,
+  `linked_lore_id` VARCHAR(64) NULL,
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_lw_world_regions_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `lw_world_regions` (`id`, `campaign_id`, `map_id`, `composite_key`, `name`, `overlay_type`, `subtitle`, `faction_key`, `color_hex`, `label_x`, `label_y`, `svg_path`, `points_json`, `description`, `governance_and_realm`, `linked_lore_id`, `visibility`) VALUES
+('reg-cinth-kingdom', 1, 'map-icrandor-world', '1:Region:reg-cinth-kingdom', 'CENTRAL KINGDOMS & CINTH', 'region', 'Heartland Coalition · Seat of Cinth & Plains of Vistagh', '1:Faction:fac-artificers', '#d9b77a', 39.00, 44.00, 'M 290 190 L 495 175 L 520 315 L 310 330 Z', JSON_ARRAY(JSON_OBJECT('x', 29.0, 'y', 33.9), JSON_OBJECT('x', 49.5, 'y', 31.3), JSON_OBJECT('x', 52.0, 'y', 56.3), JSON_OBJECT('x', 31.0, 'y', 58.9)), 'The central realms of Icrandor anchored by the metropolis of Cinth, the Plains of Vistagh, and the trade roads connecting the western holds to the northern forests.', 'Capital: City of Cinth · Governance: Noble Council & Chartered Artificer Guilds · Primary Trade: Brass Condensers, Chokrah Trade, Sky-Freight', 'lore-kingdom-cinth', 'players'),
+('reg-southern-kingdoms', 1, 'map-icrandor-world', '1:Region:reg-southern-kingdoms', 'SOUTHERN KINGDOMS', 'region', 'Coastal Marches · Vandia, Bay of Forgotten Treasures & Well of Life', NULL, '#5ccfe6', 27.00, 62.00, 'M 140 280 L 385 310 L 370 465 L 130 445 Z', JSON_ARRAY(JSON_OBJECT('x', 14.0, 'y', 50.0), JSON_OBJECT('x', 38.5, 'y', 55.4), JSON_OBJECT('x', 37.0, 'y', 83.0), JSON_OBJECT('x', 13.0, 'y', 79.5)), 'The maritime kingdoms and cliffside reaches of southwestern Icrandor, stretching from Vandia and the Bay of Forgotten Treasures northeast along the sacred Well of Life triangle.', 'Major Port: Vandia · Landmarks: Party Cliff-Edge House & Well of Life Sanctuary · Economy: Maritime Shipping & Lost Isles Expeditions', 'lore-vandia-coast', 'players'),
+('reg-veldra-wood', 1, 'map-icrandor-world', '1:Region:reg-veldra-wood', 'VELDRA WOOD', 'region', 'Ancient Fey-Bordered Canopy of Icrandor', NULL, '#49e892', 58.00, 36.00, 'M 510 140 L 670 150 L 660 290 L 515 275 Z', JSON_ARRAY(JSON_OBJECT('x', 51.0, 'y', 25.0), JSON_OBJECT('x', 67.0, 'y', 26.8), JSON_OBJECT('x', 66.0, 'y', 51.8), JSON_OBJECT('x', 51.5, 'y', 49.1)), 'An ancient forest older than the current kingdoms, home to fey remnants, boundary stones, and the Whispering Woods approach to the Ruined Chapel.', 'Wardens: Outcast Fey & Hermit Orders · Borders: Whispering Woods & Northern Edhellain Marches', 'lore-veldra-wood', 'players'),
+('reg-red-marches', 1, 'map-icrandor-world', '1:Region:reg-red-marches', 'THE PLAINS OF RED', 'region', 'Ancient Fey Battlefield & Southern Mountain Corridor', NULL, '#e26d5c', 56.00, 68.00, 'M 450 330 L 665 340 L 640 465 L 430 450 Z', JSON_ARRAY(JSON_OBJECT('x', 45.0, 'y', 58.9), JSON_OBJECT('x', 66.5, 'y', 60.7), JSON_OBJECT('x', 64.0, 'y', 83.0), JSON_OBJECT('x', 43.0, 'y', 80.4)), 'Named for the slaughter of fey by men roughly a thousand years ago. Borders the poisoned roots of the southern mountain where the bound dragon claws at its runic prison.', 'Terrain: Crimson Steppe & Fey Cairns · Hazard: Subterranean Runic Tremors beneath the Southern Peaks', 'lore-plains-of-red', 'players'),
+('reg-blackridge', 1, 'map-icrandor-world', '1:Region:reg-blackridge', 'ORDER OF PRIORS DOMAIN', 'territory', 'GM Secret Territory · Council & Prior Siphon Network', '1:Faction:fac-priors', '#e06c75', 76.00, 30.00, 'M 685 110 L 870 125 L 855 255 L 680 240 Z', JSON_ARRAY(JSON_OBJECT('x', 68.5, 'y', 19.6), JSON_OBJECT('x', 87.0, 'y', 22.3), JSON_OBJECT('x', 85.5, 'y', 45.5), JSON_OBJECT('x', 68.0, 'y', 42.9)), 'Secret jurisdictional reach of the Order of Priors and the Council of Magic''s Chokrah titration academies.', 'Patron: Emrys Driothe · Secret Function: Pooling siphoned student magic for the dragon-scale Luminary ritual', 'lore-priors-rituals', 'gm')
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `subtitle`=VALUES(`subtitle`), `svg_path`=VALUES(`svg_path`), `points_json`=VALUES(`points_json`), `description`=VALUES(`description`);
+
 
 

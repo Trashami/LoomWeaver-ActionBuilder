@@ -16,6 +16,11 @@ public sealed record WorldMapSummaryDto(
     string Visibility
 );
 
+public sealed record RegionPolygonPointDto(
+    double X,
+    double Y
+);
+
 public sealed record WorldMapRegionOverlayDto(
     string Id,
     string MapId,
@@ -26,17 +31,22 @@ public sealed record WorldMapRegionOverlayDto(
     double LabelX,
     double LabelY,
     string SvgPath,
-    string Visibility
+    string Visibility,
+    string? Subtitle = null,
+    string? Description = null,
+    string? GovernanceAndRealm = null,
+    string? LinkedLoreId = null,
+    IReadOnlyList<RegionPolygonPointDto>? Points = null
 );
 
 public sealed record MarkerVisualStyleDto(
     string IconMode = "default",
-    string DefaultIconName = "landmark",
+    string DefaultIconName = "dot",
     string? StampImageUrl = null,
     bool ShowIcon = true,
     string ColorHex = "#d9b77a",
     string FontFamily = "Cinzel",
-    string LabelPosition = "right",
+    string LabelPosition = "top",
     double IconScale = 1.0
 );
 
@@ -278,5 +288,24 @@ public sealed record CreateWorldHistoryEventRequest(
     string Summary,
     int? SessionNumber,
     string? LocationKey,
+    string Visibility
+);
+
+public sealed record UpsertRegionOverlayRequest(
+    string? Id,
+    string? MapId,
+    string Name,
+    string OverlayType,
+    string? Subtitle,
+    string? FactionKey,
+    string ColorHex,
+    double LabelX,
+    double LabelY,
+    string? SvgPath,
+    IReadOnlyList<RegionPolygonPointDto>? Points,
+    string? Description,
+    string? GovernanceAndRealm,
+    string? LinkedLoreId,
+    string? LoreContent,
     string Visibility
 );

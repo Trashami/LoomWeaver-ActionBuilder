@@ -4,11 +4,80 @@ import {
   LoreEntryVm,
   MarkerVisualStyleVm,
   PlayerVisibilityMode,
+  RegionPolygonPointVm,
   WorldHistoryChronicleEventVm,
   WorldLorePrimaryTab,
   WorldMapMarkerVm,
+  WorldMapRegionOverlayVm,
   WorldMapSummaryVm,
 } from '../models/world-lore.models';
+
+export function buildRegionSvgPath(points: readonly RegionPolygonPointVm[]): string {
+  if (!points.length) return 'M 300 180 L 500 180 L 500 320 L 300 320 Z';
+  return (
+    'M ' +
+    points.map((p) => `${Math.round(p.x * 10)} ${Math.round(p.y * 5.6)}`).join(' L ') +
+    ' Z'
+  );
+}
+
+export function parseRegionPointsFromSvgPath(svgPath: string): readonly RegionPolygonPointVm[] {
+  const nums = (svgPath.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+  const pts: RegionPolygonPointVm[] = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    pts.push({
+      x: Math.round((nums[i] / 10) * 10) / 10,
+      y: Math.round((nums[i + 1] / 5.6) * 10) / 10,
+    });
+  }
+  return pts.length >= 3
+    ? pts
+    : [
+        { x: 30, y: 30 },
+        { x: 52, y: 30 },
+        { x: 52, y: 55 },
+        { x: 30, y: 55 },
+      ];
+}
+
+export function buildOptimisticRegionOverlay(
+  mapId: string,
+  req: {
+    id?: string;
+    name: string;
+    overlayType: 'region' | 'territory';
+    subtitle?: string;
+    factionKey?: string | null;
+    colorHex: string;
+    labelX: number;
+    labelY: number;
+    points: readonly RegionPolygonPointVm[];
+    description?: string;
+    governanceAndRealm?: string;
+    linkedLoreId?: string | null;
+    visibility: 'players' | 'gm' | 'public';
+  },
+): WorldMapRegionOverlayVm {
+  const slug = req.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'new-region';
+  const id = req.id || `reg-${slug}`;
+  return {
+    id,
+    mapId,
+    name: req.name.trim().toUpperCase(),
+    overlayType: req.overlayType,
+    factionKey: req.factionKey ?? null,
+    colorHex: req.colorHex || '#d9b77a',
+    labelX: req.labelX,
+    labelY: req.labelY,
+    svgPath: buildRegionSvgPath(req.points),
+    visibility: req.visibility,
+    subtitle: req.subtitle || 'Charted Realm & Territory',
+    description: req.description || `Charted region of ${req.name} in the campaign atlas.`,
+    governanceAndRealm: req.governanceAndRealm || 'Realm governance, settlements, and trade routes recorded by the GM.',
+    linkedLoreId: req.linkedLoreId || `lore-${id}`,
+    points: req.points,
+  };
+}
 
 export const DEFAULT_ACTIVE_LAYERS: readonly AtlasLayerFilterId[] = [
   'Locations',

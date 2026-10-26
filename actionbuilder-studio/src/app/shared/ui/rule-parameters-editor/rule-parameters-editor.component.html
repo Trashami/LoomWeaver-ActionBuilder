@@ -1,0 +1,193 @@
+<lw-panel
+  eyebrow="Rule Configuration & Engine Binding"
+  [title]="rule().name"
+  [subtitle]="'Adjust parameters below. Changes apply exclusively to your DM campaign (' + activeCampaignName() + ').'"
+>
+  <div panelActions>
+    <lw-badge
+      [label]="rule().isCustomizedForCampaign ? 'Campaign Modified' : 'Core SRD Default'"
+      [tone]="rule().isCustomizedForCampaign ? 'gold' : 'emerald'"
+    />
+  </div>
+
+  <div class="ab-params-grid">
+    <div class="ab-field ab-field--wide">
+      <label class="ab-field__label">Rule / Action Name</label>
+      <input
+        type="text"
+        class="ab-field__input"
+        [ngModel]="rule().name"
+        (ngModelChange)="patchField('name', $event)"
+      />
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Rule Code</label>
+      <input
+        type="text"
+        class="ab-field__input ab-field__input--mono"
+        [ngModel]="rule().ruleCode"
+        (ngModelChange)="patchField('ruleCode', $event)"
+      />
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Category</label>
+      <select
+        class="ab-field__select"
+        [ngModel]="rule().category"
+        (ngModelChange)="patchField('category', $event)"
+      >
+        @for (cat of categories; track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Primary Rules Engine Class</label>
+      <select
+        class="ab-field__select ab-field__input--mono"
+        [ngModel]="rule().primaryClassName"
+        (ngModelChange)="patchField('primaryClassName', $event)"
+      >
+        @for (sym of engineSymbols(); track sym.className) {
+          <option [value]="sym.className">{{ sym.className }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Primary Engine Method</label>
+      <select
+        class="ab-field__select ab-field__input--mono"
+        [ngModel]="rule().primaryMethodName"
+        (ngModelChange)="patchField('primaryMethodName', $event)"
+      >
+        @for (m of methodsForPrimaryClass(rule().primaryClassName); track m.methodName) {
+          <option [value]="m.methodName">{{ m.methodName }}()</option>
+        }
+      </select>
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Action Cost</label>
+      <select
+        class="ab-field__select"
+        [ngModel]="rule().actionCost"
+        (ngModelChange)="patchField('actionCost', $event)"
+      >
+        @for (cost of actionCosts; track cost) {
+          <option [value]="cost">{{ cost }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Range / Reach</label>
+      <input
+        type="text"
+        class="ab-field__input"
+        [ngModel]="rule().rangeLabel"
+        (ngModelChange)="patchField('rangeLabel', $event)"
+      />
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Damage / Effect Formula</label>
+      <input
+        type="text"
+        class="ab-field__input ab-field__input--mono"
+        [ngModel]="rule().damageOrEffectFormula"
+        (ngModelChange)="patchField('damageOrEffectFormula', $event)"
+      />
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">AC Bonus Modifier</label>
+      <input
+        type="number"
+        class="ab-field__input"
+        [ngModel]="rule().acBonus"
+        (ngModelChange)="patchField('acBonus', +$event)"
+      />
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Save DC (0 if None)</label>
+      <input
+        type="number"
+        class="ab-field__input"
+        [ngModel]="rule().saveDc"
+        (ngModelChange)="patchField('saveDc', +$event)"
+      />
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Duration</label>
+      <input
+        type="text"
+        class="ab-field__input"
+        [ngModel]="rule().durationLabel"
+        (ngModelChange)="patchField('durationLabel', $event)"
+      />
+    </div>
+
+    <div class="ab-field ab-field--full">
+      <label class="ab-field__label">Rule Description & Table Summary</label>
+      <textarea
+        rows="2"
+        class="ab-field__textarea"
+        [ngModel]="rule().summary"
+        (ngModelChange)="patchField('summary', $event)"
+      ></textarea>
+    </div>
+  </div>
+
+  <div class="ab-scaling-section">
+    <div class="ab-scaling-section__header">
+      <strong class="ab-scaling-section__title">Level 1–20 Progression & Scaling Tiers</strong>
+      <lw-button
+        label="+ Add Scaling Tier"
+        variant="guide-chip"
+        size="xs"
+        (pressed)="addScalingTier()"
+      />
+    </div>
+
+    <div class="ab-scaling-list">
+      @for (tier of rule().scalingTiers; track $index; let tIdx = $index) {
+        <div class="ab-scaling-row">
+          <input
+            type="text"
+            class="ab-field__input ab-scaling-row__range"
+            [ngModel]="tier.levelRange"
+            (ngModelChange)="updateScalingTier(tIdx, 'levelRange', $event)"
+            placeholder="Levels"
+          />
+          <input
+            type="text"
+            class="ab-field__input ab-field__input--mono ab-scaling-row__dice"
+            [ngModel]="tier.diceOrValue"
+            (ngModelChange)="updateScalingTier(tIdx, 'diceOrValue', $event)"
+            placeholder="Dice/Value"
+          />
+          <input
+            type="text"
+            class="ab-field__input ab-scaling-row__summary"
+            [ngModel]="tier.summary"
+            (ngModelChange)="updateScalingTier(tIdx, 'summary', $event)"
+            placeholder="Effect at this tier"
+          />
+          <lw-button
+            icon="trash"
+            variant="ghost"
+            size="xs"
+            [iconOnly]="true"
+            (pressed)="removeScalingTier(tIdx)"
+          />
+        </div>
+      }
+    </div>
+  </div>
+</lw-panel>

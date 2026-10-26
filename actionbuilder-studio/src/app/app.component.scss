@@ -1,0 +1,59 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.ab-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.ab-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 1.25rem;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--lw-border-subtle);
+
+  &--gold {
+    background: rgba(217, 183, 122, 0.14);
+    color: #f6e7c6;
+  }
+
+  &--emerald {
+    background: rgba(46, 211, 154, 0.14);
+    color: #dffaf0;
+  }
+}
+
+.ab-workbench {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr) 390px;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.5rem;
+  align-items: start;
+}
+
+.ab-workbench__center {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 1360px) {
+  .ab-workbench {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .ab-workbench__right {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 920px) {
+  .ab-workbench {
+    grid-template-columns: 1fr;
+  }
+}

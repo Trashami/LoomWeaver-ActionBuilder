@@ -37,6 +37,7 @@ export class LwWorldAtlasComponent {
   readonly isGm = input<boolean>(false);
 
   readonly markerSelected = output<WorldMapMarkerVm>();
+  readonly regionSelected = output<WorldMapRegionOverlayVm>();
   readonly markerPositionCommitted = output<{ locationKey: string; xPercent: number; yPercent: number }>();
   readonly repositionCancelled = output<void>();
   readonly childMapRequested = output<string>();
@@ -225,6 +226,16 @@ export class LwWorldAtlasComponent {
       return;
     }
     this.markerSelected.emit(marker);
+  }
+
+  selectRegion(region: WorldMapRegionOverlayVm, event: MouseEvent): void {
+    event.stopPropagation();
+    this.regionSelected.emit(region);
+  }
+
+  isDotMarker(marker: WorldMapMarkerVm): boolean {
+    const icon = marker.style?.defaultIconName;
+    return !icon || icon === 'dot';
   }
 
   submitCreateWorldMap(): void {

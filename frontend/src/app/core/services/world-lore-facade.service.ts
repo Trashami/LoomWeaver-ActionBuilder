@@ -6,10 +6,12 @@ import {
   LoreEntryVm,
   MarkerVisualStyleVm,
   PlayerVisibilityMode,
+  RegionPolygonPointVm,
   WorldHistoryChronicleEventVm,
   WorldLorePrimaryTab,
   WorldLoreWorkspaceVm,
   WorldMapMarkerVm,
+  WorldMapRegionOverlayVm,
   WorldMapSummaryVm,
 } from '../models/world-lore.models';
 import { LoomWeaverStoreService } from './loomweaver-store.service';
@@ -22,8 +24,11 @@ import {
   buildFallbackLocationVm,
   buildFallbackLoreEntryVm,
   buildMarkerFromLocation,
+  buildOptimisticRegionOverlay,
+  buildRegionSvgPath,
   computeMapBreadcrumbs,
   filterLoreEntriesList,
+  parseRegionPointsFromSvgPath,
   readSavedLayers,
   readSavedPrimaryTab,
 } from './world-lore-facade.helpers';
@@ -196,10 +201,7 @@ export class WorldLoreFacadeService {
 
   selectLocation(locationKey: string | null): void {
     this.errorBanner.set(null);
-    if (!locationKey) {
-      this.selectedLocationKey.set(null);
-      return;
-    }
+    if (!locationKey) { this.selectedLocationKey.set(null); return; }
     this.inspectorContextMode.set('world');
     const local = this.locationsState().find((l) => l.locationKey === locationKey || l.compositeKey === locationKey);
     if (local && !this.isGm() && local.visibility === 'gm') {
@@ -209,37 +211,23 @@ export class WorldLoreFacadeService {
     }
     this.selectedLocationKey.set(local?.locationKey ?? locationKey);
     const cid = this.store.activeCampaignId();
-    this.http
-      .get<LocationInspectorDetailVm>(`/api/v2/campaigns/${cid}/world-lore/locations/${locationKey}?role=${this.store.viewerRole()}`)
-      .subscribe({
-        next: (detail) => {
-          if (detail && detail.campaignId === this.store.activeCampaignId()) {
-            this.locationsState.update((list) =>
-              list.some((l) => l.locationKey === detail.locationKey)
-                ? list.map((l) =>
-                    l.locationKey === detail.locationKey
-                      ? {
-                          ...detail,
-                          name: l.name || detail.name,
-                          locationType: l.locationType || detail.locationType,
-                          style: l.style ?? detail.style,
-                          attachedSessionId: l.attachedSessionId ?? detail.attachedSessionId,
-                          attachedSessionLabel: l.attachedSessionLabel ?? detail.attachedSessionLabel,
-                          playerVisibilityPolicy: l.playerVisibilityPolicy ?? detail.playerVisibilityPolicy,
-                        }
-                      : l,
-                  )
-                : [detail, ...list],
-            );
-          }
-        },
-        error: (err) => {
-          if (err?.status === 404 && !local) {
-            this.selectedLocationKey.set(null);
-            this.errorBanner.set('Location not found or not yet revealed to players.');
-          }
-        },
-      });
+    this.http.get<LocationInspectorDetailVm>(`/api/v2/campaigns/${cid}/world-lore/locations/${locationKey}?role=${this.store.viewerRole()}`).subscribe({
+      next: (detail) => {
+        if (detail && detail.campaignId === this.store.activeCampaignId()) {
+          this.locationsState.update((list) =>
+            list.some((l) => l.locationKey === detail.locationKey)
+              ? list.map((l) => (l.locationKey === detail.locationKey ? { ...detail, name: l.name || detail.name, locationType: l.locationType || detail.locationType, style: l.style ?? detail.style, attachedSessionId: l.attachedSessionId ?? detail.attachedSessionId, attachedSessionLabel: l.attachedSessionLabel ?? detail.attachedSessionLabel, playerVisibilityPolicy: l.playerVisibilityPolicy ?? detail.playerVisibilityPolicy } : l))
+              : [detail, ...list],
+          );
+        }
+      },
+      error: (err) => {
+        if (err?.status === 404 && !local) {
+          this.selectedLocationKey.set(null);
+          this.errorBanner.set('Location not found or not yet revealed to players.');
+        }
+      },
+    });
   }
 
   selectLoreEntry(loreId: string | null): void {
@@ -252,70 +240,33 @@ export class WorldLoreFacadeService {
     this.persistLayers();
   }
 
-  showAllLayers(): void {
-    this.activeLayers.set(this.availableLayerFilters().map((f) => f.id));
-    this.persistLayers();
-  }
-
-  clearAllLayers(): void {
-    this.activeLayers.set([]);
-    this.persistLayers();
-  }
-
-  resetDefaultLayers(): void {
-    this.activeLayers.set(DEFAULT_ACTIVE_LAYERS.filter((id) => this.isGm() || id !== 'Secrets'));
-    this.persistLayers();
-  }
+  showAllLayers(): void { this.activeLayers.set(this.availableLayerFilters().map((f) => f.id)); this.persistLayers(); }
+  clearAllLayers(): void { this.activeLayers.set([]); this.persistLayers(); }
+  resetDefaultLayers(): void { this.activeLayers.set(DEFAULT_ACTIVE_LAYERS.filter((id) => this.isGm() || id !== 'Secrets')); this.persistLayers(); }
 
   openMapEditor(locationKey?: string | null): void {
-    if (locationKey) {
-      this.selectLocation(locationKey);
-    } else if (!this.selectedLocationKey()) {
+    if (locationKey) this.selectLocation(locationKey);
+    else if (!this.selectedLocationKey()) {
       const firstMarker = this.visibleMapMarkers()[0];
       if (firstMarker) this.selectLocation(firstMarker.locationKey);
     }
     this.mapEditorOpen.set(true);
   }
 
-  closeMapEditor(): void {
-    this.mapEditorOpen.set(false);
-    this.repositioningLocationKey.set(null);
-  }
-
-  startRepositioningLocation(locationKey: string | null): void {
-    if (locationKey) this.selectLocation(locationKey);
-    this.repositioningLocationKey.set(locationKey);
-  }
+  closeMapEditor(): void { this.mapEditorOpen.set(false); this.repositioningLocationKey.set(null); }
+  startRepositioningLocation(locationKey: string | null): void { if (locationKey) this.selectLocation(locationKey); this.repositioningLocationKey.set(locationKey); }
 
   setPlayerVisibilityMode(mode: PlayerVisibilityMode): void {
     this.playerVisibilityMode.set(mode);
-    this.statusBanner.set(
-      mode === 'auto_lore_revealed'
-        ? 'Player visibility set to Auto (Respects Lore & Revealed to Players Only).'
-        : 'Player visibility set to Manual DM Override.',
-    );
+    this.statusBanner.set(mode === 'auto_lore_revealed' ? 'Player visibility set to Auto (Respects Lore & Revealed to Players Only).' : 'Player visibility set to Manual DM Override.');
   }
 
   saveLocation(
     payload: {
-      locationKey?: string;
-      name: string;
-      locationType: string;
-      hierarchyLevel: string;
-      parentLocationKey?: string | null;
-      mapId?: string | null;
-      childMapId?: string | null;
-      linkedSceneKey?: string | null;
-      attachedSessionId?: string | number | null;
-      attachedSessionLabel?: string | null;
-      playerVisibilityPolicy?: PlayerVisibilityMode;
-      style?: MarkerVisualStyleVm;
-      xPercent: number;
-      yPercent: number;
-      discoveryStatus: string;
-      visibility: 'players' | 'gm' | 'public';
-      artworkUrl?: string;
-      description: string;
+      locationKey?: string; name: string; locationType: string; hierarchyLevel: string; parentLocationKey?: string | null;
+      mapId?: string | null; childMapId?: string | null; linkedSceneKey?: string | null; attachedSessionId?: string | number | null;
+      attachedSessionLabel?: string | null; playerVisibilityPolicy?: PlayerVisibilityMode; style?: MarkerVisualStyleVm;
+      xPercent: number; yPercent: number; discoveryStatus: string; visibility: 'players' | 'gm' | 'public'; artworkUrl?: string; description: string;
     },
     silent = false,
   ): void {
@@ -330,14 +281,7 @@ export class WorldLoreFacadeService {
     }
     this.http.post<LocationInspectorDetailVm>(`/api/v2/campaigns/${cid}/world-lore/locations?role=gm`, { ...payload, mapId }).subscribe({
       next: (saved) => {
-        const enriched: LocationInspectorDetailVm = {
-          ...saved,
-          attachedSessionId: payload.attachedSessionId ?? saved.attachedSessionId ?? existing?.attachedSessionId ?? null,
-          attachedSessionLabel: payload.attachedSessionLabel ?? saved.attachedSessionLabel ?? existing?.attachedSessionLabel ?? null,
-          playerVisibilityPolicy: payload.playerVisibilityPolicy ?? saved.playerVisibilityPolicy ?? existing?.playerVisibilityPolicy ?? 'auto_lore_revealed',
-          style: payload.style ?? saved.style ?? existing?.style,
-        };
-        this.applySavedLocationLocally(enriched, payload.xPercent, payload.yPercent);
+        this.applySavedLocationLocally({ ...saved, attachedSessionId: payload.attachedSessionId ?? saved.attachedSessionId ?? existing?.attachedSessionId ?? null, attachedSessionLabel: payload.attachedSessionLabel ?? saved.attachedSessionLabel ?? existing?.attachedSessionLabel ?? null, playerVisibilityPolicy: payload.playerVisibilityPolicy ?? saved.playerVisibilityPolicy ?? existing?.playerVisibilityPolicy ?? 'auto_lore_revealed', style: payload.style ?? saved.style ?? existing?.style }, payload.xPercent, payload.yPercent);
       },
       error: () => {},
     });
@@ -390,6 +334,76 @@ export class WorldLoreFacadeService {
     this.http.post<WorldLoreWorkspaceVm>(`/api/v2/campaigns/${cid}/world-lore/maps/assign?role=gm`, dto).subscribe({
       next: (ws) => { this.workspace.set(ws); this.activeMapId.set(ws.activeMapId); },
       error: () => { this.workspace.update((cur) => ({ ...cur, activeMapId: dto.mapId, maps: [dto, ...cur.maps] })); this.activeMapId.set(dto.mapId); },
+    });
+  }
+
+  saveRegionOverlay(
+    req: {
+      id?: string;
+      name: string;
+      overlayType: 'region' | 'territory';
+      subtitle?: string;
+      factionKey?: string | null;
+      colorHex: string;
+      labelX: number;
+      labelY: number;
+      points: readonly RegionPolygonPointVm[];
+      description?: string;
+      governanceAndRealm?: string;
+      linkedLoreId?: string | null;
+      loreContent?: string;
+      visibility: 'players' | 'gm' | 'public';
+      silent?: boolean;
+    },
+  ): void {
+    const cid = this.store.activeCampaignId();
+    const mapId = this.activeMap()?.mapId ?? 'map-icrandor-world';
+    const optimistic = buildOptimisticRegionOverlay(mapId, req);
+    this.workspace.update((cur) => ({
+      ...cur,
+      regionOverlays: cur.regionOverlays.some((o) => o.id === optimistic.id)
+        ? cur.regionOverlays.map((o) => (o.id === optimistic.id ? optimistic : o))
+        : [...cur.regionOverlays, optimistic],
+    }));
+    const regionLoc = buildFallbackLocationVm(cid, mapId, {
+      locationKey: optimistic.id,
+      name: req.name,
+      locationType: optimistic.subtitle || 'Charted Region',
+      hierarchyLevel: 'Region',
+      xPercent: optimistic.labelX,
+      yPercent: optimistic.labelY,
+      discoveryStatus: 'known',
+      visibility: req.visibility,
+      description: optimistic.description || '',
+      historicalBackground: optimistic.governanceAndRealm,
+    });
+    this.locationsState.update((list) =>
+      list.some((l) => l.locationKey === regionLoc.locationKey) ? list.map((l) => (l.locationKey === regionLoc.locationKey ? regionLoc : l)) : [regionLoc, ...list],
+    );
+    if (!req.silent) {
+      this.upsertLoreLocally(
+        buildFallbackLoreEntryVm(cid, {
+          id: optimistic.linkedLoreId || `lore-${optimistic.id}`,
+          title: req.name,
+          category: 'Worlds & Regions',
+          subtitle: optimistic.subtitle,
+          excerpt: optimistic.description,
+          content: req.loreContent || `${optimistic.description}\n\n${optimistic.governanceAndRealm}`,
+          tags: ['Regions', req.name],
+          linkedEntityKeys: [`${cid}:Region:${optimistic.id}`],
+          visibility: req.visibility,
+        }),
+      );
+      this.statusBanner.set(`Saved region "${req.name}" & synced regional lore.`);
+    }
+    this.http.post<WorldMapRegionOverlayVm>(`/api/v2/campaigns/${cid}/world-lore/regions?role=gm`, { ...req, mapId, svgPath: optimistic.svgPath }).subscribe({
+      next: (saved) => {
+        this.workspace.update((cur) => ({
+          ...cur,
+          regionOverlays: cur.regionOverlays.map((o) => (o.id === saved.id ? { ...optimistic, ...saved } : o)),
+        }));
+      },
+      error: () => {},
     });
   }
 

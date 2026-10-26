@@ -1,0 +1,90 @@
+<aside class="ab-sidebar">
+  <div class="ab-sidebar__header">
+    <div class="ab-sidebar__title-row">
+      <h2 class="ab-sidebar__title">Select a Rule to Adjust</h2>
+      <lw-badge [label]="filteredRules().length + ' Rules'" tone="emerald" />
+    </div>
+    <p class="ab-sidebar__subtitle">
+      Choose a core rule or reaction below to customize its logic and parameters for your campaign.
+    </p>
+
+    <div class="ab-sidebar__search">
+      <lw-icon name="search" [size]="15" tone="muted" />
+      <input
+        type="search"
+        class="ab-sidebar__search-input"
+        placeholder="Search rule, reaction, or engine class..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+
+    <div class="ab-sidebar__filters">
+      <lw-button
+        [label]="'All (' + rules().length + ')'"
+        variant="guide-pill"
+        size="xs"
+        [active]="activeSourceFilter() === 'all'"
+        (pressed)="activeSourceFilter.set('all')"
+      />
+      <lw-button
+        [label]="'Campaign Modified (' + modifiedCount() + ')'"
+        variant="guide-pill"
+        size="xs"
+        [active]="activeSourceFilter() === 'modified'"
+        (pressed)="activeSourceFilter.set('modified')"
+      />
+      <lw-button
+        label="Core SRD"
+        variant="guide-pill"
+        size="xs"
+        [active]="activeSourceFilter() === 'core'"
+        (pressed)="activeSourceFilter.set('core')"
+      />
+    </div>
+
+    <div class="ab-sidebar__categories">
+      @for (cat of categories; track cat) {
+        <lw-button
+          [label]="cat"
+          variant="guide-chip"
+          size="xs"
+          [active]="activeCategory() === cat"
+          (pressed)="activeCategory.set(cat)"
+        />
+      }
+    </div>
+  </div>
+
+  <div class="ab-sidebar__list">
+    @for (rule of filteredRules(); track rule.id) {
+      <button
+        type="button"
+        class="ab-rule-card"
+        [class.ab-rule-card--active]="rule.id === selectedRuleId()"
+        [class.ab-rule-card--modified]="rule.isCustomizedForCampaign"
+        (click)="ruleSelected.emit(rule)"
+      >
+        <div class="ab-rule-card__top">
+          <strong class="ab-rule-card__name">{{ rule.name }}</strong>
+          <lw-badge
+            [label]="rule.isCustomizedForCampaign ? 'Campaign Modified' : 'Core SRD'"
+            [tone]="rule.isCustomizedForCampaign ? 'gold' : 'emerald'"
+          />
+        </div>
+        <div class="ab-rule-card__meta">
+          <span class="ab-rule-card__cost">{{ rule.actionCost }}</span>
+          <span class="ab-rule-card__dot">·</span>
+          <span class="ab-rule-card__category">{{ rule.category }}</span>
+        </div>
+        <div class="ab-rule-card__binding">
+          <code>{{ rule.primaryClassName }}.{{ rule.primaryMethodName }}</code>
+        </div>
+      </button>
+    } @empty {
+      <div class="ab-sidebar__empty">
+        <p>No rules match your current search filter.</p>
+      </div>
+    }
+  </div>
+</aside>
