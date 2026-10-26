@@ -12,6 +12,17 @@ export type WorldHierarchyScope =
 
 export type LocationDiscoveryStatus = 'visited' | 'known' | 'rumor' | 'undiscovered';
 
+export type MarkerLabelPosition = 'right' | 'top' | 'bottom' | 'left' | 'overlay' | 'hidden';
+
+export type MarkerFontFamily =
+  | 'Cinzel'
+  | 'Cormorant Garamond'
+  | 'Inter'
+  | 'JetBrains Mono'
+  | 'Georgia';
+
+export type PlayerVisibilityMode = 'auto_lore_revealed' | 'manual_dm';
+
 export type AtlasLayerFilterId =
   | 'Locations'
   | 'Settlements'
@@ -32,6 +43,24 @@ export interface AtlasLayerFilterOption {
   readonly label: string;
   readonly icon: string;
   readonly gmOnly?: boolean;
+}
+
+export interface OldWorldStampOption {
+  readonly id: string;
+  readonly label: string;
+  readonly collection: 'Muller Old World' | 'Harrewyn Classic' | 'World Elements';
+  readonly imageUrl: string;
+}
+
+export interface MarkerVisualStyleVm {
+  readonly iconMode: 'default' | 'stamp';
+  readonly defaultIconName: string;
+  readonly stampImageUrl: string | null;
+  readonly showIcon: boolean;
+  readonly colorHex: string;
+  readonly fontFamily: MarkerFontFamily;
+  readonly labelPosition: MarkerLabelPosition;
+  readonly iconScale: number;
 }
 
 export interface WorldMapSummaryVm {
@@ -78,6 +107,10 @@ export interface WorldMapMarkerVm {
   readonly visibility: AudienceVisibility;
   readonly childMapId: string | null;
   readonly linkedSceneKey: string | null;
+  readonly attachedSessionId?: string | number | null;
+  readonly attachedSessionLabel?: string | null;
+  readonly playerVisibilityPolicy?: PlayerVisibilityMode;
+  readonly style?: MarkerVisualStyleVm;
   readonly questCount: number;
   readonly npcCount: number;
   readonly secretCount: number;
@@ -100,6 +133,8 @@ export interface PartyJourneyWaypointVm {
 export interface LocationAttributeVm {
   readonly label: string;
   readonly value: string;
+  readonly linkTargetKey?: string;
+  readonly linkType?: 'location' | 'lore' | 'entity' | 'session';
 }
 
 export interface LocationRelatedEntityVm {
@@ -145,6 +180,10 @@ export interface LocationInspectorDetailVm {
   readonly mapId: string | null;
   readonly childMapId: string | null;
   readonly linkedSceneKey: string | null;
+  readonly attachedSessionId?: string | number | null;
+  readonly attachedSessionLabel?: string | null;
+  readonly playerVisibilityPolicy?: PlayerVisibilityMode;
+  readonly style?: MarkerVisualStyleVm;
   readonly visibility: AudienceVisibility;
   readonly attributes: readonly LocationAttributeVm[];
   readonly historicalBackground: string;

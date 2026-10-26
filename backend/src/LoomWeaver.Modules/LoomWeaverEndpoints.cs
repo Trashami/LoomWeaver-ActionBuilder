@@ -1,6 +1,7 @@
 using LoomWeaver.Domain;
 using LoomWeaver.GameSystems;
 using LoomWeaver.Infrastructure.MySql;
+using MySqlConnector;
 using LoomWeaver.Infrastructure.Neo4j;
 using LoomWeaver.Modules.Actions;
 using LoomWeaver.Modules.Adventures;
@@ -64,10 +65,116 @@ public static class LoomWeaverEndpoints
             timestamp = DateTimeOffset.UtcNow
         }));
 
-        api.MapGet("/campaigns", async (LoomWeaverMySqlRepository repo, CancellationToken ct) =>
+        api.MapGet("/campaigns", async (HttpContext ctx, LoomWeaverMySqlRepository repo, CancellationToken ct) =>
         {
-            var campaigns = await repo.GetCampaignsAsync(ct);
-            return Results.Ok(campaigns);
+            var caller = AuthAndCheckoutEndpoints.ResolveAuthenticatedUser(ctx);
+            var baseCampaigns = await repo.GetCampaignsAsync(ct);
+            var list = new List<object>();
+
+            try
+            {
+                await using var db = await repo.OpenConnectionAsync(ct);
+                var uid = caller?.Id ?? 1L;
+                await using var cmd = new MySqlCommand("""
+                    SELECT c.id, c.name, COALESCE(c.description, ''), c.dm_user_id,
+                           COALESCE(m.role, CASE WHEN c.dm_user_id = @u THEN 'dm' ELSE 'player' END) AS my_role,
+                           m.character_id, m.character_name
+                    FROM jane_scrum.mw_campaigns c
+                    LEFT JOIN jane_scrum.mw_campaign_members m ON m.campaign_id = c.id AND m.user_id = @u
+                    WHERE c.dm_user_id = @u OR m.user_id = @u OR @isAdmin = 1
+                    ORDER BY c.id
+                    """, db);
+                var isAdmin = caller is null || caller.Id == 1 || caller.Role == "gm";
+                cmd.Parameters.AddWithValue("@u", uid);
+                cmd.Parameters.AddWithValue("@isAdmin", isAdmin ? 1 : 0);
+                await using var r = await cmd.ExecuteReaderAsync(ct);
+                while (await r.ReadAsync(ct))
+                {
+                    var cid = r.GetInt32(0);
+                    var name = r.GetString(1);
+                    var desc = r.GetString(2);
+                    var dmId = r.GetInt64(3);
+                    var rawRole = r.GetString(4);
+                    var myRole = rawRole is "gm" or "dm" ? "dm" : "player";
+                    var myCharId = r.IsDBNull(5) ? (long?)null : r.GetInt64(5);
+                    var myCharName = r.IsDBNull(6) ? null : r.GetString(6);
+                    var match = baseCampaigns.FirstOrDefault(b => b.Id == cid) ?? baseCampaigns.FirstOrDefault();
+
+                    list.Add(new
+                    {
+                        id = cid,
+                        slug = match?.Slug ?? $"campaign-{cid}",
+                        name,
+                        subtitle = string.IsNullOrWhiteSpace(desc) ? (match?.Subtitle ?? "Living World Campaign") : desc,
+                        description = desc,
+                        systemCode = match?.SystemCode ?? "dnd5e",
+                        worldName = match?.WorldName ?? "Icrandor",
+                        currentAct = match?.CurrentAct ?? "ACT I",
+                        currentSessionNumber = match?.CurrentSessionNumber ?? 1,
+                        currentLocationName = match?.CurrentLocationName ?? "Cinth",
+                        weaveEnabled = match?.WeaveEnabled ?? true,
+                        dm_user_id = dmId,
+                        my_role = myRole,
+                        my_character_id = myCharId,
+                        my_character_name = myCharName ?? (myRole == "dm" ? "Dungeon Master" : caller?.BoundCharacter)
+                    });
+                }
+            }
+            catch { }
+
+            if (list.Count == 0)
+            {
+                var isGm = caller is null || caller.Role == "gm";
+                foreach (var c in baseCampaigns)
+                {
+                    list.Add(new
+                    {
+                        id = c.Id,
+                        slug = c.Slug,
+                        name = c.Name,
+                        subtitle = c.Subtitle,
+                        description = c.Subtitle,
+                        systemCode = c.SystemCode,
+                        worldName = c.WorldName,
+                        currentAct = c.CurrentAct,
+                        currentSessionNumber = c.CurrentSessionNumber,
+                        currentLocationName = c.CurrentLocationName,
+                        weaveEnabled = c.WeaveEnabled,
+                        dm_user_id = 1L,
+                        my_role = isGm ? "dm" : "player",
+                        my_character_id = isGm ? (long?)null : 16L,
+                        my_character_name = isGm ? "Dungeon Master" : (caller?.BoundCharacter ?? "Dal Riata")
+                    });
+                }
+            }
+
+            return Results.Ok(list);
+        });
+
+        api.MapGet("/campaigns/{campaignId:int}", async (int campaignId, HttpContext ctx, LoomWeaverMySqlRepository repo, CancellationToken ct) =>
+        {
+            var caller = AuthAndCheckoutEndpoints.ResolveAuthenticatedUser(ctx);
+            var isGm = caller is null || caller.Role == "gm";
+            var baseCampaigns = await repo.GetCampaignsAsync(ct);
+            var c = baseCampaigns.FirstOrDefault(x => x.Id == campaignId) ?? baseCampaigns[0];
+            return Results.Ok(new
+            {
+                id = campaignId,
+                slug = c.Slug,
+                name = c.Name,
+                subtitle = c.Subtitle,
+                description = c.Subtitle,
+                systemCode = c.SystemCode,
+                worldName = c.WorldName,
+                currentAct = c.CurrentAct,
+                currentSessionNumber = c.CurrentSessionNumber,
+                currentLocationName = c.CurrentLocationName,
+                weaveEnabled = c.WeaveEnabled,
+                dm_user_id = 1L,
+                my_role = isGm ? "dm" : "player",
+                my_character_id = isGm ? (long?)null : 16L,
+                my_character_name = isGm ? "Dungeon Master" : (caller?.BoundCharacter ?? "Dal Riata")
+            });
         });
 
         api.MapGet("/campaigns/{campaignId:int}/entities", async (

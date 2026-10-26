@@ -7,16 +7,42 @@
     [class.lw-btn--secondary]="variant() === 'secondary'"
     [class.lw-btn--ghost]="variant() === 'ghost'"
     [class.lw-btn--danger]="variant() === 'danger'"
+    [class.lw-btn--guide-pill]="variant() === 'guide-pill'"
+    [class.lw-btn--guide-chip]="variant() === 'guide-chip'"
+    [class.lw-btn--guide-crumb]="variant() === 'guide-crumb'"
+    [class.lw-btn--guide-action]="variant() === 'guide-action'"
+    [class.lw-btn--guide-exit]="variant() === 'guide-exit'"
+    [class.lw-btn--guide-header]="variant() === 'guide-header'"
+    [class.lw-btn--xs]="size() === 'xs'"
     [class.lw-btn--sm]="size() === 'sm'"
     [class.lw-btn--lg]="size() === 'lg'"
-    [routerLink]="route">
-    @if (iconOnly() && icon(); as iconName) {
-      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 14 : 16" />
+    [class.lw-btn--pill]="shape() === 'pill'"
+    [class.lw-btn--square]="shape() === 'square'"
+    [class.lw-btn--active]="active()"
+    [class.lw-btn--full]="fullWidth()"
+    [class.lw-btn--icon-only]="iconOnly()"
+    [attr.title]="title() || null"
+    [routerLink]="route"
+  >
+    @if (icon(); as iconName) {
+      <lw-icon [name]="iconName" [size]="resolvedIconSize()" [tone]="iconTone()" />
     }
-    @if (label()) {
-      <span>{{ label() }}</span>
+    @if (!iconOnly()) {
+      @if (label() || sublabel()) {
+        <span class="lw-btn__copy">
+          @if (label()) {
+            <span class="lw-btn__label">{{ label() }}</span>
+          }
+          @if (sublabel()) {
+            <small class="lw-btn__sublabel">{{ sublabel() }}</small>
+          }
+        </span>
+      }
+      <ng-content />
     }
-    <ng-content />
+    @if (trailingIcon(); as trailName) {
+      <lw-icon [name]="trailName" [size]="resolvedIconSize()" [tone]="iconTone()" />
+    }
   </a>
 } @else {
   <button
@@ -28,16 +54,42 @@
     [class.lw-btn--secondary]="variant() === 'secondary'"
     [class.lw-btn--ghost]="variant() === 'ghost'"
     [class.lw-btn--danger]="variant() === 'danger'"
+    [class.lw-btn--guide-pill]="variant() === 'guide-pill'"
+    [class.lw-btn--guide-chip]="variant() === 'guide-chip'"
+    [class.lw-btn--guide-crumb]="variant() === 'guide-crumb'"
+    [class.lw-btn--guide-action]="variant() === 'guide-action'"
+    [class.lw-btn--guide-exit]="variant() === 'guide-exit'"
+    [class.lw-btn--guide-header]="variant() === 'guide-header'"
+    [class.lw-btn--xs]="size() === 'xs'"
     [class.lw-btn--sm]="size() === 'sm'"
     [class.lw-btn--lg]="size() === 'lg'"
+    [class.lw-btn--pill]="shape() === 'pill'"
+    [class.lw-btn--square]="shape() === 'square'"
+    [class.lw-btn--active]="active()"
+    [class.lw-btn--full]="fullWidth()"
+    [class.lw-btn--icon-only]="iconOnly()"
+    [attr.title]="title() || null"
     [disabled]="disabled()"
-    (click)="pressed.emit()">
-    @if (iconOnly() && icon(); as iconName) {
-      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 14 : 16" />
+    (click)="pressed.emit()"
+  >
+    @if (icon(); as iconName) {
+      <lw-icon [name]="iconName" [size]="resolvedIconSize()" [tone]="iconTone()" />
     }
-    @if (label()) {
-      <span>{{ label() }}</span>
+    @if (!iconOnly()) {
+      @if (label() || sublabel()) {
+        <span class="lw-btn__copy">
+          @if (label()) {
+            <span class="lw-btn__label">{{ label() }}</span>
+          }
+          @if (sublabel()) {
+            <small class="lw-btn__sublabel">{{ sublabel() }}</small>
+          }
+        </span>
+      }
+      <ng-content />
     }
-    <ng-content />
+    @if (trailingIcon(); as trailName) {
+      <lw-icon [name]="trailName" [size]="resolvedIconSize()" [tone]="iconTone()" />
+    }
   </button>
 }

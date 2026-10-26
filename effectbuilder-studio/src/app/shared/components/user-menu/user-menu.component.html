@@ -1,0 +1,89 @@
+<div class="user-menu-container">
+  @if (auth.isAuthenticated()) {
+    <button
+      type="button"
+      class="user-menu__trigger"
+      [class.active]="isOpen()"
+      (click)="toggleDropdown($event)"
+      aria-haspopup="true"
+      [attr.aria-expanded]="isOpen()">
+      <div class="user-avatar-circle" [ngClass]="getTierBadgeClass(auth.userTier(), auth.isAdmin())">
+        <img *ngIf="auth.currentUser()?.avatarUrl" [src]="auth.currentUser()?.avatarUrl!" alt="Avatar" />
+        <span *ngIf="!auth.currentUser()?.avatarUrl">
+          {{ getInitials(auth.currentUser()?.displayName || auth.currentUser()?.username) }}
+        </span>
+      </div>
+      <div class="user-text-col">
+        <span class="user-primary-name">
+          {{ auth.currentUser()?.displayName || auth.currentUser()?.username }}
+        </span>
+        <span class="user-tier-tag" [ngClass]="getTierBadgeClass(auth.userTier(), auth.isAdmin())">
+          {{ getTierBadgeLabel(auth.userTier(), auth.isAdmin()) }}
+        </span>
+      </div>
+    </button>
+  } @else {
+    <mw-button
+      label="Sign In"
+      appearance="primary"
+      placement="header"
+      edges="none"
+      (pressed)="openAuthModal()" />
+  }
+
+  @if (isOpen() && auth.isAuthenticated()) {
+    <div class="user-menu__dropdown" [style.width]="panelWidth" (click)="$event.stopPropagation()">
+      <div class="dropdown-header">
+        <div class="header-avatar-large">
+          <img *ngIf="auth.currentUser()?.avatarUrl" [src]="auth.currentUser()?.avatarUrl!" alt="Avatar" />
+          <span *ngIf="!auth.currentUser()?.avatarUrl">
+            {{ getInitials(auth.currentUser()?.displayName || auth.currentUser()?.username) }}
+          </span>
+        </div>
+        <div class="header-details">
+          <h4 class="profile-name">
+            {{ auth.currentUser()?.displayName || auth.currentUser()?.username || 'Adventurer' }}
+          </h4>
+          <p class="profile-email">{{ auth.currentUser()?.email }}</p>
+          <div class="tier-badge-row">
+            <span class="tier-pill-large" [ngClass]="getTierBadgeClass(auth.userTier(), auth.isAdmin())">
+              {{ getTierBadgeLabel(auth.userTier(), auth.isAdmin()) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dropdown-body">
+        <div class="menu-nav-links">
+          <a class="menu-nav-btn" href="https://loom-weaver.com/dashboard">
+            <span>Dashboard &amp; Campaigns</span>
+            <mw-icon name="chevron-right" [size]="14" />
+          </a>
+          <a class="menu-nav-btn" href="https://loom-weaver.com/marketplace">
+            <span>Marketplace</span>
+            <mw-icon name="chevron-right" [size]="14" />
+          </a>
+          <a class="menu-nav-btn" href="https://loom-weaver.com/vtt">
+            <span>Virtual Tabletop</span>
+            <mw-icon name="chevron-right" [size]="14" />
+          </a>
+        </div>
+      </div>
+
+      <div class="dropdown-footer">
+        <mw-button
+          label="Sync Profile"
+          appearance="secondary"
+          size="sm"
+          edges="sm"
+          (pressed)="refreshProfile()" />
+        <mw-button
+          label="Sign Out"
+          appearance="danger"
+          size="sm"
+          edges="sm"
+          (pressed)="signOut()" />
+      </div>
+    </div>
+  }
+</div>

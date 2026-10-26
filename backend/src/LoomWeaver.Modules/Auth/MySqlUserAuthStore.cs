@@ -28,6 +28,9 @@ public static class MySqlUserAuthStore
         Environment.GetEnvironmentVariable("LOOMWEAVER_JWT_SECRET")
         ?? "LoomWeaverV2-Polyglot-HMAC-SHA256-SigningKey-2026!");
 
+    private static readonly byte[] LegacyJwtSigningKey = Encoding.UTF8.GetBytes(
+        "MythWeaver_Super_Secure_Secret_Key_For_Jwt_Token_Generation_2026_Tromborg_DND_12345!");
+
     private const string GoogleClientId =
         "280529007750-q5jrb7qbln2hpcaf8a62j4125oied8qs.apps.googleusercontent.com";
 
@@ -49,25 +52,25 @@ public static class MySqlUserAuthStore
                 new[] { "asset-map-cinth" }, 0.00),
             new(4, "acc-player-kycius", "stick.hazen@loomweaver.com", "StickHazen", "Stick Hazen (Kycius)", testerHash, testerSalt, "gm", "worldsmith", "Kycius",
                 Array.Empty<string>(), 0.00),
-            new(5, "acc-gm-greg", "gregmeinert@loomweaver.com", "GregMeinert", "Greg Meinert", testerHash, testerSalt, "gm", "legendary", "GM",
+            new(4522, "acc-gm-greg", "gregmeinert@loomweaver.com", "GregMeinert", "Greg Meinert", testerHash, testerSalt, "gm", "legendary", "GM",
                 new[] { "asset-map-cinth", "asset-dice-runed-obsidian" }, 0.00),
-            new(6, "acc-player-kildrid", "ryan.issak@loomweaver.com", "RyanIssak", "Ryan Issak (Kildrid)", testerHash, testerSalt, "players", "worldsmith", "Kildrid",
+            new(5359, "acc-player-kildrid", "ryan.issak@loomweaver.com", "RyanIssak", "Ryan Issak (Kildrid)", testerHash, testerSalt, "players", "worldsmith", "Kildrid",
                 Array.Empty<string>(), 0.00),
-            new(7, "acc-player-fivi", "dallas.crow@loomweaver.com", "DallasCrow", "Dallas Crow (Fivi)", testerHash, testerSalt, "players", "adventurer", "Fivi",
+            new(5360, "acc-player-fivi", "dallas.crow@loomweaver.com", "DallasCrow", "Dallas Crow (Fivi)", testerHash, testerSalt, "players", "adventurer", "Fivi",
                 new[] { "asset-dice-runed-obsidian" }, 0.00),
-            new(8, "acc-player-munk", "pete.higano@loomweaver.com", "PeteHigano", "Pete Higano (Munk)", testerHash, testerSalt, "players", "adventurer", "Munk",
+            new(5362, "acc-player-munk", "pete.higano@loomweaver.com", "PeteHigano", "Pete Higano (Munk)", testerHash, testerSalt, "players", "adventurer", "Munk",
                 Array.Empty<string>(), 0.00),
-            new(9, "acc-player-josh", "josh.tromborg@loomweaver.com", "JoshTromborg", "Josh Tromborg", testerHash, testerSalt, "players", "worldsmith", "Dal",
+            new(5361, "acc-player-josh", "josh.tromborg@loomweaver.com", "JoshTromborg", "Josh Tromborg", testerHash, testerSalt, "players", "worldsmith", "Dal",
                 Array.Empty<string>(), 0.00),
-            new(10, "acc-gm-kenneth", "kenneth.alexander@loomweaver.com", "KennethAlexander", "Kenneth Alexander", testerHash, testerSalt, "gm", "legendary", "GM",
+            new(5363, "acc-gm-kenneth", "kenneth.alexander@loomweaver.com", "KennethAlexander", "Kenneth Alexander", testerHash, testerSalt, "gm", "legendary", "GM",
                 Array.Empty<string>(), 0.00),
-            new(11, "acc-player-christine", "christine.richey@loomweaver.com", "ChristineRichey", "Christine Richey", testerHash, testerSalt, "players", "worldsmith", "Fivi",
+            new(5364, "acc-player-christine", "christine.richey@loomweaver.com", "ChristineRichey", "Christine Richey", testerHash, testerSalt, "players", "worldsmith", "Fivi",
                 Array.Empty<string>(), 0.00),
-            new(12, "acc-player-michael", "michael.aguilar@loomweaver.com", "MichaelAguilar", "Michael Aguilar", testerHash, testerSalt, "players", "adventurer", "Kycius",
+            new(5365, "acc-player-michael", "michael.aguilar@loomweaver.com", "MichaelAguilar", "Michael Aguilar", testerHash, testerSalt, "players", "adventurer", "Kycius",
                 Array.Empty<string>(), 0.00),
-            new(13, "acc-player-juno", "juno@loomweaver.com", "Juno", "Juno", testerHash, testerSalt, "players", "worldsmith", "Fivi",
+            new(5366, "acc-player-juno", "juno@loomweaver.com", "Juno", "Juno", testerHash, testerSalt, "players", "worldsmith", "Fivi",
                 Array.Empty<string>(), 0.00),
-            new(14, "acc-player-candice", "candice.freymond@loomweaver.com", "CandiceFreymond", "Candice Freymond", testerHash, testerSalt, "players", "adventurer", "Dal",
+            new(5367, "acc-player-candice", "candice.freymond@loomweaver.com", "CandiceFreymond", "Candice Freymond", testerHash, testerSalt, "players", "adventurer", "Dal",
                 Array.Empty<string>(), 0.00)
         };
     }
@@ -78,7 +81,7 @@ public static class MySqlUserAuthStore
     public static UserAccountProfileContract ToContract(StoredUserRecord u) =>
         new(u.AccountId, u.Username, u.DisplayName, u.Email, u.Role, u.TierCode, u.BoundCharacter, u.OwnedAssetIds, u.CreatorBalanceUsd);
 
-    public static object ToLegacyUserDto(StoredUserRecord u)
+    public static object ToLegacyUserDto(StoredUserRecord u, string? freshToken = null)
     {
         var isAdmin = u.Email.Equals("jtromborg1@gmail.com", StringComparison.OrdinalIgnoreCase) ||
                       u.Username.Equals("GeoJason", StringComparison.OrdinalIgnoreCase) ||
@@ -101,7 +104,8 @@ public static class MySqlUserAuthStore
             storageLimitBytes = 10737418240L,
             activeCampaignsLimit = 25,
             isAdmin,
-            boundCharacter = u.BoundCharacter
+            boundCharacter = u.BoundCharacter,
+            token = freshToken ?? IssueHmacJwt(u, DateTimeOffset.UtcNow.AddDays(30))
         };
     }
 
@@ -112,10 +116,7 @@ public static class MySqlUserAuthStore
         {
             await using var conn = await repo.OpenConnectionAsync(ct);
 
-            var createSql = """
-                DROP TABLE IF EXISTS mw_users;
-                DROP TABLE IF EXISTS mw_account_requests;
-
+            const string createSql = """
                 CREATE TABLE IF NOT EXISTS lw_auth_users (
                     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     account_id VARCHAR(64) NOT NULL,
@@ -150,14 +151,15 @@ public static class MySqlUserAuthStore
             foreach (var seed in MemoryUsers)
             {
                 const string upsert = """
-                    INSERT INTO lw_auth_users (account_id, email, username, display_name, password_hash, password_salt, role, tier, bound_character)
-                    VALUES (@aid, @email, @uname, @dname, @hash, @salt, @role, @tier, @bound)
+                    INSERT INTO lw_auth_users (id, account_id, email, username, display_name, password_hash, password_salt, role, tier, bound_character)
+                    VALUES (@id, @aid, @email, @uname, @dname, @hash, @salt, @role, @tier, @bound)
                     ON DUPLICATE KEY UPDATE
                         password_hash = COALESCE(NULLIF(password_hash, ''), @hash),
                         password_salt = COALESCE(NULLIF(password_salt, ''), @salt),
                         display_name = @dname;
                     """;
                 await using var uCmd = new MySqlCommand(upsert, conn);
+                uCmd.Parameters.AddWithValue("@id", seed.Id);
                 uCmd.Parameters.AddWithValue("@aid", seed.AccountId);
                 uCmd.Parameters.AddWithValue("@email", seed.Email);
                 uCmd.Parameters.AddWithValue("@uname", seed.Username);
@@ -174,7 +176,7 @@ public static class MySqlUserAuthStore
         }
         catch
         {
-            // Uses MemoryUsers with identical PBKDF2-SHA512 hashes when MySQL is unavailable locally
+            // Uses MemoryUsers when MySQL is unavailable locally
         }
     }
 
@@ -192,6 +194,67 @@ public static class MySqlUserAuthStore
 
         await EnsureDatabaseReadyAsync(repo, ct);
 
+        var memMatch = MemoryUsers.FirstOrDefault(u =>
+            string.Equals(u.Email, cleanId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(u.Username, cleanId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(u.AccountId, cleanId, StringComparison.OrdinalIgnoreCase));
+
+        // 1. Check jane_scrum.mw_users (production canonical user table)
+        try
+        {
+            await using var conn = await repo.OpenConnectionAsync(ct);
+            const string mwSql = """
+                SELECT id, email, username, display_name, COALESCE(password_hash, ''), COALESCE(password_salt, ''),
+                       COALESCE(role, 'player'), COALESCE(tier, 'adventurer')
+                FROM jane_scrum.mw_users
+                WHERE LOWER(email) = LOWER(@id) OR LOWER(username) = LOWER(@id)
+                LIMIT 1;
+                """;
+            await using var mwCmd = new MySqlCommand(mwSql, conn);
+            mwCmd.Parameters.AddWithValue("@id", cleanId);
+            await using var mwReader = await mwCmd.ExecuteReaderAsync(ct);
+            if (await mwReader.ReadAsync(ct))
+            {
+                var dbId = mwReader.GetInt64(0);
+                var email = mwReader.GetString(1);
+                var uname = mwReader.GetString(2);
+                var dname = mwReader.GetString(3);
+                var hash = mwReader.GetString(4);
+                var salt = mwReader.GetString(5);
+                var rawRole = mwReader.GetString(6);
+                var tier = mwReader.GetString(7);
+
+                var validMwPassword = !string.IsNullOrEmpty(hash) && !string.IsNullOrEmpty(salt) &&
+                                      PasswordHasher.VerifyPassword(password, hash, salt);
+                var validSeedPassword = memMatch is not null &&
+                                        PasswordHasher.VerifyPassword(password, memMatch.PasswordHash, memMatch.PasswordSalt);
+
+                if (validMwPassword || validSeedPassword)
+                {
+                    var normalizedRole = rawRole is "admin" or "dm" or "gm" ? "gm" : "players";
+                    return new StoredUserRecord(
+                        dbId,
+                        memMatch?.AccountId ?? $"acc-{dbId}",
+                        email,
+                        uname,
+                        dname,
+                        hash,
+                        salt,
+                        normalizedRole,
+                        tier,
+                        memMatch?.BoundCharacter ?? (normalizedRole == "gm" ? "GM" : uname),
+                        memMatch?.OwnedAssetIds ?? new[] { "asset-map-cinth", "asset-dice-runed-obsidian" },
+                        memMatch?.CreatorBalanceUsd ?? 0.0
+                    );
+                }
+            }
+        }
+        catch
+        {
+            // Continue to lw_auth_users / MemoryUsers
+        }
+
+        // 2. Check loomweaver.lw_auth_users
         try
         {
             await using var conn = await repo.OpenConnectionAsync(ct);
@@ -209,27 +272,26 @@ public static class MySqlUserAuthStore
             {
                 var hash = reader.IsDBNull(5) ? string.Empty : reader.GetString(5);
                 var salt = reader.IsDBNull(6) ? string.Empty : reader.GetString(6);
-                if (!PasswordHasher.VerifyPassword(password, hash, salt))
+                if (PasswordHasher.VerifyPassword(password, hash, salt) ||
+                    (memMatch is not null && PasswordHasher.VerifyPassword(password, memMatch.PasswordHash, memMatch.PasswordSalt)))
                 {
-                    return null;
+                    var rawRole = reader.GetString(7);
+                    var normalizedRole = rawRole is "player" or "players" ? "players" : "gm";
+                    return new StoredUserRecord(
+                        memMatch?.Id ?? reader.GetInt64(0),
+                        reader.GetString(1),
+                        reader.GetString(2),
+                        reader.GetString(3),
+                        reader.GetString(4),
+                        hash,
+                        salt,
+                        normalizedRole,
+                        reader.GetString(8),
+                        reader.GetString(9),
+                        new[] { "asset-map-cinth", "asset-dice-runed-obsidian" },
+                        0.0
+                    );
                 }
-
-                var rawRole = reader.GetString(7);
-                var normalizedRole = rawRole is "player" or "players" ? "players" : "gm";
-                return new StoredUserRecord(
-                    reader.GetInt64(0),
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.GetString(4),
-                    hash,
-                    salt,
-                    normalizedRole,
-                    reader.GetString(8),
-                    reader.GetString(9),
-                    new[] { "asset-map-cinth", "asset-dice-runed-obsidian" },
-                    0.0
-                );
             }
         }
         catch
@@ -237,17 +299,12 @@ public static class MySqlUserAuthStore
             // Fall through to MemoryUsers verification
         }
 
-        var mem = MemoryUsers.FirstOrDefault(u =>
-            string.Equals(u.Email, cleanId, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(u.Username, cleanId, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(u.AccountId, cleanId, StringComparison.OrdinalIgnoreCase));
-
-        if (mem is null || !PasswordHasher.VerifyPassword(password, mem.PasswordHash, mem.PasswordSalt))
+        if (memMatch is null || !PasswordHasher.VerifyPassword(password, memMatch.PasswordHash, memMatch.PasswordSalt))
         {
             return null;
         }
 
-        return mem;
+        return memMatch;
     }
 
     public static async Task<StoredUserRecord> RegisterAsync(
@@ -277,20 +334,12 @@ public static class MySqlUserAuthStore
 
         var (hash, salt) = PasswordHasher.HashPassword(password);
         var accountId = $"acc-{normalizedRole}-{Guid.NewGuid():N}"[..18];
-        var newId = (long)(MemoryUsers.Count + 100);
+        var newId = (long)(MemoryUsers.Count + 6000);
         var record = new StoredUserRecord(
-            newId,
-            accountId,
-            cleanEmail,
-            cleanUser,
-            cleanDisplay,
-            hash,
-            salt,
-            normalizedRole,
-            normalizedRole == "gm" ? "adventurer" : "player",
+            newId, accountId, cleanEmail, cleanUser, cleanDisplay, hash, salt,
+            normalizedRole, normalizedRole == "gm" ? "adventurer" : "player",
             normalizedRole == "gm" ? "GM" : "Fivi",
-            new[] { "asset-dice-runed-obsidian" },
-            0.0
+            new[] { "asset-dice-runed-obsidian" }, 0.0
         );
 
         try
@@ -344,10 +393,7 @@ public static class MySqlUserAuthStore
             using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
             var root = doc.RootElement;
             var aud = root.TryGetProperty("aud", out var audProp) ? audProp.GetString() : null;
-            if (!string.Equals(aud, GoogleClientId, StringComparison.Ordinal))
-            {
-                return null;
-            }
+            if (!string.Equals(aud, GoogleClientId, StringComparison.Ordinal)) return null;
 
             var email = (root.TryGetProperty("email", out var emProp) ? emProp.GetString() : null)?.Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(email)) return null;
@@ -356,20 +402,35 @@ public static class MySqlUserAuthStore
             var existing = MemoryUsers.FirstOrDefault(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase));
             if (existing is not null) return existing;
 
+            try
+            {
+                await using var conn = await repo.OpenConnectionAsync(ct);
+                await using var cmd = new MySqlCommand(
+                    "SELECT id, username, display_name, COALESCE(role, 'player'), COALESCE(tier, 'adventurer') FROM jane_scrum.mw_users WHERE LOWER(email) = LOWER(@email) LIMIT 1",
+                    conn);
+                cmd.Parameters.AddWithValue("@email", email);
+                await using var r = await cmd.ExecuteReaderAsync(ct);
+                if (await r.ReadAsync(ct))
+                {
+                    var dbId = r.GetInt64(0);
+                    var rawRole = r.GetString(3);
+                    return new StoredUserRecord(
+                        dbId, $"acc-{dbId}", email, r.GetString(1), r.GetString(2), "", "",
+                        rawRole is "admin" or "dm" or "gm" ? "gm" : "players", r.GetString(4), "GM",
+                        new[] { "asset-map-cinth" }, 0.0);
+                }
+            }
+            catch { }
+
             var (hash, salt) = PasswordHasher.HashPassword(Guid.NewGuid().ToString("N"));
             var created = new StoredUserRecord(
-                MemoryUsers.Count + 200,
+                MemoryUsers.Count + 6200,
                 $"acc-google-{Guid.NewGuid():N}"[..18],
-                email,
-                email.Split('@')[0],
-                name,
-                hash,
-                salt,
+                email, email.Split('@')[0], name, hash, salt,
                 email.Equals("jtromborg1@gmail.com", StringComparison.OrdinalIgnoreCase) ? "gm" : "players",
                 email.Equals("jtromborg1@gmail.com", StringComparison.OrdinalIgnoreCase) ? "legendary" : "adventurer",
                 email.Equals("jtromborg1@gmail.com", StringComparison.OrdinalIgnoreCase) ? "GM" : "Dal",
-                new[] { "asset-map-cinth", "asset-dice-runed-obsidian" },
-                0.0
+                new[] { "asset-map-cinth", "asset-dice-runed-obsidian" }, 0.0
             );
             MemoryUsers.Insert(0, created);
             return created;
@@ -380,95 +441,9 @@ public static class MySqlUserAuthStore
         }
     }
 
-    public static string IssueHmacJwt(StoredUserRecord user, DateTimeOffset expiresAt)
-    {
-        var isAdmin = user.Email.Equals("jtromborg1@gmail.com", StringComparison.OrdinalIgnoreCase) ||
-                      user.Username.Equals("GeoJason", StringComparison.OrdinalIgnoreCase) ||
-                      user.Username.Equals("GregMeinert", StringComparison.OrdinalIgnoreCase);
+    public static string IssueHmacJwt(StoredUserRecord user, DateTimeOffset expiresAt) =>
+        JwtTokenHelper.IssueHmacJwt(user, expiresAt);
 
-        var headerJson = JsonSerializer.Serialize(new { alg = "HS256", typ = "JWT" });
-        var payloadJson = JsonSerializer.Serialize(new
-        {
-            sub = user.Id.ToString(),
-            accountId = user.AccountId,
-            email = user.Email,
-            username = user.Username,
-            usr = user.Username,
-            name = user.DisplayName,
-            role = user.Role,
-            tier = user.TierCode,
-            witness = user.BoundCharacter,
-            is_admin = isAdmin ? "true" : "false",
-            exp = expiresAt.ToUnixTimeSeconds()
-        });
-
-        var headerB64 = Base64UrlEncode(Encoding.UTF8.GetBytes(headerJson));
-        var payloadB64 = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
-        var unsignedToken = $"{headerB64}.{payloadB64}";
-        var sigBytes = HMACSHA256.HashData(JwtSigningKey, Encoding.UTF8.GetBytes(unsignedToken));
-        return $"{unsignedToken}.{Base64UrlEncode(sigBytes)}";
-    }
-
-    public static StoredUserRecord? VerifyHmacJwt(string? token)
-    {
-        if (string.IsNullOrWhiteSpace(token)) return null;
-        var clean = token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-            ? token["Bearer ".Length..].Trim()
-            : token.Trim();
-
-        var parts = clean.Split('.');
-        if (parts.Length != 3) return null;
-
-        try
-        {
-            var unsignedToken = $"{parts[0]}.{parts[1]}";
-            var expectedSig = Base64UrlEncode(HMACSHA256.HashData(JwtSigningKey, Encoding.UTF8.GetBytes(unsignedToken)));
-            if (!CryptographicOperations.FixedTimeEquals(
-                    Encoding.UTF8.GetBytes(parts[2]),
-                    Encoding.UTF8.GetBytes(expectedSig)))
-            {
-                return null;
-            }
-
-            var payloadBytes = Base64UrlDecode(parts[1]);
-            using var doc = JsonDocument.Parse(payloadBytes);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("exp", out var expProp) &&
-                expProp.TryGetInt64(out var expSec) &&
-                DateTimeOffset.UtcNow.ToUnixTimeSeconds() > expSec)
-            {
-                return null;
-            }
-
-            var email = root.TryGetProperty("email", out var em) ? em.GetString() : null;
-            var username = root.TryGetProperty("username", out var un) ? un.GetString() :
-                           (root.TryGetProperty("usr", out var usr) ? usr.GetString() : null);
-            var accountId = root.TryGetProperty("accountId", out var aid) ? aid.GetString() :
-                            (root.TryGetProperty("sub", out var sub) ? sub.GetString() : null);
-
-            return MemoryUsers.FirstOrDefault(u =>
-                (!string.IsNullOrEmpty(email) && string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(username) && string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(accountId) && (string.Equals(u.AccountId, accountId, StringComparison.OrdinalIgnoreCase) || u.Id.ToString() == accountId)));
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static string Base64UrlEncode(byte[] bytes) =>
-        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-
-    private static byte[] Base64UrlDecode(string input)
-    {
-        var padded = input.Replace('-', '+').Replace('_', '/');
-        switch (padded.Length % 4)
-        {
-            case 2: padded += "=="; break;
-            case 3: padded += "="; break;
-        }
-        return Convert.FromBase64String(padded);
-    }
+    public static StoredUserRecord? VerifyHmacJwt(string? token) =>
+        JwtTokenHelper.VerifyHmacJwt(token, MemoryUsers);
 }

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IconComponent } from '../../../../../Mythweaver.client/src/app/shared/components/icon/icon.component';
+import { IconComponent } from '../components/icon/icon.component';
 import { clamp, EASINGS, OpacityKeyframe, opacityAt } from './animation-curves';
 
 @Component({ selector: 'mw-opacity-editor', standalone: true, imports: [FormsModule, IconComponent],

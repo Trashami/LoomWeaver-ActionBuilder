@@ -130,7 +130,12 @@
         </lw-scroll-area>
       </main>
 
-      <lw-inspector-drawer [generativeAiEnabled]="store.weaveEnabled()" />
+      <lw-inspector-drawer
+        [generativeAiEnabled]="store.weaveEnabled()"
+        [(collapsed)]="rightGuideCollapsed"
+        collapsedWidth="16px"
+        expandedWidth="356px"
+      />
     </div>
   </div>
   <lw-auth-modal />

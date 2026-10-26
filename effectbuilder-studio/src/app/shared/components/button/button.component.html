@@ -1,0 +1,69 @@
+@if (href && !disabled && !loading) {
+  <a
+    [routerLink]="href"
+    [attr.target]="target || null"
+    [class]="computedClasses"
+    [ngStyle]="customStyles"
+    [attr.title]="title || ariaLabel || label || null"
+    [attr.aria-label]="ariaLabel || title || label || null"
+    [attr.data-testid]="testId || null"
+    (click)="handleClick($event)">
+    @if (loading) {
+      <span class="mw-btn__spinner" aria-hidden="true"></span>
+    } @else if (resolvedIcon) {
+      <span class="mw-btn__icon mw-btn__icon--left" aria-hidden="true">
+        <mw-icon [name]="resolvedIcon" [size]="iconSizePx" />
+      </span>
+    }
+
+    @if (displayLabel) {
+      <span class="mw-btn__label">{{ displayLabel }}</span>
+    }
+
+    <ng-content />
+
+    @if (badge) {
+      <span class="mw-btn__badge">{{ badge }}</span>
+    }
+
+    @if (resolvedIconRight) {
+      <span class="mw-btn__icon mw-btn__icon--right" aria-hidden="true">
+        <mw-icon [name]="resolvedIconRight" [size]="iconSizePx" />
+      </span>
+    }
+  </a>
+} @else {
+  <button
+    type="button"
+    [class]="computedClasses"
+    [ngStyle]="customStyles"
+    [disabled]="disabled || loading"
+    [attr.title]="title || ariaLabel || label || null"
+    [attr.aria-label]="ariaLabel || title || label || null"
+    [attr.data-testid]="testId || null"
+    (click)="handleClick($event)">
+    @if (loading) {
+      <span class="mw-btn__spinner" aria-hidden="true"></span>
+    } @else if (resolvedIcon) {
+      <span class="mw-btn__icon mw-btn__icon--left" aria-hidden="true">
+        <mw-icon [name]="resolvedIcon" [size]="iconSizePx" />
+      </span>
+    }
+
+    @if (displayLabel) {
+      <span class="mw-btn__label">{{ displayLabel }}</span>
+    }
+
+    <ng-content />
+
+    @if (badge) {
+      <span class="mw-btn__badge">{{ badge }}</span>
+    }
+
+    @if (resolvedIconRight) {
+      <span class="mw-btn__icon mw-btn__icon--right" aria-hidden="true">
+        <mw-icon [name]="resolvedIconRight" [size]="iconSizePx" />
+      </span>
+    }
+  </button>
+}

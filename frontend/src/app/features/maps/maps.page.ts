@@ -13,6 +13,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { QualityProfile } from '../../core/models/loomweaver.models';
+import { AdventureGuideService } from '../../core/services/adventure-guide.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import {
   BrushParameterState,
@@ -77,9 +78,16 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly commands = inject(MapSceneCommandsService);
   readonly store = inject(LoomWeaverStoreService);
+  readonly adventureGuide = inject(AdventureGuideService);
   readonly stage = inject(BabylonMapStageService);
   readonly studio = inject(MapStudioStoreService);
   readonly history = inject(MapHistoryEngineService);
+
+  readonly assignSessionId = signal<string>('session-15');
+  readonly assignLocationNodeId = signal<string>('node-loc-ruined-chapel');
+  readonly assignStatusBanner = signal<string>(
+    'Linked to Session 15 — The Ruined Chapel · Site & Keyed Rooms C1, C2, C3.',
+  );
 
   readonly activePresetId = signal<string>('preset-cinth-ballroom');
   readonly activeCatalogAsset = signal<MapCatalogAssetItem | null>(null);
@@ -372,6 +380,25 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       (newRev) => {
         this.sceneGraph.update((cur) => ({ ...cur, revision: newRev }));
       },
+    );
+    this.assignBattlemapToSessionAndPlace();
+  }
+
+  assignBattlemapToSessionAndPlace(): void {
+    const scene = this.activeScene();
+    const mapTitle = this.studio.mapTitle() || scene.name;
+    const sessionId = this.assignSessionId();
+    const locationNodeId = this.assignLocationNodeId();
+    this.adventureGuide.assignBattlemapToSessionAndPlace({
+      sceneKey: scene.sceneKey,
+      sceneTitle: mapTitle,
+      sessionId,
+      locationNodeId,
+      artworkUrl: '/battlemap-showcase.jpg',
+      biome: scene.biome,
+    });
+    this.assignStatusBanner.set(
+      `Assigned '${mapTitle}' (${scene.gridCols}x${scene.gridRows}) to ${sessionId} and place ${locationNodeId} in the Session Guide & Neo4j graph.`,
     );
   }
 

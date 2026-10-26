@@ -14,22 +14,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "types": [],
-    "outDir": "out-tsc",
-    "rootDir": "..",
-    "paths": {
-      "@angular/*": [
-        "./node_modules/@angular/*"
-      ],
-      "rxjs": [
-        "./node_modules/rxjs"
-      ],
-      "rxjs/*": [
-        "./node_modules/rxjs/*"
-      ],
-      "@babylonjs/*": [
-        "./node_modules/@babylonjs/*"
-      ]
-    }
+    "outDir": "out-tsc"
   },
   "angularCompilerOptions": {
     "strictTemplates": true,

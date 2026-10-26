@@ -1,0 +1,114 @@
+@if (open) {
+ <div class="modal-backdrop" [class.no-backdrop-blur]="noBackdropBlur" (click)="onBackdropClick()">
+ <div
+ #containerRef
+ class="modal-container"
+ [class]="'modal-container--' + maxWidth"
+ [class.is-movable]="movable"
+ [class.is-resizable]="resizable"
+ [class.is-dragging]="isDragging()"
+ [class.is-resizing]="isResizing()"
+ [class.is-minimized]="isMinimized"
+ [class.is-maximized]="isMaximized"
+ [style.left.px]="pos()?.x"
+ [style.top.px]="pos()?.y"
+ [style.width.px]="size()?.width"
+ [style.height.px]="size()?.height"
+ [style.position]="pos() ? 'fixed' : null"
+ [style.margin]="pos() ? '0' : null"
+ [attr.aria-label]="ariaLabel || title || 'Dialog'"
+ [attr.data-testid]="testId || null"
+ role="dialog"
+ aria-modal="true"
+ (click)="$event.stopPropagation()">
+ 
+ @if (title || subtitle || iconName) {
+ <header class="modal-header" [class.draggable-header]="movable" (mousedown)="startDrag($event)">
+ <div class="modal-header__main">
+ @if (iconName) {
+ <div class="modal-header__icon-badge">
+ <mw-icon [name]="iconName" [size]="18" />
+ </div>
+ }
+ <div class="modal-header__info">
+ <h2 class="modal-header__title">{{ title }}</h2>
+ @if (subtitle) {
+ <p class="modal-header__subtitle">{{ subtitle }}</p>
+ }
+ </div>
+ </div>
+ <div class="modal-header__actions">
+ @if (minimizable) {
+ <button
+ type="button"
+ class="modal-header__btn modal-header__btn--min"
+ [attr.aria-label]="isMinimized ? 'Restore window' : 'Minimize window'"
+ (click)="toggleMinimize()"
+ [title]="isMinimized ? 'Restore' : 'Minimize'"
+ >
+ <mw-icon [name]="isMinimized ? 'plus' : 'minus'" [size]="14" />
+ </button>
+ }
+ @if (maximizable) {
+ <button
+ type="button"
+ class="modal-header__btn modal-header__btn--max"
+ [attr.aria-label]="isMaximized ? 'Restore size' : 'Maximize window'"
+ (click)="toggleMaximize()"
+ [title]="isMaximized ? 'Restore size' : 'Maximize'"
+ >
+ <mw-icon [name]="isMaximized ? 'minimize-2' : 'maximize-2'" [size]="14" />
+ </button>
+ }
+ @if (showCloseButton) {
+ <button
+ type="button"
+ class="modal-header__btn modal-header__btn--close"
+ aria-label="Close dialog"
+ (click)="close()"
+ title="Close"
+ >
+ <mw-icon name="x" [size]="16" />
+ </button>
+ }
+ </div>
+ </header>
+ }
+
+ @if (!isMinimized) {
+ <div class="modal-body">
+ <ng-content />
+ </div>
+
+ <footer class="modal-footer">
+ <ng-content select="[modalFooter]" />
+ 
+ @if (cancelLabel && !hideCancel) {
+ <mw-button
+ [label]="cancelLabel"
+ [iconName]="cancelIcon || ''"
+ [appearance]="cancelAppearance"
+ (pressed)="onCancelClick()" />
+ }
+ @if (primaryLabel) {
+ <mw-button
+ [label]="primaryLabel"
+ [iconName]="primaryIcon || ''"
+ [appearance]="primaryAppearance"
+ [loading]="primaryLoading"
+ [disabled]="primaryDisabled"
+ (pressed)="onPrimaryClick()" />
+ }
+ </footer>
+
+ @if (resizable) {
+ <div class="modal-resize-handle" (mousedown)="startResize($event)" title="Resize modal">
+ <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+ <path d="M14 14v-2h-2v2h2zm0-4v-2h-2v2h2zm-4 4v-2H8v2h2zm4-8V4h-2v2h2zm-4 4v-2H8v2h2zm-4 4v-2H4v2h2z"/>
+ </svg>
+ </div>
+ }
+ }
+ </div>
+ </div>
+}

@@ -5,9 +5,7 @@
   "scripts": {
     "start": "ng serve --host 127.0.0.1 --port 4310",
     "build": "ng build",
-    "test": "node scripts/check-effects.mjs && node scripts/check-native-runtime.mjs",
-    "prebuild": "node scripts/shared-angular.mjs",
-    "prestart": "node scripts/shared-angular.mjs"
+    "test": "node scripts/check-effects.mjs && node scripts/check-native-runtime.mjs"
   },
   "engines": {
     "node": ">=24.15 <25"

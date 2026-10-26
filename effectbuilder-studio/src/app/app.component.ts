@@ -1,23 +1,24 @@
 import { TELEPORT_DEFAULTS } from './effects/effect-definition';
-import { OptionGridComponent } from '../../../Mythweaver.client/src/app/shared/components/option-grid/option-grid.component';
+import { OptionGridComponent } from './shared/components/option-grid/option-grid.component';
 import { makeLayerCatalog } from './effects/layer-catalog';
 import { LightSettings, parseLight } from './effects/spell-light-settings';
-import { makeSpellTemplates,makeGasCone } from './effects/spell-templates';
+import { makeSpellTemplates, makeGasCone } from './effects/spell-templates';
 import { HttpClient } from '@angular/common/http';
-import { UserMenuComponent } from '../../../Mythweaver.client/src/app/shared/components/user-menu/user-menu.component';
-import { SplitterComponent } from '../../../Mythweaver.client/src/app/shared/components/splitter/splitter.component';
-import { SpellPickerComponent, CatalogSpell } from '../../../Mythweaver.client/src/app/shared/components/spell-picker/spell-picker.component';
+import { UserMenuComponent } from './shared/components/user-menu/user-menu.component';
+import { SplitterComponent } from './shared/components/splitter/splitter.component';
+import { SpellPickerComponent, CatalogSpell } from './shared/components/spell-picker/spell-picker.component';
 import { makeAmbientPresets } from './effects/ambient-presets';
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { ButtonComponent } from '../../../Mythweaver.client/src/app/shared/components/button/button.component';
-import { IconComponent } from '../../../Mythweaver.client/src/app/shared/components/icon/icon.component';
-import { ModalComponent } from '../../../Mythweaver.client/src/app/shared/components/modal/modal.component';
-import { AuthModalComponent } from '../../../Mythweaver.client/src/app/shared/components/auth-modal/auth-modal.component';
-import { AuthService } from '../../../Mythweaver.client/src/app/core/services/auth.service';
-import { CampaignService } from '../../../Mythweaver.client/src/app/core/services/campaign.service';
-import { UiLayoutService } from '../../../Mythweaver.client/src/app/core/services/ui-layout.service';
+import { ButtonComponent } from './shared/components/button/button.component';
+import { IconComponent } from './shared/components/icon/icon.component';
+import { ModalComponent } from './shared/components/modal/modal.component';
+import { AuthModalComponent } from './shared/components/auth-modal/auth-modal.component';
+import { AuthService } from './core/services/auth.service';
+import { CampaignService } from './core/services/campaign.service';
+import { UiLayoutService } from './core/services/ui-layout.service';
+import { adaptEffectForCampaign, downloadStandaloneEffectFile, parseStandaloneEffectPayload } from './effects/standalone-effect-io';
 import { EffectPreviewComponent } from './shared/effect-preview.component';
 import { TimelineComponent, ClipChange } from './shared/timeline/timeline.component';
 import { EffectApiService, EffectListing } from './effect-api.service';
@@ -28,7 +29,32 @@ export class AppComponent {
   readonly sessionReady=signal(false);readonly sessionError=signal('');private sessionGeneration=0;
   private readonly accountId=computed(()=>this.auth.isAuthenticated()?this.auth.currentUser()?.id:null);
   @HostListener('window:focus') checkSession():void { void this.validateSession(); }
-  async validateSession():Promise<void>{const generation=++this.sessionGeneration;if(!this.auth.isAuthenticated()){this.sessionReady.set(false);return;}try{await firstValueFrom(this.http.get('/api/auth/me'));if(generation===this.sessionGeneration){this.sessionError.set('');this.sessionReady.set(true);}}catch(e:any){if(generation!==this.sessionGeneration)return;this.sessionReady.set(false);this.sessionError.set(e?.status===401?'Your session expired. Sign in to continue.':'Unable to verify your account. Please retry.');if(e?.status===401)this.auth.logout();}}
+  async validateSession(): Promise<void> {
+    const generation = ++this.sessionGeneration;
+    try {
+      await firstValueFrom(this.auth.refreshProfile());
+      if (generation === this.sessionGeneration) {
+        this.sessionError.set('');
+        this.sessionReady.set(true);
+        this.campaigns.loadMyCampaigns().subscribe({ error: () => {} });
+      }
+    } catch (e: any) {
+      if (generation !== this.sessionGeneration) return;
+      if (this.auth.isAuthenticated()) {
+        if (e?.status === 401) {
+          this.sessionReady.set(false);
+          this.sessionError.set('Your session expired. Sign in to continue.');
+          this.auth.clearInvalidSession();
+        } else {
+          this.sessionError.set('');
+          this.sessionReady.set(true);
+          this.campaigns.loadMyCampaigns().subscribe({ error: () => {} });
+        }
+      } else {
+        this.sessionReady.set(false);
+      }
+    }
+  }
   readonly auth = inject(AuthService); readonly campaigns = inject(CampaignService); readonly ui = inject(UiLayoutService); private api = inject(EffectApiService);
   @ViewChild(EffectPreviewComponent) preview?: EffectPreviewComponent;
   readonly ambient = [...makeAmbientPresets(),{role:'target' as const,effect:createFireHitEffect()},{role:'caster' as const,effect:createFireballComposition('caster')},{role:'target' as const,effect:createFireballComposition('impact')}]; readonly presetRoles = new Map(this.ambient.map(p => [p.effect.id,p.role]));
@@ -144,13 +170,74 @@ export class AppComponent {
   async loadLibrary(): Promise<void> { try { const uid = this.auth.currentUser()?.id, result = await firstValueFrom(this.api.library()); if (this.auth.currentUser()?.id === uid) this.library.set(result.map(parseEffect)); } catch { this.notice.set('Could not load your cloud library. Your browser draft is safe.'); } }
   async save(): Promise<void> { if (!this.auth.isAuthenticated()) return this.signIn(); await this.task(async () => { const d = parseEffect(this.definition()); if (!d.layers.length) throw new Error('Add a layer before saving.'); await firstValueFrom(this.api.save(d)); await this.loadLibrary(); this.notice.set('Saved to your effect library.'); }); }
   async deleteSaved(id: string): Promise<void> { await this.task(async () => { await firstValueFrom(this.api.delete(id)); this.library.update(es => es.filter(e => e.id !== id)); this.notice.set('Removed from the library. Assigned copies are preserved.'); }); }
-  export(pack = false): void { const data = pack ? { format: 'loomweaver-effect-pack', schemaVersion: 1, effects: this.library() } : this.definition(); const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = pack ? 'effect-pack.json' : 'spell-effect.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
-  async importFile(event: Event): Promise<void> { const input = event.target as HTMLInputElement, file = input.files?.[0]; if (!file) return; await this.task(async () => { if (file.size > 512000) throw new Error('Use an effect file smaller than 500 KB.'); const raw = JSON.parse(await file.text()), data = raw.format === 'loomweaver-effect-pack' ? raw.effects : [raw]; if (!Array.isArray(data) || !data.length || data.length > 50) throw new Error('Import 1–50 effects.'); const effects = data.map(parseEffect).map(d => ({ ...d, id: newId() })); if (effects.length > 1) { if (!this.auth.isAuthenticated()) throw new Error('Sign in before importing a pack.'); for (const e of effects) await firstValueFrom(this.api.save(e)); await this.loadLibrary(); } this.use(effects[0]); this.notice.set('Imported. Older effects receive compatible motion defaults.'); }); input.value = ''; }
-  async openAssignments(): Promise<void> { if (!this.auth.isAuthenticated()) return this.signIn(); this.assignmentSpell = ''; this.campaignId = this.campaigns.activeCampaignId(); this.dialog.set('assign'); await this.loadAssignments(); }
+  export(pack = false, singleEffect?: EffectDefinition): void {
+    if (!pack) {
+      downloadStandaloneEffectFile(singleEffect ?? this.definition());
+      return;
+    }
+    const data = { format: 'loomweaver-effect-pack', schemaVersion: 1, effects: this.library() };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'effect-pack.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  exportSingleEffect(e: EffectDefinition, ev?: Event): void {
+    ev?.stopPropagation();
+    downloadStandaloneEffectFile(e);
+  }
+  async importFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement, file = input.files?.[0];
+    if (!file) return;
+    await this.task(async () => {
+      if (file.size > 512000) throw new Error('Use an effect file smaller than 500 KB.');
+      const raw = JSON.parse(await file.text());
+      const effects = parseStandaloneEffectPayload(raw, this.campaignId || this.campaigns.activeCampaignId());
+      if (effects.length > 50) throw new Error('Import 1–50 effects.');
+      if (this.auth.isAuthenticated()) {
+        for (const e of effects) await firstValueFrom(this.api.save(e));
+        await this.loadLibrary();
+      }
+      this.use(effects[0]);
+      this.notice.set(`Imported ${effects.length} standalone effect${effects.length > 1 ? 's' : ''}. Ready for any campaign.`);
+    });
+    input.value = '';
+  }
+  async importIntoCampaignFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement, file = input.files?.[0];
+    if (!file) return;
+    await this.task(async () => {
+      if (!this.campaignId) throw new Error('Choose a campaign first.');
+      if (file.size > 512000) throw new Error('Use an effect file smaller than 500 KB.');
+      const raw = JSON.parse(await file.text());
+      const res = await firstValueFrom(
+        this.api.importIntoCampaign(this.campaignId, raw, this.assignmentSpell || undefined, +this.characterId)
+      );
+      await this.loadLibrary();
+      this.assignments.set(await firstValueFrom(this.api.assignments(this.campaignId)));
+      if (res.effects?.length) {
+        this.use(parseEffect(res.effects[0]));
+      }
+      this.notice.set(
+        this.assignmentSpell
+          ? `Imported & assigned to ${this.assignmentSpell} in campaign.`
+          : `Imported ${res.imported} standalone effect(s) into campaign and your library.`
+      );
+    });
+    input.value = '';
+  }
+  async openAssignments(): Promise<void> {
+    if (!this.auth.isAuthenticated()) return this.signIn();
+    this.assignmentSpell = this.definition().spellName || '';
+    this.campaignId = this.campaigns.activeCampaignId() ?? (this.campaigns.myCampaigns()[0]?.id ?? 0);
+    this.dialog.set('assign');
+    await this.loadAssignments();
+  }
   setDesignSpell(spell: CatalogSpell | null): void { if (spell) this.update({spellName:spell.name}); }
   selectAssignmentSpell(spell: CatalogSpell | null): void { this.assignmentSpell = spell?.name ?? ''; }
   async loadAssignments(): Promise<void> { this.assignments.set([]); this.members.set([]); this.characterId = 0; if (!this.campaignId) return; await this.task(async () => { const [as, ms] = await Promise.all([firstValueFrom(this.api.assignments(this.campaignId)), firstValueFrom(this.api.members(this.campaignId))]); this.assignments.set(as); this.members.set(ms.members.filter(m => m.character_id)); }); }
-  async assign(): Promise<void> { await this.task(async () => { if (!this.campaignId || !this.assignmentSpell.trim()) throw new Error('Choose a campaign and a spell from the catalog.'); const a = { spellName: this.assignmentSpell.trim(), characterId: +this.characterId, definition: parseEffect(this.definition()) }; await firstValueFrom(this.api.assign(this.campaignId, a)); this.notice.set('Effect assigned to '+this.assignmentSpell+'. The campaign copy is saved.'); this.assignments.set(await firstValueFrom(this.api.assignments(this.campaignId))); }); }
+  async assign(): Promise<void> { await this.task(async () => { if (!this.campaignId || !this.assignmentSpell.trim()) throw new Error('Choose a campaign and a spell from the catalog.'); const adapted = adaptEffectForCampaign(this.definition(), this.campaignId); const a = { spellName: this.assignmentSpell.trim(), characterId: +this.characterId, definition: parseEffect(adapted) }; await firstValueFrom(this.api.assign(this.campaignId, a)); this.notice.set('Effect assigned to '+this.assignmentSpell+'. The campaign copy is saved.'); this.assignments.set(await firstValueFrom(this.api.assignments(this.campaignId))); }); }
   async unassign(a: EffectAssignment): Promise<void> { await this.task(async () => { await firstValueFrom(this.api.unassign(this.campaignId, a)); this.assignments.update(as => as.filter(x => x !== a)); }); }
   openPublish(): void { if (!this.auth.isAuthenticated()) return this.signIn(); this.publishTitle = this.definition().name; this.publishDescription = this.definition().description; this.rightsConfirmed = false; this.dialog.set('publish'); }
   async loadCommunity(): Promise<void> { try { this.listings.set(await firstValueFrom(this.api.listings())); } catch { /* Explicit refresh remains available. */ } }

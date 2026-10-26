@@ -2,7 +2,7 @@ import { Easing, EASINGS, OpacityKeyframe } from '../animation/animation-curves'
 import { OpacityEditorComponent } from '../animation/opacity-editor.component';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IconComponent } from '../../../../../Mythweaver.client/src/app/shared/components/icon/icon.component';
+import { IconComponent } from '../components/icon/icon.component';
 import { ClipEdit, editClip } from './timeline-math';
 export interface TimelineClip { id: string; name: string; color: string; start: number; duration: number; enabled: boolean; easing: Easing; opacityKeyframes: OpacityKeyframe[]; }
 export interface ClipChange { id: string; start: number; duration: number; }

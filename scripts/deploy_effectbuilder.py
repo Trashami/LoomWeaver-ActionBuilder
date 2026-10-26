@@ -1,8 +1,8 @@
 """
-Pushes the existing old EffectBuilder (brought over as-is into effectbuilder-studio) to
-its dedicated GitHub repository (LoomWeaver-EffectBuilder), pushes LoomWeaverV2 to origin
-(master & dev), and deploys the existing old EffectBuilder client + EffectBuilder.server
-as-is to 209.46.127.226 (effectbuilder.loom-weaver.com).
+Deploys the refactored EffectBuilder Studio frontend and the unified single .NET 10
+backend (LoomWeaver.Api on port 5000) to 209.46.127.226, verifies live sign-in and
+effect endpoints on https://effectbuilder.loom-weaver.com, and pushes both
+LoomWeaver-EffectBuilder and LoomWeaverV2 to GitHub (master & dev).
 """
 import json
 import os
@@ -15,10 +15,9 @@ import paramiko
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EB_ROOT = os.path.join(ROOT, "effectbuilder-studio")
-OLD_WORK = r"C:\repos\Jane\Jane\.effectbuilder\work\MythWeaver"
-EB_DIST = os.path.join(OLD_WORK, "EffectBuilder.client", "dist", "effectbuilder-client", "browser")
-EB_SERVER_PUB = os.path.join(OLD_WORK, "EffectBuilder.server", "publish")
-DEPLOY_TAR = os.path.join(ROOT, "effectbuilder_as_is.tar.gz")
+EB_DIST = os.path.join(EB_ROOT, "dist", "effectbuilder-client", "browser")
+BACKEND_PUB = os.path.join(ROOT, "backend", "publish")
+DEPLOY_TAR = os.path.join(ROOT, "effectbuilder_unified.tar.gz")
 
 
 def get_github_credentials() -> tuple[str, str]:
@@ -77,100 +76,50 @@ def run_git(cwd: str, *args: str) -> None:
         print(res.stdout.strip())
 
 
-def push_repos() -> None:
-    username, token = get_github_credentials()
-    eb_remote = ensure_github_repo(
-        username,
-        token,
-        "LoomWeaver-EffectBuilder",
-        "EffectBuilder Studio (EffectBuilder.client + EffectBuilder.server) for effectbuilder.loom-weaver.com",
-    )
-
-    eb_gitignore = os.path.join(EB_ROOT, ".gitignore")
-    with open(eb_gitignore, "w", encoding="utf-8") as f:
-        f.write("node_modules/\ndist/\n.angular/\nserver/bin/\nserver/obj/\nserver/publish/\n*.tar.gz\n")
-
-    if not os.path.exists(os.path.join(EB_ROOT, ".git")):
-        run_git(EB_ROOT, "init", "-b", "master")
-
-    run_git(EB_ROOT, "config", "user.name", username)
-    run_git(EB_ROOT, "config", "user.email", f"{username}@users.noreply.github.com")
-    run_git(EB_ROOT, "add", "-A")
-    status = subprocess.run(
-        ["git", "status", "--porcelain"], cwd=EB_ROOT, text=True, capture_output=True
-    ).stdout.strip()
-    if status:
-        run_git(
-            EB_ROOT,
-            "commit",
-            "-m",
-            "Restore existing EffectBuilder (EffectBuilder.client + EffectBuilder.server) as-is",
-        )
-
-    remotes = subprocess.run(
-        ["git", "remote"], cwd=EB_ROOT, text=True, capture_output=True
-    ).stdout.splitlines()
-    if "origin" in remotes:
-        run_git(EB_ROOT, "remote", "set-url", "origin", eb_remote)
-    else:
-        run_git(EB_ROOT, "remote", "add", "origin", eb_remote)
-
-    run_git(EB_ROOT, "branch", "-M", "master")
-    run_git(EB_ROOT, "push", "-u", "origin", "master", "--force")
-    run_git(EB_ROOT, "push", "origin", "master:dev", "--force")
-    print(f"Pushed existing EffectBuilder as-is to {eb_remote} (master + dev)")
-
-    shutil.rmtree(os.path.join(EB_ROOT, ".git"), ignore_errors=True)
-
-    lw_remote = f"https://github.com/{username}/LoomWeaverV2.git"
-    run_git(ROOT, "remote", "set-url", "origin", lw_remote)
-    run_git(ROOT, "config", "user.name", username)
-    run_git(ROOT, "config", "user.email", f"{username}@users.noreply.github.com")
-    run_git(ROOT, "add", "-A")
-    root_status = subprocess.run(
-        ["git", "status", "--porcelain"], cwd=ROOT, text=True, capture_output=True
-    ).stdout.strip()
-    if root_status:
-        run_git(
-            ROOT,
-            "commit",
-            "-m",
-            "Bring existing EffectBuilder (EffectBuilder.client + EffectBuilder.server) over as-is",
-        )
-    run_git(ROOT, "push", "-u", "origin", "master", "--force")
-    run_git(ROOT, "push", "origin", "master:dev", "--force")
-    print("Pushed LoomWeaverV2 to origin (master + dev)")
-
-
 def deploy_to_server() -> None:
-    print("Packaging existing EffectBuilder client and server into effectbuilder_as_is.tar.gz...")
+    if not os.path.exists(os.path.join(EB_DIST, "index.html")):
+        raise RuntimeError(f"Missing built frontend at {EB_DIST}/index.html")
+    if not os.path.exists(os.path.join(BACKEND_PUB, "LoomWeaver.Api.dll")):
+        raise RuntimeError(f"Missing published backend at {BACKEND_PUB}/LoomWeaver.Api.dll")
+
+    print("Packaging EffectBuilder Studio frontend + Unified .NET 10 backend...")
     with tarfile.open(DEPLOY_TAR, "w:gz") as tf:
         tf.add(EB_DIST, arcname="client")
-        tf.add(EB_SERVER_PUB, arcname="server")
+        tf.add(BACKEND_PUB, arcname="backend")
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect("209.46.127.226", username="iamtrash", password="tZ-2jETuYpgVRzFBF=09")
 
     sftp = ssh.open_sftp()
-    sftp.put(DEPLOY_TAR, "/tmp/effectbuilder_as_is.tar.gz")
+    sftp.put(DEPLOY_TAR, "/tmp/effectbuilder_unified.tar.gz")
 
     remote_script = r"""#!/usr/bin/env bash
 set -e
 
-RELEASE_DIR="/var/www/effectbuilder/releases/as-is-v14"
-echo "1. Extracting existing EffectBuilder client + server to $RELEASE_DIR..."
+RELEASE_DIR="/var/www/effectbuilder/releases/unified-v15"
+echo "1. Extracting EffectBuilder client + Unified .NET backend to $RELEASE_DIR..."
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"
-tar -xzf /tmp/effectbuilder_as_is.tar.gz -C "$RELEASE_DIR"
-rm -f /tmp/effectbuilder_as_is.tar.gz
+tar -xzf /tmp/effectbuilder_unified.tar.gz -C "$RELEASE_DIR"
+rm -f /tmp/effectbuilder_unified.tar.gz
 
+echo "2. Updating Unified .NET Backend at /var/www/loomweaver/server..."
+mkdir -p /var/www/loomweaver/server
+cp -a "$RELEASE_DIR/backend/." /var/www/loomweaver/server/
+if [ -f "$RELEASE_DIR/client/google-sso.html" ] && [ -d /var/www/loomweaver/client ]; then
+    cp -f "$RELEASE_DIR/client/google-sso.html" /var/www/loomweaver/client/google-sso.html
+fi
+chown -R iamtrash:www-data /var/www/loomweaver/server
+chmod -R 755 /var/www/loomweaver/server
+
+echo "3. Activating EffectBuilder Studio frontend at /var/www/effectbuilder/current..."
 rm -rf /var/www/effectbuilder/current
 ln -sfn "$RELEASE_DIR" /var/www/effectbuilder/current
 chown -R iamtrash:www-data /var/www/effectbuilder
 chmod -R 755 /var/www/effectbuilder
 
-echo "2. Restoring original nginx config for effectbuilder.loom-weaver.com..."
+echo "4. Updating nginx for effectbuilder.loom-weaver.com to use the single .NET backend (127.0.0.1:5000)..."
 cat << 'EOF' > /etc/nginx/sites-available/effectbuilder-loom-weaver
 server {
     listen 80;
@@ -185,24 +134,7 @@ server {
     root /var/www/effectbuilder/current/client;
     index index.html;
     client_max_body_size 15m;
-    location /api/effects/ {
-        proxy_pass http://127.0.0.1:5002/api/effects/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        add_header Cache-Control "no-store";
-    }
-    location /api/summon-assets/ {
-        proxy_pass http://127.0.0.1:5002/api/summon-assets/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        add_header Cache-Control "no-store";
-    }
+
     location /api/ {
         proxy_pass http://127.0.0.1:5000/api/;
         proxy_http_version 1.1;
@@ -210,6 +142,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-store";
     }
     location /hubs/ {
         proxy_pass http://127.0.0.1:5000/hubs/;
@@ -229,32 +162,35 @@ server {
 EOF
 
 ln -sfn /etc/nginx/sites-available/effectbuilder-loom-weaver /etc/nginx/sites-enabled/effectbuilder-loom-weaver
-mkdir -p /etc/systemd/system/effectbuilder.service.d
-cat << 'EOF' > /etc/systemd/system/effectbuilder.service.d/database.conf
-[Service]
-Environment="ConnectionStrings__MythWeaver=Server=localhost;Port=3306;Database=jane_scrum;User ID=root;Password=Sp34kFri3nd4nd3nt3r!;SslMode=Preferred;"
-Environment="Jwt__Secret=MythWeaver_Super_Secure_Secret_Key_For_Jwt_Token_Generation_2026_Tromborg_DND_12345!"
-EOF
 nginx -t
-systemctl daemon-reload
-systemctl restart effectbuilder.service
-systemctl reload nginx
-sleep 2
 
-echo "3. Verifying effectbuilder.service and https://effectbuilder.loom-weaver.com..."
-systemctl is-active effectbuilder.service nginx
-curl -s http://127.0.0.1:5002/api/effects/health
-echo ""
+echo "5. Stopping retired effectbuilder.service (port 5002) and restarting unified loom-weaver.service (port 5000)..."
+systemctl stop effectbuilder.service || true
+systemctl disable effectbuilder.service || true
+systemctl daemon-reload
+systemctl restart loom-weaver.service
+systemctl reload nginx
+sleep 3
+
+echo "6. Verifying unified loom-weaver.service and https://effectbuilder.loom-weaver.com endpoints..."
+systemctl is-active loom-weaver.service nginx
+echo "--- /api/effects/health ---"
 curl -k -s -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/api/effects/health
 echo ""
+echo "--- /api/spells?search=fire ---"
+curl -k -s -H "Host: effectbuilder.loom-weaver.com" "https://127.0.0.1/api/spells?search=fire" | head -c 300
+echo ""
+echo "--- /google-sso.html ---"
+curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/google-sso.html | head -n 5
+echo "--- / (index.html) ---"
 curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/ | head -n 5
 """
-    with sftp.open("/tmp/deploy_effectbuilder_as_is.sh", "w") as f:
+    with sftp.open("/tmp/deploy_effectbuilder_unified.sh", "w") as f:
         f.write(remote_script)
     sftp.close()
 
     _, out, err = ssh.exec_command(
-        'echo "tZ-2jETuYpgVRzFBF=09" | sudo -S bash /tmp/deploy_effectbuilder_as_is.sh'
+        'echo "tZ-2jETuYpgVRzFBF=09" | sudo -S bash /tmp/deploy_effectbuilder_unified.sh'
     )
     print(out.read().decode())
     err_txt = err.read().decode()
@@ -266,6 +202,71 @@ curl -k -s -I -H "Host: effectbuilder.loom-weaver.com" https://127.0.0.1/ | head
         os.remove(DEPLOY_TAR)
 
 
+def push_repos() -> None:
+    username, token = get_github_credentials()
+    eb_remote = ensure_github_repo(
+        username,
+        token,
+        "LoomWeaver-EffectBuilder",
+        "EffectBuilder Studio for effectbuilder.loom-weaver.com (unified LoomWeaver .NET 10 backend)",
+    )
+
+    eb_gitignore = os.path.join(EB_ROOT, ".gitignore")
+    with open(eb_gitignore, "w", encoding="utf-8") as f:
+        f.write("node_modules/\ndist/\n.angular/\n*.tar.gz\n")
+
+    if not os.path.exists(os.path.join(EB_ROOT, ".git")):
+        run_git(EB_ROOT, "init", "-b", "master")
+
+    run_git(EB_ROOT, "config", "user.name", username)
+    run_git(EB_ROOT, "config", "user.email", f"{username}@users.noreply.github.com")
+    run_git(EB_ROOT, "add", "-A")
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=EB_ROOT, text=True, capture_output=True
+    ).stdout.strip()
+    if status:
+        run_git(
+            EB_ROOT,
+            "commit",
+            "-m",
+            "Refactor EffectBuilder for <=500 line modularity, unified .NET auth, and standalone .lweffect.json import/export",
+        )
+
+    remotes = subprocess.run(
+        ["git", "remote"], cwd=EB_ROOT, text=True, capture_output=True
+    ).stdout.splitlines()
+    if "origin" in remotes:
+        run_git(EB_ROOT, "remote", "set-url", "origin", eb_remote)
+    else:
+        run_git(EB_ROOT, "remote", "add", "origin", eb_remote)
+
+    run_git(EB_ROOT, "branch", "-M", "master")
+    run_git(EB_ROOT, "push", "-u", "origin", "master", "--force")
+    run_git(EB_ROOT, "push", "origin", "master:dev", "--force")
+    print(f"Pushed EffectBuilder Studio to {eb_remote} (master + dev)")
+
+    shutil.rmtree(os.path.join(EB_ROOT, ".git"), ignore_errors=True)
+
+    lw_remote = f"https://github.com/{username}/LoomWeaverV2.git"
+    run_git(ROOT, "remote", "set-url", "origin", lw_remote)
+    run_git(ROOT, "config", "user.name", username)
+    run_git(ROOT, "config", "user.email", f"{username}@users.noreply.github.com")
+    run_git(ROOT, "add", "-A")
+    root_status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT, text=True, capture_output=True
+    ).stdout.strip()
+    if root_status:
+        run_git(
+            ROOT,
+            "commit",
+            "-m",
+            "Unify EffectBuilder into single .NET 10 backend, fix cross-subdomain auth, and add standalone effect file import/export",
+        )
+    run_git(ROOT, "push", "-u", "origin", "master", "--force")
+    run_git(ROOT, "push", "origin", "master:dev", "--force")
+    print("Pushed LoomWeaverV2 to origin (master + dev)")
+
+
 if __name__ == "__main__":
-    push_repos()
     deploy_to_server()
+    push_repos()

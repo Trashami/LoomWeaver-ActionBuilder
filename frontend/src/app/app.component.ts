@@ -50,6 +50,7 @@ export class AppComponent {
   readonly globalSearchText = signal<string>('');
   readonly showAllModules = signal<boolean>(true);
   readonly leftNavCollapsed = signal<boolean>(false);
+  readonly rightGuideCollapsed = signal<boolean>(false);
 
   readonly isLandingSurface = computed(() => {
     const clean = this.currentUrl().split('?')[0].split('#')[0];

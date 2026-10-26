@@ -89,15 +89,21 @@ public static class WorldLoreEndpoints
                 existing?.LinkedLoreIds ?? [],
                 existing?.RelatedEntities ?? [],
                 existing?.HistoryEvents ?? [],
-                existing?.Secrets ?? []
+                existing?.Secrets ?? [],
+                req.AttachedSessionId ?? existing?.AttachedSessionId,
+                req.AttachedSessionLabel ?? existing?.AttachedSessionLabel,
+                req.PlayerVisibilityPolicy ?? existing?.PlayerVisibilityPolicy ?? "auto_lore_revealed",
+                req.Style ?? existing?.Style
             );
 
             if (existingIdx >= 0) locs[existingIdx] = updated;
             else locs.Insert(0, updated);
 
-            var markerCategory = MapLocationTypeToLayer(updated.LocationType, updated.Visibility);
+            var mIdx = markers.FindIndex(m => m.LocationKey == key && m.MapId == targetMapId);
+            var existingMarker = mIdx >= 0 ? markers[mIdx] : null;
+            var markerCategory = existingMarker?.Category ?? MapLocationTypeToLayer(updated.LocationType, updated.Visibility);
             var markerDto = new WorldMapMarkerDto(
-                $"m-{key}",
+                existingMarker?.MarkerId ?? $"m-{key}",
                 targetMapId,
                 key,
                 compositeKey,
@@ -105,18 +111,20 @@ public static class WorldLoreEndpoints
                 updated.LocationType,
                 markerCategory,
                 updated.HierarchyLevel,
-                Math.Clamp(req.XPercent <= 0 ? 50 : req.XPercent, 6, 94),
-                Math.Clamp(req.YPercent <= 0 ? 50 : req.YPercent, 8, 92),
+                Math.Clamp(req.XPercent <= 0 ? (existingMarker?.XPercent ?? 50) : req.XPercent, 2, 98),
+                Math.Clamp(req.YPercent <= 0 ? (existingMarker?.YPercent ?? 50) : req.YPercent, 2, 98),
                 updated.DiscoveryStatus,
                 updated.Visibility,
                 updated.ChildMapId,
                 updated.LinkedSceneKey,
                 updated.RelatedEntities.Count(r => r.EntityType == "Quest"),
                 updated.RelatedEntities.Count(r => r.EntityType == "NPC"),
-                updated.Secrets.Count
+                updated.Secrets.Count,
+                updated.AttachedSessionId,
+                updated.AttachedSessionLabel,
+                updated.PlayerVisibilityPolicy,
+                updated.Style
             );
-
-            var mIdx = markers.FindIndex(m => m.LocationKey == key && m.MapId == targetMapId);
             if (mIdx >= 0) markers[mIdx] = markerDto;
             else markers.Add(markerDto);
 

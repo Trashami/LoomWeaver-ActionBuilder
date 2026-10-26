@@ -1,0 +1,249 @@
+<div class="modal-backdrop" (click)="dismiss()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="brand-header">
+        <img src="/LoomWeaver.png" alt="LoomWeaver" class="brand-logo" />
+        <div class="brand-subtext">
+          <span class="brand-portal-tag">CAMPAIGN STUDIO</span>
+          <span class="brand-subtitle">Authentication Gateway</span>
+        </div>
+      </div>
+      <button type="button" class="close-btn" (click)="dismiss()" aria-label="Close modal">
+        <mw-icon name="x" [size]="16" />
+      </button>
+    </div>
+
+    <div class="mode-nav">
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="activeTab() === 'signin'"
+        (click)="setTab('signin')">
+        Sign In
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="activeTab() === 'register'"
+        (click)="setTab('register')">
+        Create Account
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="activeTab() === 'request'"
+        (click)="setTab('request')">
+        Request Access
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage()" class="alert-error">
+      <mw-icon name="shield-alert" [size]="15" />
+      <span>{{ errorMessage() }}</span>
+    </div>
+
+    <div *ngIf="activeTab() === 'signin'" class="auth-section">
+      <div class="patreon-gateway">
+        <button
+          type="button"
+          class="btn-patreon-hero"
+          (click)="signInWithPatreon()"
+          [disabled]="isLoading()"
+          title="Sign in with your Patreon subscriber account">
+          <div class="patreon-btn-content">
+            <div class="patreon-badge">
+              <mw-icon name="patreon" [size]="20" />
+            </div>
+            <div class="patreon-text">
+              <span class="patreon-title">Continue with Patreon</span>
+              <span class="patreon-sub">Instant Access for Guild Supporters, DMs &amp; Worldsmiths</span>
+            </div>
+          </div>
+          <mw-icon name="chevron-right" [size]="18" class="patreon-chevron" />
+        </button>
+      </div>
+
+      <div class="google-gateway">
+        <div id="mw-google-btn-container" class="google-btn-slot"></div>
+      </div>
+
+      <div class="auth-divider">
+        <span class="divider-line"></span>
+        <span class="divider-text">OR WITH CREDENTIALS</span>
+        <span class="divider-line"></span>
+      </div>
+
+      <form class="credentials-form" (ngSubmit)="submitLogin()">
+        <div class="form-group">
+          <label for="loginIdentifier">Email or Username</label>
+          <div class="input-wrapper">
+            <input
+              id="loginIdentifier"
+              type="text"
+              class="form-control"
+              placeholder="e.g. GeoJason or jtromborg1@gmail.com"
+              [(ngModel)]="loginIdentifier"
+              name="loginIdentifier"
+              autocomplete="username"
+              required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="input-wrapper">
+            <input
+              id="loginPassword"
+              type="password"
+              class="form-control"
+              placeholder="••••••••"
+              [(ngModel)]="loginPassword"
+              name="loginPassword"
+              autocomplete="current-password"
+              required />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-corporate-submit" [disabled]="isLoading()">
+          <span *ngIf="!isLoading()">Authenticate &amp; Enter Studio</span>
+          <span *ngIf="isLoading()">Verifying credentials…</span>
+        </button>
+      </form>
+
+      <div class="security-footer">
+        <mw-icon name="shield" [size]="13" color="#10b981" />
+        <span>Subscribers sync in real-time via Patreon &amp; Google OAuth2.</span>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab() === 'register'" class="auth-section">
+      <form class="credentials-form" (ngSubmit)="submitRegister()">
+        <div class="form-group">
+          <label for="regEmail">Email Address</label>
+          <input
+            id="regEmail"
+            type="email"
+            class="form-control"
+            placeholder="adventurer@example.com"
+            [(ngModel)]="regEmail"
+            name="regEmail"
+            required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regUsername">Username</label>
+            <input
+              id="regUsername"
+              type="text"
+              class="form-control"
+              placeholder="Handle"
+              [(ngModel)]="regUsername"
+              name="regUsername"
+              required />
+          </div>
+          <div class="form-group">
+            <label for="regDisplayName">Display Name</label>
+            <input
+              id="regDisplayName"
+              type="text"
+              class="form-control"
+              placeholder="DM or Player Name"
+              [(ngModel)]="regDisplayName"
+              name="regDisplayName" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regPassword">Password (6+ characters)</label>
+          <input
+            id="regPassword"
+            type="password"
+            class="form-control"
+            placeholder="Create password"
+            [(ngModel)]="regPassword"
+            name="regPassword"
+            required />
+        </div>
+
+        <button type="submit" class="btn-corporate-submit" [disabled]="isLoading()">
+          <span *ngIf="!isLoading()">Create Account &amp; Enter Studio</span>
+          <span *ngIf="isLoading()">Creating account…</span>
+        </button>
+      </form>
+    </div>
+
+    <div *ngIf="activeTab() === 'request'" class="auth-section">
+      <div *ngIf="requestSubmitted()" class="request-success-box">
+        <div class="success-icon-wrap">
+          <mw-icon name="check" [size]="32" color="#10b981" />
+        </div>
+        <h3 class="success-title">Access Request Received</h3>
+        <p class="success-body">
+          {{ requestSuccessMessage() || 'Your request has been submitted for administrator review.' }}
+        </p>
+        <button type="button" class="btn-corporate-submit" (click)="setTab('signin')">
+          Return to Sign In
+        </button>
+      </div>
+
+      <form *ngIf="!requestSubmitted()" class="credentials-form" (ngSubmit)="submitRequest()">
+        <p class="request-intro">
+          Join the LoomWeaver Campaign Studio. Accounts include free character sheets, standard compendium rules, and trial Weave creation credits upon approval.
+        </p>
+
+        <div class="form-group">
+          <label for="reqEmail">Email Address</label>
+          <input
+            id="reqEmail"
+            type="email"
+            class="form-control"
+            placeholder="adventurer@example.com"
+            [(ngModel)]="reqEmail"
+            name="reqEmail"
+            required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reqUsername">Desired Username</label>
+            <input
+              id="reqUsername"
+              type="text"
+              class="form-control"
+              placeholder="Unique handle"
+              [(ngModel)]="reqUsername"
+              name="reqUsername"
+              required />
+          </div>
+          <div class="form-group">
+            <label for="reqDisplayName">Display Name</label>
+            <input
+              id="reqDisplayName"
+              type="text"
+              class="form-control"
+              placeholder="DM or Player Name"
+              [(ngModel)]="reqDisplayName"
+              name="reqDisplayName" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reqNotes">Note or Campaign Code (Optional)</label>
+          <input
+            id="reqNotes"
+            type="text"
+            class="form-control"
+            placeholder="e.g. Campaign invitation, guild playtest"
+            [(ngModel)]="reqNotes"
+            name="reqNotes" />
+        </div>
+
+        <button type="submit" class="btn-corporate-submit" [disabled]="isLoading()">
+          <span *ngIf="!isLoading()">Submit Account Request</span>
+          <span *ngIf="isLoading()">Submitting…</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

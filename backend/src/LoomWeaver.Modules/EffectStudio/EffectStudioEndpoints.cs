@@ -22,13 +22,32 @@ public static class EffectStudioEndpoints
             await repo.EnsureSchemaAndSeedAsync(ct);
             return Results.Ok(new
             {
-                status = "healthy",
-                service = "LoomWeaver.EffectStudio",
+                status = "ok",
+                service = "effectbuilder",
+                version = 14,
+                surfaceLighting = true,
+                normalMappedPreview = true,
+                spellTemplates = 25,
+                cinematicCones = true,
+                gameplayRiders = true,
+                cinematicMaterials = true,
+                summonTokens = true,
+                styles = 65,
+                blendModes = 10,
+                opacityKeyframes = true,
+                ambientPresets = 43,
+                texturedFireball = true,
+                shaderFireHit = true,
+                magicMissile = true,
+                standaloneExportImport = true,
                 mysqlBacked = true,
                 emittersLoaded = EffectEmitterCatalog.GetAllEmitters().Count,
                 timestamp = DateTimeOffset.UtcNow
             });
         });
+
+        api.MapEffectLibraryAndAssignmentEndpoints();
+        api.MapEffectMarketplaceAndCatalogEndpoints();
 
         api.MapGet("/effects/studio", async (
             int? campaignId,

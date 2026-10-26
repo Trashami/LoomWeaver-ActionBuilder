@@ -192,6 +192,19 @@ public static class AuthAndCheckoutEndpoints
                 return Results.Json(new { message = "Unauthorized or expired session." }, statusCode: StatusCodes.Status401Unauthorized);
             }
 
+            var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
+            var token = MySqlUserAuthStore.IssueHmacJwt(user, expiresAt);
+            AppendHttpOnlySessionCookie(ctx, token, expiresAt);
+            return Results.Ok(MySqlUserAuthStore.ToLegacyUserDto(user, token));
+        });
+
+        api.MapPut("/auth/ai-preference", (HttpContext ctx) =>
+        {
+            var user = ResolveAuthenticatedUser(ctx);
+            if (user is null)
+            {
+                return Results.Json(new { message = "Unauthorized or expired session." }, statusCode: StatusCodes.Status401Unauthorized);
+            }
             return Results.Ok(MySqlUserAuthStore.ToLegacyUserDto(user));
         });
 
@@ -278,7 +291,7 @@ public static class AuthAndCheckoutEndpoints
         var isHttps = ctx.Request.IsHttps ||
                       string.Equals(ctx.Request.Headers["X-Forwarded-Proto"], "https", StringComparison.OrdinalIgnoreCase);
 
-        var options = new CookieOptions
+        var httpOnlyOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = isHttps,
@@ -287,12 +300,23 @@ public static class AuthAndCheckoutEndpoints
             Expires = expiresAt
         };
 
+        var clientCookieOptions = new CookieOptions
+        {
+            HttpOnly = false,
+            Secure = isHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            Expires = expiresAt
+        };
+
         if (host.EndsWith("loom-weaver.com", StringComparison.Ordinal))
         {
-            options.Domain = ".loom-weaver.com";
+            httpOnlyOptions.Domain = ".loom-weaver.com";
+            clientCookieOptions.Domain = ".loom-weaver.com";
         }
 
-        ctx.Response.Cookies.Append("lw_session_http", token, options);
+        ctx.Response.Cookies.Append("lw_session_http", token, httpOnlyOptions);
+        ctx.Response.Cookies.Append("mw_auth_token", token, clientCookieOptions);
     }
 
     private static void ClearHttpOnlySessionCookie(HttpContext ctx)
@@ -305,10 +329,19 @@ public static class AuthAndCheckoutEndpoints
             Path = "/",
             Expires = DateTimeOffset.UnixEpoch
         };
+        var clientOptions = new CookieOptions
+        {
+            HttpOnly = false,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            Expires = DateTimeOffset.UnixEpoch
+        };
         if (host.EndsWith("loom-weaver.com", StringComparison.Ordinal))
         {
             options.Domain = ".loom-weaver.com";
+            clientOptions.Domain = ".loom-weaver.com";
         }
         ctx.Response.Cookies.Delete("lw_session_http", options);
+        ctx.Response.Cookies.Delete("mw_auth_token", clientOptions);
     }
 }

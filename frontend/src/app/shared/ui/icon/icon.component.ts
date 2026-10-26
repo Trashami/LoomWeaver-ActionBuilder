@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
+export type LwIconTone = 'inherit' | 'emerald' | 'gold' | 'crimson' | 'muted';
+
 /**
  * Maps LoomWeaver semantic icon identifiers to Angular Material Icons ligatures.
  * Note: Star / AI sparkle icons ('sparkles', 'auto_awesome', 'star', 'stars') are
@@ -16,10 +18,11 @@ const MATERIAL_ICON_MAP: Readonly<Record<string, string>> = {
   crown: 'workspace_premium',
   compass: 'explore',
   globe: 'public',
+  public: 'public',
   map: 'map',
   shield: 'shield',
   'shield-check': 'verified_user',
-  swords: 'Hardware',
+  swords: 'gavel',
   dices: 'casino',
   zap: 'bolt',
   layers: 'layers',
@@ -29,9 +32,12 @@ const MATERIAL_ICON_MAP: Readonly<Record<string, string>> = {
   'bar-chart-3': 'bar_chart',
   chart: 'timeline',
   'book-open': 'menu_book',
+  'menu-book': 'menu_book',
   book: 'menu_book',
+  'history-edu': 'history_edu',
   scroll: 'description',
   network: 'hub',
+  hub: 'hub',
   database: 'storage',
   music: 'volume_up',
   search: 'search',
@@ -41,11 +47,16 @@ const MATERIAL_ICON_MAP: Readonly<Record<string, string>> = {
   unlock: 'lock_open',
   check: 'check',
   'arrow-right': 'arrow_forward',
+  'arrow-forward': 'arrow_forward',
   'external-link': 'open_in_new',
   'chevron-down': 'expand_more',
   'chevron-up': 'expand_less',
   'chevron-right': 'chevron_right',
   'chevron-left': 'chevron_left',
+  'panel-right-close': 'keyboard_double_arrow_right',
+  'panel-right-open': 'keyboard_double_arrow_left',
+  'zoom-in': 'zoom_in',
+  'zoom-out': 'zoom_out',
   'alert-triangle': 'warning_amber',
   apps: 'apps',
   menu: 'menu',
@@ -85,6 +96,7 @@ const MATERIAL_ICON_MAP: Readonly<Record<string, string>> = {
   'file-text': 'description',
   user: 'person',
   'alert-circle': 'error_outline',
+  info: 'info',
   bell: 'notifications_none',
   help: 'help_outline',
   cube: 'view_in_ar',
@@ -107,6 +119,8 @@ const MATERIAL_ICON_MAP: Readonly<Record<string, string>> = {
 export class LwIconComponent {
   readonly name = input.required<string>();
   readonly size = input<number>(16);
+  readonly tone = input<LwIconTone>('inherit');
+  readonly framed = input<boolean>(false);
 
   readonly materialLigature = computed(() => {
     const raw = (this.name() || '').trim();

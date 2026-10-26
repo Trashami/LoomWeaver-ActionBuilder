@@ -1,6 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
 import { NgpButton } from 'ng-primitives/button';
@@ -29,7 +37,6 @@ export type LwInspectorTab = 'guide' | 'notes' | 'npcs' | 'places' | 'lore';
   standalone: true,
   imports: [
     FormsModule,
-    RouterLink,
     NgpButton,
     NgpCheckbox,
     NgpAvatar,
@@ -55,6 +62,11 @@ export class LwInspectorDrawerComponent {
   private readonly router = inject(Router);
 
   readonly generativeAiEnabled = input<boolean>(false);
+  readonly expandedWidth = input<string>('356px');
+  readonly collapsedWidth = input<string>('16px');
+  readonly collapsed = model<boolean>(false);
+  readonly zoomPercent = model<number>(100);
+
   readonly isWeaveEnabled = computed(
     () => this.generativeAiEnabled() || this.store.weaveEnabled(),
   );
@@ -126,9 +138,28 @@ export class LwInspectorDrawerComponent {
           ev.urlAfterRedirects.startsWith('/weave') ||
           ev.urlAfterRedirects.startsWith('/world-lore')
         ) {
-          this.worldLore.inspectorContextMode.set('world');
+          this.worldLore.inspectorContextMode.set(
+            this.worldLore.selectedLocationKey() ? 'world' : 'session-guide',
+          );
         }
       });
+  }
+
+  onLoreLinkSelected(loreId: string): void {
+    this.worldLore.selectLoreEntry(loreId);
+    this.worldLore.setPrimaryTab('lore');
+  }
+
+  toggleCollapsed(): void {
+    this.collapsed.update((c) => !c);
+  }
+
+  adjustZoom(delta: number): void {
+    this.zoomPercent.update((cur) => Math.max(80, Math.min(135, cur + delta)));
+  }
+
+  resetZoom(): void {
+    this.zoomPercent.set(100);
   }
 
   selectScope(scopeKind: AdventureScopeKind, scopeId: string): void {
@@ -150,7 +181,13 @@ export class LwInspectorDrawerComponent {
     return this.revealedCheckOutcomeIds().includes(blockId);
   }
 
-  inspectNpc(compositeKey: string, name?: string, role?: string, summary?: string, routeLink?: string): void {
+  inspectNpc(
+    compositeKey: string,
+    name?: string,
+    role?: string,
+    summary?: string,
+    routeLink?: string,
+  ): void {
     if (name && routeLink) {
       this.store.registerEntity({
         compositeKey,

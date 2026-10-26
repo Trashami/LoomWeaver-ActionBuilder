@@ -71,6 +71,7 @@ namespace LoomWeaver.Api
                     var isPublicAuthOrHealth =
                         path.EndsWith("/health", StringComparison.OrdinalIgnoreCase) ||
                         path.Contains("/effects/", StringComparison.OrdinalIgnoreCase) ||
+                        path.Contains("/summon-assets/", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/login", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/register", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/google", StringComparison.OrdinalIgnoreCase) ||

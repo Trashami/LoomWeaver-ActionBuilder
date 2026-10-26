@@ -29,6 +29,18 @@ public sealed record WorldMapRegionOverlayDto(
     string Visibility
 );
 
+public sealed record MarkerVisualStyleDto(
+    string IconMode = "vector",
+    string VectorIcon = "map-pin",
+    string? StampUrl = null,
+    string? StampLabel = null,
+    bool ShowIcon = true,
+    string ColorHex = "#49e892",
+    string FontFamily = "Cinzel",
+    string LabelPosition = "right",
+    double IconScale = 1.0
+);
+
 public sealed record WorldMapMarkerDto(
     string MarkerId,
     string MapId,
@@ -46,7 +58,11 @@ public sealed record WorldMapMarkerDto(
     string? LinkedSceneKey,
     int QuestCount,
     int NpcCount,
-    int SecretCount
+    int SecretCount,
+    int? AttachedSessionId = null,
+    string? AttachedSessionLabel = null,
+    string? PlayerVisibilityPolicy = "auto_lore_revealed",
+    MarkerVisualStyleDto? Style = null
 );
 
 public sealed record PartyJourneyWaypointDto(
@@ -65,7 +81,9 @@ public sealed record PartyJourneyWaypointDto(
 
 public sealed record LocationAttributeDto(
     string Label,
-    string Value
+    string Value,
+    string? LinkTargetKey = null,
+    string? LinkType = null
 );
 
 public sealed record LocationRelatedEntityDto(
@@ -120,7 +138,11 @@ public sealed record LocationInspectorDetailDto(
     IReadOnlyList<string> LinkedLoreIds,
     IReadOnlyList<LocationRelatedEntityDto> RelatedEntities,
     IReadOnlyList<LocationHistoryEventDto> HistoryEvents,
-    IReadOnlyList<LocationSecretDto> Secrets
+    IReadOnlyList<LocationSecretDto> Secrets,
+    int? AttachedSessionId = null,
+    string? AttachedSessionLabel = null,
+    string? PlayerVisibilityPolicy = "auto_lore_revealed",
+    MarkerVisualStyleDto? Style = null
 );
 
 public sealed record LoreEntryDto(
@@ -219,7 +241,11 @@ public sealed record UpsertLocationRequest(
     string? CultureAndTraditions,
     string? LocalMyths,
     IReadOnlyList<LocationAttributeDto>? Attributes,
-    IReadOnlyList<string>? Tags
+    IReadOnlyList<string>? Tags,
+    int? AttachedSessionId = null,
+    string? AttachedSessionLabel = null,
+    string? PlayerVisibilityPolicy = null,
+    MarkerVisualStyleDto? Style = null
 );
 
 public sealed record LinkEntityToLocationRequest(

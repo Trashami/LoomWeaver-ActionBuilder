@@ -6,7 +6,7 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmi
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
-import { IconComponent } from '../../../../Mythweaver.client/src/app/shared/components/icon/icon.component';
+import { IconComponent } from './components/icon/icon.component';
 import { EffectDefinition, PreviewScene, effectDuration } from '../effects/effect-definition';
 
 @Component({ selector:'mw-effect-preview', standalone:true, imports:[IconComponent],changeDetection:ChangeDetectionStrategy.OnPush,

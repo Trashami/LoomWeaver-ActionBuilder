@@ -1,42 +1,87 @@
 :host {
-  display: inline-block;
+  display: inline-flex;
+  vertical-align: middle;
 }
 
 .lw-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 6px;
+  padding: 7px 13px;
   border-radius: var(--lw-radius-sm, 6px);
-  border: 1px solid var(--lw-border-subtle);
-  font-size: 0.84rem;
+  border: 1px solid var(--lw-border-subtle, rgba(73, 232, 146, 0.24));
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+  text-decoration: none;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease;
   white-space: nowrap;
+}
+
+.lw-btn__copy {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.lw-btn__sublabel {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #49e892;
+}
+
+.lw-btn--xs {
+  padding: 3px 8px;
+  font-size: 0.67rem;
+  gap: 4px;
+  border-radius: 5px;
 }
 
 .lw-btn--sm {
   padding: 5px 10px;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
+  gap: 5px;
 }
 
 .lw-btn--lg {
-  padding: 11px 20px;
-  font-size: 0.92rem;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+}
+
+.lw-btn--pill {
+  border-radius: 999px;
+}
+
+.lw-btn--square {
+  border-radius: 0;
+}
+
+.lw-btn--full {
+  width: 100%;
+}
+
+.lw-btn--icon-only {
+  padding: 4px;
+  min-width: 24px;
+  min-height: 24px;
 }
 
 .lw-btn--emerald {
   background: linear-gradient(135deg, #1b6b4f 0%, #104935 100%);
-  border-color: var(--lw-accent-emerald);
+  border-color: rgba(73, 232, 146, 0.55);
   color: #f2fbf7;
 }
 
 .lw-btn--emerald:hover:not(:disabled) {
   background: linear-gradient(135deg, #228462 0%, #165c44 100%);
-  transform: translateY(-1px);
+  border-color: #49e892;
 }
 
 .lw-btn--gold {
@@ -47,34 +92,153 @@
 
 .lw-btn--gold:hover:not(:disabled) {
   background: linear-gradient(135deg, #d7be84 0%, #b5985a 100%);
-  transform: translateY(-1px);
 }
 
 .lw-btn--secondary {
-  background: var(--lw-bg-elevated);
-  border-color: var(--lw-border-subtle);
-  color: var(--lw-text-primary);
+  background: rgba(11, 24, 19, 0.85);
+  border-color: rgba(73, 232, 146, 0.25);
+  color: #e4ede8;
 }
 
 .lw-btn--secondary:hover:not(:disabled) {
-  border-color: var(--lw-accent-gold);
+  border-color: #d9b77a;
+  color: #f7ecd5;
 }
 
 .lw-btn--ghost {
   background: transparent;
   border-color: transparent;
-  color: var(--lw-text-secondary);
+  color: #9cb4a8;
 }
 
 .lw-btn--ghost:hover:not(:disabled) {
-  background: var(--lw-accent-emerald-soft);
-  color: var(--lw-text-primary);
+  background: rgba(73, 232, 146, 0.12);
+  color: #f2fbf7;
 }
 
 .lw-btn--danger {
-  background: var(--lw-accent-crimson-soft);
+  background: rgba(130, 28, 42, 0.35);
   border-color: rgba(239, 93, 114, 0.45);
-  color: var(--lw-accent-crimson);
+  color: #ffb8c0;
+}
+
+/* Adventure Guide Custom Button Variants */
+.lw-btn--guide-crumb {
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: rgba(12, 26, 20, 0.55);
+  color: #8fb4a3;
+  font-size: 0.66rem;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    color: #f4e6c8;
+    border-color: rgba(217, 183, 122, 0.32);
+    background: rgba(20, 42, 32, 0.78);
+  }
+
+  &.lw-btn--active {
+    color: #f3d79b;
+    border-color: rgba(217, 183, 122, 0.45);
+    background: rgba(217, 183, 122, 0.14);
+    font-weight: 700;
+  }
+}
+
+.lw-btn--guide-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 183, 122, 0.26);
+  background: rgba(9, 22, 17, 0.85);
+  color: #c2d4cb;
+  font-size: 0.66rem;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(73, 232, 146, 0.52);
+    color: #ffffff;
+  }
+
+  &.lw-btn--active {
+    border-color: #49e892;
+    background: rgba(46, 230, 107, 0.18);
+    color: #effff5;
+    box-shadow: 0 0 10px rgba(73, 232, 146, 0.18);
+  }
+}
+
+.lw-btn--guide-chip {
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(90, 212, 148, 0.24);
+  background: rgba(10, 24, 18, 0.84);
+  color: #b8cec2;
+  font-size: 0.65rem;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(217, 183, 122, 0.52);
+    color: #f6e7c8;
+  }
+
+  &.lw-btn--active {
+    border-color: #d9b77a;
+    background: rgba(217, 183, 122, 0.18);
+    color: #f7e6c4;
+  }
+}
+
+.lw-btn--guide-action {
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(73, 232, 146, 0.36);
+  background: rgba(8, 28, 20, 0.88);
+  color: #6df0a9;
+  font-size: 0.66rem;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: rgba(22, 62, 44, 0.92);
+    border-color: #49e892;
+    color: #ffffff;
+  }
+}
+
+.lw-btn--guide-exit {
+  width: 100%;
+  justify-content: space-between;
+  padding: 6px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 183, 122, 0.28);
+  background: rgba(11, 24, 19, 0.88);
+  color: #f2e4c6;
+  font-size: 0.68rem;
+  text-align: left;
+  white-space: normal;
+
+  &:hover:not(:disabled) {
+    border-color: #49e892;
+    background: rgba(18, 42, 31, 0.92);
+  }
+}
+
+.lw-btn--guide-header {
+  width: 100%;
+  justify-content: space-between;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: #f1e3c5;
+  font-family: var(--lw-font-display, Georgia, serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    color: #49e892;
+  }
 }
 
 .lw-btn:disabled {

@@ -4,6 +4,8 @@ import {
   AtlasLayerFilterId,
   LocationInspectorDetailVm,
   LoreEntryVm,
+  MarkerVisualStyleVm,
+  PlayerVisibilityMode,
   WorldHistoryChronicleEventVm,
   WorldLorePrimaryTab,
   WorldLoreWorkspaceVm,
@@ -33,11 +35,14 @@ export class WorldLoreFacadeService {
 
   readonly activePrimaryTab = signal<WorldLorePrimaryTab>('atlas');
   readonly activeMapId = signal<string | null>('map-icrandor-world');
-  readonly selectedLocationKey = signal<string | null>('loc-cinth');
-  readonly selectedLoreId = signal<string | null>(null);
+  readonly selectedLocationKey = signal<string | null>(null);
+  readonly selectedLoreId = signal<string | null>('lore-kingdom-cinth');
   readonly activeLayers = signal<readonly AtlasLayerFilterId[]>(DEFAULT_ACTIVE_LAYERS);
   readonly journeySessionFilter = signal<number | 'all'>('all');
-  readonly inspectorContextMode = signal<'world' | 'session-guide'>('world');
+  readonly inspectorContextMode = signal<'world' | 'session-guide'>('session-guide');
+  readonly mapEditorOpen = signal<boolean>(false);
+  readonly repositioningLocationKey = signal<string | null>(null);
+  readonly playerVisibilityMode = signal<PlayerVisibilityMode>('auto_lore_revealed');
 
   readonly loreSearchQuery = signal<string>('');
   readonly loreCategoryFilter = signal<string>('All');
@@ -120,9 +125,12 @@ export class WorldLoreFacadeService {
 
   readonly selectedLoreEntry = computed<LoreEntryVm | null>(() => {
     const id = this.selectedLoreId();
-    if (!id) return null;
-    const found = this.workspace().loreEntries.find((l) => l.id === id);
-    return found && (this.isGm() || found.visibility !== 'gm') ? found : null;
+    const list = this.filteredLoreEntries();
+    if (id) {
+      const found = list.find((l) => l.id === id) ?? this.workspace().loreEntries.find((l) => l.id === id);
+      if (found && (this.isGm() || found.visibility !== 'gm')) return found;
+    }
+    return list[0] ?? null;
   });
 
   readonly loreCategories = computed<readonly string[]>(() => {
@@ -247,6 +255,35 @@ export class WorldLoreFacadeService {
     this.persistLayers();
   }
 
+  openMapEditor(locationKey?: string | null): void {
+    if (locationKey) {
+      this.selectLocation(locationKey);
+    } else if (!this.selectedLocationKey()) {
+      const firstMarker = this.visibleMapMarkers()[0];
+      if (firstMarker) this.selectLocation(firstMarker.locationKey);
+    }
+    this.mapEditorOpen.set(true);
+  }
+
+  closeMapEditor(): void {
+    this.mapEditorOpen.set(false);
+    this.repositioningLocationKey.set(null);
+  }
+
+  startRepositioningLocation(locationKey: string | null): void {
+    if (locationKey) this.selectLocation(locationKey);
+    this.repositioningLocationKey.set(locationKey);
+  }
+
+  setPlayerVisibilityMode(mode: PlayerVisibilityMode): void {
+    this.playerVisibilityMode.set(mode);
+    this.statusBanner.set(
+      mode === 'auto_lore_revealed'
+        ? 'Player visibility set to Auto (Respects Lore & Revealed to Players Only).'
+        : 'Player visibility set to Manual DM Override.',
+    );
+  }
+
   saveLocation(payload: {
     locationKey?: string;
     name: string;
@@ -256,6 +293,10 @@ export class WorldLoreFacadeService {
     mapId?: string | null;
     childMapId?: string | null;
     linkedSceneKey?: string | null;
+    attachedSessionId?: number | null;
+    attachedSessionLabel?: string | null;
+    playerVisibilityPolicy?: PlayerVisibilityMode;
+    style?: MarkerVisualStyleVm;
     xPercent: number;
     yPercent: number;
     discoveryStatus: string;
@@ -266,14 +307,24 @@ export class WorldLoreFacadeService {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
     const mapId = payload.mapId ?? this.activeMap()?.mapId ?? 'map-icrandor-world';
+    const existing = payload.locationKey ? this.locationsState().find((l) => l.locationKey === payload.locationKey) : null;
     this.http.post<LocationInspectorDetailVm>(`/api/v2/campaigns/${cid}/world-lore/locations?role=gm`, { ...payload, mapId }).subscribe({
       next: (saved) => {
-        this.applySavedLocationLocally(saved, payload.xPercent, payload.yPercent);
-        this.statusBanner.set(`Saved location "${saved.name}".`);
+        const enriched: LocationInspectorDetailVm = {
+          ...saved,
+          attachedSessionId: payload.attachedSessionId ?? saved.attachedSessionId ?? existing?.attachedSessionId ?? null,
+          attachedSessionLabel: payload.attachedSessionLabel ?? saved.attachedSessionLabel ?? existing?.attachedSessionLabel ?? null,
+          playerVisibilityPolicy: payload.playerVisibilityPolicy ?? saved.playerVisibilityPolicy ?? existing?.playerVisibilityPolicy ?? 'auto_lore_revealed',
+          style: payload.style ?? saved.style ?? existing?.style,
+        };
+        this.applySavedLocationLocally(enriched, payload.xPercent, payload.yPercent);
+        this.repositioningLocationKey.set(null);
+        this.statusBanner.set(`Saved location "${enriched.name}".`);
       },
       error: () => {
-        const fallback = buildFallbackLocationVm(cid, mapId, payload);
+        const fallback = buildFallbackLocationVm(cid, mapId, payload, existing);
         this.applySavedLocationLocally(fallback, payload.xPercent, payload.yPercent);
+        this.repositioningLocationKey.set(null);
         this.statusBanner.set(`Saved location "${fallback.name}".`);
       },
     });
@@ -281,14 +332,7 @@ export class WorldLoreFacadeService {
 
   linkEntityToLocation(
     locationKey: string,
-    req: {
-      targetCompositeKey: string;
-      targetName: string;
-      targetSubtitle: string;
-      entityType: string;
-      relationshipLabel: string;
-      visibility: 'players' | 'gm';
-    },
+    req: { targetCompositeKey: string; targetName: string; targetSubtitle: string; entityType: string; relationshipLabel: string; visibility: 'players' | 'gm' },
   ): void {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
@@ -298,19 +342,8 @@ export class WorldLoreFacadeService {
         this.statusBanner.set(`Linked "${req.targetName}" to ${updated.name}.`);
       },
       error: () => {
-        this.locationsState.update((list) =>
-          list.map((l) =>
-            l.locationKey === locationKey
-              ? {
-                  ...l,
-                  relatedEntities: [
-                    { compositeKey: req.targetCompositeKey, name: req.targetName, subtitle: req.targetSubtitle, entityType: req.entityType, relationshipLabel: req.relationshipLabel, routeLink: '/campaigns', visibility: req.visibility },
-                    ...l.relatedEntities,
-                  ],
-                }
-              : l,
-          ),
-        );
+        const rel = { compositeKey: req.targetCompositeKey, name: req.targetName, subtitle: req.targetSubtitle, entityType: req.entityType, relationshipLabel: req.relationshipLabel, routeLink: '/campaigns', visibility: req.visibility };
+        this.locationsState.update((list) => list.map((l) => (l.locationKey === locationKey ? { ...l, relatedEntities: [rel, ...l.relatedEntities] } : l)));
         this.statusBanner.set(`Linked "${req.targetName}".`);
       },
     });
@@ -326,11 +359,7 @@ export class WorldLoreFacadeService {
       },
       error: () => {
         this.locationsState.update((list) =>
-          list.map((l) =>
-            l.locationKey === locationKey
-              ? { ...l, visibility: 'players', secrets: l.secrets.map((s) => (s.id === secretId ? { ...s, revealedToPlayers: !s.revealedToPlayers } : s)) }
-              : l,
-          ),
+          list.map((l) => (l.locationKey === locationKey ? { ...l, visibility: 'players', secrets: l.secrets.map((s) => (s.id === secretId ? { ...s, revealedToPlayers: !s.revealedToPlayers } : s)) } : l)),
         );
       },
     });
@@ -340,29 +369,14 @@ export class WorldLoreFacadeService {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
     const dto: WorldMapSummaryVm = {
-      mapId: `map-${cid}-${Date.now().toString().slice(-4)}`,
-      campaignId: cid,
-      name: map.name,
-      scopeLevel: map.scopeLevel,
-      parentMapId: null,
-      parentLocationKey: null,
-      imageUrl: map.imageUrl || '/icrandor_world_dashboard.jpg',
-      linkedSceneKey: map.linkedSceneKey ?? null,
-      scaleLabel: '0 — 100 — 200 Miles',
-      compassOrientation: 'Top-Right North',
-      widthUnits: 1000,
-      heightUnits: 560,
-      visibility: 'players',
+      mapId: `map-${cid}-${Date.now().toString().slice(-4)}`, campaignId: cid, name: map.name, scopeLevel: map.scopeLevel,
+      parentMapId: null, parentLocationKey: null, imageUrl: map.imageUrl || '/icrandor_world_dashboard.jpg',
+      linkedSceneKey: map.linkedSceneKey ?? null, scaleLabel: '0 — 100 — 200 Miles', compassOrientation: 'Top-Right North',
+      widthUnits: 1000, heightUnits: 560, visibility: 'players',
     };
     this.http.post<WorldLoreWorkspaceVm>(`/api/v2/campaigns/${cid}/world-lore/maps/assign?role=gm`, dto).subscribe({
-      next: (ws) => {
-        this.workspace.set(ws);
-        this.activeMapId.set(ws.activeMapId);
-      },
-      error: () => {
-        this.workspace.update((cur) => ({ ...cur, activeMapId: dto.mapId, maps: [dto, ...cur.maps] }));
-        this.activeMapId.set(dto.mapId);
-      },
+      next: (ws) => { this.workspace.set(ws); this.activeMapId.set(ws.activeMapId); },
+      error: () => { this.workspace.update((cur) => ({ ...cur, activeMapId: dto.mapId, maps: [dto, ...cur.maps] })); this.activeMapId.set(dto.mapId); },
     });
   }
 
@@ -394,8 +408,9 @@ export class WorldLoreFacadeService {
     this.workspace.set(seedWs);
     this.locationsState.set(seedLocs);
     this.activeMapId.set(seedWs.activeMapId);
-    this.selectedLocationKey.set(seedLocs[0]?.locationKey ?? null);
-    this.selectedLoreId.set(null);
+    this.selectedLocationKey.set(null);
+    this.inspectorContextMode.set('session-guide');
+    this.selectedLoreId.set(seedWs.loreEntries[0]?.id ?? null);
     this.errorBanner.set(null);
     this.loading.set(true);
     this.http.get<WorldLoreWorkspaceVm>(`/api/v2/campaigns/${campaignId}/world-lore?role=${role}`).subscribe({
@@ -404,6 +419,9 @@ export class WorldLoreFacadeService {
         if (res && res.campaignId === this.store.activeCampaignId()) {
           this.workspace.set(res);
           this.activeMapId.set(res.activeMapId);
+          if (!this.selectedLoreId() && res.loreEntries.length > 0) {
+            this.selectedLoreId.set(res.loreEntries[0].id);
+          }
         }
       },
       error: () => this.loading.set(false),
@@ -414,7 +432,8 @@ export class WorldLoreFacadeService {
     this.locationsState.update((list) =>
       list.some((l) => l.locationKey === saved.locationKey) ? list.map((l) => (l.locationKey === saved.locationKey ? saved : l)) : [saved, ...list],
     );
-    const marker = buildMarkerFromLocation(saved, this.activeMap()?.mapId ?? 'map-icrandor-world', xPercent, yPercent);
+    const existingMarker = this.workspace().markers.find((m) => m.locationKey === saved.locationKey);
+    const marker = buildMarkerFromLocation(saved, this.activeMap()?.mapId ?? 'map-icrandor-world', xPercent, yPercent, existingMarker);
     this.workspace.update((cur) => ({
       ...cur,
       markers: cur.markers.some((m) => m.locationKey === saved.locationKey)
@@ -422,6 +441,7 @@ export class WorldLoreFacadeService {
         : [...cur.markers, marker],
     }));
     this.selectedLocationKey.set(saved.locationKey);
+    this.inspectorContextMode.set('world');
   }
 
   private upsertLoreLocally(saved: LoreEntryVm): void {

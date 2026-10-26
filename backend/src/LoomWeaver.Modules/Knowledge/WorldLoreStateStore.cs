@@ -302,8 +302,8 @@ public static class WorldLoreStateStore
                 "scene-cinth-gala",
                 "players",
                 [
-                    new("Parent City", "City of Cinth"),
-                    new("Notable Sites", "Grand Ballroom, Artificers Guildhall, Sky-Dock")
+                    new("Parent City", "City of Cinth", "loc-cinth", "location"),
+                    new("Notable Sites", "Grand Ballroom, Artificers Guildhall, Sky-Dock", "loc-artificers-skydock", "location")
                 ],
                 "Built after the Moonlight Wars to showcase both noble splendor and artificer engineering.",
                 "Clockwork chimes mark every hour across the district.",
@@ -312,7 +312,155 @@ public static class WorldLoreStateStore
                 ["lore-artificers-guild"],
                 [],
                 [],
-                []
+                [],
+                14,
+                "Session 14 · Velvet & Fangs at the Cinth Masquerade"
+            ),
+            new(
+                "loc-artificers-skydock",
+                "1:Location:loc-artificers-skydock",
+                1,
+                "Artificers Sky-Dock & Brass Foundry",
+                "Guild Stronghold",
+                "District",
+                "loc-cinth",
+                "City of Cinth",
+                "/six-engines-showcase.jpg",
+                "Rising directly above Cinth's eastern terraced walls, the Artificers Sky-Dock cradles phosphor-bronze airships, lightning-condenser towers, and non-magical mechanical workshops.",
+                "visited",
+                "48.2° E, 38.6° N (Cinth High Berth)",
+                "map-icrandor-world",
+                "map-cinth-metropolis",
+                "scene-cinth-gala",
+                "players",
+                [
+                    new("Parent City", "City of Cinth", "loc-cinth", "location"),
+                    new("Controlling Guild", "Artificers Guild of Cinth", "lore-artificers-guild", "lore"),
+                    new("Docked Vessel", "Captain Kutler's Skyship (Claimed by Fivi)", "1:NPC:npc-kutler", "entity"),
+                    new("Attached Session", "Session 14 · Velvet & Fangs at the Cinth Masquerade", "14", "session")
+                ],
+                "Constructed after the hundred-year Moonlight Wars by non-magical engineers determined never again to be helpless before wizard councils or ancient monsters.",
+                "Master riggers test brass pressure-valves and clockwork ballistae while skyship hulls moor to copper lightning spires.",
+                "Apprentices swear that Fivi has already chalked her name across the helm of Captain Kutler's flagship.",
+                ["Factions", "Artificers", "Cinth", "Skyship"],
+                ["lore-artificers-guild", "lore-kingdom-cinth"],
+                [
+                    new("1:Faction:fac-artificers", "Artificers Guild of Cinth", "Post-Moonlight Wars Craft Collective", "Faction", "Headquarters", "/campaigns?inspect=fac-artificers", "players"),
+                    new("1:NPC:npc-kutler", "Captain Kutler", "Skyship Commander", "NPC", "Skyship Berth", "/campaigns?inspect=npc-kutler", "players"),
+                    new("1:Location:loc-cinth", "City of Cinth", "Parent Metropolis", "Location", "Parent Settlement", "/weave", "players")
+                ],
+                [
+                    new("hist-skydock-14", "Session 14: Alliance at the Sky-Dock", "14th of Frostfall, 1004 A.M.", 14, "Major Events", "The party befriended the Artificers Guild engineers and inspected the high airship moorings of Cinth.", "players")
+                ],
+                [],
+                14,
+                "Session 14 · Velvet & Fangs at the Cinth Masquerade"
+            ),
+            new(
+                "loc-karak-thul",
+                "1:Location:loc-karak-thul",
+                1,
+                "Karak Thul",
+                "Dwarven Hold",
+                "Settlement",
+                null,
+                "Northern Iron Peaks",
+                "/combat-caves.jpg",
+                "An ancient dwarven stone-hold carved into the western basalt ridges, famed for deep-crust seismic listening posts and keepers of post-war dragon lore.",
+                "known",
+                "23.0° E, 29.0° N",
+                "map-icrandor-world",
+                null,
+                null,
+                "players",
+                [
+                    new("Region", "Western Basalt Ridges", "loc-plains-red", "location"),
+                    new("Scholarly Tie", "Kildrid's Stone-Sense Lineage", "lore-first-age-anelith", "lore")
+                ],
+                "After the Moonlight Wars, one of the surviving dragons entrusted a Luminary's safeguarding to the dwarven holds.",
+                "Stone-scholars read tremors in the mountain roots like written scripture.",
+                "Miners speak of a rhythmic hundred-year scratching echoing from the southern mountain range.",
+                ["Settlements", "Dwarves", "Stone-Sense"],
+                ["lore-first-age-anelith"],
+                [
+                    new("1:PlayerCharacter:pc-kildrid", "Kildrid", "Dwarven Stone Scholar", "PlayerCharacter", "Scholarly Archive", "/characters?focus=pc-kildrid", "players")
+                ],
+                [],
+                [],
+                13,
+                "Session 13 · Stone-Sense on the Cinth Road"
+            ),
+            new(
+                "loc-well-of-life",
+                "1:Location:loc-well-of-life",
+                1,
+                "Well of Life Sanctuary",
+                "Temple Ruins",
+                "Building",
+                "loc-vandia",
+                "Vandia & The Cliff House",
+                "/icrandor_world_dashboard.jpg",
+                "Ancient overgrown sanctuary northeast of the party's cliff-edge house along the sacred triangle route, where the dragon-thing once guarded the Luminary of the Well of Life.",
+                "visited",
+                "35.0° E, 58.0° S",
+                "map-icrandor-world",
+                null,
+                "scene-vandia-cliff",
+                "players",
+                [
+                    new("Parent Region", "Vandia & The Cliff House", "loc-vandia", "location"),
+                    new("Sacred Relic", "Luminary of the Well of Life", "lore-first-age-anelith", "lore")
+                ],
+                "Woven during the First Age when the Sidhe Ard called upon the Anelith to breathe life into root and river.",
+                "Pilgrims from Vandia once traced the triangle route in silence.",
+                "Even after the guardian fell, the basin water glows faintly under moonlight.",
+                ["Locations", "Luminaries", "Well of Life", "Vandia"],
+                ["lore-first-age-anelith"],
+                [
+                    new("1:Artifact:art-luminary-well", "Luminary of the Well of Life", "Sidhe Ard Creation Core", "Artifact", "Origin Sanctuary", "/assets", "players"),
+                    new("1:Location:loc-vandia", "Vandia & The Cliff House", "Coastal Haven", "Location", "Southwest Anchor", "/weave", "players")
+                ],
+                [
+                    new("hist-well-12", "Session 12: Trial at the Well of Life", "5th of Frostfall, 1004 A.M.", 12, "Historical Discoveries", "The party passed the Well of Life sanctuary northeast of the cliff house bearing the recovered Luminary.", "players")
+                ],
+                [],
+                12,
+                "Session 12 · Sanctuary of the Well of Life"
+            ),
+            new(
+                "loc-crimson-ambush",
+                "1:Location:loc-crimson-ambush",
+                1,
+                "Crimson Court Road Ambush",
+                "Active Encounter",
+                "Building",
+                "loc-plains-red",
+                "The Plains of Red",
+                "/tactical-combat-engine.jpg",
+                "A shattered wayside watchtower along the southern edge of the Plains of Red where vampire outriders of the Crimson Court waylay envoys traveling to and from Cinth.",
+                "known",
+                "67.5° E, 55.0° S",
+                "map-icrandor-world",
+                null,
+                "scene-cinth-gala",
+                "players",
+                [
+                    new("Parent Region", "The Plains of Red", "loc-plains-red", "location"),
+                    new("Linked Quest", "Masquerade of the Crimson Court", "lore-kingdom-cinth", "lore")
+                ],
+                "Once a border toll-post of Cinth, now used by nocturnal thralls loyal to the vampire conspirators.",
+                "Carriages avoid the southern mile-markers after sundown.",
+                "Broken wine crates stamped with Cinth noble seals litter the ditch.",
+                ["Encounters", "Cinth", "Crimson Court"],
+                ["lore-kingdom-cinth"],
+                [
+                    new("1:Quest:quest-cinth-gala", "Masquerade of the Crimson Court", "Main Quest", "Quest", "Ambush Site", "/campaigns?inspect=quest-cinth-gala", "players"),
+                    new("1:Location:loc-plains-red", "The Plains of Red", "Crimson Steppe", "Location", "Surrounding Region", "/weave", "players")
+                ],
+                [],
+                [],
+                15,
+                "Session 15 · Shadows Beneath the Ruined Chapel"
             )
         ],
         [2] =

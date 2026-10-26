@@ -160,7 +160,10 @@ export function bounded(value: unknown, min: number, max: number, fallback: numb
 }
 export function parseEffect(value: unknown): EffectDefinition {
   if (!value || typeof value !== 'object') throw new Error('Expected an effect object.');
-  const e = value as Record<string, unknown>;
+  const rawObj = value as Record<string, unknown>;
+  const e = rawObj['effect'] && typeof rawObj['effect'] === 'object' && !rawObj['layers']
+    ? (rawObj['effect'] as Record<string, unknown>)
+    : rawObj;
   if (e['schemaVersion'] !== 1 || typeof e['name'] !== 'string' || !e['name'].trim() || !Array.isArray(e['layers']) || e['layers'].length > 16)
     throw new Error('Use a version 1 effect with a name and at most 16 layers.');
   const color = (v: unknown) => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : '#62e5ad';

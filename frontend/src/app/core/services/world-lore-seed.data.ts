@@ -2,8 +2,8 @@ import { ViewerRole } from '../models/loomweaver.models';
 import {
   AtlasLayerFilterOption,
   LocationInspectorDetailVm,
-  WorldLoreWorkspaceVm,
 } from '../models/world-lore.models';
+import { EXTRA_SEED_LOCATIONS_C1 } from './world-lore-stamps.data';
 
 export const ATLAS_LAYER_FILTERS: readonly AtlasLayerFilterOption[] = [
   { id: 'Locations', label: 'Locations', icon: 'map-pin' },
@@ -53,13 +53,17 @@ const SEED_LOCATIONS_C1: readonly LocationInspectorDetailVm[] = [
     mapId: 'map-icrandor-world',
     childMapId: 'map-cinth-metropolis',
     linkedSceneKey: 'scene-cinth-gala',
+    attachedSessionId: 'sess-15',
+    attachedSessionLabel: 'Session 15 — The Ruined Chapel & Masquerade of Cinth',
+    playerVisibilityPolicy: 'auto_lore_revealed',
     visibility: 'players',
     attributes: [
-      { label: 'Region', value: 'Kingdom of Cinth · Plains of Vistagh' },
+      { label: 'Region', value: 'Kingdom of Cinth · Plains of Vistagh', linkTargetKey: 'lore-kingdom-cinth', linkType: 'lore' },
       { label: 'Population', value: '~250,000' },
-      { label: 'Government', value: 'Monarchic Council & Guild Charter' },
-      { label: 'Ruler', value: 'Lord Varyn of Cinth' },
-      { label: 'Primary Exports', value: 'Artificer Brass, Grain, Scholar Works' },
+      { label: 'Government', value: 'Monarchic Council & Guild Charter', linkTargetKey: 'lore-artificers-guild', linkType: 'lore' },
+      { label: 'Ruler', value: 'Lord Varyn of Cinth', linkTargetKey: '1:Quest:quest-cinth-gala', linkType: 'entity' },
+      { label: 'Skyship Port', value: 'Artificers Sky-Dock', linkTargetKey: 'loc-artificers-skydock', linkType: 'location' },
+      { label: 'Primary Exports', value: 'Artificer Brass, Chokrah Trade, Scholar Works' },
       { label: 'Alignment', value: 'Lawful Neutral' },
     ],
     historicalBackground:
@@ -347,7 +351,8 @@ export function getSeedLocationsForCampaign(
   role: ViewerRole,
 ): readonly LocationInspectorDetailVm[] {
   const isGm = role === 'gm';
-  const raw = campaignId === 1 ? SEED_LOCATIONS_C1 : [];
+  const raw =
+    campaignId === 1 ? [...SEED_LOCATIONS_C1, ...EXTRA_SEED_LOCATIONS_C1] : [];
   return raw
     .filter((l) => isGm || (l.visibility !== 'gm' && l.discoveryStatus !== 'undiscovered'))
     .map((l) =>

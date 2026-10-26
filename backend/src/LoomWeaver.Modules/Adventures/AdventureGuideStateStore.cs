@@ -196,12 +196,8 @@ public static class AdventureGuideStateStore
             var cur = Session15Beats[idx];
             var nextDone = !cur.Done;
             Session15Beats[idx] = cur with { Done = nextDone, ProgressState = nextDone ? "completed" : "unresolved" };
-            PlayEvents.Insert(0, new AdventurePlayEventDto(
-                $"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                "beat_checked",
-                "GM",
-                $"{(nextDone ? "Completed" : "Reopened")} Session Beat: {cur.Label} (Location secrets remain isolated)",
-                "Just now"));
+            PlayEvents.Insert(0, new($"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", "beat_checked", "GM",
+                $"{(nextDone ? "Completed" : "Reopened")} Session Beat: {cur.Label} (Location secrets remain isolated)", "Just now"));
         }
     }
 
@@ -211,12 +207,8 @@ public static class AdventureGuideStateStore
         {
             var clean = string.IsNullOrWhiteSpace(progressState) ? "discovered" : progressState.Trim().ToLowerInvariant();
             NodeProgressStates[nodeId] = clean;
-            PlayEvents.Insert(0, new AdventurePlayEventDto(
-                $"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                "state_updated",
-                "GM",
-                $"Marked '{nodeId}' as {clean.ToUpperInvariant()}" + (string.IsNullOrWhiteSpace(outcomeNotes) ? "" : $" — {outcomeNotes}"),
-                "Just now"));
+            PlayEvents.Insert(0, new($"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", "state_updated", "GM",
+                $"Marked '{nodeId}' as {clean.ToUpperInvariant()}" + (string.IsNullOrWhiteSpace(outcomeNotes) ? "" : $" — {outcomeNotes}"), "Just now"));
         }
     }
 
@@ -227,12 +219,8 @@ public static class AdventureGuideStateStore
             SharedReadAloudAndSecretIds.Add(req.TargetId);
             NodeProgressStates[req.TargetId] = "discovered";
             var recipient = string.IsNullOrWhiteSpace(req.CharacterKey) ? "All Party" : req.CharacterKey;
-            PlayEvents.Insert(0, new AdventurePlayEventDto(
-                $"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                "knowledge_granted",
-                "GM",
-                $"Revealed '{req.TargetTitle}' to {recipient}",
-                "Just now"));
+            PlayEvents.Insert(0, new($"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", "knowledge_granted", "GM",
+                $"Revealed '{req.TargetTitle}' to {recipient}", "Just now"));
         }
     }
 
@@ -242,17 +230,10 @@ public static class AdventureGuideStateStore
         {
             var key = string.IsNullOrWhiteSpace(req.IdempotencyKey) ? $"reward-{req.NodeId}" : req.IdempotencyKey;
             if (!AwardedRewardKeys.Add(key))
-            {
                 return (false, 0, $"Reward '{req.CurrencyOrItemLabel}' was already awarded (idempotent ledger verified).");
-            }
             NodeProgressStates[req.NodeId] = "completed";
             var msg = $"Awarded +{req.XpAmount} XP & {req.CurrencyOrItemLabel} to the party.";
-            PlayEvents.Insert(0, new AdventurePlayEventDto(
-                $"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                "reward_awarded",
-                "GM",
-                msg,
-                "Just now"));
+            PlayEvents.Insert(0, new($"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", "reward_awarded", "GM", msg, "Just now"));
             return (true, req.XpAmount, msg);
         }
     }
@@ -335,14 +316,11 @@ public static class AdventureGuideStateStore
             AssignedMapsByScope["default"] = updated;
             AssignedMapsByScope[sesId] = updated;
             AssignedMapsByScope[locNodeId] = updated;
-
             PlayEvents.Insert(0, new AdventurePlayEventDto(
                 $"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                "map_assigned",
-                "LoomMaps",
+                "map_assigned", "LoomMaps",
                 $"Assigned Battlemap '{updated.Title}' to {updated.SessionTitle} · {updated.LocationTitle}",
                 "Just now"));
-
             return updated;
         }
     }
@@ -353,17 +331,12 @@ public static class AdventureGuideStateStore
     private static bool FilterMatches(string state, string filter) =>
         filter == "all" || string.Equals(state, filter, StringComparison.OrdinalIgnoreCase);
 
-    private static string NormalizeScopeKind(string? scopeKind, string? scopeId)
-    {
-        if (!string.IsNullOrWhiteSpace(scopeKind)) return scopeKind.Trim().ToLowerInvariant();
-        if (!string.IsNullOrWhiteSpace(scopeId))
-        {
-            if (scopeId.StartsWith("node-room-", StringComparison.OrdinalIgnoreCase)) return "room";
-            if (scopeId.StartsWith("node-loc-", StringComparison.OrdinalIgnoreCase)) return "location";
-            if (scopeId.StartsWith("adv-", StringComparison.OrdinalIgnoreCase)) return "adventure";
-        }
-        return "session";
-    }
+    private static string NormalizeScopeKind(string? scopeKind, string? scopeId) =>
+        !string.IsNullOrWhiteSpace(scopeKind) ? scopeKind.Trim().ToLowerInvariant()
+        : scopeId?.StartsWith("node-room-", StringComparison.OrdinalIgnoreCase) == true ? "room"
+        : scopeId?.StartsWith("node-loc-", StringComparison.OrdinalIgnoreCase) == true ? "location"
+        : scopeId?.StartsWith("adv-", StringComparison.OrdinalIgnoreCase) == true ? "adventure"
+        : "session";
 
     private static string ResolveScopeId(string scopeKind, string? scopeId) =>
         !string.IsNullOrWhiteSpace(scopeId) ? scopeId.Trim() : scopeKind switch

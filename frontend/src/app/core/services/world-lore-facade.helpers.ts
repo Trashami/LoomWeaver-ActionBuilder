@@ -2,6 +2,8 @@ import {
   AtlasLayerFilterId,
   LocationInspectorDetailVm,
   LoreEntryVm,
+  MarkerVisualStyleVm,
+  PlayerVisibilityMode,
   WorldHistoryChronicleEventVm,
   WorldLorePrimaryTab,
   WorldMapMarkerVm,
@@ -112,35 +114,44 @@ export function buildFallbackLocationVm(
     historicalBackground?: string;
     cultureAndTraditions?: string;
     localMyths?: string;
+    attachedSessionId?: number | null;
+    attachedSessionLabel?: string | null;
+    playerVisibilityPolicy?: PlayerVisibilityMode;
+    style?: MarkerVisualStyleVm;
   },
+  existing?: LocationInspectorDetailVm | null,
 ): LocationInspectorDetailVm {
-  const fallbackKey = payload.locationKey ?? `loc-${Date.now().toString().slice(-5)}`;
+  const fallbackKey = payload.locationKey ?? existing?.locationKey ?? `loc-${Date.now().toString().slice(-5)}`;
   return {
     locationKey: fallbackKey,
-    compositeKey: `${cid}:Location:${fallbackKey}`,
+    compositeKey: existing?.compositeKey ?? `${cid}:Location:${fallbackKey}`,
     campaignId: cid,
     name: payload.name,
     locationType: payload.locationType,
-    hierarchyLevel: (payload.hierarchyLevel as never) || 'Settlement',
-    parentLocationKey: payload.parentLocationKey ?? null,
-    parentLocationName: 'Campaign Realm',
-    artworkUrl: payload.artworkUrl || '/icrandor_world_dashboard.jpg',
-    description: payload.description,
-    discoveryStatus: (payload.discoveryStatus as never) || 'known',
+    hierarchyLevel: (payload.hierarchyLevel as never) || existing?.hierarchyLevel || 'Settlement',
+    parentLocationKey: payload.parentLocationKey !== undefined ? payload.parentLocationKey : (existing?.parentLocationKey ?? null),
+    parentLocationName: existing?.parentLocationName ?? 'Campaign Realm',
+    artworkUrl: payload.artworkUrl || existing?.artworkUrl || '/icrandor_world_dashboard.jpg',
+    description: payload.description || existing?.description || 'Recorded in the campaign world atlas.',
+    discoveryStatus: (payload.discoveryStatus as never) || existing?.discoveryStatus || 'known',
     coordinatesLabel: `${payload.yPercent.toFixed(1)}° N, ${payload.xPercent.toFixed(1)}° E`,
     mapId,
-    childMapId: payload.childMapId ?? null,
-    linkedSceneKey: payload.linkedSceneKey ?? null,
+    childMapId: payload.childMapId !== undefined ? payload.childMapId : (existing?.childMapId ?? null),
+    linkedSceneKey: payload.linkedSceneKey !== undefined ? payload.linkedSceneKey : (existing?.linkedSceneKey ?? null),
+    attachedSessionId: payload.attachedSessionId !== undefined ? payload.attachedSessionId : (existing?.attachedSessionId ?? null),
+    attachedSessionLabel: payload.attachedSessionLabel !== undefined ? payload.attachedSessionLabel : (existing?.attachedSessionLabel ?? null),
+    playerVisibilityPolicy: payload.playerVisibilityPolicy ?? existing?.playerVisibilityPolicy ?? 'auto_lore_revealed',
+    style: payload.style ?? existing?.style,
     visibility: payload.visibility,
-    attributes: [{ label: 'Region', value: 'Charted Realm' }],
-    historicalBackground: payload.historicalBackground || 'Chronicled by the GM.',
-    cultureAndTraditions: payload.cultureAndTraditions || 'Recorded in campaign lore.',
-    localMyths: payload.localMyths || 'Local legends endure.',
-    tags: [payload.locationType],
-    linkedLoreIds: [],
-    relatedEntities: [],
-    historyEvents: [],
-    secrets: [],
+    attributes: existing?.attributes ?? [{ label: 'Region', value: 'Charted Realm' }],
+    historicalBackground: payload.historicalBackground || existing?.historicalBackground || 'Chronicled by the GM.',
+    cultureAndTraditions: payload.cultureAndTraditions || existing?.cultureAndTraditions || 'Recorded in campaign lore.',
+    localMyths: payload.localMyths || existing?.localMyths || 'Local legends endure.',
+    tags: existing?.tags ?? [payload.locationType],
+    linkedLoreIds: existing?.linkedLoreIds ?? [],
+    relatedEntities: existing?.relatedEntities ?? [],
+    historyEvents: existing?.historyEvents ?? [],
+    secrets: existing?.secrets ?? [],
   };
 }
 
@@ -149,15 +160,16 @@ export function buildMarkerFromLocation(
   mapId: string,
   xPercent: number,
   yPercent: number,
+  existingMarker?: WorldMapMarkerVm,
 ): WorldMapMarkerVm {
   return {
-    markerId: `m-${saved.locationKey}`,
+    markerId: existingMarker?.markerId ?? `m-${saved.locationKey}`,
     mapId: saved.mapId ?? mapId,
     locationKey: saved.locationKey,
     compositeKey: saved.compositeKey,
     name: saved.name,
     subtitle: saved.locationType,
-    category: saved.visibility === 'gm' ? 'Secrets' : 'Settlements',
+    category: existingMarker?.category ?? (saved.visibility === 'gm' ? 'Secrets' : 'Settlements'),
     hierarchyLevel: saved.hierarchyLevel,
     xPercent,
     yPercent,
@@ -165,6 +177,10 @@ export function buildMarkerFromLocation(
     visibility: saved.visibility,
     childMapId: saved.childMapId,
     linkedSceneKey: saved.linkedSceneKey,
+    attachedSessionId: saved.attachedSessionId ?? existingMarker?.attachedSessionId ?? null,
+    attachedSessionLabel: saved.attachedSessionLabel ?? existingMarker?.attachedSessionLabel ?? null,
+    playerVisibilityPolicy: saved.playerVisibilityPolicy ?? existingMarker?.playerVisibilityPolicy ?? 'auto_lore_revealed',
+    style: saved.style ?? existingMarker?.style,
     questCount: saved.relatedEntities.filter((r) => r.entityType === 'Quest').length,
     npcCount: saved.relatedEntities.filter((r) => r.entityType === 'NPC').length,
     secretCount: saved.secrets.length,

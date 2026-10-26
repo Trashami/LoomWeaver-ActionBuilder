@@ -17,6 +17,7 @@
 
 .lw-workspace {
   flex: 1;
+  width: 100%;
   min-height: 0;
   overflow: hidden;
   display: grid;
@@ -36,10 +37,10 @@
 
   .lw-workspace {
     overflow: visible;
-    grid-template-columns: 205px minmax(0, 1fr);
+    grid-template-columns: 205px minmax(0, 1fr) auto;
 
     &--nav-collapsed {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
   }
 }

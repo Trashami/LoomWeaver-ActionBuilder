@@ -1,8 +1,18 @@
-<mat-icon
-  class="lw-mat-icon material-icons-outlined"
-  [style.font-size.px]="size()"
-  [style.width.px]="size()"
-  [style.height.px]="size()"
+<span
+  class="lw-icon-wrap"
+  [class.lw-icon-wrap--framed]="framed()"
+  [class.lw-icon-wrap--emerald]="tone() === 'emerald'"
+  [class.lw-icon-wrap--gold]="tone() === 'gold'"
+  [class.lw-icon-wrap--crimson]="tone() === 'crimson'"
+  [class.lw-icon-wrap--muted]="tone() === 'muted'"
   aria-hidden="true"
-  >{{ materialLigature() }}
-</mat-icon>
+>
+  <mat-icon
+    class="lw-mat-icon material-icons-outlined"
+    [style.font-size.px]="size()"
+    [style.width.px]="size()"
+    [style.height.px]="size()"
+    aria-hidden="true"
+    >{{ materialLigature() }}</mat-icon
+  >
+</span>

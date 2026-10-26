@@ -1,4 +1,4 @@
-import { GridOption } from '../../../../Mythweaver.client/src/app/shared/components/option-grid/option-grid.component';
+import { GridOption } from '../shared/components/option-grid/option-grid.component';
 import { makeAmbientPresets } from './ambient-presets';
 import { makeGasCone, makeSpellTemplates } from './spell-templates';
 import { createEffect, createFireballComposition, createFireHitEffect, createMageHandEffect, createMagicMissileEffect, defaultMotion, EFFECT_KINDS, EffectDefinition, VARIANTS } from './effect-definition';

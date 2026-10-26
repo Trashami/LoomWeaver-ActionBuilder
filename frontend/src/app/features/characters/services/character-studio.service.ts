@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { AdventureGuideService } from '../../../core/services/adventure-guide.service';
 import { LoomWeaverStoreService } from '../../../core/services/loomweaver-store.service';
 import {
   AbilityScoreVm,
@@ -9,6 +10,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CharacterStudioService {
   private readonly store = inject(LoomWeaverStoreService);
+  private readonly adventureGuide = inject(AdventureGuideService);
 
   readonly activeSystem = signal<'dnd5e' | 'pf2e' | 'vampire_v5'>('dnd5e');
   readonly selectedCharacterKey = signal<string>('char-dal');
@@ -157,6 +159,29 @@ export class CharacterStudioService {
 
     this.sheets.update((prev) => [newSheet, ...prev]);
     this.selectedCharacterKey.set(charKey);
+    this.store.registerEntity({
+      compositeKey: newSheet.compositeKey,
+      entityKey: charKey,
+      campaignId: 1,
+      entityType: 'Character',
+      name: cleanName,
+      subtitle: `${ancestry} · ${archetype}`,
+      visibility: 'players',
+      canonStatus: 'approved',
+      summary: `Level ${newSheet.level} ${ancestry} ${archetype} (HP ${newSheet.maxHp}, AC ${newSheet.armorClass}). Populated into the Session & Adventure Guide.`,
+      routeLink: `/characters?focus=${charKey}`,
+    });
+    this.adventureGuide.populateCharacterOrNpc({
+      compositeKey: newSheet.compositeKey,
+      name: cleanName,
+      role: `${ancestry} · ${archetype}`,
+      dispositionLabel: 'Party Hero',
+      motive: `Active party member (Lv.${newSheet.level}, HP ${newSheet.maxHp}, AC ${newSheet.armorClass}).`,
+      artworkUrl: '/characters-showcase.jpg',
+      sessionId: 'session-15',
+      locationNodeId: 'node-room-c1-nave',
+      routeLink: `/characters?focus=${charKey}`,
+    });
   }
 
   private recalculate(
