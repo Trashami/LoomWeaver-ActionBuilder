@@ -67,6 +67,12 @@ export class LwWorldAtlasComponent {
     () => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.zoom()})`,
   );
 
+  readonly markerZoomScale = computed(() => {
+    const z = this.zoom();
+    if (z <= 1) return 1;
+    return +(1 / Math.pow(z, 1.22)).toFixed(4);
+  });
+
   readonly zoomPercentLabel = computed(() => `${Math.round(this.zoom() * 100)}%`);
 
   readonly playerRoutePolyline = computed(() => {

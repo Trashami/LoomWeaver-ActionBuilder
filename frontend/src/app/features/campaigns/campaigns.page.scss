@@ -117,7 +117,9 @@
 .lw-structure-head,
 .lw-strip-panel__head,
 .lw-chain-panel__head {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.7rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+  h3 { margin: 0.16rem 0 0; font-size: 0.96rem; color: #f5e6c8; }
+  p { margin: 0.18rem 0 0; font-size: 0.76rem; color: #b4c8be; }
 }
 
 .lw-add-beat-bar__row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }

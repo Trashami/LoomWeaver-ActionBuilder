@@ -52,7 +52,7 @@
           </div>
         }
 
-        <div class="lw-editor-viewport" [style.transform]="transformStyle()">
+        <div class="lw-editor-viewport" [style.transform]="transformStyle()" [style.--lw-marker-scale]="markerZoomScale()">
           <img [src]="m.imageUrl" [alt]="m.name" class="lw-editor-map-img" draggable="false" />
 
           <svg class="lw-editor-svg" viewBox="0 0 1000 560" preserveAspectRatio="none">

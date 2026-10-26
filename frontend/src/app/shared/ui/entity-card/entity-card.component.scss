@@ -5,21 +5,22 @@
 .lw-entity-card {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 0.95rem 1.05rem;
-  border-radius: var(--lw-radius-lg);
-  background: var(--lw-bg-surface);
-  border: 1px solid var(--lw-border-subtle);
+  gap: 0.6rem;
+  padding: 0.82rem 0.95rem;
+  border-radius: 9px;
+  background: rgba(9, 22, 17, 0.92);
+  border: 1px solid rgba(217, 183, 122, 0.32);
+  color: #f4e6ca;
   transition: border-color 150ms ease, background 150ms ease;
 
   &:hover {
-    border-color: var(--lw-border-gold);
+    border-color: #49e892;
   }
 }
 
 .lw-entity-card--active {
-  background: var(--lw-bg-elevated);
-  border-color: var(--lw-accent-gold);
+  background: rgba(15, 34, 26, 0.95);
+  border-color: #d9b77a;
 }
 
 .lw-entity-card__top {

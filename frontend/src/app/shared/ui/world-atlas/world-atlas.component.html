@@ -22,7 +22,7 @@
       </div>
     }
 
-    <div class="lw-atlas-viewport" [style.transform]="transformStyle()">
+    <div class="lw-atlas-viewport" [style.transform]="transformStyle()" [style.--lw-marker-scale]="markerZoomScale()">
       <img
         class="lw-atlas-map-img"
         [src]="m.imageUrl"
@@ -81,7 +81,7 @@
             <circle
               [attr.cx]="wp.xPercent * 10"
               [attr.cy]="wp.yPercent * 5.6"
-              [attr.r]="wp.status === 'current' ? 8 : 5"
+              [attr.r]="(wp.status === 'current' ? 8 : 5) * markerZoomScale()"
               [attr.data-status]="wp.status"
             />
           </g>

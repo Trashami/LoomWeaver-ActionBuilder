@@ -108,6 +108,7 @@
   fill-opacity: 0.12;
   stroke-width: 2;
   stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
 }
 
 .lw-editor-drag-banner {
@@ -141,7 +142,8 @@
 
 .lw-editor-marker {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--lw-marker-scale, 1));
+  transform-origin: center center;
   display: inline-flex;
   align-items: center;
   gap: 0.42rem;

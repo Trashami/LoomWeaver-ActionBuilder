@@ -54,6 +54,7 @@
   fill-opacity: 0.1;
   stroke-width: 2;
   stroke-dasharray: 7 5;
+  vector-effect: non-scaling-stroke;
 
   &--territory {
     fill-opacity: 0.18;
@@ -64,12 +65,12 @@
 .lw-region-label {
   fill: rgba(244, 232, 204, 0.86);
   font-family: var(--lw-font-display, Georgia, serif);
-  font-size: 13px;
+  font-size: calc(13px * var(--lw-marker-scale, 1));
   font-weight: 700;
   letter-spacing: 0.14em;
   paint-order: stroke;
   stroke: rgba(5, 12, 9, 0.92);
-  stroke-width: 4px;
+  stroke-width: calc(4px * var(--lw-marker-scale, 1));
 }
 
 .lw-journey-line {
@@ -78,6 +79,7 @@
   stroke-width: 3;
   stroke-dasharray: 8 6;
   stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 
   &--glow {
     stroke: rgba(73, 232, 146, 0.32);
@@ -95,6 +97,7 @@
   fill: #49e892;
   stroke: #06150f;
   stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
 
   &[data-status='current'] {
     fill: #49e892;
@@ -110,7 +113,8 @@
 
 .lw-atlas-marker {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--lw-marker-scale, 1));
+  transform-origin: center center;
   display: inline-flex;
   align-items: center;
   gap: 0.42rem;
@@ -125,7 +129,7 @@
   z-index: 4;
 
   &:hover {
-    transform: translate(-50%, -50%) scale(1.06);
+    transform: translate(-50%, -50%) scale(calc(var(--lw-marker-scale, 1) * 1.06));
     border-color: #49e892;
     z-index: 8;
   }

@@ -93,15 +93,16 @@
 .lw-quest-card {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 12px;
-  background: rgba(8, 24, 18, 0.9);
-  border: 1px solid rgba(55, 110, 84, 0.38);
+  gap: 0.65rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 9px;
+  background: rgba(9, 22, 17, 0.92);
+  border: 1px solid rgba(217, 183, 122, 0.32);
+  color: #f4e6ca;
 
   &--completed {
-    border-color: rgba(92, 229, 160, 0.45);
-    background: linear-gradient(135deg, rgba(92, 229, 160, 0.09), rgba(8, 24, 18, 0.94));
+    border-color: rgba(73, 232, 146, 0.52);
+    background: linear-gradient(135deg, rgba(16, 48, 34, 0.92), rgba(9, 22, 17, 0.94));
   }
 }
 
@@ -114,16 +115,17 @@
 }
 
 .lw-quest-card__giver {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(229, 184, 92, 0.85);
+  letter-spacing: 0.08em;
+  color: #49e892;
 }
 
 .lw-quest-card__title {
-  margin: 0.12rem 0 0;
-  font-size: 0.98rem;
-  color: #f6f1e6;
+  margin: 0.16rem 0 0;
+  font-size: 0.95rem;
+  color: #f6ead0;
 }
 
 .lw-quest-card__badges {
@@ -135,35 +137,42 @@
 .lw-quest-card__locations {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  font-size: 0.76rem;
-  color: rgba(214, 208, 196, 0.82);
-  padding: 0.45rem 0.65rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 0.6rem;
+  font-size: 0.73rem;
+  color: #b4c8be;
+  padding: 0.45rem 0.6rem;
+  border-radius: 7px;
+  border: 1px solid rgba(217, 183, 122, 0.22);
+  background: rgba(6, 15, 11, 0.86);
 }
 
 .lw-quest-card__steps {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.38rem;
 }
 
 .lw-quest-card__step {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(11, 31, 24, 0.8);
-  color: #e2dcd0;
+  padding: 0.46rem 0.62rem;
+  border-radius: 7px;
+  border: 1px solid rgba(217, 183, 122, 0.24);
+  background: rgba(6, 15, 11, 0.88);
+  color: #f2e5ca;
   text-align: left;
   cursor: pointer;
+  transition: border-color 140ms ease;
+
+  &:hover {
+    border-color: #49e892;
+  }
 
   &--done {
-    border-color: rgba(92, 229, 160, 0.4);
-    color: #98f5c4;
+    border-color: rgba(73, 232, 146, 0.46);
+    background: rgba(10, 26, 19, 0.92);
+    color: #b7f5d4;
   }
 }
 
@@ -171,11 +180,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  font-size: 0.81rem;
+  font-size: 0.77rem;
 
   small {
-    font-size: 0.7rem;
-    color: rgba(229, 184, 92, 0.8);
+    font-size: 0.68rem;
+    color: #d9b77a;
+    font-weight: 600;
   }
 }
 
@@ -187,19 +197,24 @@
 }
 
 .lw-quest-card__clue-label {
-  font-size: 0.72rem;
-  color: rgba(214, 208, 196, 0.72);
+  font-size: 0.7rem;
+  color: #a8beb3;
 }
 
 .lw-quest-card__clue-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.22rem 0.5rem;
-  border-radius: 6px;
-  border: 1px solid rgba(73, 232, 146, 0.35);
-  background: rgba(73, 232, 146, 0.08);
-  color: #98f5c4;
-  font-size: 0.72rem;
+  padding: 0.18rem 0.48rem;
+  border-radius: 5px;
+  border: 1px solid rgba(217, 183, 122, 0.32);
+  background: rgba(12, 28, 21, 0.9);
+  color: #f4e5c7;
+  font-size: 0.69rem;
   cursor: pointer;
+
+  &:hover {
+    border-color: #49e892;
+    color: #49e892;
+  }
 }

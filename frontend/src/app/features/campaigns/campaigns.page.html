@@ -344,22 +344,44 @@
   }
 
   @if (viewMode() === 'quests-registry') {
-    <lw-panel eyebrow="Multi-Step RPG Quest & Clue Investigation Tracker" title="Active Campaign Quests & Automated XP Awards" [subtitle]="questXpBanner()" icon="Compass">
+    <section class="lw-chain-panel">
+      <div class="lw-chain-panel__head">
+        <div>
+          <span class="lw-story-hero__eyebrow">MULTI-STEP RPG QUEST &amp; CLUE INVESTIGATION TRACKER</span>
+          <h3>Active Campaign Quests &amp; Automated XP Awards</h3>
+          <p>{{ questXpBanner() }}</p>
+        </div>
+        <div class="lw-chain-panel__badges">
+          <lw-badge [label]="quests().length + ' Active Quests'" tone="emerald" />
+        </div>
+      </div>
+
       <div class="lw-quest-grid">
         @for (quest of quests(); track quest.id) {
           <lw-quest-tracker-card [quest]="quest" (stepToggled)="handleStepToggle($event)" (clueInspected)="store.inspectEntity($event)" />
         }
       </div>
-    </lw-panel>
+    </section>
 
-    <lw-panel eyebrow="Canon & World Registry" title="Quests, NPCs, Locations, Factions, Clues & Secrets" subtitle="Filtered automatically by your server-verified role and knowledge grants." icon="Compass">
-      <div panelActions>
+    <section class="lw-chain-panel">
+      <div class="lw-chain-panel__head">
+        <div>
+          <span class="lw-story-hero__eyebrow">CANON &amp; WORLD REGISTRY</span>
+          <h3>Quests, NPCs, Locations, Factions, Clues &amp; Secrets</h3>
+          <p>Filtered automatically by your server-verified role and knowledge grants.</p>
+        </div>
         <div class="lw-filter-bar">
           @for (cat of categories; track cat) {
-            <lw-button [variant]="selectedCategory() === cat ? 'primary' : 'secondary'" size="sm" (pressed)="selectedCategory.set(cat)">{{ cat }}</lw-button>
+            <button
+              type="button"
+              class="lw-truth-btn"
+              [class.lw-truth-btn--active]="selectedCategory() === cat"
+              (click)="selectedCategory.set(cat)"
+            >{{ cat }}</button>
           }
         </div>
       </div>
+
       <div class="lw-entity-grid">
         @for (entity of filteredEntities(); track entity.compositeKey) {
           <lw-entity-card
@@ -375,6 +397,6 @@
           <lw-empty-state icon="Lock" title="No Entities Visible for Filter" description="Switch to GM Role Preview in the top bar to inspect GM-scoped Secret entities or choose another category." actionLabel="Reset Filter" (actionTriggered)="selectedCategory.set('All')" />
         }
       </div>
-    </lw-panel>
+    </section>
   }
 </div>
