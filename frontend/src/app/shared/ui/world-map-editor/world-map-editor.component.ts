@@ -7,6 +7,7 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgpButton } from 'ng-primitives/button';
@@ -31,6 +32,28 @@ import {
 } from '../../../core/services/world-lore-stamps.data';
 import { LwButtonComponent } from '../button/button.component';
 import { LwIconComponent } from '../icon/icon.component';
+
+export interface MapEditorSavePayload {
+  locationKey?: string;
+  name: string;
+  locationType: string;
+  hierarchyLevel: string;
+  parentLocationKey?: string | null;
+  mapId?: string | null;
+  childMapId?: string | null;
+  linkedSceneKey?: string | null;
+  attachedSessionId?: string | number | null;
+  attachedSessionLabel?: string | null;
+  playerVisibilityPolicy?: PlayerVisibilityMode;
+  style?: MarkerVisualStyleVm;
+  xPercent: number;
+  yPercent: number;
+  discoveryStatus: string;
+  visibility: 'players' | 'gm' | 'public';
+  artworkUrl?: string;
+  description: string;
+  silent?: boolean;
+}
 
 @Component({
   selector: 'lw-world-map-editor',
@@ -59,26 +82,7 @@ export class LwWorldMapEditorComponent {
   readonly childMapRequested = output<string>();
   readonly relatedEntitySelected = output<LocationRelatedEntityVm>();
   readonly loreSelected = output<string>();
-  readonly locationSaved = output<{
-    locationKey?: string;
-    name: string;
-    locationType: string;
-    hierarchyLevel: string;
-    parentLocationKey?: string | null;
-    mapId?: string | null;
-    childMapId?: string | null;
-    linkedSceneKey?: string | null;
-    attachedSessionId?: string | number | null;
-    attachedSessionLabel?: string | null;
-    playerVisibilityPolicy?: PlayerVisibilityMode;
-    style?: MarkerVisualStyleVm;
-    xPercent: number;
-    yPercent: number;
-    discoveryStatus: string;
-    visibility: 'players' | 'gm' | 'public';
-    artworkUrl?: string;
-    description: string;
-  }>();
+  readonly locationSaved = output<MapEditorSavePayload>();
 
   readonly stampCatalog = OLD_WORLD_STAMP_OPTIONS;
   readonly vectorIcons = DEFAULT_MARKER_ICONS;
@@ -92,6 +96,7 @@ export class LwWorldMapEditorComponent {
   readonly isPanning = signal<boolean>(false);
   readonly dragModeActive = signal<boolean>(false);
   readonly isDraggingPin = signal<boolean>(false);
+  readonly saveNotice = signal<string | null>(null);
 
   readonly stampArtistFilter = signal<'All' | 'Muller Old World' | 'Harrewyn Classic'>('All');
   readonly rightPaneSection = signal<'properties' | 'customize' | 'attachments'>('properties');
@@ -118,14 +123,24 @@ export class LwWorldMapEditorComponent {
   readonly labelPosition = signal<MarkerLabelPosition>('right');
   readonly iconScale = signal<number>(1.0);
 
+  private hydratedLocationKey: string | null = null;
   private dragStartX = 0;
   private dragStartY = 0;
+  private hasMovedPinDuringDrag = false;
+  private suppressNextMarkerClick = false;
 
   constructor() {
     effect(() => {
       const loc = this.selectedLocation();
-      if (!loc) return;
-      const m = this.markers().find((mk) => mk.locationKey === loc.locationKey);
+      if (!loc) {
+        this.hydratedLocationKey = null;
+        return;
+      }
+      if (this.hydratedLocationKey === loc.locationKey) {
+        return;
+      }
+      this.hydratedLocationKey = loc.locationKey;
+      const m = untracked(() => this.markers().find((mk) => mk.locationKey === loc.locationKey));
       this.editName.set(loc.name);
       this.editSubtitle.set(m?.subtitle || loc.locationType);
       this.editHierarchy.set(loc.hierarchyLevel);
@@ -185,12 +200,22 @@ export class LwWorldMapEditorComponent {
 
   onMarkerClick(marker: WorldMapMarkerVm, event: MouseEvent): void {
     event.stopPropagation();
+    if (this.suppressNextMarkerClick) {
+      this.suppressNextMarkerClick = false;
+      return;
+    }
+    if (this.selectedLocation()?.locationKey === marker.locationKey) {
+      return;
+    }
     this.markerSelected.emit(marker.locationKey);
   }
 
   onMarkerMouseDown(marker: WorldMapMarkerVm, event: MouseEvent): void {
-    if (this.dragModeActive() && this.selectedLocation()?.locationKey === marker.locationKey) {
+    if (event.button !== 0) return;
+    if (this.dragModeActive() || this.selectedLocation()?.locationKey === marker.locationKey) {
+      event.preventDefault();
       event.stopPropagation();
+      this.hasMovedPinDuringDrag = false;
       this.isDraggingPin.set(true);
     }
   }
@@ -202,6 +227,7 @@ export class LwWorldMapEditorComponent {
       const rect = vp.getBoundingClientRect();
       this.editXPercent.set(Math.max(2, Math.min(98, Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 10)));
       this.editYPercent.set(Math.max(2, Math.min(98, Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 10)));
+      this.hasMovedPinDuringDrag = true;
       this.isDraggingPin.set(true);
       return;
     }
@@ -211,12 +237,13 @@ export class LwWorldMapEditorComponent {
   }
 
   onPointerMove(event: MouseEvent): void {
-    if (this.isDraggingPin() && this.dragModeActive()) {
+    if (this.isDraggingPin()) {
       const vp = (event.currentTarget as HTMLElement).querySelector('.lw-editor-viewport') as HTMLElement | null;
       if (vp) {
         const rect = vp.getBoundingClientRect();
         this.editXPercent.set(Math.max(2, Math.min(98, Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 10)));
         this.editYPercent.set(Math.max(2, Math.min(98, Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 10)));
+        this.hasMovedPinDuringDrag = true;
       }
       return;
     }
@@ -228,13 +255,56 @@ export class LwWorldMapEditorComponent {
   }
 
   onPointerUp(): void {
+    const wasDraggingPin = this.isDraggingPin();
     this.isPanning.set(false);
     this.isDraggingPin.set(false);
+    if (wasDraggingPin && this.hasMovedPinDuringDrag) {
+      this.suppressNextMarkerClick = true;
+      this.hasMovedPinDuringDrag = false;
+      this.emitSave(true, 'Location coordinates updated on map.');
+    }
+  }
+
+  setIconMode(mode: 'default' | 'stamp'): void {
+    this.iconMode.set(mode);
+    this.emitSave(true);
+  }
+
+  setDefaultIcon(iconId: string): void {
+    this.iconMode.set('default');
+    this.defaultIconName.set(iconId);
+    this.emitSave(true);
   }
 
   selectStamp(url: string): void {
     this.iconMode.set('stamp');
     this.stampImageUrl.set(url);
+    this.emitSave(true);
+  }
+
+  setShowIcon(val: boolean): void {
+    this.showIcon.set(val);
+    this.emitSave(true);
+  }
+
+  setColorHex(hex: string): void {
+    this.colorHex.set(hex);
+    this.emitSave(true);
+  }
+
+  setFontFamily(font: MarkerFontFamily): void {
+    this.fontFamily.set(font);
+    this.emitSave(true);
+  }
+
+  setLabelPosition(pos: MarkerLabelPosition): void {
+    this.labelPosition.set(pos);
+    this.emitSave(true);
+  }
+
+  setIconScale(scale: number): void {
+    this.iconScale.set(scale);
+    this.emitSave(true);
   }
 
   markerDisplayX(m: WorldMapMarkerVm): number {
@@ -246,6 +316,11 @@ export class LwWorldMapEditorComponent {
   }
 
   saveSelectedLocation(): void {
+    this.emitSave(false, `Saved "${this.editName() || this.selectedLocation()?.name}" to Atlas.`);
+    this.dragModeActive.set(false);
+  }
+
+  emitSave(silent: boolean, feedbackMessage?: string): void {
     const loc = this.selectedLocation();
     if (!loc) return;
     const sess = this.sessionOptions.find((s) => s.id === String(this.editSessionId()) || s.number === Number(this.editSessionId()));
@@ -279,11 +354,16 @@ export class LwWorldMapEditorComponent {
       visibility: this.editVisibility(),
       artworkUrl: loc.artworkUrl,
       description: this.editDescription().trim() || loc.description,
+      silent,
     });
-    this.dragModeActive.set(false);
+
+    if (feedbackMessage) {
+      this.saveNotice.set(feedbackMessage);
+    }
   }
 
   createNewLocationOnMap(): void {
+    this.hydratedLocationKey = null;
     this.locationSaved.emit({
       name: 'New Charted Landmark',
       locationType: 'Settlement',

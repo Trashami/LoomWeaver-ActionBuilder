@@ -1,6 +1,4 @@
-:host {
-  display: block;
-}
+:host { display: block; }
 
 .lw-map-editor-backdrop {
   position: fixed;
@@ -33,29 +31,11 @@
     padding: 0.75rem 1.1rem;
     background: linear-gradient(180deg, rgba(13, 31, 24, 0.98), rgba(7, 17, 13, 0.98));
     border-bottom: 1px solid rgba(217, 183, 122, 0.26);
-
-    h2 {
-      margin: 0.1rem 0 0;
-      font-family: var(--lw-font-display, Georgia, serif);
-      font-size: 1.05rem;
-      color: #f5e7c8;
-    }
+    h2 { margin: 0.1rem 0 0; font-family: var(--lw-font-display, Georgia, serif); font-size: 1.05rem; color: #f5e7c8; }
   }
 
-  &__eyebrow {
-    font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    color: #49e892;
-  }
-
-  &__header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
+  &__eyebrow { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.09em; color: #49e892; }
+  &__header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
   &__close {
     width: 32px;
     height: 32px;
@@ -74,11 +54,18 @@
     min-height: 0;
     display: grid;
     grid-template-columns: 1fr 420px;
-
-    @media (max-width: 1024px) {
-      grid-template-columns: 1fr;
-    }
+    @media (max-width: 1024px) { grid-template-columns: 1fr; }
   }
+}
+
+.lw-editor-save-pill {
+  padding: 0.24rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid #49e892;
+  background: rgba(24, 68, 46, 0.92);
+  color: #dcffe9;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .lw-editor-stage {
@@ -191,8 +178,13 @@
 }
 
 .lw-editor-marker__stamp-wrap {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
+  padding: 3px;
+  border-radius: 50%;
+  border: 1.5px solid #d9b77a;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -203,7 +195,6 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.88));
 }
 
 .lw-editor-marker__label {
@@ -435,17 +426,28 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.22rem;
+  gap: 0.25rem;
   padding: 0.36rem;
   border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 19, 14, 0.9);
-  color: #cbd8d0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 19, 14, 0.92);
+  color: #d6e4dc;
   font-size: 0.63rem;
   text-align: center;
   cursor: pointer;
+  &__plate {
+    width: 100%;
+    height: 46px;
+    padding: 4px;
+    border-radius: 5px;
+    background: #ffffff;
+    border: 1px solid rgba(217, 183, 122, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   img { width: 38px; height: 38px; object-fit: contain; }
-  &--active { border-color: #49e892; background: rgba(20, 52, 38, 0.9); color: #ffffff; }
+  &--active { border-color: #49e892; background: rgba(20, 52, 38, 0.94); color: #ffffff; box-shadow: 0 0 0 1px #49e892; }
 }
 
 .lw-color-swatches { display: flex; align-items: center; gap: 0.36rem; flex-wrap: wrap; }

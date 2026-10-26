@@ -60,6 +60,8 @@ export class LwWorldAtlasComponent {
 
   private dragStartX = 0;
   private dragStartY = 0;
+  private hasMovedMarker = false;
+  private suppressNextMarkerClick = false;
 
   readonly transformStyle = computed(
     () => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.zoom()})`,
@@ -132,7 +134,9 @@ export class LwWorldAtlasComponent {
   onMarkerMouseDown(marker: WorldMapMarkerVm, event: MouseEvent): void {
     if (this.repositioningLocationKey() === marker.locationKey && this.isGm()) {
       event.stopPropagation();
+      event.preventDefault();
       this.isDraggingMarker.set(true);
+      this.hasMovedMarker = false;
       this.pendingCoords.set({ xPercent: marker.xPercent, yPercent: marker.yPercent });
     }
   }
@@ -147,6 +151,7 @@ export class LwWorldAtlasComponent {
     if (this.repositioningLocationKey() && this.isGm()) {
       this.pendingCoords.set({ xPercent: xPct, yPercent: yPct });
       this.isDraggingMarker.set(true);
+      this.hasMovedMarker = true;
       return;
     }
 
@@ -169,6 +174,7 @@ export class LwWorldAtlasComponent {
         const xPct = Math.max(2, Math.min(98, Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 10));
         const yPct = Math.max(2, Math.min(98, Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 10));
         this.pendingCoords.set({ xPercent: xPct, yPercent: yPct });
+        this.hasMovedMarker = true;
       }
       return;
     }
@@ -180,8 +186,14 @@ export class LwWorldAtlasComponent {
   }
 
   onPointerUp(): void {
+    const wasDraggingMarker = this.isDraggingMarker() && this.hasMovedMarker;
     this.isPanning.set(false);
     this.isDraggingMarker.set(false);
+    if (wasDraggingMarker) {
+      this.suppressNextMarkerClick = true;
+      this.commitReposition();
+    }
+    this.hasMovedMarker = false;
   }
 
   commitReposition(): void {
@@ -202,6 +214,10 @@ export class LwWorldAtlasComponent {
 
   selectMarker(marker: WorldMapMarkerVm, event: MouseEvent): void {
     event.stopPropagation();
+    if (this.suppressNextMarkerClick || this.repositioningLocationKey() === marker.locationKey) {
+      this.suppressNextMarkerClick = false;
+      return;
+    }
     this.markerSelected.emit(marker);
   }
 

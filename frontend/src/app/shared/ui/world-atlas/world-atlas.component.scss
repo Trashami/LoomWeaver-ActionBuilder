@@ -154,6 +154,11 @@
 .lw-atlas-marker__stamp-wrap {
   width: 34px;
   height: 34px;
+  padding: 3px;
+  border-radius: 50%;
+  border: 1.5px solid #d9b77a;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -164,7 +169,6 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.85));
 }
 
 .lw-atlas-reposition-bar {

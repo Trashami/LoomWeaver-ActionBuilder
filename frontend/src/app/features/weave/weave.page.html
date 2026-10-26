@@ -296,6 +296,6 @@
     (childMapRequested)="worldLore.selectMap($event)"
     (relatedEntitySelected)="onEditorRelatedSelected($event)"
     (loreSelected)="onEditorLoreSelected($event)"
-    (locationSaved)="worldLore.saveLocation($event)"
+    (locationSaved)="worldLore.saveLocation($event, !!$event.silent)"
   />
 }

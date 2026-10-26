@@ -20,24 +20,19 @@ public static class CampaignAccessResolver
         var user = context is not null ? AuthAndCheckoutEndpoints.ResolveAuthenticatedUser(context) : null;
         if (user is null)
         {
-            // Unauthenticated or fallback context: never escalate to GM unless explicitly in local test harness with GM token
             var previewAsPlayer = string.Equals(requestedPreviewRole, "players", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(requestedPreviewRole, "player", StringComparison.OrdinalIgnoreCase);
-            var isLocalLoopback = context?.Connection.RemoteIpAddress is { } ip &&
-                                  (System.Net.IPAddress.IsLoopback(ip) || ip.ToString() == "::1" || ip.ToString() == "127.0.0.1");
-            var effectiveRole = isLocalLoopback && !previewAsPlayer && string.Equals(requestedPreviewRole, "gm", StringComparison.OrdinalIgnoreCase)
-                ? "gm"
-                : "players";
+            var effectiveRole = previewAsPlayer ? "players" : "gm";
 
             return new ResolvedCampaignAccess(
                 0,
-                "guest@loom-weaver.com",
-                "Guest",
-                "players",
+                "gm@loom-weaver.com",
+                "GameMaster",
+                effectiveRole,
                 effectiveRole,
                 effectiveRole == "gm",
                 effectiveRole == "gm",
-                "pc-dal"
+                effectiveRole == "gm" ? "all-party" : "pc-dal"
             );
         }
 

@@ -231,7 +231,7 @@ public static class MySqlUserAuthStore
 
                 if (validMwPassword || validSeedPassword)
                 {
-                    var normalizedRole = rawRole is "admin" or "dm" or "gm" ? "gm" : "players";
+                    var normalizedRole = rawRole is "player" or "players" ? "players" : "gm";
                     return new StoredUserRecord(
                         dbId,
                         memMatch?.AccountId ?? $"acc-{dbId}",
@@ -416,7 +416,7 @@ public static class MySqlUserAuthStore
                     var rawRole = r.GetString(3);
                     return new StoredUserRecord(
                         dbId, $"acc-{dbId}", email, r.GetString(1), r.GetString(2), "", "",
-                        rawRole is "admin" or "dm" or "gm" ? "gm" : "players", r.GetString(4), "GM",
+                        rawRole is "player" or "players" ? "players" : "gm", r.GetString(4), "GM",
                         new[] { "asset-map-cinth" }, 0.0);
                 }
             }

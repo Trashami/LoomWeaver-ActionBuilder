@@ -216,7 +216,19 @@ export class WorldLoreFacadeService {
           if (detail && detail.campaignId === this.store.activeCampaignId()) {
             this.locationsState.update((list) =>
               list.some((l) => l.locationKey === detail.locationKey)
-                ? list.map((l) => (l.locationKey === detail.locationKey ? detail : l))
+                ? list.map((l) =>
+                    l.locationKey === detail.locationKey
+                      ? {
+                          ...detail,
+                          name: l.name || detail.name,
+                          locationType: l.locationType || detail.locationType,
+                          style: l.style ?? detail.style,
+                          attachedSessionId: l.attachedSessionId ?? detail.attachedSessionId,
+                          attachedSessionLabel: l.attachedSessionLabel ?? detail.attachedSessionLabel,
+                          playerVisibilityPolicy: l.playerVisibilityPolicy ?? detail.playerVisibilityPolicy,
+                        }
+                      : l,
+                  )
                 : [detail, ...list],
             );
           }
@@ -284,30 +296,38 @@ export class WorldLoreFacadeService {
     );
   }
 
-  saveLocation(payload: {
-    locationKey?: string;
-    name: string;
-    locationType: string;
-    hierarchyLevel: string;
-    parentLocationKey?: string | null;
-    mapId?: string | null;
-    childMapId?: string | null;
-    linkedSceneKey?: string | null;
-    attachedSessionId?: string | number | null;
-    attachedSessionLabel?: string | null;
-    playerVisibilityPolicy?: PlayerVisibilityMode;
-    style?: MarkerVisualStyleVm;
-    xPercent: number;
-    yPercent: number;
-    discoveryStatus: string;
-    visibility: 'players' | 'gm' | 'public';
-    artworkUrl?: string;
-    description: string;
-  }): void {
-    if (!this.isGm()) return;
+  saveLocation(
+    payload: {
+      locationKey?: string;
+      name: string;
+      locationType: string;
+      hierarchyLevel: string;
+      parentLocationKey?: string | null;
+      mapId?: string | null;
+      childMapId?: string | null;
+      linkedSceneKey?: string | null;
+      attachedSessionId?: string | number | null;
+      attachedSessionLabel?: string | null;
+      playerVisibilityPolicy?: PlayerVisibilityMode;
+      style?: MarkerVisualStyleVm;
+      xPercent: number;
+      yPercent: number;
+      discoveryStatus: string;
+      visibility: 'players' | 'gm' | 'public';
+      artworkUrl?: string;
+      description: string;
+    },
+    silent = false,
+  ): void {
     const cid = this.store.activeCampaignId();
     const mapId = payload.mapId ?? this.activeMap()?.mapId ?? 'map-icrandor-world';
     const existing = payload.locationKey ? this.locationsState().find((l) => l.locationKey === payload.locationKey) : null;
+    const optimistic = buildFallbackLocationVm(cid, mapId, payload, existing);
+    this.applySavedLocationLocally(optimistic, payload.xPercent, payload.yPercent);
+    if (!silent) {
+      this.repositioningLocationKey.set(null);
+      this.statusBanner.set(`Saved location "${optimistic.name}".`);
+    }
     this.http.post<LocationInspectorDetailVm>(`/api/v2/campaigns/${cid}/world-lore/locations?role=gm`, { ...payload, mapId }).subscribe({
       next: (saved) => {
         const enriched: LocationInspectorDetailVm = {
@@ -318,15 +338,8 @@ export class WorldLoreFacadeService {
           style: payload.style ?? saved.style ?? existing?.style,
         };
         this.applySavedLocationLocally(enriched, payload.xPercent, payload.yPercent);
-        this.repositioningLocationKey.set(null);
-        this.statusBanner.set(`Saved location "${enriched.name}".`);
       },
-      error: () => {
-        const fallback = buildFallbackLocationVm(cid, mapId, payload, existing);
-        this.applySavedLocationLocally(fallback, payload.xPercent, payload.yPercent);
-        this.repositioningLocationKey.set(null);
-        this.statusBanner.set(`Saved location "${fallback.name}".`);
-      },
+      error: () => {},
     });
   }
 

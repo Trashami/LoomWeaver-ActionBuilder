@@ -4,18 +4,24 @@
     <!-- Top Header Bar -->
     <header class="lw-map-editor__header">
       <div class="lw-map-editor__brand">
-        <span class="lw-map-editor__eyebrow">LOOMWEAVER ATLAS STUDIO · CUSTOM MAP & ICON EDITOR</span>
-        <h2>{{ m.name }} — Interactive Map & Marker Studio</h2>
+        <span class="lw-map-editor__eyebrow">LOOMWEAVER ATLAS STUDIO · CUSTOM MAP &amp; ICON EDITOR</span>
+        <h2>{{ m.name }} — Interactive Map &amp; Marker Studio</h2>
       </div>
 
       <div class="lw-map-editor__header-actions">
+        @if (saveNotice(); as notice) {
+          <span class="lw-editor-save-pill">
+            <lw-icon name="check" [size]="13" tone="emerald" />
+            <span>{{ notice }}</span>
+          </span>
+        }
         <lw-button variant="secondary" size="sm" icon="plus" iconTone="gold" label="Add New Marker" (pressed)="createNewLocationOnMap()" />
         @if (selectedLocation()) {
           <lw-button
             [variant]="dragModeActive() ? 'emerald' : 'secondary'"
             size="sm"
             icon="map-pin"
-            [label]="dragModeActive() ? 'Dragging Enabled (Click Save Position)' : 'Drag / Move Selected Location'"
+            [label]="dragModeActive() ? 'Dragging Enabled (Click or Drag Pin)' : 'Drag / Move Selected Location'"
             (pressed)="dragModeActive.set(!dragModeActive())"
           />
           <lw-button variant="gold" size="sm" icon="check" label="Save Location & Style" (pressed)="saveSelectedLocation()" />
@@ -31,7 +37,7 @@
       <div
         class="lw-editor-stage"
         [class.lw-editor-stage--panning]="isPanning()"
-        [class.lw-editor-stage--dragging]="dragModeActive()"
+        [class.lw-editor-stage--dragging]="dragModeActive() || isDraggingPin()"
         (wheel)="onWheel($event)"
         (mousedown)="onPointerDown($event)"
         (mousemove)="onPointerMove($event)"
@@ -81,7 +87,7 @@
             >
               @if (useShowIcon) {
                 @if (useIconMode === 'stamp' && useStampUrl) {
-                  <span class="lw-editor-marker__stamp-wrap" [style.transform]="'scale(' + useScale + ')'">
+                  <span class="lw-editor-marker__stamp-wrap" [style.border-color]="useColor" [style.transform]="'scale(' + useScale + ')'">
                     <img [src]="useStampUrl" [alt]="mk.name" class="lw-editor-marker__stamp" draggable="false" />
                   </span>
                 } @else {
@@ -136,16 +142,15 @@
             </button>
           </div>
 
-          <!-- Section Tabs inside Right Pane -->
           <div class="lw-editor-tabs" role="tablist">
             <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'properties'" (click)="rightPaneSection.set('properties')">
               Connected Properties
             </button>
             <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'customize'" (click)="rightPaneSection.set('customize')">
-              Icon, Stamp & Font
+              Icon, Stamp &amp; Font
             </button>
             <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'attachments'" (click)="rightPaneSection.set('attachments')">
-              Sessions, Maps & DM
+              Sessions, Maps &amp; DM
             </button>
           </div>
 
@@ -155,16 +160,16 @@
                 <div class="lw-editor-group">
                   <label class="lw-editor-field">
                     <span>Location Name</span>
-                    <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)" />
+                    <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event); emitSave(true)" />
                   </label>
                   <div class="lw-editor-row">
                     <label class="lw-editor-field">
                       <span>Subtitle / Type</span>
-                      <input type="text" [ngModel]="editSubtitle()" (ngModelChange)="editSubtitle.set($event)" />
+                      <input type="text" [ngModel]="editSubtitle()" (ngModelChange)="editSubtitle.set($event); emitSave(true)" />
                     </label>
                     <label class="lw-editor-field">
                       <span>Hierarchy</span>
-                      <select [ngModel]="editHierarchy()" (ngModelChange)="editHierarchy.set($event)">
+                      <select [ngModel]="editHierarchy()" (ngModelChange)="editHierarchy.set($event); emitSave(true)">
                         <option value="World">World</option>
                         <option value="Region">Region</option>
                         <option value="Settlement">Settlement</option>
@@ -206,15 +211,15 @@
                 <div class="lw-editor-group">
                   <div class="lw-editor-toggle-row">
                     <span>Show Marker Icon / Image</span>
-                    <input type="checkbox" [ngModel]="showIcon()" (ngModelChange)="showIcon.set($event)" />
+                    <input type="checkbox" [ngModel]="showIcon()" (ngModelChange)="setShowIcon($event)" />
                   </div>
 
                   <div class="lw-editor-mode-switch">
-                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'default'" (click)="iconMode.set('default')">
+                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'default'" (click)="setIconMode('default')">
                       Default Vector Icons
                     </button>
-                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'stamp'" (click)="iconMode.set('stamp')">
-                      Old World Stamps (Muller & Harrewyn)
+                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'stamp'" (click)="setIconMode('stamp')">
+                      Old World Stamps (Muller &amp; Harrewyn)
                     </button>
                   </div>
 
@@ -226,7 +231,7 @@
                           type="button"
                           class="lw-vector-option"
                           [class.lw-vector-option--active]="defaultIconName() === ic.id"
-                          (click)="defaultIconName.set(ic.id)"
+                          (click)="setDefaultIcon(ic.id)"
                         >
                           <lw-icon [name]="ic.id" [size]="16" />
                           <span>{{ ic.label }}</span>
@@ -256,7 +261,9 @@
                           [class.lw-stamp-card--active]="stampImageUrl() === st.imageUrl"
                           (click)="selectStamp(st.imageUrl)"
                         >
-                          <img [src]="st.imageUrl" [alt]="st.label" />
+                          <span class="lw-stamp-card__plate">
+                            <img [src]="st.imageUrl" [alt]="st.label" />
+                          </span>
                           <span>{{ st.label }}</span>
                         </button>
                       }
@@ -264,7 +271,7 @@
                   }
 
                   <label class="lw-editor-field">
-                    <span>Color Accent & Swatches</span>
+                    <span>Color Accent &amp; Swatches</span>
                     <div class="lw-color-swatches">
                       @for (c of colorSwatches; track c.hex) {
                         <button
@@ -274,17 +281,17 @@
                           [class.lw-color-swatch--active]="colorHex() === c.hex"
                           [style.background]="c.hex"
                           [title]="c.label"
-                          (click)="colorHex.set(c.hex)"
+                          (click)="setColorHex(c.hex)"
                         ></button>
                       }
-                      <input type="color" [ngModel]="colorHex()" (ngModelChange)="colorHex.set($event)" />
+                      <input type="color" [ngModel]="colorHex()" (ngModelChange)="setColorHex($event)" />
                     </div>
                   </label>
 
                   <div class="lw-editor-row">
                     <label class="lw-editor-field">
                       <span>Word Font Family</span>
-                      <select [ngModel]="fontFamily()" (ngModelChange)="fontFamily.set($event)">
+                      <select [ngModel]="fontFamily()" (ngModelChange)="setFontFamily($event)">
                         @for (f of fontOptions; track f.value) {
                           <option [value]="f.value">{{ f.label }}</option>
                         }
@@ -292,7 +299,7 @@
                     </label>
                     <label class="lw-editor-field">
                       <span>Title Position</span>
-                      <select [ngModel]="labelPosition()" (ngModelChange)="labelPosition.set($event)">
+                      <select [ngModel]="labelPosition()" (ngModelChange)="setLabelPosition($event)">
                         <option value="right">Right of Icon</option>
                         <option value="top">Above Icon</option>
                         <option value="bottom">Below Icon</option>
@@ -305,7 +312,7 @@
 
                   <label class="lw-editor-field">
                     <span>Icon Scale ({{ iconScale() }}x)</span>
-                    <input type="range" min="0.7" max="2.2" step="0.1" [ngModel]="iconScale()" (ngModelChange)="iconScale.set(+$event)" />
+                    <input type="range" min="0.7" max="2.2" step="0.1" [ngModel]="iconScale()" (ngModelChange)="setIconScale(+$event)" />
                   </label>
                 </div>
               }
@@ -315,7 +322,7 @@
                   <h4>ATTACH CAMPAIGN SESSION</h4>
                   <label class="lw-editor-field">
                     <span>Linked Session</span>
-                    <select [ngModel]="editSessionId()" (ngModelChange)="editSessionId.set($event || null)">
+                    <select [ngModel]="editSessionId()" (ngModelChange)="editSessionId.set($event || null); emitSave(true)">
                       <option value="">No Attached Session</option>
                       @for (s of sessionOptions; track s.id) {
                         <option [value]="s.id">{{ s.label }}</option>
@@ -326,7 +333,7 @@
                   <h4>ATTACH REGIONAL OR BATTLE MAPS</h4>
                   <label class="lw-editor-field">
                     <span>Attached Regional / Settlement Sub-Map</span>
-                    <select [ngModel]="editChildMapId()" (ngModelChange)="editChildMapId.set($event)">
+                    <select [ngModel]="editChildMapId()" (ngModelChange)="editChildMapId.set($event); emitSave(true)">
                       <option value="">None</option>
                       @for (mp of maps(); track mp.mapId) {
                         <option [value]="mp.mapId">{{ mp.scopeLevel }}: {{ mp.name }}</option>
@@ -336,11 +343,11 @@
 
                   <label class="lw-editor-field">
                     <span>Attached Tactical Battle Map</span>
-                    <select [ngModel]="editSceneKey()" (ngModelChange)="editSceneKey.set($event)">
+                    <select [ngModel]="editSceneKey()" (ngModelChange)="editSceneKey.set($event); emitSave(true)">
                       <option value="">None</option>
                       <option value="scene-cinth-gala">Masquerade Ballroom of Cinth (Battlemap)</option>
                       <option value="scene-plains-red">The Plains of Red Ambush (Battlemap)</option>
-                      <option value="scene-vandia-cliff">Cliff House & Sky-Dock above Vandia (Battlemap)</option>
+                      <option value="scene-vandia-cliff">Cliff House &amp; Sky-Dock above Vandia (Battlemap)</option>
                       <option value="scene-mountain-prison">Runed Cavern of the Bound Dragon (GM Battlemap)</option>
                     </select>
                   </label>
@@ -348,8 +355,8 @@
                   <h4>DM PLAYER VISIBILITY PREFERENCES</h4>
                   <label class="lw-editor-field">
                     <span>Player Visibility Enforcement Mode</span>
-                    <select [ngModel]="editVisibilityPolicy()" (ngModelChange)="editVisibilityPolicy.set($event)">
-                      <option value="auto_lore_revealed">Automatic (Respects Lore & Revealed to Players Only)</option>
+                    <select [ngModel]="editVisibilityPolicy()" (ngModelChange)="editVisibilityPolicy.set($event); emitSave(true)">
+                      <option value="auto_lore_revealed">Automatic (Respects Lore &amp; Revealed to Players Only)</option>
                       <option value="manual_dm">Manual DM Override</option>
                     </select>
                   </label>
@@ -357,7 +364,7 @@
                   <div class="lw-editor-row">
                     <label class="lw-editor-field">
                       <span>Discovery State</span>
-                      <select [ngModel]="editDiscovery()" (ngModelChange)="editDiscovery.set($event)">
+                      <select [ngModel]="editDiscovery()" (ngModelChange)="editDiscovery.set($event); emitSave(true)">
                         <option value="visited">Visited by Party</option>
                         <option value="known">Known to Players</option>
                         <option value="rumor">Rumor Only</option>
@@ -366,7 +373,7 @@
                     </label>
                     <label class="lw-editor-field">
                       <span>Audience Access</span>
-                      <select [ngModel]="editVisibility()" (ngModelChange)="editVisibility.set($event)">
+                      <select [ngModel]="editVisibility()" (ngModelChange)="editVisibility.set($event); emitSave(true)">
                         <option value="players">Revealed to Players</option>
                         <option value="gm">GM Secret Only</option>
                       </select>
