@@ -1,0 +1,337 @@
+@if (mode() === 'preview') {
+  <section class="lw-lore-preview">
+    <header class="lw-lore-preview__header">
+      <h3>LORE LIBRARY</h3>
+      <div class="lw-lore-preview__header-actions">
+        @if (worldLore.isGm()) {
+          <button type="button" class="lw-lore-btn lw-lore-btn--ghost" (click)="openQuickCreate()">
+            <lw-icon name="add" [size]="14"></lw-icon>
+            <span>New Entry</span>
+          </button>
+        }
+        <button type="button" class="lw-lore-link-btn" (click)="viewAllClicked.emit()">
+          <span>View All</span>
+          <lw-icon name="arrow_forward" [size]="14"></lw-icon>
+        </button>
+      </div>
+    </header>
+
+    <div class="lw-lore-preview__search-row">
+      <div class="lw-lore-search-box">
+        <lw-icon name="search" [size]="15"></lw-icon>
+        <input
+          type="search"
+          [ngModel]="worldLore.loreSearchQuery()"
+          (ngModelChange)="worldLore.loreSearchQuery.set($event)"
+          placeholder="Search lore entries..."
+          aria-label="Search lore entries" />
+      </div>
+      <div class="lw-lore-preview__pills">
+        @for (cat of previewCategories; track cat) {
+          <button
+            type="button"
+            class="lw-lore-pill"
+            [class.lw-lore-pill--active]="worldLore.loreCategoryFilter() === cat"
+            (click)="worldLore.loreCategoryFilter.set(cat)">
+            {{ cat }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="lw-lore-preview__grid">
+      @for (entry of previewEntries(); track entry.id) {
+        <article
+          class="lw-lore-mini-card"
+          [class.lw-lore-mini-card--active]="worldLore.selectedLoreEntry()?.id === entry.id"
+          (click)="selectEntry(entry)">
+          <div class="lw-lore-mini-card__icon">
+            <lw-icon [name]="entry.category.includes('Faction') ? 'shield' : entry.category.includes('Kingdom') ? 'fort' : 'menu_book'" [size]="18"></lw-icon>
+          </div>
+          <div class="lw-lore-mini-card__body">
+            <h4>{{ entry.title }}</h4>
+            <span class="lw-lore-mini-card__meta">
+              {{ entry.subtitle || entry.category }} · {{ entry.tags[0] || entry.visibility }}
+            </span>
+          </div>
+        </article>
+      } @empty {
+        <p class="lw-lore-empty">No matching lore entries found.</p>
+      }
+    </div>
+  </section>
+} @else {
+  <section class="lw-lore-full">
+    <header class="lw-lore-full__toolbar">
+      <div class="lw-lore-search-box lw-lore-search-box--wide">
+        <lw-icon name="search" [size]="16"></lw-icon>
+        <input
+          type="search"
+          [ngModel]="worldLore.loreSearchQuery()"
+          (ngModelChange)="worldLore.loreSearchQuery.set($event)"
+          placeholder="Search encyclopedia by title, text, or @entity..."
+          aria-label="Search encyclopedia" />
+      </div>
+
+      <div class="lw-lore-full__controls">
+        <select
+          class="lw-lore-select"
+          [ngModel]="worldLore.loreCategoryFilter()"
+          (ngModelChange)="worldLore.loreCategoryFilter.set($event)"
+          aria-label="Filter lore by category">
+          <option value="All">All Categories</option>
+          @for (cat of categories(); track cat) {
+            <option [value]="cat">{{ cat }}</option>
+          }
+        </select>
+
+        <select
+          class="lw-lore-select"
+          [ngModel]="worldLore.loreTagFilter()"
+          (ngModelChange)="worldLore.loreTagFilter.set($event)"
+          aria-label="Filter lore by tag">
+          <option value="All">All Tags</option>
+          @for (tag of worldLore.allLoreTags(); track tag) {
+            <option [value]="tag">#{{ tag }}</option>
+          }
+        </select>
+
+        <select
+          class="lw-lore-select"
+          [ngModel]="worldLore.loreSortBy()"
+          (ngModelChange)="worldLore.loreSortBy.set($event)"
+          aria-label="Sort lore entries">
+          <option value="updated">Recently Updated</option>
+          <option value="created">Recently Created</option>
+          <option value="name">Alphabetical (A–Z)</option>
+        </select>
+
+        <div class="lw-lore-view-toggle" role="group" aria-label="Presentation mode">
+          <button
+            type="button"
+            class="lw-lore-icon-btn"
+            [class.lw-lore-icon-btn--active]="worldLore.lorePresentationMode() === 'cards'"
+            (click)="worldLore.lorePresentationMode.set('cards')"
+            title="Card View">
+            <lw-icon name="grid_view" [size]="16"></lw-icon>
+          </button>
+          <button
+            type="button"
+            class="lw-lore-icon-btn"
+            [class.lw-lore-icon-btn--active]="worldLore.lorePresentationMode() === 'list'"
+            (click)="worldLore.lorePresentationMode.set('list')"
+            title="List View">
+            <lw-icon name="view_list" [size]="16"></lw-icon>
+          </button>
+        </div>
+
+        @if (worldLore.isGm()) {
+          <button type="button" class="lw-lore-btn lw-lore-btn--gold" (click)="openQuickCreate()">
+            <lw-icon name="add" [size]="15"></lw-icon>
+            <span>Create Entry</span>
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="lw-lore-full__workspace">
+      <div
+        class="lw-lore-full__collection"
+        [class.lw-lore-full__collection--list]="worldLore.lorePresentationMode() === 'list'">
+        @for (entry of worldLore.filteredLoreEntries(); track entry.id) {
+          <article
+            class="lw-lore-entry-card"
+            [class.lw-lore-entry-card--selected]="worldLore.selectedLoreEntry()?.id === entry.id"
+            (click)="selectEntry(entry)">
+            <div class="lw-lore-entry-card__top">
+              <span class="lw-lore-entry-card__category">{{ entry.category }}</span>
+              <span
+                class="lw-lore-entry-card__vis"
+                [class.lw-lore-entry-card__vis--gm]="entry.visibility === 'gm'">
+                {{ entry.visibility === 'gm' ? 'GM Only' : 'Published' }}
+              </span>
+            </div>
+            <h4>{{ entry.title }}</h4>
+            <p>{{ entry.excerpt }}</p>
+            <div class="lw-lore-entry-card__footer">
+              <div class="lw-lore-entry-card__tags">
+                @for (tag of entry.tags.slice(0, 3); track tag) {
+                  <span class="lw-lore-tag">#{{ tag }}</span>
+                }
+              </div>
+              <span class="lw-lore-entry-card__date">{{ entry.updatedAtLabel }}</span>
+            </div>
+          </article>
+        } @empty {
+          <div class="lw-lore-empty-box">
+            <lw-icon name="menu_book" [size]="28"></lw-icon>
+            <h4>No Lore Entries Match Filter</h4>
+            <p>Adjust your search query or create a new world encyclopedia entry.</p>
+          </div>
+        }
+      </div>
+
+      @if (worldLore.selectedLoreEntry(); as activeEntry) {
+        <aside class="lw-lore-reader">
+          <div class="lw-lore-reader__header">
+            <div>
+              <span class="lw-lore-reader__kicker">{{ activeEntry.category }}</span>
+              <h3>{{ activeEntry.title }}</h3>
+            </div>
+            @if (worldLore.isGm()) {
+              <div class="lw-lore-reader__actions">
+                <button type="button" class="lw-lore-btn lw-lore-btn--ghost" (click)="openEditEntry(activeEntry)">
+                  <lw-icon name="edit" [size]="14"></lw-icon>
+                  <span>Edit</span>
+                </button>
+                <button
+                  type="button"
+                  class="lw-lore-btn lw-lore-btn--ghost"
+                  (click)="archiveEntry(activeEntry)">
+                  <lw-icon name="archive" [size]="14"></lw-icon>
+                  <span>Archive</span>
+                </button>
+              </div>
+            }
+          </div>
+
+          <p class="lw-lore-reader__summary">{{ activeEntry.excerpt }}</p>
+          <div class="lw-lore-reader__body">{{ activeEntry.content }}</div>
+
+          @if (activeEntry.linkedEntityKeys.length > 0) {
+            <div class="lw-lore-reader__section">
+              <h5>LINKED ATLAS LOCATIONS</h5>
+              <div class="lw-lore-reader__links">
+                @for (locKey of activeEntry.linkedEntityKeys; track locKey) {
+                  <button
+                    type="button"
+                    class="lw-lore-pill lw-lore-pill--active"
+                    (click)="inspectLocationRequested.emit(locKey)">
+                    <lw-icon name="place" [size]="13"></lw-icon>
+                    <span>Inspect on Atlas ({{ locKey }})</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (activeEntry.tags.length > 0) {
+            <div class="lw-lore-reader__section">
+              <h5>TAGS</h5>
+              <div class="lw-lore-reader__links">
+                @for (tag of activeEntry.tags; track tag) {
+                  <span class="lw-lore-tag">#{{ tag }}</span>
+                }
+              </div>
+            </div>
+          }
+        </aside>
+      }
+    </div>
+  </section>
+}
+
+@if (createModalOpen()) {
+  <div class="lw-lore-modal-backdrop" (click)="createModalOpen.set(false)">
+    <div class="lw-lore-modal" (click)="$event.stopPropagation()">
+      <header class="lw-lore-modal__header">
+        <h4>{{ editingEntryId() ? 'Edit Lore Entry' : 'Quick Create Lore Entry' }}</h4>
+        <button type="button" class="lw-lore-icon-btn" (click)="createModalOpen.set(false)">
+          <lw-icon name="close" [size]="16"></lw-icon>
+        </button>
+      </header>
+
+      <div class="lw-lore-modal__body">
+        <label class="lw-lore-field">
+          <span>Title (Required)</span>
+          <input type="text" [ngModel]="newTitle()" (ngModelChange)="newTitle.set($event)" placeholder="Entry title..." />
+        </label>
+
+        <div class="lw-lore-field-row">
+          <label class="lw-lore-field">
+            <span>Category (Required)</span>
+            <select [ngModel]="newCategory()" (ngModelChange)="newCategory.set($event)">
+              @for (cat of categories(); track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </label>
+          <label class="lw-lore-field">
+            <span>Or Custom Category (System-Agnostic)</span>
+            <input
+              type="text"
+              [ngModel]="customCategoryInput()"
+              (ngModelChange)="customCategoryInput.set($event)"
+              placeholder="e.g. Cyberware, Bloodlines, Starships" />
+          </label>
+        </div>
+
+        <div class="lw-lore-field-row">
+          <label class="lw-lore-field">
+            <span>Visibility</span>
+            <select [ngModel]="newVisibility()" (ngModelChange)="newVisibility.set($event)">
+              <option value="players">Published to Players</option>
+              <option value="gm">GM Only</option>
+            </select>
+          </label>
+          <label class="lw-lore-field">
+            <span>Link to Atlas Location (Optional)</span>
+            <select [ngModel]="newLinkedLocationKey()" (ngModelChange)="newLinkedLocationKey.set($event)">
+              <option value="">None</option>
+              @for (loc of worldLore.locationsState(); track loc.locationKey) {
+                <option [value]="loc.locationKey">{{ loc.name }} ({{ loc.locationType }})</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <label class="lw-lore-field">
+          <span>Summary (Optional)</span>
+          <input
+            type="text"
+            [ngModel]="newSummary()"
+            (ngModelChange)="newSummary.set($event)"
+            placeholder="Brief encyclopedia summary..." />
+        </label>
+
+        <label class="lw-lore-field">
+          <span>Encyclopedia Content (Supports &#64;mention entity links)</span>
+          <textarea
+            rows="5"
+            [ngModel]="newContent()"
+            (ngModelChange)="onContentChange($event)"
+            placeholder="Write lore details... Type @ to link locations, NPCs, or other lore entries."></textarea>
+        </label>
+
+        @if (mentionSuggestions().length > 0) {
+          <div class="lw-lore-mentions">
+            <span class="lw-lore-mentions__label">Insert &#64;mention:</span>
+            @for (item of mentionSuggestions(); track item.id) {
+              <button type="button" class="lw-lore-pill" (click)="insertMention(item.label)">
+                {{ item.label }} ({{ item.kind }})
+              </button>
+            }
+          </div>
+        }
+
+        <label class="lw-lore-field">
+          <span>Tags (Comma separated, optional)</span>
+          <input
+            type="text"
+            [ngModel]="newTagsText()"
+            (ngModelChange)="newTagsText.set($event)"
+            placeholder="history, crown, shadowfen" />
+        </label>
+      </div>
+
+      <footer class="lw-lore-modal__footer">
+        <button type="button" class="lw-lore-btn lw-lore-btn--ghost" (click)="createModalOpen.set(false)">
+          Cancel
+        </button>
+        <button type="button" class="lw-lore-btn lw-lore-btn--gold" (click)="saveLoreEntry()">
+          Save Entry
+        </button>
+      </footer>
+    </div>
+  </div>
+}

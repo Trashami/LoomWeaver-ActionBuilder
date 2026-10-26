@@ -1,180 +1,279 @@
-<div class="lw-page">
-  @if (!store.weaveEnabled()) {
-    <lw-empty-state
-      icon="Network"
-      title="The Weave Is Currently Disabled for This Campaign"
-      description="The Loom Campaign Memory remains 100% active. Enable The Weave in the top bar whenever you want Creative AI drafting or the interactive Neo4j World Graph."
-      actionLabel="Enable The Weave"
-      (actionTriggered)="store.toggleWeave()"
-    />
-  } @else {
-    <lw-panel
-      eyebrow="Module 9 · Neo4j Polyglot Graph Projections (Namespace: loomweaver)"
-      title="The Weave · Interactive World Graph & Relationship Explorer"
-      subtitle="Visualizes canonical relationships from the loomweaver Neo4j graph. Filter by entity type or click any node to inspect its deep links."
-      icon="Network"
-      [elevated]="true"
-    >
-      <div panelActions class="lw-weave-actions">
-        @for (type of graphTypes; track type) {
-          <lw-button
-            [variant]="graphFilterType() === type ? 'gold' : 'secondary'"
-            size="sm"
-            (pressed)="graphFilterType.set(type)"
-          >
-            {{ type }}
-          </lw-button>
-        }
-        <lw-badge [label]="positionedNodes().length + ' Nodes · ' + positionedEdges().length + ' Edges'" tone="gold" />
-      </div>
+@let ws = worldLore.workspace();
+<div class="lw-world-page">
+  <header class="lw-world-header">
+    <div class="lw-world-header__titles">
+      <h1>WORLD &amp; LORE</h1>
+      <p>Atlas, locations, lore, history, and connected world knowledge.</p>
+    </div>
 
-      <div class="lw-graph-canvas">
-        <svg class="lw-graph-svg" viewBox="0 0 840 400" aria-label="Neo4j World Graph">
-          @for (edge of positionedEdges(); track edge.id) {
-            <g>
-              <line
-                [attr.x1]="edge.x1"
-                [attr.y1]="edge.y1"
-                [attr.x2]="edge.x2"
-                [attr.y2]="edge.y2"
-                class="lw-graph-edge"
-              />
-              <text
-                [attr.x]="edge.midX"
-                [attr.y]="edge.midY - 4"
-                text-anchor="middle"
-                class="lw-graph-edge-label"
-              >
-                {{ edge.label }}
-              </text>
-            </g>
-          }
+    <nav class="lw-world-tabs" role="tablist" aria-label="World and Lore Views">
+      <button
+        type="button"
+        role="tab"
+        class="lw-world-tab"
+        [class.lw-world-tab--active]="worldLore.activePrimaryTab() === 'atlas'"
+        [attr.aria-selected]="worldLore.activePrimaryTab() === 'atlas'"
+        (click)="worldLore.setPrimaryTab('atlas')">
+        <lw-icon name="map" [size]="15"></lw-icon>
+        <span>Atlas</span>
+      </button>
 
-          @for (node of positionedNodes(); track node.compositeKey) {
-            <g
-              class="lw-graph-node"
-              [class.lw-graph-node--selected]="store.inspectedEntityKey() === node.compositeKey"
-              (click)="store.inspectEntity(node.compositeKey)"
-            >
-              <circle
-                [attr.cx]="node.x"
-                [attr.cy]="node.y"
-                r="18"
-                [attr.data-vis]="node.visibility"
-              />
-              <text [attr.x]="node.x" [attr.y]="node.y + 30" text-anchor="middle" class="lw-graph-node-name">
-                {{ node.name }}
-              </text>
-              <text [attr.x]="node.x" [attr.y]="node.y + 4" text-anchor="middle" class="lw-graph-node-type">
-                {{ node.entityType.slice(0, 3) }}
-              </text>
-            </g>
-          }
-        </svg>
-      </div>
-    </lw-panel>
+      <button
+        type="button"
+        role="tab"
+        class="lw-world-tab"
+        [class.lw-world-tab--active]="worldLore.activePrimaryTab() === 'lore'"
+        [attr.aria-selected]="worldLore.activePrimaryTab() === 'lore'"
+        (click)="worldLore.setPrimaryTab('lore')">
+        <lw-icon name="menu_book" [size]="15"></lw-icon>
+        <span>Lore Library</span>
+      </button>
 
-    <div class="lw-weave-studio-grid">
-      <lw-panel
-        eyebrow="Context-Grounded Creative AI Companion"
-        title="Weave New Campaign Draft"
-        subtitle="Generates characters, monsters, factions, quests, items, spells, loot tables, sessions, and battle maps grounded in campaign canon."
-      >
-        <div class="lw-weave-composer">
-          <div class="lw-weave-composer__cats">
-            @for (cat of weaveCategories; track cat) {
-              <button
-                type="button"
-                class="lw-weave-cat-pill"
-                [class.lw-weave-cat-pill--active]="selectedGenerateCategory() === cat"
-                (click)="selectedGenerateCategory.set(cat)"
-              >
-                {{ cat }}
-              </button>
-            }
-          </div>
+      <button
+        type="button"
+        role="tab"
+        class="lw-world-tab"
+        [class.lw-world-tab--active]="worldLore.activePrimaryTab() === 'history'"
+        [attr.aria-selected]="worldLore.activePrimaryTab() === 'history'"
+        (click)="worldLore.setPrimaryTab('history')">
+        <lw-icon name="history_edu" [size]="15"></lw-icon>
+        <span>History</span>
+      </button>
 
-          <label>
-            <span>Grounded Location / Canon Anchor</span>
-            <input
-              type="text"
-              [ngModel]="generateLocation()"
-              (ngModelChange)="generateLocation.set($event)"
-            />
-          </label>
+      @if (store.weaveEnabled()) {
+        <button
+          type="button"
+          role="tab"
+          class="lw-world-tab"
+          [class.lw-world-tab--active]="worldLore.activePrimaryTab() === 'relationships'"
+          [attr.aria-selected]="worldLore.activePrimaryTab() === 'relationships'"
+          (click)="worldLore.setPrimaryTab('relationships')">
+          <lw-icon name="hub" [size]="15"></lw-icon>
+          <span>Relationships</span>
+        </button>
+      }
+    </nav>
+  </header>
 
-          <label>
-            <span>Weave Concept Prompt</span>
-            <textarea
-              rows="3"
-              [ngModel]="generatePrompt()"
-              (ngModelChange)="generatePrompt.set($event)"
-            ></textarea>
-          </label>
-
-          <lw-button variant="primary" (pressed)="generateDraft()">
-            Weave {{ selectedGenerateCategory() }} Draft (Non-Canonical Until Approved)
-          </lw-button>
-        </div>
-      </lw-panel>
-
-      <lw-panel
-        eyebrow="100% GM Authorship Gate"
-        title="Draft Review Queue (Approve, Re-Weave, or Reject)"
-        [subtitle]="reviewBanner()"
-        icon="Shield"
-      >
-        <div class="lw-draft-grid">
-          @for (draft of activeDrafts(); track draft.id) {
-            <article class="lw-weave-draft-card" [class.lw-weave-draft-card--approved]="draft.status === 'approved'">
-              <div class="lw-weave-draft-card__top">
-                <div>
-                  <span class="lw-weave-draft-card__cat">{{ draft.category }} · {{ draft.groundedContext }}</span>
-                  <h4>{{ draft.name }}</h4>
-                </div>
-                <lw-badge
-                  [label]="draft.status === 'approved' ? 'Committed to Canon' : 'Pending GM Review'"
-                  [tone]="draft.status === 'approved' ? 'emerald' : 'gold'"
-                />
-              </div>
-
-              <p class="lw-weave-draft-card__summary">{{ draft.summary }}</p>
-
-              <div class="lw-weave-draft-card__edges">
-                @for (edge of draft.suggestedEdges; track edge) {
-                  <code>{{ edge }}</code>
-                }
-              </div>
-
-              <div class="lw-weave-draft-card__actions">
-                <lw-button
-                  variant="primary"
-                  size="sm"
-                  icon="Check"
-                  (pressed)="reviewDraft(draft, 'approve')"
-                >
-                  Approve & Commit to Graph
-                </lw-button>
-                <lw-button
-                  variant="secondary"
-                  size="sm"
-                  (pressed)="reviewDraft(draft, 'reweave')"
-                >
-                  Re-Weave Draft
-                </lw-button>
-                <lw-button
-                  variant="ghost"
-                  size="sm"
-                  icon="X"
-                  (pressed)="reviewDraft(draft, 'reject')"
-                >
-                  Reject
-                </lw-button>
-              </div>
-            </article>
-          }
-        </div>
-      </lw-panel>
+  @if (worldLore.errorBanner(); as err) {
+    <div class="lw-world-banner lw-world-banner--error" role="alert">
+      <lw-icon name="info" [size]="15"></lw-icon>
+      <span>{{ err }}</span>
+      <button type="button" (click)="worldLore.errorBanner.set(null)">Dismiss</button>
     </div>
   }
+
+  @if (worldLore.statusBanner(); as status) {
+    <div class="lw-world-banner lw-world-banner--ok" role="status">
+      <lw-icon name="check" [size]="15"></lw-icon>
+      <span>{{ status }}</span>
+      <button type="button" (click)="worldLore.statusBanner.set(null)">Dismiss</button>
+    </div>
+  }
+
+  @switch (worldLore.activePrimaryTab()) {
+    @case ('atlas') {
+      <lw-atlas-layer-filters
+        [filters]="worldLore.availableLayerFilters()"
+        [activeLayerIds]="worldLore.activeLayers()"
+        [maps]="ws.maps"
+        [activeMapId]="worldLore.activeMap()?.mapId ?? null"
+        [breadcrumbs]="worldLore.mapHierarchyBreadcrumbs()"
+        [isGm]="worldLore.isGm()"
+        [journeySessionFilter]="worldLore.journeySessionFilter()"
+        (layerToggled)="worldLore.toggleLayer($event)"
+        (showAllRequested)="worldLore.showAllLayers()"
+        (clearAllRequested)="worldLore.clearAllLayers()"
+        (resetRequested)="worldLore.resetDefaultLayers()"
+        (mapSelected)="worldLore.selectMap($event)"
+        (sessionFilterChanged)="worldLore.journeySessionFilter.set($event)"
+        (createLocationRequested)="openAddLocationModal()"
+      />
+
+      <lw-world-atlas
+        [map]="worldLore.activeMap()"
+        [overlays]="worldLore.visibleMapOverlays()"
+        [markers]="worldLore.visibleMapMarkers()"
+        [waypoints]="worldLore.visibleJourneyWaypoints()"
+        [selectedLocationKey]="worldLore.selectedLocationKey()"
+        [isGm]="worldLore.isGm()"
+        (markerSelected)="onMarkerSelected($event)"
+        (childMapRequested)="worldLore.selectMap($event)"
+        (parentMapRequested)="worldLore.selectMap($event)"
+        (createMapRequested)="worldLore.assignWorldMap($event)"
+        (canvasPinPlaced)="openAddLocationModal($event)"
+      />
+
+      <div class="lw-world-bottom-grid">
+        <lw-lore-library
+          mode="preview"
+          (viewAllClicked)="worldLore.setPrimaryTab('lore')"
+          (inspectLocationRequested)="onInspectLocationFromChild($event)"
+        />
+
+        <div class="lw-world-bottom-right">
+          <section class="lw-discoveries-panel">
+            <header class="lw-discoveries-panel__header">
+              <h3>RECENT DISCOVERIES</h3>
+              <button
+                type="button"
+                class="lw-discoveries-panel__link"
+                (click)="worldLore.setPrimaryTab('history')">
+                <span>View All</span>
+                <lw-icon name="arrow_forward" [size]="14"></lw-icon>
+              </button>
+            </header>
+
+            <div class="lw-discoveries-panel__list">
+              @for (disc of ws.recentDiscoveries; track disc.id) {
+                <article class="lw-discovery-row" (click)="onDiscoverySelected(disc)">
+                  <div
+                    class="lw-discovery-row__thumb"
+                    [style.background-image]="'url(' + disc.artworkUrl + ')'"></div>
+                  <div class="lw-discovery-row__copy">
+                    <h4>{{ disc.title }}</h4>
+                    <p>{{ disc.eventSummary }}</p>
+                  </div>
+                  <span class="lw-discovery-row__time">{{ disc.relativeTime }}</span>
+                </article>
+              } @empty {
+                <p class="lw-discovery-empty">No recent world discoveries recorded yet.</p>
+              }
+            </div>
+          </section>
+
+          <section class="lw-world-stats-bar" aria-label="World Statistics">
+            <header class="lw-world-stats-bar__header">
+              <h4>WORLD STATISTICS</h4>
+            </header>
+            <div class="lw-world-stats-bar__metrics">
+              <div class="lw-world-stat">
+                <strong>{{ ws.statistics.regionCount }}</strong>
+                <span>Regions</span>
+              </div>
+              <div class="lw-world-stat">
+                <strong>{{ ws.statistics.locationCount }}</strong>
+                <span>Locations</span>
+              </div>
+              <div class="lw-world-stat">
+                <strong>{{ ws.statistics.npcCount }}</strong>
+                <span>NPCs</span>
+              </div>
+              <div class="lw-world-stat">
+                <strong>{{ ws.statistics.factionCount }}</strong>
+                <span>Factions</span>
+              </div>
+              <div class="lw-world-stat">
+                <strong>{{ ws.statistics.activeQuestCount }}</strong>
+                <span>Active Quests</span>
+              </div>
+              <div class="lw-world-stat">
+                <strong>{{ ws.statistics.unresolvedMysteryCount }}</strong>
+                <span>Unresolved Mysteries</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+
+    @case ('lore') {
+      <lw-lore-library
+        mode="full"
+        (inspectLocationRequested)="onInspectLocationFromChild($event)"
+      />
+    }
+
+    @case ('history') {
+      <lw-world-history
+        (inspectLocationRequested)="onInspectLocationFromChild($event)"
+      />
+    }
+
+    @case ('relationships') {
+      @if (store.weaveEnabled()) {
+        <lw-weave-relationships-graph
+          (inspectLocationRequested)="onInspectLocationFromChild($event)"
+        />
+      }
+    }
+  }
 </div>
+
+@if (createLocationModalOpen()) {
+  <div class="lw-world-modal-backdrop" (click)="createLocationModalOpen.set(false)">
+    <div class="lw-world-modal" (click)="$event.stopPropagation()">
+      <header class="lw-world-modal__header">
+        <h4>Create Atlas Location Marker</h4>
+        <button type="button" class="lw-world-modal__close" (click)="createLocationModalOpen.set(false)">
+          <lw-icon name="close" [size]="16"></lw-icon>
+        </button>
+      </header>
+
+      <div class="lw-world-modal__body">
+        <label class="lw-world-field">
+          <span>Location Name</span>
+          <input type="text" [ngModel]="newLocName()" (ngModelChange)="newLocName.set($event)" placeholder="e.g. Watchtower of Dorn" />
+        </label>
+
+        <div class="lw-world-field-row">
+          <label class="lw-world-field">
+            <span>Location Type</span>
+            <input type="text" [ngModel]="newLocType()" (ngModelChange)="newLocType.set($event)" placeholder="Fortress, City, Ruin..." />
+          </label>
+          <label class="lw-world-field">
+            <span>Hierarchy Level</span>
+            <select [ngModel]="newLocHierarchy()" (ngModelChange)="newLocHierarchy.set($event)">
+              <option value="World">World</option>
+              <option value="Continent">Continent</option>
+              <option value="Region">Region</option>
+              <option value="Settlement">Settlement</option>
+              <option value="District">District</option>
+              <option value="Building">Building</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="lw-world-field-row">
+          <label class="lw-world-field">
+            <span>Discovery Status</span>
+            <select [ngModel]="newLocStatus()" (ngModelChange)="newLocStatus.set($event)">
+              <option value="visited">Visited by Party</option>
+              <option value="known">Known Location</option>
+              <option value="rumor">Unverified Rumor</option>
+              <option value="undiscovered">Undiscovered</option>
+            </select>
+          </label>
+          <label class="lw-world-field">
+            <span>Audience Visibility</span>
+            <select [ngModel]="newLocVisibility()" (ngModelChange)="newLocVisibility.set($event)">
+              <option value="players">Revealed to Players</option>
+              <option value="gm">GM Secret</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="lw-world-field-row">
+          <label class="lw-world-field">
+            <span>Atlas X Coordinate (%)</span>
+            <input type="number" [ngModel]="newLocX()" (ngModelChange)="newLocX.set(+$event)" min="5" max="95" />
+          </label>
+          <label class="lw-world-field">
+            <span>Atlas Y Coordinate (%)</span>
+            <input type="number" [ngModel]="newLocY()" (ngModelChange)="newLocY.set(+$event)" min="5" max="95" />
+          </label>
+        </div>
+
+        <label class="lw-world-field">
+          <span>Overview Description</span>
+          <textarea rows="3" [ngModel]="newLocDescription()" (ngModelChange)="newLocDescription.set($event)" placeholder="Describe this place, its atmosphere, and notable landmarks..."></textarea>
+        </label>
+      </div>
+
+      <footer class="lw-world-modal__footer">
+        <button type="button" class="lw-world-modal__btn" (click)="createLocationModalOpen.set(false)">Cancel</button>
+        <button type="button" class="lw-world-modal__btn lw-world-modal__btn--gold" (click)="submitCreateLocation()">Place Location</button>
+      </footer>
+    </div>
+  </div>
+}

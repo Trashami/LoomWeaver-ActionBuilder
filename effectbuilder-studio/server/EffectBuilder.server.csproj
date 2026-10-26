@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup><PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" /><PackageReference Include="MySqlConnector" Version="2.6.2" /></ItemGroup>
+  <ItemGroup><Compile Include="../Mythweaver.server/Images/SummonAssets.cs" Link="SummonAssets.cs" /><Compile Include="../Mythweaver.server/Data/MySqlConnectionFactory.cs" Link="Data/MySqlConnectionFactory.cs" /><Compile Include="../Mythweaver.server/Auth/AuthExtensions.cs" Link="Auth/AuthExtensions.cs" /></ItemGroup>
+  <ItemGroup><Compile Remove="tests/**" /><Content Remove="tests/**;publish/**" /><None Remove="publish/**" /></ItemGroup>
+</Project>

@@ -1,0 +1,120 @@
+<div class="lw-atlas-filters" role="toolbar" aria-label="World Atlas Layer Filters and Hierarchy">
+  <div class="lw-atlas-filters__primary-row">
+    <div class="lw-atlas-filters__pills">
+      @for (filter of filters().slice(0, 8); track filter.id) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-filter-pill"
+          [class.lw-filter-pill--active]="isLayerActive(filter.id)"
+          [class.lw-filter-pill--gm]="filter.gmOnly"
+          [attr.aria-pressed]="isLayerActive(filter.id)"
+          (click)="layerToggled.emit(filter.id)"
+        >
+          <lw-icon [name]="filter.icon" [size]="14" />
+          <span>{{ filter.label }}</span>
+        </button>
+      }
+      <button
+        ngpButton
+        type="button"
+        class="lw-filter-pill lw-filter-pill--more"
+        (click)="showExtendedFilters.set(!showExtendedFilters())"
+      >
+        <lw-icon name="filter" [size]="14" />
+        <span>{{ showExtendedFilters() ? 'Less Layers' : 'More Layers' }}</span>
+      </button>
+    </div>
+
+    <div class="lw-atlas-filters__actions">
+      @if (maps().length > 1) {
+        <select
+          class="lw-map-select"
+          aria-label="Select Campaign World Map"
+          [value]="activeMapId() ?? ''"
+          (change)="mapSelected.emit($any($event.target).value)"
+        >
+          @for (m of maps(); track m.mapId) {
+            <option [value]="m.mapId">{{ m.scopeLevel }}: {{ m.name }}</option>
+          }
+        </select>
+      }
+
+      @if (isGm()) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-filter-action-btn lw-filter-action-btn--gold"
+          (click)="createLocationRequested.emit()"
+        >
+          <lw-icon name="plus" [size]="14" />
+          <span>Add Location</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (showExtendedFilters() || breadcrumbs().length > 1) {
+    <div class="lw-atlas-filters__secondary-row">
+      <div class="lw-atlas-filters__pills">
+        @for (filter of filters().slice(8); track filter.id) {
+          <button
+            ngpButton
+            type="button"
+            class="lw-filter-pill lw-filter-pill--sm"
+            [class.lw-filter-pill--active]="isLayerActive(filter.id)"
+            (click)="layerToggled.emit(filter.id)"
+          >
+            <span>{{ filter.label }}</span>
+          </button>
+        }
+
+        <label class="lw-route-session-filter">
+          <span>Route Session:</span>
+          <select
+            [value]="journeySessionFilter()"
+            (change)="onSessionSelect($any($event.target).value)"
+          >
+            <option value="all">All Sessions</option>
+            <option value="12">Up to Session 12</option>
+            <option value="14">Up to Session 14</option>
+            <option value="15">Up to Session 15</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="lw-atlas-filters__preset-controls">
+        @if (breadcrumbs().length > 0) {
+          <nav class="lw-map-breadcrumbs" aria-label="Map Hierarchy">
+            @for (crumb of breadcrumbs(); track crumb.mapId; let last = $last) {
+              <button
+                ngpButton
+                type="button"
+                class="lw-crumb-btn"
+                [class.lw-crumb-btn--current]="last"
+                (click)="mapSelected.emit(crumb.mapId)"
+              >
+                {{ crumb.scopeLevel }}: {{ crumb.name }}
+              </button>
+              @if (!last) {
+                <span class="lw-crumb-sep">/</span>
+              }
+            }
+          </nav>
+        }
+
+        <div class="lw-bulk-btns">
+          <button ngpButton type="button" class="lw-text-btn" (click)="showAllRequested.emit()">
+            Show All
+          </button>
+          <button ngpButton type="button" class="lw-text-btn" (click)="clearAllRequested.emit()">
+            Clear
+          </button>
+          <button ngpButton type="button" class="lw-text-btn" (click)="resetRequested.emit()">
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

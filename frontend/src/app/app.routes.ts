@@ -150,6 +150,12 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('./features/weave/weave.page').then((m) => m.WeavePageComponent),
   },
+  {
+    path: 'world-lore',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/weave/weave.page').then((m) => m.WeavePageComponent),
+  },
   // Protected legacy route redirects
   { path: 'dashboard', redirectTo: 'home', pathMatch: 'full' },
   { path: 'dm-game', redirectTo: 'arcane-screen', pathMatch: 'full' },
@@ -157,7 +163,7 @@ export const APP_ROUTES: Routes = [
   { path: 'loom-graph', redirectTo: 'weave', pathMatch: 'full' },
   { path: 'quests', redirectTo: 'campaigns', pathMatch: 'full' },
   { path: 'notes', redirectTo: 'loom', pathMatch: 'full' },
-  { path: 'locations', redirectTo: 'campaigns', pathMatch: 'full' },
+  { path: 'locations', redirectTo: 'weave', pathMatch: 'full' },
   { path: 'npcs', redirectTo: 'campaigns', pathMatch: 'full' },
   { path: 'monsters', redirectTo: 'encounters', pathMatch: 'full' },
   { path: 'spells', redirectTo: 'effects', pathMatch: 'full' },

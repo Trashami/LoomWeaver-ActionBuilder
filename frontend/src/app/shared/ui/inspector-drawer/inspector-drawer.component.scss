@@ -40,6 +40,36 @@
   background: linear-gradient(90deg, rgba(217, 183, 122, 0.08), transparent);
 }
 
+.lw-inspector__context-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(6, 15, 11, 0.92);
+  border-bottom: 1px solid rgba(217, 183, 122, 0.22);
+}
+
+.lw-inspector__context-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.34rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 183, 122, 0.18);
+  background: rgba(9, 24, 18, 0.72);
+  color: #9cb4a8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--active {
+    background: rgba(217, 183, 122, 0.2);
+    border-color: rgba(217, 183, 122, 0.56);
+    color: #f4e6c8;
+  }
+}
+
 .lw-inspector__act-title {
   margin: 0;
   font-family: var(--lw-font-display, Georgia, serif);

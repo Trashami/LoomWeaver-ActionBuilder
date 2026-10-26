@@ -1,4 +1,7 @@
 node_modules/
 dist/
 .angular/
+server/bin/
+server/obj/
+server/publish/
 *.tar.gz

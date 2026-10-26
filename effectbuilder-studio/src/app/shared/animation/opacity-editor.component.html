@@ -1,0 +1,15 @@
+<div class="key-heading"><span><mw-icon name="sliders" /> OPACITY KEYFRAMES</span><div><button [disabled]="frames.length >= 32" (click)="add()"><mw-icon name="plus" /> Add at playhead</button><button (click)="preset()">Fade in / out</button><button [disabled]="!frames.length" (click)="clear()">Reset</button></div></div>
+<p>Drag a diamond left or right to change time, up or down to change opacity. Double-click the graph to add a point.</p>
+<div class="graph-wrap"><span class="max">100%</span><span class="min">0%</span><div class="graph" aria-label="Opacity animation graph" (dblclick)="graphAdd($event)">
+  <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polyline [attr.points]="curve" /></svg>
+  <i class="graph-playhead" [style.left.%]="localTime*100"></i>
+  @for(frame of frames;track frame.id;let i=$index) { <button class="key" [class.selected]="frame.id===selectedId()" [style.left.%]="frame.time*100" [style.top.%]="(1-frame.value)*100" [attr.aria-label]="'Opacity keyframe '+(i+1)" [attr.aria-pressed]="frame.id===selectedId()" [title]="(frame.time*duration).toFixed(0)+'ms / '+(frame.value*100).toFixed(0)+'%'" (pointerdown)="drag($event,frame)" (click)="pick(frame)" (keydown)="keyboard($event,frame)"></button> }
+</div></div>
+<div class="time-labels"><span>{{ start }}ms</span><span>{{ start+duration }}ms</span></div>
+<div class="key-controls">@if(selected;as key) {
+  <label>Key time <input aria-label="Opacity keyframe time in milliseconds" type="number" min="0" [max]="duration" [ngModel]="+(key.time*duration).toFixed(2)" (ngModelChange)="patch({time:+$event/duration})" /> ms into layer</label>
+  <label>Opacity <input aria-label="Opacity keyframe value" type="number" min="0" max="100" [ngModel]="+(key.value*100).toFixed(1)" (ngModelChange)="patch({value:+$event/100})" /> %</label>
+  <label>To next point <select aria-label="Opacity interpolation" [ngModel]="key.easing" (ngModelChange)="patch({easing:$event})">@for(curve of curves;track curve){<option [value]="curve">{{ curve }}</option>}</select></label>
+  <button (click)="remove()">Remove point</button>
+} @else { <span>{{ frames.length ? 'Select a diamond to edit its time, opacity, and interpolation.' : 'No keyframes: original automatic fade is active.' }}</span> }</div>
+<p class="note">Graph spans this layer’s duration. Moving or resizing the clip keeps points at the same relative positions. Keyed opacity multiplies Layer opacity and replaces the automatic fade.</p>

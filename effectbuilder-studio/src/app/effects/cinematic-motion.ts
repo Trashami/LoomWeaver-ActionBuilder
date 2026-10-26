@@ -1,0 +1,4 @@
+import { ease } from '../shared/animation/animation-curves';
+import type { EffectLayer } from './effect-definition';
+export function cinematicFrame(l:EffectLayer,time:number,from:{x:number;y:number},to:{x:number;y:number},scale=1){const c=l.cinematic!,p=(time-l.delay)/l.duration,angle=Math.atan2(to.y-from.y,to.x-from.x)+l.motion.direction*Math.PI/180,reach=c.reachFeet/5*66*scale,width=c.widthFeet/5*66*scale,beamLength=Math.hypot(to.x-from.x,to.y-from.y);return {p:ease(Math.max(0,Math.min(1,p)),l.easing),angle,reach,width,length:c.style==='beam'?beamLength:reach,alpha:l.enabled&&p>=0&&p<=1?Math.min(1,p*14,Math.max(0,(1-p)*3)):0,clock:Math.max(0,(time-l.delay)/1000)*l.motion.speed};}
+export function insideCone(x:number,y:number,reach:number,width:number):boolean{return x>=0&&x<=reach&&Math.abs(y)<=width*.5*x/Math.max(.001,reach);}

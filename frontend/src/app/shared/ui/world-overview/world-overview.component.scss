@@ -1,0 +1,144 @@
+:host {
+  display: block;
+}
+
+.lw-world-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.lw-world-overview__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.lw-world-overview__eyebrow {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #49e892;
+  font-weight: 700;
+}
+
+.lw-world-overview__title {
+  margin: 0.12rem 0 0;
+  font-family: var(--lw-font-display, Georgia, serif);
+  font-size: 0.96rem;
+  color: #f4e6c8;
+}
+
+.lw-world-overview__clear {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 16, 13, 0.8);
+  color: #c2d1c9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lw-world-overview__art-wrap {
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid rgba(217, 183, 122, 0.3);
+  height: 120px;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.lw-world-overview__badges,
+.lw-world-overview__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.lw-world-overview__text {
+  margin: 0;
+  font-size: 0.77rem;
+  line-height: 1.5;
+  color: #c8d4ce;
+}
+
+.lw-world-overview__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.45rem;
+}
+
+.lw-stat-pill {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(217, 183, 122, 0.22);
+  background: rgba(9, 20, 16, 0.85);
+  display: flex;
+  flex-direction: column;
+
+  strong {
+    font-size: 0.95rem;
+    color: #f4e6c8;
+  }
+
+  span {
+    font-size: 0.68rem;
+    color: #9cb0a5;
+  }
+}
+
+.lw-world-overview__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+
+  h4 {
+    margin: 0;
+    font-family: var(--lw-font-display, Georgia, serif);
+    font-size: 0.75rem;
+    color: #e6d6b4;
+    letter-spacing: 0.05em;
+  }
+}
+
+.lw-world-overview__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+}
+
+.lw-landmark-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.44rem 0.58rem;
+  border-radius: 8px;
+  border: 1px solid rgba(85, 201, 147, 0.24);
+  background: rgba(9, 22, 17, 0.85);
+  color: #f2e5cb;
+  text-align: left;
+  cursor: pointer;
+
+  strong {
+    display: block;
+    font-size: 0.76rem;
+  }
+
+  small {
+    font-size: 0.68rem;
+    color: #9db0a6;
+  }
+
+  &:hover {
+    border-color: #49e892;
+  }
+}

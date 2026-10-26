@@ -1,0 +1,69 @@
+<section class="lw-rel-graph">
+  <header class="lw-rel-graph__toolbar">
+    <div>
+      <span class="lw-rel-graph__kicker">CONNECTED WORLD ENTITIES</span>
+      <h3>World Relationships &amp; Allegiances</h3>
+      <p>Explore how settlements, factions, characters, and active quests connect across the campaign world.</p>
+    </div>
+
+    <div class="lw-rel-graph__filters">
+      @for (f of filterTypes; track f.key) {
+        <button
+          type="button"
+          class="lw-rel-graph__pill"
+          [class.lw-rel-graph__pill--active]="graphFilter() === f.key"
+          (click)="graphFilter.set(f.key)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="lw-rel-graph__workspace">
+    <div class="lw-rel-graph__canvas-wrap">
+      <svg class="lw-rel-graph__svg" viewBox="0 0 900 460" preserveAspectRatio="xMidYMid meet">
+        @for (edge of visibleEdges(); track edge.id) {
+          @if (nodeById(edge.from); as fromNode) {
+            @if (nodeById(edge.to); as toNode) {
+              <g class="lw-rel-graph__edge" [class.lw-rel-graph__edge--secret]="edge.secret">
+                <line
+                  [attr.x1]="fromNode.x"
+                  [attr.y1]="fromNode.y"
+                  [attr.x2]="toNode.x"
+                  [attr.y2]="toNode.y" />
+                <text [attr.x]="edgeMidX(edge)" [attr.y]="edgeMidY(edge) - 6">
+                  {{ edge.label }}
+                </text>
+              </g>
+            }
+          }
+        }
+
+        @for (node of visibleNodes(); track node.id) {
+          <g
+            class="lw-rel-graph__node"
+            [class.lw-rel-graph__node--active]="selectedNode()?.id === node.id"
+            [class.lw-rel-graph__node--secret]="node.secret"
+            [attr.transform]="'translate(' + node.x + ',' + node.y + ')'"
+            (click)="selectGraphNode(node)">
+            <circle r="24" />
+            <text class="lw-rel-graph__node-title" y="38">{{ node.label }}</text>
+            <text class="lw-rel-graph__node-sub" y="51">{{ node.subtitle }}</text>
+          </g>
+        }
+      </svg>
+    </div>
+
+    @if (selectedNode(); as active) {
+      <aside class="lw-rel-graph__card">
+        <span class="lw-rel-graph__type">{{ active.type | uppercase }}</span>
+        <h4>{{ active.label }}</h4>
+        <p class="lw-rel-graph__sub">{{ active.subtitle }}</p>
+        <p class="lw-rel-graph__summary">{{ active.summary }}</p>
+        @if (active.sessionSource) {
+          <span class="lw-rel-graph__source">Recorded: {{ active.sessionSource }}</span>
+        }
+      </aside>
+    }
+  </div>
+</section>

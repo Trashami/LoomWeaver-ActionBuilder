@@ -1,0 +1,79 @@
+@let ws = workspace();
+<section class="lw-world-overview" aria-label="World Overview and Selected Lore">
+  @if (selectedLore(); as lore) {
+    <header class="lw-world-overview__head">
+      <div>
+        <span class="lw-world-overview__eyebrow">Lore Encyclopedia Entry</span>
+        <h3 class="lw-world-overview__title">{{ lore.title }}</h3>
+      </div>
+      <button ngpButton type="button" class="lw-world-overview__clear" (click)="loreCleared.emit()">
+        <lw-icon name="close" [size]="14" />
+      </button>
+    </header>
+
+    <div class="lw-world-overview__art-wrap">
+      <img [src]="lore.artworkUrl" [alt]="lore.title" />
+    </div>
+
+    <div class="lw-world-overview__badges">
+      <lw-badge [label]="lore.category" tone="gold" />
+      <lw-badge [label]="lore.visibility" [tone]="lore.visibility === 'gm' ? 'gm' : 'emerald'" />
+    </div>
+
+    <p class="lw-world-overview__text">{{ lore.content }}</p>
+
+    <div class="lw-world-overview__tags">
+      @for (tag of lore.tags; track tag) {
+        <lw-badge [label]="tag" tone="neutral" />
+      }
+    </div>
+  } @else {
+    <header class="lw-world-overview__head">
+      <div>
+        <span class="lw-world-overview__eyebrow">Campaign World Overview</span>
+        <h3 class="lw-world-overview__title">{{ ws.worldName }} · {{ ws.campaignName }}</h3>
+      </div>
+    </header>
+
+    <p class="lw-world-overview__text">{{ ws.worldOverviewSummary }}</p>
+
+    <div class="lw-world-overview__stats-grid">
+      <div class="lw-stat-pill">
+        <strong>{{ ws.statistics.regionCount }}</strong>
+        <span>Regions</span>
+      </div>
+      <div class="lw-stat-pill">
+        <strong>{{ ws.statistics.locationCount }}</strong>
+        <span>Locations</span>
+      </div>
+      <div class="lw-stat-pill">
+        <strong>{{ ws.statistics.npcCount }}</strong>
+        <span>NPCs</span>
+      </div>
+      <div class="lw-stat-pill">
+        <strong>{{ ws.statistics.factionCount }}</strong>
+        <span>Factions</span>
+      </div>
+    </div>
+
+    <div class="lw-world-overview__block">
+      <h4>KEY ATLAS LANDMARKS</h4>
+      <div class="lw-world-overview__list">
+        @for (marker of ws.markers.slice(0, 6); track marker.markerId) {
+          <button
+            ngpButton
+            type="button"
+            class="lw-landmark-btn"
+            (click)="locationSelected.emit(marker.locationKey)"
+          >
+            <div>
+              <strong>{{ marker.name }}</strong>
+              <small>{{ marker.subtitle }} · {{ marker.discoveryStatus }}</small>
+            </div>
+            <lw-icon name="chevron-right" [size]="14" />
+          </button>
+        }
+      </div>
+    </div>
+  }
+</section>

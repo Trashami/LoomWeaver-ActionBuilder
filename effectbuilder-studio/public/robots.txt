@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Allow: /features/
-Allow: /login
-Allow: /register
-Allow: /welcome
-Disallow: /api/
-
-Sitemap: https://loom-weaver.com/sitemap.xml

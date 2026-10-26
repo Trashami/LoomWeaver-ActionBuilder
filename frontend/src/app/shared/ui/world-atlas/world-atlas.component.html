@@ -1,0 +1,269 @@
+@if (map(); as m) {
+  <div
+    class="lw-atlas-stage"
+    [class.lw-atlas-stage--panning]="isPanning()"
+    [class.lw-atlas-stage--placing]="pinPlacementMode()"
+    (mousedown)="onPointerDown($event)"
+    (mousemove)="onPointerMove($event)"
+    (mouseup)="onPointerUp()"
+    (mouseleave)="onPointerUp()"
+  >
+    <div class="lw-atlas-viewport" [style.transform]="transformStyle()">
+      <img
+        class="lw-atlas-map-img"
+        [src]="m.imageUrl"
+        [alt]="m.name"
+        draggable="false"
+      />
+
+      <div class="lw-atlas-vignette"></div>
+
+      <svg
+        class="lw-atlas-svg-overlay"
+        viewBox="0 0 1000 560"
+        preserveAspectRatio="none"
+        aria-label="Campaign Regions and Party Travel Route"
+      >
+        @for (ov of overlays(); track ov.id) {
+          <g class="lw-region-group">
+            <path
+              [attr.d]="ov.svgPath"
+              [attr.stroke]="ov.colorHex"
+              [attr.fill]="ov.colorHex"
+              [class.lw-region-poly--territory]="ov.overlayType === 'territory'"
+              class="lw-region-poly"
+            />
+            <text
+              [attr.x]="ov.labelX * 10"
+              [attr.y]="ov.labelY * 5.6"
+              text-anchor="middle"
+              class="lw-region-label"
+            >
+              {{ ov.name }}
+            </text>
+          </g>
+        }
+
+        @if (playerRoutePolyline()) {
+          <polyline
+            [attr.points]="playerRoutePolyline()"
+            class="lw-journey-line lw-journey-line--glow"
+          />
+          <polyline
+            [attr.points]="playerRoutePolyline()"
+            class="lw-journey-line"
+          />
+        }
+
+        @if (isGm() && gmPlannedPolyline()) {
+          <polyline
+            [attr.points]="gmPlannedPolyline()"
+            class="lw-journey-line lw-journey-line--gm"
+          />
+        }
+
+        @for (wp of waypoints(); track wp.id) {
+          <g class="lw-waypoint-node">
+            <circle
+              [attr.cx]="wp.xPercent * 10"
+              [attr.cy]="wp.yPercent * 5.6"
+              [attr.r]="wp.status === 'current' ? 8 : 5"
+              [attr.data-status]="wp.status"
+            />
+          </g>
+        }
+      </svg>
+
+      @for (marker of markers(); track marker.markerId) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-atlas-marker"
+          [class.lw-atlas-marker--selected]="selectedLocationKey() === marker.locationKey"
+          [attr.data-category]="marker.category"
+          [attr.data-vis]="marker.visibility"
+          [style.left.%]="marker.xPercent"
+          [style.top.%]="marker.yPercent"
+          (click)="selectMarker(marker, $event)"
+        >
+          <span class="lw-atlas-marker__pin">
+            <lw-icon [name]="markerIcon(marker.category)" [size]="15" />
+          </span>
+          <span class="lw-atlas-marker__card">
+            <strong class="lw-atlas-marker__title">{{ marker.name }}</strong>
+            <small class="lw-atlas-marker__sub">{{ marker.subtitle }}</small>
+          </span>
+        </button>
+      }
+    </div>
+
+    <!-- Top-Left Zoom & Viewport Controls -->
+    <div class="lw-atlas-controls" aria-label="Map Zoom Controls">
+      <button ngpButton type="button" class="lw-zoom-btn" title="Zoom In" (click)="zoomIn()">
+        <lw-icon name="plus" [size]="15" />
+      </button>
+      <button ngpButton type="button" class="lw-zoom-btn" title="Zoom Out" (click)="zoomOut()">
+        <lw-icon name="minus" [size]="15" />
+      </button>
+      <button
+        ngpButton
+        type="button"
+        class="lw-zoom-btn"
+        title="Reset Map Viewport"
+        (click)="resetViewport()"
+      >
+        <lw-icon name="target" [size]="15" />
+      </button>
+      @if (isGm()) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-zoom-btn"
+          [class.lw-zoom-btn--active]="pinPlacementMode()"
+          title="Click Map to Place New Location Marker"
+          (click)="pinPlacementMode.set(!pinPlacementMode())"
+        >
+          <lw-icon name="map-pin" [size]="15" />
+        </button>
+      }
+    </div>
+
+    <!-- Top-Right Map Scope & Parent Return Control -->
+    <div class="lw-atlas-top-right">
+      @if (m.parentMapId; as parentId) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-atlas-nav-pill"
+          (click)="parentMapRequested.emit(parentId)"
+        >
+          <lw-icon name="arrow-left" [size]="14" />
+          <span>Return to Parent Atlas</span>
+        </button>
+      }
+      @if (m.linkedSceneKey; as sceneKey) {
+        <a
+          ngpButton
+          class="lw-atlas-nav-pill"
+          [routerLink]="'/maps'"
+          [queryParams]="{ scene: sceneKey }"
+        >
+          <span>Open in Maps & Scenes</span>
+        </a>
+      }
+    </div>
+
+    <!-- Selected Marker Contextual Popup -->
+    @if (activePopupMarker(); as pop) {
+      <div class="lw-atlas-popup" role="dialog" aria-label="Selected Location Summary">
+        <div class="lw-atlas-popup__head">
+          <div>
+            <span class="lw-atlas-popup__eyebrow">{{ pop.hierarchyLevel }} · {{ pop.discoveryStatus }}</span>
+            <h4>{{ pop.name }}</h4>
+          </div>
+          <lw-badge [label]="pop.category" tone="gold" />
+        </div>
+        <div class="lw-atlas-popup__meta">
+          <span>{{ pop.questCount }} Quests</span>
+          <span>·</span>
+          <span>{{ pop.npcCount }} NPCs</span>
+          @if (isGm() && pop.secretCount > 0) {
+            <span>·</span>
+            <span class="lw-atlas-popup__secret">{{ pop.secretCount }} GM Secrets</span>
+          }
+        </div>
+        @if (pop.childMapId; as childId) {
+          <button
+            ngpButton
+            type="button"
+            class="lw-atlas-popup__drill-btn"
+            (click)="childMapRequested.emit(childId)"
+          >
+            <span>Explore {{ pop.name }} Sub-Map</span>
+            <lw-icon name="arrow-right" [size]="13" />
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Bottom-Left Map Legend & Scale -->
+    <div class="lw-atlas-legend-wrap">
+      <aside class="lw-atlas-legend" aria-label="World Atlas Legend">
+        <div class="lw-legend-row">
+          <span class="lw-legend-dot lw-legend-dot--party"></span>
+          <span>Party Location</span>
+        </div>
+        <div class="lw-legend-row">
+          <span class="lw-legend-line"></span>
+          <span>Traveled Route</span>
+        </div>
+        <div class="lw-legend-row">
+          <span class="lw-legend-dot lw-legend-dot--loc"></span>
+          <span>Location</span>
+        </div>
+        <div class="lw-legend-row">
+          <span class="lw-legend-dot lw-legend-dot--settlement"></span>
+          <span>Settlement</span>
+        </div>
+        <div class="lw-legend-row">
+          <span class="lw-legend-dot lw-legend-dot--ruin"></span>
+          <span>Ruin / Dungeon</span>
+        </div>
+        <div class="lw-legend-row">
+          <span class="lw-legend-swatch lw-legend-swatch--territory"></span>
+          <span>Faction Territory</span>
+        </div>
+        <div class="lw-legend-row">
+          <span class="lw-legend-swatch lw-legend-swatch--region"></span>
+          <span>Region Border</span>
+        </div>
+      </aside>
+
+      <div class="lw-atlas-scale">
+        <span class="lw-atlas-scale__compass">{{ m.compassOrientation }}</span>
+        <div class="lw-atlas-scale__bar"></div>
+        <span class="lw-atlas-scale__label">{{ m.scaleLabel }}</span>
+      </div>
+    </div>
+  </div>
+} @else {
+  <!-- Helpful Empty State for Campaigns Without a Configured World Map -->
+  <div class="lw-atlas-empty">
+    <div class="lw-atlas-empty__card">
+      <span class="lw-atlas-empty__eyebrow">World Atlas Not Yet Assigned</span>
+      <h3>No World Map Configured for This Campaign</h3>
+      <p>
+        This campaign does not yet have an authoritative world or regional map assigned. Select or initialize a world atlas below, or build a custom 2D/3D cartography canvas in Maps & Scenes.
+      </p>
+
+      @if (isGm()) {
+        <div class="lw-atlas-empty__form">
+          <input
+            type="text"
+            [ngModel]="newMapName()"
+            (ngModelChange)="newMapName.set($event)"
+            placeholder="World or Region Atlas Title"
+          />
+          <select
+            [ngModel]="newMapScope()"
+            (ngModelChange)="newMapScope.set($event)"
+          >
+            <option value="World">World Scope</option>
+            <option value="Region">Region Scope</option>
+            <option value="Settlement">Settlement Scope</option>
+          </select>
+          <lw-button variant="gold" (pressed)="submitCreateWorldMap()">
+            Initialize Campaign World Atlas
+          </lw-button>
+          <a ngpButton class="lw-atlas-empty__link" routerLink="/maps">
+            Open Maps & Scenes Studio
+          </a>
+        </div>
+      } @else {
+        <p class="lw-atlas-empty__player-note">
+          The Game Master has not yet published a world map for players in this campaign. You can still browse authorized entries in the Lore Library and World History tabs.
+        </p>
+      }
+    </div>
+  </div>
+}

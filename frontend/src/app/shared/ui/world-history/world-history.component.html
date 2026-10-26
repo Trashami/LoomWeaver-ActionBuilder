@@ -1,0 +1,149 @@
+<section class="lw-history">
+  <header class="lw-history__toolbar">
+    <div>
+      <span class="lw-history__kicker">CONTEXTUAL CHRONICLE</span>
+      <h3>World History &amp; Recorded Ages</h3>
+      <p>Fictional eras and world events are tracked separately from real-world table session dates.</p>
+    </div>
+
+    @if (worldLore.isGm()) {
+      <button type="button" class="lw-history__btn lw-history__btn--gold" (click)="openCreateEvent()">
+        <lw-icon name="add" [size]="15"></lw-icon>
+        <span>Record Historical Event</span>
+      </button>
+    }
+  </header>
+
+  <div class="lw-history__filters">
+    @for (cat of categories; track cat) {
+      <button
+        type="button"
+        class="lw-history__pill"
+        [class.lw-history__pill--active]="worldLore.historyCategoryFilter() === cat"
+        (click)="worldLore.historyCategoryFilter.set(cat)">
+        {{ cat }}
+      </button>
+    }
+  </div>
+
+  <div class="lw-history__list">
+    @for (ev of worldLore.filteredHistoryEvents(); track ev.id) {
+      <article class="lw-history__card">
+        <div class="lw-history__card-dates">
+          <span class="lw-history__world-date">{{ ev.worldDateLabel }}</span>
+          <span class="lw-history__era">{{ ev.eraName }}</span>
+          @if (ev.realSessionDateLabel) {
+            <span class="lw-history__session-date">
+              <lw-icon name="event" [size]="12"></lw-icon>
+              <span>{{ ev.realSessionDateLabel }}</span>
+            </span>
+          }
+        </div>
+
+        <div class="lw-history__card-body">
+          <div class="lw-history__card-top">
+            <span class="lw-history__category">{{ ev.category }}</span>
+            @if (ev.visibility === 'gm') {
+              <span class="lw-history__gm-badge">GM ONLY</span>
+            }
+          </div>
+          <h4>{{ ev.title }}</h4>
+          <p>{{ ev.summary }}</p>
+
+          @if (ev.locationKey) {
+            <div class="lw-history__links">
+              <button
+                type="button"
+                class="lw-history__link-btn"
+                (click)="inspectLocationRequested.emit(ev.locationKey!)">
+                <lw-icon name="place" [size]="14"></lw-icon>
+                <span>View Linked Location ({{ ev.locationName || ev.locationKey }})</span>
+              </button>
+            </div>
+          }
+        </div>
+      </article>
+    } @empty {
+      <div class="lw-history__empty">
+        <lw-icon name="history_edu" [size]="28"></lw-icon>
+        <h4>No Historical Events Recorded in Category</h4>
+        <p>Select another chronicle category or record a new historical milestone.</p>
+      </div>
+    }
+  </div>
+</section>
+
+@if (createModalOpen()) {
+  <div class="lw-history-modal-backdrop" (click)="createModalOpen.set(false)">
+    <div class="lw-history-modal" (click)="$event.stopPropagation()">
+      <header class="lw-history-modal__header">
+        <h4>Record World History Event</h4>
+        <button type="button" class="lw-history__btn" (click)="createModalOpen.set(false)">
+          <lw-icon name="close" [size]="16"></lw-icon>
+        </button>
+      </header>
+
+      <div class="lw-history-modal__body">
+        <label class="lw-history-field">
+          <span>Event Title</span>
+          <input type="text" [ngModel]="newTitle()" (ngModelChange)="newTitle.set($event)" placeholder="e.g. Signing of the Concord of Vaelgard" />
+        </label>
+
+        <div class="lw-history-row">
+          <label class="lw-history-field">
+            <span>Category</span>
+            <select [ngModel]="newCategory()" (ngModelChange)="newCategory.set($event)">
+              @for (cat of categories.slice(1); track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </label>
+          <label class="lw-history-field">
+            <span>Visibility</span>
+            <select [ngModel]="newVisibility()" (ngModelChange)="newVisibility.set($event)">
+              <option value="players">Known to Players</option>
+              <option value="gm">GM Secret</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="lw-history-row">
+          <label class="lw-history-field">
+            <span>In-World Date / Year</span>
+            <input type="text" [ngModel]="newWorldDate()" (ngModelChange)="newWorldDate.set($event)" placeholder="e.g. 412 Second Age" />
+          </label>
+          <label class="lw-history-field">
+            <span>Fictional Era</span>
+            <input type="text" [ngModel]="newEra()" (ngModelChange)="newEra.set($event)" placeholder="e.g. Second Age of Crowns" />
+          </label>
+        </div>
+
+        <div class="lw-history-row">
+          <label class="lw-history-field">
+            <span>Linked Atlas Location (Optional)</span>
+            <select [ngModel]="newLocationKey()" (ngModelChange)="newLocationKey.set($event)">
+              <option value="">None</option>
+              @for (loc of worldLore.locationsState(); track loc.locationKey) {
+                <option [value]="loc.locationKey">{{ loc.name }}</option>
+              }
+            </select>
+          </label>
+          <label class="lw-history-field">
+            <span>Session Number (Optional)</span>
+            <input type="number" [ngModel]="newSessionNumber()" (ngModelChange)="newSessionNumber.set($event ? +$event : null)" placeholder="e.g. 15" />
+          </label>
+        </div>
+
+        <label class="lw-history-field">
+          <span>Historical Account</span>
+          <textarea rows="4" [ngModel]="newSummary()" (ngModelChange)="newSummary.set($event)" placeholder="Describe the historical event and its lasting impact on the world..."></textarea>
+        </label>
+      </div>
+
+      <footer class="lw-history-modal__footer">
+        <button type="button" class="lw-history__btn" (click)="createModalOpen.set(false)">Cancel</button>
+        <button type="button" class="lw-history__btn lw-history__btn--gold" (click)="saveEvent()">Record Event</button>
+      </footer>
+    </div>
+  </div>
+}

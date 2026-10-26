@@ -1,0 +1,339 @@
+@let loc = location();
+<section
+  ngpTabset
+  [ngpTabsetValue]="activeTab()"
+  class="lw-loc-inspector"
+  aria-label="World Location Contextual Inspector"
+>
+  <header class="lw-loc-inspector__header">
+    <div class="lw-loc-inspector__title-wrap">
+      <h2 class="lw-loc-inspector__title">{{ loc.name }}</h2>
+      @if (loc.parentLocationName) {
+        <span class="lw-loc-inspector__parent">{{ loc.hierarchyLevel }} · {{ loc.parentLocationName }}</span>
+      }
+    </div>
+    <button
+      ngpButton
+      type="button"
+      class="lw-loc-inspector__close"
+      title="Return to World Overview"
+      (click)="closeRequested.emit()"
+    >
+      <lw-icon name="close" [size]="14" />
+    </button>
+  </header>
+
+  <nav ngpTabList class="lw-loc-inspector__tabs" role="tablist">
+    @for (tab of visibleTabs(); track tab.id) {
+      <button
+        ngpButton
+        ngpTabButton
+        [ngpTabButtonValue]="tab.id"
+        type="button"
+        role="tab"
+        class="lw-loc-inspector__tab"
+        [class.lw-loc-inspector__tab--active]="activeTab() === tab.id"
+        [attr.aria-selected]="activeTab() === tab.id"
+        (click)="activeTab.set(tab.id)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  <div class="lw-loc-inspector__body">
+    <!-- Artwork & Badges -->
+    <div class="lw-loc-inspector__art-frame">
+      <img [src]="loc.artworkUrl" [alt]="loc.name" class="lw-loc-inspector__art" />
+    </div>
+
+    <div class="lw-loc-inspector__badges">
+      <lw-badge [label]="loc.hierarchyLevel.toUpperCase()" tone="gold" />
+      <lw-badge [label]="loc.discoveryStatus.toUpperCase()" tone="emerald" />
+      <lw-badge [label]="loc.locationType.toUpperCase()" tone="neutral" />
+      @if (isGm() && loc.visibility === 'gm') {
+        <lw-badge label="GM SECRET" tone="gm" />
+      }
+    </div>
+
+    <!-- GM Action Toolbar -->
+    @if (isGm()) {
+      <div class="lw-loc-inspector__gm-bar">
+        <button ngpButton type="button" class="lw-gm-chip" (click)="openEditLocation()">
+          <lw-icon name="pen" [size]="12" />
+          <span>Edit</span>
+        </button>
+        <button ngpButton type="button" class="lw-gm-chip" (click)="openAddSublocation()">
+          <lw-icon name="plus" [size]="12" />
+          <span>Sublocation</span>
+        </button>
+        <button ngpButton type="button" class="lw-gm-chip" (click)="openLinkEntity()">
+          <lw-icon name="link" [size]="12" />
+          <span>Link Entity</span>
+        </button>
+        @if (loc.childMapId; as childMap) {
+          <button ngpButton type="button" class="lw-gm-chip" (click)="childMapRequested.emit(childMap)">
+            <lw-icon name="map" [size]="12" />
+            <span>Sub-Map</span>
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Inline GM Editor / Linker Drawer -->
+    @if (isGm() && editingMode() !== 'none') {
+      <div class="lw-loc-inspector__editor">
+        @if (editingMode() === 'link') {
+          <h4>Link Entity to {{ loc.name }}</h4>
+          <label>
+            <span>Select Authorized Campaign Entity</span>
+            <select [ngModel]="selectedLinkKey()" (ngModelChange)="selectedLinkKey.set($event)">
+              @for (ent of linkableEntities(); track ent.compositeKey) {
+                <option [value]="ent.compositeKey">{{ ent.entityType }}: {{ ent.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Relationship Role</span>
+            <input
+              type="text"
+              [ngModel]="linkRoleLabel()"
+              (ngModelChange)="linkRoleLabel.set($event)"
+              placeholder="e.g. Notable NPC, Ruling Faction, Active Quest"
+            />
+          </label>
+          <div class="lw-loc-inspector__editor-btns">
+            <lw-button variant="gold" size="sm" (pressed)="submitEntityLink()">Save Link</lw-button>
+            <lw-button variant="ghost" size="sm" (pressed)="editingMode.set('none')">Cancel</lw-button>
+          </div>
+        } @else {
+          <h4>{{ editingMode() === 'sublocation' ? 'Add Sublocation' : 'Edit Location' }}</h4>
+          <label>
+            <span>Name</span>
+            <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)" />
+          </label>
+          <div class="lw-loc-inspector__editor-row">
+            <label>
+              <span>Type</span>
+              <input type="text" [ngModel]="editType()" (ngModelChange)="editType.set($event)" />
+            </label>
+            <label>
+              <span>Hierarchy</span>
+              <select [ngModel]="editHierarchy()" (ngModelChange)="editHierarchy.set($event)">
+                <option value="World">World</option>
+                <option value="Continent">Continent</option>
+                <option value="Region">Region</option>
+                <option value="Settlement">Settlement</option>
+                <option value="District">District</option>
+                <option value="Building">Building</option>
+              </select>
+            </label>
+          </div>
+          <div class="lw-loc-inspector__editor-row">
+            <label>
+              <span>Status</span>
+              <select [ngModel]="editStatus()" (ngModelChange)="editStatus.set($event)">
+                <option value="visited">Visited</option>
+                <option value="known">Known</option>
+                <option value="rumor">Rumor</option>
+                <option value="undiscovered">Undiscovered</option>
+              </select>
+            </label>
+            <label>
+              <span>Visibility</span>
+              <select [ngModel]="editVisibility()" (ngModelChange)="editVisibility.set($event)">
+                <option value="players">Players</option>
+                <option value="gm">GM Only</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Description</span>
+            <textarea
+              rows="3"
+              [ngModel]="editDescription()"
+              (ngModelChange)="editDescription.set($event)"
+            ></textarea>
+          </label>
+          <div class="lw-loc-inspector__editor-btns">
+            <lw-button variant="gold" size="sm" (pressed)="submitLocationForm()">Save</lw-button>
+            <lw-button variant="ghost" size="sm" (pressed)="editingMode.set('none')">Cancel</lw-button>
+          </div>
+        }
+      </div>
+    }
+
+    @switch (activeTab()) {
+      @case ('overview') {
+        <p class="lw-loc-inspector__desc">{{ loc.description }}</p>
+
+        @if (loc.attributes.length > 0) {
+          <dl class="lw-loc-inspector__attrs">
+            @for (attr of loc.attributes; track attr.label) {
+              <div class="lw-loc-inspector__attr-row">
+                <dt>{{ attr.label }}</dt>
+                <dd>{{ attr.value }}</dd>
+              </div>
+            }
+          </dl>
+        }
+
+        <div class="lw-loc-inspector__block">
+          <h3 class="lw-loc-inspector__section-title">RELATED ENTITIES</h3>
+          <div class="lw-loc-inspector__rel-list">
+            @for (rel of loc.relatedEntities; track rel.compositeKey) {
+              <div class="lw-rel-row">
+                <span class="lw-rel-row__role">{{ rel.relationshipLabel }}</span>
+                <button
+                  ngpButton
+                  type="button"
+                  class="lw-rel-card"
+                  (click)="relatedEntitySelected.emit(rel)"
+                >
+                  <div class="lw-rel-card__copy">
+                    <strong>{{ rel.name }}</strong>
+                    <small>{{ rel.subtitle }}</small>
+                  </div>
+                  <lw-icon name="chevron-right" [size]="14" />
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (isGm() && loc.secrets.length > 0) {
+          <div class="lw-loc-inspector__block lw-loc-inspector__secrets-box">
+            <div class="lw-loc-inspector__secrets-head">
+              <span class="lw-loc-inspector__section-title lw-loc-inspector__section-title--gold">
+                GM SECRETS ({{ loc.secrets.length }})
+              </span>
+              <button
+                ngpButton
+                type="button"
+                class="lw-view-all-btn"
+                (click)="activeTab.set('secrets')"
+              >
+                Manage
+              </button>
+            </div>
+            @for (sec of loc.secrets; track sec.id) {
+              <div class="lw-secret-card" [class.lw-secret-card--revealed]="sec.revealedToPlayers">
+                <div class="lw-secret-card__copy">
+                  <strong>{{ sec.title }}</strong>
+                  <p>{{ sec.summary }}</p>
+                </div>
+                <button
+                  ngpButton
+                  type="button"
+                  class="lw-secret-card__reveal"
+                  [title]="sec.revealedToPlayers ? 'Revealed to Players' : 'Reveal to Players'"
+                  (click)="secretRevealRequested.emit({ locationKey: loc.locationKey, secretId: sec.id })"
+                >
+                  <lw-icon [name]="sec.revealedToPlayers ? 'check' : 'plus'" [size]="13" />
+                </button>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      @case ('lore') {
+        <div class="lw-loc-inspector__lore-sections">
+          <div class="lw-lore-subblock">
+            <h4>Historical Background</h4>
+            <p>{{ loc.historicalBackground }}</p>
+          </div>
+          <div class="lw-lore-subblock">
+            <h4>Culture & Society</h4>
+            <p>{{ loc.cultureAndTraditions }}</p>
+          </div>
+          <div class="lw-lore-subblock">
+            <h4>Local Myths & Rumors</h4>
+            <p>{{ loc.localMyths }}</p>
+          </div>
+          <div class="lw-loc-inspector__tags">
+            @for (tag of loc.tags; track tag) {
+              <lw-badge [label]="tag" tone="neutral" />
+            }
+          </div>
+        </div>
+      }
+
+      @case ('connections') {
+        <div class="lw-loc-inspector__block">
+          <h3 class="lw-loc-inspector__section-title">CONNECTED NPCS, FACTIONS & QUESTS</h3>
+          <div class="lw-loc-inspector__rel-list">
+            @for (rel of loc.relatedEntities; track rel.compositeKey) {
+              <button
+                ngpButton
+                type="button"
+                class="lw-rel-card"
+                (click)="relatedEntitySelected.emit(rel)"
+              >
+                <div class="lw-rel-card__copy">
+                  <strong>{{ rel.name }}</strong>
+                  <small>{{ rel.relationshipLabel }} · {{ rel.subtitle }}</small>
+                </div>
+                <lw-icon name="chevron-right" [size]="14" />
+              </button>
+            }
+          </div>
+          @if (loc.linkedSceneKey; as sceneKey) {
+            <a
+              ngpButton
+              class="lw-scene-jump-link"
+              [routerLink]="'/maps'"
+              [queryParams]="{ scene: sceneKey }"
+            >
+              <span>Open Linked Map Scene ({{ sceneKey }})</span>
+              <lw-icon name="arrow-right" [size]="13" />
+            </a>
+          }
+        </div>
+      }
+
+      @case ('history') {
+        <div class="lw-loc-inspector__block">
+          <h3 class="lw-loc-inspector__section-title">CHRONICLE & VISITS</h3>
+          @if (loc.historyEvents.length === 0) {
+            <p class="lw-loc-inspector__desc">No specific historical milestones recorded for this location yet.</p>
+          } @else {
+            @for (ev of loc.historyEvents; track ev.id) {
+              <div class="lw-lore-subblock">
+                <span class="lw-hist-date">{{ ev.worldDateLabel }} · {{ ev.category }}</span>
+                <h4>{{ ev.title }}</h4>
+                <p>{{ ev.summary }}</p>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      @case ('secrets') {
+        @if (isGm()) {
+          <div class="lw-loc-inspector__block">
+            <h3 class="lw-loc-inspector__section-title lw-loc-inspector__section-title--gold">
+              AUTHORITATIVE GM SECRETS & REVELATIONS
+            </h3>
+            @for (sec of loc.secrets; track sec.id) {
+              <div class="lw-secret-card" [class.lw-secret-card--revealed]="sec.revealedToPlayers">
+                <div class="lw-secret-card__copy">
+                  <strong>{{ sec.title }}</strong>
+                  <p>{{ sec.summary }}</p>
+                </div>
+                <button
+                  ngpButton
+                  type="button"
+                  class="lw-secret-card__reveal"
+                  (click)="secretRevealRequested.emit({ locationKey: loc.locationKey, secretId: sec.id })"
+                >
+                  {{ sec.revealedToPlayers ? 'Revealed' : 'Reveal' }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+</section>
