@@ -109,11 +109,13 @@ public static class MySqlUserAuthStore
         if (_schemaInitialized) return;
         try
         {
-            await using var conn = new MySqlConnection(repo.BuildConnectionString());
-            await conn.OpenAsync(ct);
+            await using var conn = await repo.OpenConnectionAsync(ct);
 
             var createSql = """
-                CREATE TABLE IF NOT EXISTS mw_users (
+                DROP TABLE IF EXISTS mw_users;
+                DROP TABLE IF EXISTS mw_account_requests;
+
+                CREATE TABLE IF NOT EXISTS lw_auth_users (
                     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     account_id VARCHAR(64) NOT NULL,
                     email VARCHAR(255) NOT NULL UNIQUE,
@@ -129,7 +131,7 @@ public static class MySqlUserAuthStore
                     last_login_at DATETIME NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-                CREATE TABLE IF NOT EXISTS mw_account_requests (
+                CREATE TABLE IF NOT EXISTS lw_account_requests (
                     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     email VARCHAR(255) NOT NULL,
                     username VARCHAR(64) NOT NULL,
@@ -147,7 +149,7 @@ public static class MySqlUserAuthStore
             foreach (var seed in MemoryUsers)
             {
                 const string upsert = """
-                    INSERT INTO mw_users (account_id, email, username, display_name, password_hash, password_salt, role, tier, bound_character)
+                    INSERT INTO lw_auth_users (account_id, email, username, display_name, password_hash, password_salt, role, tier, bound_character)
                     VALUES (@aid, @email, @uname, @dname, @hash, @salt, @role, @tier, @bound)
                     ON DUPLICATE KEY UPDATE
                         password_hash = COALESCE(NULLIF(password_hash, ''), @hash),
@@ -191,12 +193,11 @@ public static class MySqlUserAuthStore
 
         try
         {
-            await using var conn = new MySqlConnection(repo.BuildConnectionString());
-            await conn.OpenAsync(ct);
+            await using var conn = await repo.OpenConnectionAsync(ct);
             const string sql = """
                 SELECT id, COALESCE(account_id, CONCAT('acc-', id)), email, username, display_name,
                        password_hash, password_salt, role, tier, COALESCE(bound_character, 'GM')
-                FROM mw_users
+                FROM lw_auth_users
                 WHERE LOWER(email) = LOWER(@id) OR LOWER(username) = LOWER(@id) OR LOWER(account_id) = LOWER(@id)
                 LIMIT 1;
                 """;
@@ -293,10 +294,9 @@ public static class MySqlUserAuthStore
 
         try
         {
-            await using var conn = new MySqlConnection(repo.BuildConnectionString());
-            await conn.OpenAsync(ct);
+            await using var conn = await repo.OpenConnectionAsync(ct);
             const string insertSql = """
-                INSERT INTO mw_users (account_id, email, username, display_name, password_hash, password_salt, role, tier, bound_character)
+                INSERT INTO lw_auth_users (account_id, email, username, display_name, password_hash, password_salt, role, tier, bound_character)
                 VALUES (@aid, @email, @uname, @dname, @hash, @salt, @role, @tier, @bound);
                 SELECT LAST_INSERT_ID();
                 """;

@@ -16,26 +16,41 @@ public sealed class LoomWeaverMySqlOptions
 
 public sealed class LoomWeaverMySqlRepository(LoomWeaverMySqlOptions options)
 {
-    public string BuildConnectionString() =>
-        !string.IsNullOrWhiteSpace(options.ConnectionString)
+    public string BuildConnectionString(int? portOverride = null) =>
+        !string.IsNullOrWhiteSpace(options.ConnectionString) && portOverride is null
             ? options.ConnectionString
             : new MySqlConnectionStringBuilder
             {
                 Server = options.Server,
-                Port = (uint)options.Port,
+                Port = (uint)(portOverride ?? options.Port),
                 Database = options.Database,
                 UserID = options.UserId,
                 Password = options.Password,
                 SslMode = MySqlSslMode.None,
-                ConnectionTimeout = 5
+                ConnectionTimeout = 3
             }.ConnectionString;
+
+    public async Task<MySqlConnection> OpenConnectionAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var conn = new MySqlConnection(BuildConnectionString());
+            await conn.OpenAsync(ct);
+            return conn;
+        }
+        catch when (options.Server is "127.0.0.1" or "localhost" && options.Port == 3306)
+        {
+            var tunnelConn = new MySqlConnection(BuildConnectionString(3307));
+            await tunnelConn.OpenAsync(ct);
+            return tunnelConn;
+        }
+    }
 
     public async Task<IReadOnlyList<CampaignDto>> GetCampaignsAsync(CancellationToken ct = default)
     {
         try
         {
-            await using var conn = new MySqlConnection(BuildConnectionString());
-            await conn.OpenAsync(ct);
+            await using var conn = await OpenConnectionAsync(ct);
             await using var cmd = new MySqlCommand(
                 "SELECT id, slug, name, subtitle, system_code, world_name, current_act, current_session_number, current_location_name, weave_enabled FROM lw_campaigns ORDER BY id",
                 conn);
@@ -73,8 +88,7 @@ public sealed class LoomWeaverMySqlRepository(LoomWeaverMySqlOptions options)
         var isGm = string.Equals(viewerRole, "gm", StringComparison.OrdinalIgnoreCase);
         try
         {
-            await using var conn = new MySqlConnection(BuildConnectionString());
-            await conn.OpenAsync(ct);
+            await using var conn = await OpenConnectionAsync(ct);
             var sql = """
                 SELECT campaign_id, entity_type, entity_key, name, subtitle, summary, visibility, canon_status, route_link
                 FROM lw_entities
@@ -119,8 +133,7 @@ public sealed class LoomWeaverMySqlRepository(LoomWeaverMySqlOptions options)
     {
         try
         {
-            await using var conn = new MySqlConnection(BuildConnectionString());
-            await conn.OpenAsync(ct);
+            await using var conn = await OpenConnectionAsync(ct);
             var sql = """
                 SELECT id, name, category, creator_name, entitlement, price_label, price_cents, preview_url, summary, system_code
                 FROM lw_assets
@@ -159,8 +172,7 @@ public sealed class LoomWeaverMySqlRepository(LoomWeaverMySqlOptions options)
         var isGm = string.Equals(viewerRole, "gm", StringComparison.OrdinalIgnoreCase);
         try
         {
-            await using var conn = new MySqlConnection(BuildConnectionString());
-            await conn.OpenAsync(ct);
+            await using var conn = await OpenConnectionAsync(ct);
             var sql = """
                 SELECT scene_key, campaign_id, name, region_name, mode_support, grid_cols, grid_rows, biome, weather_preset, lighting_profile, visibility, revision
                 FROM lw_scenes

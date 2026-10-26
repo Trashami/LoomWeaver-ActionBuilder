@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="LoomWeaver.Server.csproj" />
   <Folder Name="/src/">
     <Project Path="src/LoomWeaver.Api/LoomWeaver.Api.csproj" />
     <Project Path="src/LoomWeaver.Domain/LoomWeaver.Domain.csproj" />
