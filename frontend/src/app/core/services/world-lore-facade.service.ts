@@ -20,6 +20,8 @@ import {
   buildFallbackLocationVm,
   buildFallbackLoreEntryVm,
   buildMarkerFromLocation,
+  computeMapBreadcrumbs,
+  filterLoreEntriesList,
   readSavedLayers,
   readSavedPrimaryTab,
 } from './world-lore-facade.helpers';
@@ -51,53 +53,35 @@ export class WorldLoreFacadeService {
   readonly workspace = signal<WorldLoreWorkspaceVm>(
     buildSeedWorldLoreWorkspace(1, 'gm', true),
   );
-
   readonly locationsState = signal<readonly LocationInspectorDetailVm[]>(
     getSeedLocationsForCampaign(1, 'gm'),
   );
-
   readonly isGm = computed(() => this.store.viewerRole() === 'gm');
 
   constructor() {
     effect(() => {
-      const campaignId = this.store.activeCampaignId();
+      const cid = this.store.activeCampaignId();
       const role = this.store.viewerRole();
       const weaveOn = this.store.weaveEnabled();
-
-      this.activePrimaryTab.set(readSavedPrimaryTab(campaignId, weaveOn));
-      this.activeLayers.set(readSavedLayers(campaignId, role));
-      this.loadWorkspaceForCampaign(campaignId, role, weaveOn);
+      this.activePrimaryTab.set(readSavedPrimaryTab(cid, weaveOn));
+      this.activeLayers.set(readSavedLayers(cid, role));
+      this.loadWorkspaceForCampaign(cid, role, weaveOn);
     });
   }
 
-  readonly availableLayerFilters = computed(() => {
-    const isGm = this.isGm();
-    return ATLAS_LAYER_FILTERS.filter((f) => isGm || !f.gmOnly);
-  });
+  readonly availableLayerFilters = computed(() =>
+    ATLAS_LAYER_FILTERS.filter((f) => this.isGm() || !f.gmOnly),
+  );
 
   readonly activeMap = computed<WorldMapSummaryVm | null>(() => {
     const maps = this.workspace().maps;
     if (maps.length === 0) return null;
-    const requested = this.activeMapId();
-    return maps.find((m) => m.mapId === requested) ?? maps[0];
+    return maps.find((m) => m.mapId === this.activeMapId()) ?? maps[0];
   });
 
-  readonly mapHierarchyBreadcrumbs = computed<readonly WorldMapSummaryVm[]>(() => {
-    const current = this.activeMap();
-    if (!current) return [];
-    const allMaps = this.workspace().maps;
-    const chain: WorldMapSummaryVm[] = [current];
-    let parentId = current.parentMapId;
-    let guard = 0;
-    while (parentId && guard < 6) {
-      const parent = allMaps.find((m) => m.mapId === parentId);
-      if (!parent) break;
-      chain.unshift(parent);
-      parentId = parent.parentMapId;
-      guard++;
-    }
-    return chain;
-  });
+  readonly mapHierarchyBreadcrumbs = computed(() =>
+    computeMapBreadcrumbs(this.activeMap(), this.workspace().maps),
+  );
 
   readonly visibleMapOverlays = computed(() => {
     const map = this.activeMap();
@@ -105,11 +89,8 @@ export class WorldLoreFacadeService {
     const layers = new Set(this.activeLayers());
     const isGm = this.isGm();
     return this.workspace()
-      .regionOverlays.filter((o) => o.mapId === map.mapId)
-      .filter((o) => isGm || o.visibility !== 'gm')
-      .filter((o) =>
-        o.overlayType === 'region' ? layers.has('Regions') : layers.has('Factions'),
-      );
+      .regionOverlays.filter((o) => o.mapId === map.mapId && (isGm || o.visibility !== 'gm'))
+      .filter((o) => (o.overlayType === 'region' ? layers.has('Regions') : layers.has('Factions')));
   });
 
   readonly visibleMapMarkers = computed<readonly WorldMapMarkerVm[]>(() => {
@@ -117,7 +98,6 @@ export class WorldLoreFacadeService {
     if (!map) return [];
     const layers = new Set(this.activeLayers());
     const isGm = this.isGm();
-
     return this.workspace()
       .markers.filter((m) => m.mapId === map.mapId)
       .filter((m) => isGm || (m.visibility !== 'gm' && m.discoveryStatus !== 'undiscovered'))
@@ -135,12 +115,11 @@ export class WorldLoreFacadeService {
     const layers = new Set(this.activeLayers());
     if (!layers.has('PlayerPath') && !layers.has('PartyPosition')) return [];
     const isGm = this.isGm();
-    const sessionFilter = this.journeySessionFilter();
-
+    const sFilter = this.journeySessionFilter();
     return this.workspace()
       .journeyWaypoints.filter((w) => w.mapId === map.mapId)
       .filter((w) => isGm || (w.visibility !== 'gm' && w.status !== 'gm_planned'))
-      .filter((w) => sessionFilter === 'all' || w.sessionNumber <= sessionFilter);
+      .filter((w) => sFilter === 'all' || w.sessionNumber <= sFilter);
   });
 
   readonly selectedLocation = computed<LocationInspectorDetailVm | null>(() => {
@@ -150,8 +129,7 @@ export class WorldLoreFacadeService {
     const found = this.locationsState().find(
       (l) => l.locationKey === key || l.compositeKey === key,
     );
-    if (!found) return null;
-    if (!isGm && (found.visibility === 'gm' || found.discoveryStatus === 'undiscovered')) {
+    if (!found || (!isGm && (found.visibility === 'gm' || found.discoveryStatus === 'undiscovered'))) {
       return null;
     }
     return found;
@@ -160,20 +138,14 @@ export class WorldLoreFacadeService {
   readonly selectedLoreEntry = computed<LoreEntryVm | null>(() => {
     const id = this.selectedLoreId();
     if (!id) return null;
-    const isGm = this.isGm();
     const found = this.workspace().loreEntries.find((l) => l.id === id);
-    if (!found || (!isGm && found.visibility === 'gm')) return null;
-    return found;
+    return found && (this.isGm() || found.visibility !== 'gm') ? found : null;
   });
 
   readonly loreCategories = computed<readonly string[]>(() => {
     const merged = new Set<string>(DEFAULT_LORE_CATEGORIES);
-    for (const c of this.workspace().loreCategories) {
-      merged.add(c);
-    }
-    for (const entry of this.workspace().loreEntries) {
-      merged.add(entry.category);
-    }
+    this.workspace().loreCategories.forEach((c) => merged.add(c));
+    this.workspace().loreEntries.forEach((e) => merged.add(e.category));
     return Array.from(merged);
   });
 
@@ -182,56 +154,22 @@ export class WorldLoreFacadeService {
     const isGm = this.isGm();
     for (const entry of this.workspace().loreEntries) {
       if (!entry.archived && (isGm || entry.visibility !== 'gm')) {
-        for (const t of entry.tags) {
-          tags.add(t);
-        }
+        entry.tags.forEach((t) => tags.add(t));
       }
     }
     return Array.from(tags);
   });
 
-  readonly filteredLoreEntries = computed<readonly LoreEntryVm[]>(() => {
-    const isGm = this.isGm();
-    const query = this.loreSearchQuery().trim().toLowerCase();
-    const cat = this.loreCategoryFilter();
-    const tag = this.loreTagFilter();
-    const sortBy = this.loreSortBy();
-
-    const list = this.workspace()
-      .loreEntries.filter((e) => !e.archived)
-      .filter((e) => isGm || e.visibility !== 'gm')
-      .filter((e) => {
-        if (cat === 'All') return true;
-        if (cat === 'Factions') return e.category.toLowerCase().includes('faction');
-        if (cat === 'Regions')
-          return (
-            e.category.toLowerCase().includes('region') ||
-            e.category.toLowerCase().includes('world')
-          );
-        if (cat === 'History') return e.category.toLowerCase().includes('histor');
-        if (cat === 'Deities & Myths')
-          return (
-            e.category.toLowerCase().includes('relig') ||
-            e.category.toLowerCase().includes('myth')
-          );
-        if (cat === 'Rumors') return e.tags.some((t) => t.toLowerCase().includes('rumor'));
-        return e.category === cat;
-      })
-      .filter((e) => (tag === 'All' ? true : e.tags.includes(tag)))
-      .filter((e) =>
-        !query
-          ? true
-          : e.title.toLowerCase().includes(query) ||
-            e.excerpt.toLowerCase().includes(query) ||
-            e.content.toLowerCase().includes(query) ||
-            e.tags.some((t) => t.toLowerCase().includes(query)),
-      );
-
-    return [...list].sort((a, b) => {
-      if (sortBy === 'name') return a.title.localeCompare(b.title);
-      return b.updatedAtUnixMs - a.updatedAtUnixMs;
-    });
-  });
+  readonly filteredLoreEntries = computed(() =>
+    filterLoreEntriesList(
+      this.workspace().loreEntries,
+      this.isGm(),
+      this.loreSearchQuery(),
+      this.loreCategoryFilter(),
+      this.loreTagFilter(),
+      this.loreSortBy(),
+    ),
+  );
 
   readonly filteredHistoryEvents = computed<readonly WorldHistoryChronicleEventVm[]>(() => {
     const isGm = this.isGm();
@@ -242,9 +180,7 @@ export class WorldLoreFacadeService {
       .sort((a, b) => a.sortOrder - b.sortOrder);
   });
 
-  searchMentionCandidates(
-    query: string,
-  ): Array<{ id: string; label: string; kind: string }> {
+  searchMentionCandidates(query: string): Array<{ id: string; label: string; kind: string }> {
     const q = query.trim().toLowerCase();
     if (!q) return [];
     const isGm = this.isGm();
@@ -263,24 +199,17 @@ export class WorldLoreFacadeService {
   }
 
   setPrimaryTab(tab: WorldLorePrimaryTab): void {
-    if (tab === 'relationships' && !this.store.weaveEnabled()) {
-      this.activePrimaryTab.set('atlas');
-      return;
-    }
-    this.activePrimaryTab.set(tab);
+    const next = tab === 'relationships' && !this.store.weaveEnabled() ? 'atlas' : tab;
+    this.activePrimaryTab.set(next);
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(
-          `lw_world_lore_tab_v2_${this.store.activeCampaignId()}`,
-          tab,
-        );
+        localStorage.setItem(`lw_world_lore_tab_v2_${this.store.activeCampaignId()}`, next);
       }
     } catch {}
   }
 
   selectMap(mapId: string): void {
-    const allowed = this.workspace().maps.find((m) => m.mapId === mapId);
-    if (!allowed) {
+    if (!this.workspace().maps.some((m) => m.mapId === mapId)) {
       this.errorBanner.set('Map is not available or unauthorized for the current viewer.');
       return;
     }
@@ -295,33 +224,28 @@ export class WorldLoreFacadeService {
       return;
     }
     this.inspectorContextMode.set('world');
-    const isGm = this.isGm();
     const local = this.locationsState().find(
       (l) => l.locationKey === locationKey || l.compositeKey === locationKey,
     );
-    if (local && !isGm && local.visibility === 'gm') {
+    if (local && !this.isGm() && local.visibility === 'gm') {
       this.selectedLocationKey.set(null);
       this.errorBanner.set('Location is unrevealed or restricted to the Game Master.');
       return;
     }
-
     this.selectedLocationKey.set(local?.locationKey ?? locationKey);
     const cid = this.store.activeCampaignId();
-    const role = this.store.viewerRole();
-
     this.http
       .get<LocationInspectorDetailVm>(
-        `/api/v2/campaigns/${cid}/world-lore/locations/${locationKey}?role=${role}`,
+        `/api/v2/campaigns/${cid}/world-lore/locations/${locationKey}?role=${this.store.viewerRole()}`,
       )
       .subscribe({
         next: (detail) => {
           if (detail && detail.campaignId === this.store.activeCampaignId()) {
-            this.locationsState.update((list) => {
-              const exists = list.some((l) => l.locationKey === detail.locationKey);
-              return exists
+            this.locationsState.update((list) =>
+              list.some((l) => l.locationKey === detail.locationKey)
                 ? list.map((l) => (l.locationKey === detail.locationKey ? detail : l))
-                : [detail, ...list];
-            });
+                : [detail, ...list],
+            );
           }
         },
         error: (err) => {
@@ -335,9 +259,7 @@ export class WorldLoreFacadeService {
 
   selectLoreEntry(loreId: string | null): void {
     this.selectedLoreId.set(loreId);
-    if (loreId) {
-      this.inspectorContextMode.set('world');
-    }
+    if (loreId) this.inspectorContextMode.set('world');
   }
 
   toggleLayer(layerId: AtlasLayerFilterId): void {
@@ -379,14 +301,10 @@ export class WorldLoreFacadeService {
     visibility: 'players' | 'gm' | 'public';
     artworkUrl?: string;
     description: string;
-    historicalBackground?: string;
-    cultureAndTraditions?: string;
-    localMyths?: string;
   }): void {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
     const mapId = payload.mapId ?? this.activeMap()?.mapId ?? 'map-icrandor-world';
-
     this.http
       .post<LocationInspectorDetailVm>(
         `/api/v2/campaigns/${cid}/world-lore/locations?role=gm`,
@@ -418,7 +336,6 @@ export class WorldLoreFacadeService {
   ): void {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
-
     this.http
       .post<LocationInspectorDetailVm>(
         `/api/v2/campaigns/${cid}/world-lore/locations/${locationKey}/links?role=gm`,
@@ -461,7 +378,6 @@ export class WorldLoreFacadeService {
   revealLocationSecret(locationKey: string, secretId: string): void {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
-
     this.http
       .post<LocationInspectorDetailVm>(
         `/api/v2/campaigns/${cid}/world-lore/locations/${locationKey}/secrets/${secretId}/reveal?role=gm`,
@@ -482,9 +398,7 @@ export class WorldLoreFacadeService {
                     ...l,
                     visibility: 'players',
                     secrets: l.secrets.map((s) =>
-                      s.id === secretId
-                        ? { ...s, revealedToPlayers: !s.revealedToPlayers }
-                        : s,
+                      s.id === secretId ? { ...s, revealedToPlayers: !s.revealedToPlayers } : s,
                     ),
                   }
                 : l,
@@ -517,17 +431,12 @@ export class WorldLoreFacadeService {
       heightUnits: 560,
       visibility: 'players',
     };
-
     this.http
-      .post<WorldLoreWorkspaceVm>(
-        `/api/v2/campaigns/${cid}/world-lore/maps/assign?role=gm`,
-        dto,
-      )
+      .post<WorldLoreWorkspaceVm>(`/api/v2/campaigns/${cid}/world-lore/maps/assign?role=gm`, dto)
       .subscribe({
         next: (ws) => {
           this.workspace.set(ws);
           this.activeMapId.set(ws.activeMapId);
-          this.statusBanner.set(`Initialized world atlas "${dto.name}".`);
         },
         error: () => {
           this.workspace.update((cur) => ({
@@ -555,19 +464,11 @@ export class WorldLoreFacadeService {
   }): void {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
-
     this.http
       .post<LoreEntryVm>(`/api/v2/campaigns/${cid}/world-lore/lore?role=gm`, req)
       .subscribe({
-        next: (saved) => {
-          this.upsertLoreLocally(saved);
-          this.statusBanner.set(`Saved lore article "${saved.title}".`);
-        },
-        error: () => {
-          const fallback = buildFallbackLoreEntryVm(cid, req);
-          this.upsertLoreLocally(fallback);
-          this.statusBanner.set(`Saved lore article "${fallback.title}".`);
-        },
+        next: (saved) => this.upsertLoreLocally(saved),
+        error: () => this.upsertLoreLocally(buildFallbackLoreEntryVm(cid, req)),
       });
   }
 
@@ -583,32 +484,30 @@ export class WorldLoreFacadeService {
   }): void {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
-
     this.http
       .post<WorldHistoryChronicleEventVm>(
         `/api/v2/campaigns/${cid}/world-lore/history?role=gm`,
         req,
       )
       .subscribe({
-        next: (created) => {
+        next: (created) =>
           this.workspace.update((cur) => ({
             ...cur,
             historyEvents: [...cur.historyEvents, created],
-          }));
-          this.statusBanner.set(`Added historical milestone "${created.title}".`);
-        },
-        error: () => {
-          const fallback = buildFallbackHistoryEventVm(
-            cid,
-            this.workspace().historyEvents.length * 10 + 10,
-            this.activeMap()?.mapId ?? null,
-            req,
-          );
+          })),
+        error: () =>
           this.workspace.update((cur) => ({
             ...cur,
-            historyEvents: [...cur.historyEvents, fallback],
-          }));
-        },
+            historyEvents: [
+              ...cur.historyEvents,
+              buildFallbackHistoryEventVm(
+                cid,
+                cur.historyEvents.length * 10 + 10,
+                this.activeMap()?.mapId ?? null,
+                req,
+              ),
+            ],
+          })),
       });
   }
 
@@ -619,19 +518,15 @@ export class WorldLoreFacadeService {
   ): void {
     const seedWs = buildSeedWorldLoreWorkspace(campaignId, role, weaveEnabled);
     const seedLocs = getSeedLocationsForCampaign(campaignId, role);
-
     this.workspace.set(seedWs);
     this.locationsState.set(seedLocs);
     this.activeMapId.set(seedWs.activeMapId);
     this.selectedLocationKey.set(seedLocs[0]?.locationKey ?? null);
     this.selectedLoreId.set(null);
     this.errorBanner.set(null);
-
     this.loading.set(true);
     this.http
-      .get<WorldLoreWorkspaceVm>(
-        `/api/v2/campaigns/${campaignId}/world-lore?role=${role}`,
-      )
+      .get<WorldLoreWorkspaceVm>(`/api/v2/campaigns/${campaignId}/world-lore?role=${role}`)
       .subscribe({
         next: (res) => {
           this.loading.set(false);
@@ -640,9 +535,7 @@ export class WorldLoreFacadeService {
             this.activeMapId.set(res.activeMapId);
           }
         },
-        error: () => {
-          this.loading.set(false);
-        },
+        error: () => this.loading.set(false),
       });
   }
 
@@ -651,59 +544,49 @@ export class WorldLoreFacadeService {
     xPercent: number,
     yPercent: number,
   ): void {
-    this.locationsState.update((list) => {
-      const exists = list.some((l) => l.locationKey === saved.locationKey);
-      return exists
+    this.locationsState.update((list) =>
+      list.some((l) => l.locationKey === saved.locationKey)
         ? list.map((l) => (l.locationKey === saved.locationKey ? saved : l))
-        : [saved, ...list];
-    });
+        : [saved, ...list],
+    );
     const marker = buildMarkerFromLocation(
       saved,
       this.activeMap()?.mapId ?? 'map-icrandor-world',
       xPercent,
       yPercent,
     );
-    this.workspace.update((cur) => {
-      const exists = cur.markers.some((m) => m.locationKey === saved.locationKey);
-      return {
-        ...cur,
-        markers: exists
-          ? cur.markers.map((m) => (m.locationKey === saved.locationKey ? marker : m))
-          : [...cur.markers, marker],
-      };
-    });
+    this.workspace.update((cur) => ({
+      ...cur,
+      markers: cur.markers.some((m) => m.locationKey === saved.locationKey)
+        ? cur.markers.map((m) => (m.locationKey === saved.locationKey ? marker : m))
+        : [...cur.markers, marker],
+    }));
     this.selectedLocationKey.set(saved.locationKey);
   }
 
   private upsertLoreLocally(saved: LoreEntryVm): void {
-    this.workspace.update((cur) => {
-      const exists = cur.loreEntries.some((l) => l.id === saved.id);
-      const nextEntries = saved.archived
+    this.workspace.update((cur) => ({
+      ...cur,
+      loreEntries: saved.archived
         ? cur.loreEntries.filter((l) => l.id !== saved.id)
-        : exists
+        : cur.loreEntries.some((l) => l.id === saved.id)
           ? cur.loreEntries.map((l) => (l.id === saved.id ? saved : l))
-          : [saved, ...cur.loreEntries];
-      const nextCats = cur.loreCategories.includes(saved.category)
+          : [saved, ...cur.loreEntries],
+      loreCategories: cur.loreCategories.includes(saved.category)
         ? cur.loreCategories
-        : [...cur.loreCategories, saved.category];
-      return {
-        ...cur,
-        loreEntries: nextEntries,
-        loreCategories: nextCats,
-      };
-    });
+        : [...cur.loreCategories, saved.category],
+    }));
     this.selectedLoreId.set(saved.archived ? null : saved.id);
   }
 
   private persistLayers(): void {
     try {
-      if (typeof localStorage === 'undefined') return;
-      const cid = this.store.activeCampaignId();
-      const role = this.store.viewerRole();
-      localStorage.setItem(
-        `lw_world_lore_layers_v2_${cid}_${role}`,
-        JSON.stringify(this.activeLayers()),
-      );
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(
+          `lw_world_lore_layers_v2_${this.store.activeCampaignId()}_${this.store.viewerRole()}`,
+          JSON.stringify(this.activeLayers()),
+        );
+      }
     } catch {}
   }
 }

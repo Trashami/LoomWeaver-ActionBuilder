@@ -165,6 +165,7 @@ mkdir -p "$RELEASE_DIR"
 tar -xzf /tmp/effectbuilder_as_is.tar.gz -C "$RELEASE_DIR"
 rm -f /tmp/effectbuilder_as_is.tar.gz
 
+rm -rf /var/www/effectbuilder/current
 ln -sfn "$RELEASE_DIR" /var/www/effectbuilder/current
 chown -R iamtrash:www-data /var/www/effectbuilder
 chmod -R 755 /var/www/effectbuilder

@@ -1,14 +1,31 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
-import { WeaveGraphEdge, WeaveGraphNode } from '../../../core/models/loomweaver.models';
 import { LoomWeaverStoreService } from '../../../core/services/loomweaver-store.service';
 import { WorldLoreFacadeService } from '../../../core/services/world-lore-facade.service';
-import { LwIconComponent } from '../icon/icon.component';
+
+export interface PositionedGraphNodeVm {
+  readonly id: string;
+  readonly label: string;
+  readonly subtitle: string;
+  readonly summary: string;
+  readonly type: string;
+  readonly x: number;
+  readonly y: number;
+  readonly secret: boolean;
+}
+
+export interface PositionedGraphEdgeVm {
+  readonly id: string;
+  readonly from: string;
+  readonly to: string;
+  readonly label: string;
+  readonly secret: boolean;
+}
 
 @Component({
   selector: 'lw-weave-relationships-graph',
   standalone: true,
-  imports: [CommonModule, LwIconComponent],
+  imports: [CommonModule],
   templateUrl: './weave-relationships-graph.component.html',
   styleUrl: './weave-relationships-graph.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -23,53 +40,77 @@ export class LwWeaveRelationshipsGraphComponent {
 
   readonly filterTypes = [
     { key: 'all', label: 'All Connections' },
-    { key: 'location', label: 'Locations' },
-    { key: 'npc', label: 'NPCs' },
-    { key: 'faction', label: 'Factions' },
-    { key: 'quest', label: 'Quests' },
-    { key: 'party', label: 'Party' }
+    { key: 'Location', label: 'Locations' },
+    { key: 'NPC', label: 'NPCs' },
+    { key: 'Faction', label: 'Factions' },
+    { key: 'Quest', label: 'Quests' },
+    { key: 'PlayerCharacter', label: 'Party' }
   ];
 
-  readonly visibleNodes = computed<WeaveGraphNode[]>(() => {
+  readonly visibleNodes = computed<PositionedGraphNodeVm[]>(() => {
     const filter = this.graphFilter();
-    const isGm = this.worldLore.isGm();
-    return this.store
-      .weaveNodes()
-      .filter((node) => (isGm ? true : !node.secret))
-      .filter((node) => (filter === 'all' ? true : node.type === filter));
+    const entities = this.store
+      .authorizedEntities()
+      .filter((e) => (filter === 'all' ? true : e.entityType === filter))
+      .slice(0, 12);
+
+    const cx = 450;
+    const cy = 230;
+    const rx = 310;
+    const ry = 165;
+    const count = Math.max(1, entities.length);
+
+    return entities.map((e, idx) => {
+      const angle = (idx / count) * Math.PI * 2 - Math.PI / 2;
+      return {
+        id: e.compositeKey,
+        label: e.name,
+        subtitle: e.subtitle,
+        summary: e.summary,
+        type: e.entityType,
+        x: Math.round(cx + Math.cos(angle) * rx),
+        y: Math.round(cy + Math.sin(angle) * ry),
+        secret: e.visibility === 'gm'
+      };
+    });
   });
 
-  readonly visibleEdges = computed<WeaveGraphEdge[]>(() => {
+  readonly visibleEdges = computed<PositionedGraphEdgeVm[]>(() => {
     const ids = new Set(this.visibleNodes().map((node) => node.id));
-    const isGm = this.worldLore.isGm();
     return this.store
-      .weaveEdges()
-      .filter((edge) => (isGm ? true : !edge.secret))
-      .filter((edge) => ids.has(edge.from) && ids.has(edge.to));
+      .authorizedGraphEdges()
+      .filter((edge) => ids.has(edge.sourceKey) && ids.has(edge.targetKey))
+      .map((edge, idx) => ({
+        id: `edge-${idx}-${edge.sourceKey}-${edge.targetKey}`,
+        from: edge.sourceKey,
+        to: edge.targetKey,
+        label: edge.label || edge.relationshipType,
+        secret: edge.visibility === 'gm'
+      }));
   });
 
-  readonly selectedNode = computed<WeaveGraphNode | null>(() => {
+  readonly selectedNode = computed<PositionedGraphNodeVm | null>(() => {
     const id = this.selectedNodeId();
     return this.visibleNodes().find((node) => node.id === id) ?? this.visibleNodes()[0] ?? null;
   });
 
-  nodeById(id: string): WeaveGraphNode | undefined {
+  nodeById(id: string): PositionedGraphNodeVm | undefined {
     return this.visibleNodes().find((node) => node.id === id);
   }
 
-  edgeMidX(edge: WeaveGraphEdge): number {
+  edgeMidX(edge: PositionedGraphEdgeVm): number {
     const from = this.nodeById(edge.from);
     const to = this.nodeById(edge.to);
     return from && to ? (from.x + to.x) / 2 : 0;
   }
 
-  edgeMidY(edge: WeaveGraphEdge): number {
+  edgeMidY(edge: PositionedGraphEdgeVm): number {
     const from = this.nodeById(edge.from);
     const to = this.nodeById(edge.to);
-    return from && to ? (from.x && to.x ? (from.y + to.y) / 2 : 0) : 0;
+    return from && to ? (from.y + to.y) / 2 : 0;
   }
 
-  selectGraphNode(node: WeaveGraphNode): void {
+  selectGraphNode(node: PositionedGraphNodeVm): void {
     this.selectedNodeId.set(node.id);
     const matchingLocation = this.worldLore
       .locationsState()
@@ -81,6 +122,8 @@ export class LwWeaveRelationshipsGraphComponent {
       );
     if (matchingLocation) {
       this.worldLore.selectLocation(matchingLocation.locationKey);
+    } else {
+      this.store.inspectEntity(node.id);
     }
   }
 }

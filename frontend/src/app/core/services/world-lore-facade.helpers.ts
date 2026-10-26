@@ -5,6 +5,7 @@ import {
   WorldHistoryChronicleEventVm,
   WorldLorePrimaryTab,
   WorldMapMarkerVm,
+  WorldMapSummaryVm,
 } from '../models/world-lore.models';
 
 export const DEFAULT_ACTIVE_LAYERS: readonly AtlasLayerFilterId[] = [
@@ -36,6 +37,60 @@ export const DEFAULT_LORE_CATEGORIES: readonly string[] = [
   'Myths & Legends',
   'Important Documents',
 ];
+
+export function computeMapBreadcrumbs(
+  current: WorldMapSummaryVm | null,
+  allMaps: readonly WorldMapSummaryVm[],
+): readonly WorldMapSummaryVm[] {
+  if (!current) return [];
+  const chain: WorldMapSummaryVm[] = [current];
+  let parentId = current.parentMapId;
+  let guard = 0;
+  while (parentId && guard < 6) {
+    const parent = allMaps.find((m) => m.mapId === parentId);
+    if (!parent) break;
+    chain.unshift(parent);
+    parentId = parent.parentMapId;
+    guard++;
+  }
+  return chain;
+}
+
+export function filterLoreEntriesList(
+  entries: readonly LoreEntryVm[],
+  isGm: boolean,
+  query: string,
+  cat: string,
+  tag: string,
+  sortBy: 'updated' | 'created' | 'name',
+): readonly LoreEntryVm[] {
+  const q = query.trim().toLowerCase();
+  const list = entries
+    .filter((e) => !e.archived && (isGm || e.visibility !== 'gm'))
+    .filter((e) => {
+      if (cat === 'All') return true;
+      const lower = e.category.toLowerCase();
+      if (cat === 'Factions') return lower.includes('faction');
+      if (cat === 'Regions') return lower.includes('region') || lower.includes('world');
+      if (cat === 'History') return lower.includes('histor');
+      if (cat === 'Deities & Myths') return lower.includes('relig') || lower.includes('myth');
+      if (cat === 'Rumors') return e.tags.some((t) => t.toLowerCase().includes('rumor'));
+      return e.category === cat;
+    })
+    .filter((e) => (tag === 'All' ? true : e.tags.includes(tag)))
+    .filter((e) =>
+      !q
+        ? true
+        : e.title.toLowerCase().includes(q) ||
+          e.excerpt.toLowerCase().includes(q) ||
+          e.content.toLowerCase().includes(q) ||
+          e.tags.some((t) => t.toLowerCase().includes(q)),
+    );
+
+  return [...list].sort((a, b) =>
+    sortBy === 'name' ? a.title.localeCompare(b.title) : b.updatedAtUnixMs - a.updatedAtUnixMs,
+  );
+}
 
 export function buildFallbackLocationVm(
   cid: number,
@@ -198,12 +253,8 @@ export function readSavedPrimaryTab(
     const saved = localStorage.getItem(
       `lw_world_lore_tab_v2_${campaignId}`,
     ) as WorldLorePrimaryTab | null;
-    if (saved === 'atlas' || saved === 'lore' || saved === 'history') {
-      return saved;
-    }
-    if (saved === 'relationships' && weaveEnabled) {
-      return 'relationships';
-    }
+    if (saved === 'atlas' || saved === 'lore' || saved === 'history') return saved;
+    if (saved === 'relationships' && weaveEnabled) return 'relationships';
   } catch {}
   return 'atlas';
 }

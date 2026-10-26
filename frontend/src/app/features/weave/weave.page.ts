@@ -15,7 +15,7 @@ import {
   LwWeaveRelationshipsGraphComponent,
   LwWorldAtlasComponent,
   LwWorldHistoryComponent,
-} from '../../shared/ui';
+} from '../../shared/ui/public-api';
 
 @Component({
   selector: 'app-weave-page',
