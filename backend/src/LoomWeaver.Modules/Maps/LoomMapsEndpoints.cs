@@ -1,4 +1,5 @@
 using LoomWeaver.Domain;
+using LoomWeaver.Modules.Maps.Features.SaveScene;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -11,6 +12,8 @@ public static class LoomMapsEndpoints
 
     public static void MapLoomMapsEndpoints(this IEndpointRouteBuilder group)
     {
+        group.MapLoomMapsStudioStage1Endpoints();
+
         group.MapGet("/campaigns/{campaignId:int}/maps/{sceneKey}/scene-graph", (
             int campaignId,
             string sceneKey,

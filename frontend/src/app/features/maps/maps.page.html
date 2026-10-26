@@ -1,14 +1,40 @@
 <div class="lw-page">
   <lw-panel
-    eyebrow="Module 2 · Babylon.js 2D/3D Map Engine"
-    title="LoomMaps · Terrain, Water Splines, Stamping, Scatter & 2.5D Lighting"
-    subtitle="Interactive Babylon.js WebGL stage backed by a single canonical scene graph. Click anywhere on the map canvas to apply the active brush or stamp."
+    eyebrow="Module 2 · LoomMaps Stage 1 Studio Foundation"
+    title="LoomMaps · Multi-Level Battlemap & World Atlas Studio"
+    [subtitle]="studio.saveStatusBanner()"
     icon="map"
     [elevated]="true">
     <div panelActions>
       <a class="lw-inline-btn" routerLink="/arcane-screen">Push Scene to Arcane Screen</a>
       <a class="lw-inline-btn" routerLink="/encounters">Bind Encounter</a>
     </div>
+
+    <lw-map-studio-ribbon
+      [mapTitle]="studio.mapTitle()"
+      [mapScope]="studio.gridConfig().mapScope"
+      [renderMode]="renderMode()"
+      [levels]="studio.levels()"
+      [activeLevelIndex]="studio.activeLevelIndex()"
+      [ghostLowerFloors]="studio.ghostLowerFloors()"
+      [testTokenSandbox]="studio.testTokenSandbox()"
+      [canUndo]="history.canUndo()"
+      [canRedo]="history.canRedo()"
+      [undoCount]="history.undoCount()"
+      [redoCount]="history.redoCount()"
+      [lastHistoryLabel]="history.lastActionLabel()"
+      [saving]="studio.savingRevision()"
+      (titleChanged)="studio.mapTitle.set($event)"
+      (scopeChanged)="studio.gridConfig.update(g => ({ ...g, mapScope: $event }))"
+      (renderModeChanged)="setRenderMode($event)"
+      (levelSelected)="studio.activeLevelIndex.set($event)"
+      (addLevelRequested)="studio.addUpperLevel()"
+      (ghostModeToggled)="studio.ghostLowerFloors.set(!studio.ghostLowerFloors())"
+      (testTokenToggled)="studio.testTokenSandbox.set(!studio.testTokenSandbox())"
+      (undoRequested)="undoLastCommand()"
+      (redoRequested)="redoLastCommand()"
+      (openCatalogRequested)="showCatalogSection.set(!showCatalogSection())"
+      (saveRevisionRequested)="saveSceneRevision()" />
 
     <div class="lw-top-controls">
       <div class="lw-scene-tabs">
@@ -46,6 +72,8 @@
         <div class="lw-canvas-hud">
           <lw-badge [label]="renderMode()" tone="gold" />
           <lw-badge [label]="'Rev ' + sceneGraph().revision" tone="emerald" />
+          <lw-badge [label]="'Level L' + studio.activeLevelIndex()" tone="gold" />
+          <lw-badge [label]="'Grid: ' + studio.gridConfig().gridType + ' (' + studio.gridConfig().gridSizePx + 'px)'" tone="neutral" />
           <lw-badge [label]="'Babylon Meshes: ' + stage.activeInstanceCount()" tone="neutral" />
           <lw-badge [label]="stage.fps() + ' FPS · Profile: ' + store.qualityProfile()" tone="neutral" />
           <lw-badge
@@ -98,8 +126,45 @@
           </div>
         </div>
       </div>
+
+      <lw-map-layers-drawer
+        [layers]="studio.layers()"
+        [activeLayerId]="studio.activeLayerId()"
+        [stamps]="sceneGraph().stamps"
+        [lights]="sceneGraph().lights"
+        [selectedStampId]="studio.selectedStampId()"
+        [selectedOcclusionMode]="studio.selectedOcclusionMode()"
+        [gridConfig]="studio.gridConfig()"
+        (layerSelected)="studio.activeLayerId.set($event)"
+        (layerVisibilityToggled)="studio.toggleLayerVisibility($event)"
+        (layerLockToggled)="studio.toggleLayerLock($event)"
+        (layerOpacityChanged)="studio.updateLayerOpacity($event.layerId, $event.opacityPercent)"
+        (layerBlendChanged)="studio.updateLayerBlendMode($event.layerId, $event.blendMode)"
+        (addCustomLayerRequested)="studio.addCustomLayer()"
+        (stampSelected)="studio.selectedStampId.set($event)"
+        (stampTransformChanged)="updateStampTransform($event)"
+        (stampDeleted)="deleteStampById($event)"
+        (occlusionModeChanged)="studio.selectedOcclusionMode.set($event)"
+        (gridConfigChanged)="studio.gridConfig.set($event)" />
     </div>
   </lw-panel>
+
+  @if (showCatalogSection()) {
+    <lw-panel
+      eyebrow="LoomMaps Stage 1 · Starting Environments & Reorganized /map-assets Library"
+      title="Basemap Presets & 3D Light-Aware Stamp Browser"
+      subtitle="Select a canon starting environment or equip a 2D/3D linked stamp from the reorganized /map-assets library, then click anywhere on the canvas to place it."
+      icon="Layers"
+    >
+      <lw-map-preset-browser
+        [presets]="studio.presets()"
+        [catalogAssets]="studio.catalogAssets()"
+        [activePresetId]="activePresetId()"
+        [activeCatalogAssetId]="activeCatalogAsset()?.id ?? ''"
+        (presetSelected)="applyPresetTemplate($event)"
+        (catalogAssetSelected)="equipCatalogAsset($event)" />
+    </lw-panel>
+  }
 
   <lw-panel
     eyebrow="Multi-Octave Terrain & Biome Brush Engine"

@@ -20,11 +20,21 @@ import {
   LwBadgeComponent,
   LwButtonComponent,
   LwIconComponent,
+  LwMapLayersDrawerComponent,
+  LwMapPresetBrowserComponent,
+  LwMapStudioRibbonComponent,
   LwMapToolPanelComponent,
   LwPanelComponent,
   LwRulesOptionSelectorComponent,
   RulesOptionItem,
 } from '../../shared/ui/public-api';
+import { MapHistoryEngineService } from './application/map-history-engine.service';
+import { MapStudioStoreService } from './application/map-studio-store.service';
+import {
+  MapCatalogAssetItem,
+  MapPresetTemplate,
+  MapStudioSnapshot,
+} from './application/map-studio.models';
 import {
   MAP_STUDIO_TOOLS,
   MapCommandEntry,
@@ -45,6 +55,9 @@ import { BabylonMapStageService } from './engine/rendering/babylon-map-stage.ser
     LwIconComponent,
     LwAssetCardComponent,
     LwMapToolPanelComponent,
+    LwMapStudioRibbonComponent,
+    LwMapLayersDrawerComponent,
+    LwMapPresetBrowserComponent,
     LwRulesOptionSelectorComponent,
   ],
   templateUrl: './maps.page.html',
@@ -57,6 +70,12 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
   readonly stage = inject(BabylonMapStageService);
+  readonly studio = inject(MapStudioStoreService);
+  readonly history = inject(MapHistoryEngineService);
+
+  readonly activePresetId = signal<string>('preset-cinth-ballroom');
+  readonly activeCatalogAsset = signal<MapCatalogAssetItem | null>(null);
+  readonly showCatalogSection = signal<boolean>(true);
 
   readonly biomePresets = [
     'Gwaedhellain Poisoned Canopy',
@@ -206,8 +225,24 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     this.stage.dispose();
   }
 
+  private captureCurrentSnapshot(label: string): MapStudioSnapshot {
+    return {
+      label,
+      timestamp: `Rev ${this.sceneGraph().revision}`,
+      sceneGraph: this.sceneGraph(),
+      layers: this.studio.layers(),
+      activeLevelIndex: this.studio.activeLevelIndex(),
+    };
+  }
+
+  private recordHistoryBeforeEdit(label: string): void {
+    this.history.pushSnapshot(this.captureCurrentSnapshot(label));
+  }
+
   selectScene(sceneKey: string, name: string, biome: string): void {
+    this.recordHistoryBeforeEdit(`Switch Scene -> ${name}`);
     this.selectedSceneKey.set(sceneKey);
+    this.studio.mapTitle.set(name);
     this.sceneGraph.update((cur) => {
       const next = {
         ...cur,
@@ -219,6 +254,32 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       this.stage.syncSceneGraph(next);
       return next;
     });
+  }
+
+  applyPresetTemplate(preset: MapPresetTemplate): void {
+    this.recordHistoryBeforeEdit(`Apply Preset -> ${preset.name}`);
+    this.activePresetId.set(preset.id);
+    this.studio.mapTitle.set(preset.name);
+    this.studio.gridConfig.update((g) => ({ ...g, mapScope: preset.mapScope }));
+    this.sceneGraph.update((cur) => {
+      const next: MapSceneGraphState = {
+        ...cur,
+        name: preset.name,
+        biome: preset.baseBiome,
+        revision: cur.revision + 1,
+        scatterSeed: cur.scatterSeed + 29,
+      };
+      this.stage.syncSceneGraph(next);
+      return next;
+    });
+  }
+
+  equipCatalogAsset(asset: MapCatalogAssetItem): void {
+    this.activeCatalogAsset.set(asset);
+    this.activeToolId.set('stamps');
+    this.studio.saveStatusBanner.set(
+      `Equipped '${asset.name}' (${asset.assetType}, ${asset.defaultHeightFt}ft). Click map canvas to place.`,
+    );
   }
 
   setRenderMode(mode: string): void {
@@ -257,6 +318,13 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
 
   applyCanvasStrokeAt(x: number, z: number): void {
     const tool = this.activeToolId();
+    const equipped = this.activeCatalogAsset();
+    const snap = this.studio.gridConfig().snapToGrid;
+    const px = snap ? Math.round(x * 2) / 2 : x;
+    const pz = snap ? Math.round(z * 2) / 2 : z;
+
+    this.recordHistoryBeforeEdit(`Tool [${tool}] at (${px}, ${pz})`);
+
     this.sceneGraph.update((cur) => {
       const nextRev = cur.revision + 1;
       let stamps = cur.stamps;
@@ -265,28 +333,33 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       let scatterSeed = cur.scatterSeed;
 
       if (tool === 'stamps' || tool === 'walls') {
+        const newStampId = `st-${nextRev}`;
         stamps = [
           ...cur.stamps,
           {
-            id: `st-${nextRev}`,
-            label: tool === 'walls' ? 'Obsidian Wall Segment' : 'Gothic Arch Stamp',
+            id: newStampId,
+            label:
+              tool === 'walls'
+                ? 'Obsidian Wall Segment'
+                : (equipped?.name ?? 'Gothic Arch Stamp'),
             category: 'Architecture',
-            x,
-            z,
-            scale: 1.15,
+            x: px,
+            z: pz,
+            scale: equipped?.defaultScale ?? 1.15,
             rotationY: (nextRev % 6) * 0.5,
             colorHex: tool === 'walls' ? '#6c8796' : '#d4a853',
           },
         ];
+        this.studio.selectedStampId.set(newStampId);
       } else if (tool === 'lighting') {
         lights = [
           ...cur.lights,
           {
             id: `lt-${nextRev}`,
             label: `Brazier Point Light #${nextRev}`,
-            x,
+            x: px,
             y: 4.5,
-            z,
+            z: pz,
             range: Math.max(8, this.brushRadius() * 3),
             intensity: 1.35,
             colorHex: '#ffae52',
@@ -298,7 +371,7 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
           waterSplines = [
             {
               ...first,
-              points: [...first.points, [x, 0.14, z]],
+              points: [...first.points, [px, 0.14, pz]],
             },
           ];
         }
@@ -320,7 +393,7 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
           id: `cmd-${nextRev}`,
           timestamp: `Rev ${nextRev}`,
           toolId: tool,
-          summary: `Applied [${tool}] at (${x}, ${z}) on ${cur.name}`,
+          summary: `Applied [${tool}] at (${px}, ${pz}) on Level L${this.studio.activeLevelIndex()}`,
         },
         ...logs.slice(0, 5),
       ]);
@@ -328,18 +401,65 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  undoLastCommand(): void {
+  updateStampTransform(change: { stampId: string; scale: number; rotationY: number }): void {
+    this.recordHistoryBeforeEdit(`Transform Stamp ${change.stampId}`);
     this.sceneGraph.update((cur) => {
-      if (cur.stamps.length <= 2) return cur;
       const updated: MapSceneGraphState = {
         ...cur,
-        revision: Math.max(1, cur.revision - 1),
-        stamps: cur.stamps.slice(0, -1),
+        revision: cur.revision + 1,
+        stamps: cur.stamps.map((s) =>
+          s.id === change.stampId
+            ? { ...s, scale: change.scale, rotationY: change.rotationY }
+            : s,
+        ),
       };
       this.stage.syncSceneGraph(updated);
       return updated;
     });
-    this.commandLog.update((list) => (list.length > 1 ? list.slice(1) : list));
+  }
+
+  deleteStampById(stampId: string): void {
+    this.recordHistoryBeforeEdit(`Delete Stamp ${stampId}`);
+    this.sceneGraph.update((cur) => {
+      const updated: MapSceneGraphState = {
+        ...cur,
+        revision: cur.revision + 1,
+        stamps: cur.stamps.filter((s) => s.id !== stampId),
+      };
+      this.stage.syncSceneGraph(updated);
+      return updated;
+    });
+  }
+
+  undoLastCommand(): void {
+    const prev = this.history.undo(this.captureCurrentSnapshot('Current State'));
+    if (prev) {
+      this.sceneGraph.set(prev.sceneGraph);
+      this.studio.layers.set(prev.layers);
+      this.studio.activeLevelIndex.set(prev.activeLevelIndex);
+      this.stage.syncSceneGraph(prev.sceneGraph);
+    }
+  }
+
+  redoLastCommand(): void {
+    const next = this.history.redo(this.captureCurrentSnapshot('Current State'));
+    if (next) {
+      this.sceneGraph.set(next.sceneGraph);
+      this.studio.layers.set(next.layers);
+      this.studio.activeLevelIndex.set(next.activeLevelIndex);
+      this.stage.syncSceneGraph(next.sceneGraph);
+    }
+  }
+
+  saveSceneRevision(): void {
+    this.studio.saveAuthoritativeRevision(
+      this.selectedSceneKey(),
+      this.sceneGraph().revision,
+      this.store.viewerRole(),
+      (newRev) => {
+        this.sceneGraph.update((cur) => ({ ...cur, revision: newRev }));
+      },
+    );
   }
 
   applyHeightmapBiomeSculpt(): void {

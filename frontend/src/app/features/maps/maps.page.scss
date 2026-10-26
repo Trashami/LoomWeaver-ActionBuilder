@@ -56,11 +56,12 @@
 
 .lw-studio-layout {
   display: grid;
-  grid-template-columns: 310px 1fr;
-  gap: 1rem;
+  grid-template-columns: 295px 1fr 315px;
+  gap: 0.9rem;
+  align-items: start;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1280px) {
   .lw-studio-layout {
     grid-template-columns: 1fr;
   }
