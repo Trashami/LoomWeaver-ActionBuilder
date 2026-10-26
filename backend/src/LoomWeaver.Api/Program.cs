@@ -70,6 +70,8 @@ namespace LoomWeaver.Api
 
                     var isPublicAuthOrHealth =
                         path.EndsWith("/health", StringComparison.OrdinalIgnoreCase) ||
+                        path.EndsWith("/effects/studio", StringComparison.OrdinalIgnoreCase) ||
+                        path.EndsWith("/effects/emitters", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/login", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/register", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/google", StringComparison.OrdinalIgnoreCase) ||

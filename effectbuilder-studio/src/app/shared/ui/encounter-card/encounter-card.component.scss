@@ -1,0 +1,94 @@
+:host {
+  display: block;
+}
+
+.lw-encounter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+  border-radius: var(--lw-radius-lg);
+  background: var(--lw-bg-surface);
+  border: 1px solid var(--lw-border-subtle);
+  transition: border-color 150ms ease;
+
+  &:hover {
+    border-color: var(--lw-border-gold);
+  }
+}
+
+.lw-encounter-card--active {
+  border-color: var(--lw-accent-gold);
+  background: var(--lw-accent-gold-soft);
+}
+
+.lw-encounter-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lw-encounter-card__act {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lw-accent-gold);
+}
+
+.lw-encounter-card__title {
+  margin: 0.15rem 0 0;
+  font-family: var(--lw-font-display);
+  font-size: 1rem;
+  color: var(--lw-text-primary);
+}
+
+.lw-encounter-card__badges {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.lw-encounter-card__summary {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--lw-text-secondary);
+  line-height: 1.45;
+}
+
+.lw-encounter-card__meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.76rem;
+  color: var(--lw-text-muted);
+  flex-wrap: wrap;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+}
+
+.lw-encounter-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--lw-border-subtle);
+  flex-wrap: wrap;
+}
+
+.lw-encounter-card__map-link {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--lw-accent-emerald);
+}
+
+.lw-encounter-card__actions {
+  display: flex;
+  gap: 0.4rem;
+}

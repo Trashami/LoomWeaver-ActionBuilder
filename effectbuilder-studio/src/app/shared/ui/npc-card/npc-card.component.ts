@@ -1,0 +1,58 @@
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { NgpAvatar, NgpAvatarFallback, NgpAvatarImage } from 'ng-primitives/avatar';
+import { NgpButton } from 'ng-primitives/button';
+import { AudienceVisibility } from '../../../core/models/loomweaver.models';
+import { LwBadgeComponent, LwBadgeTone } from '../badge/badge.component';
+import { LwButtonComponent } from '../button/button.component';
+
+export interface NpcCardVm {
+  readonly compositeKey: string;
+  readonly name: string;
+  readonly title: string;
+  readonly faction: string;
+  readonly locationName: string;
+  readonly disposition: 'Friendly' | 'Guarded' | 'Deceptive' | 'Hostile';
+  readonly attitudeLabel?: string;
+  readonly avatarUrl?: string;
+  readonly summary: string;
+  readonly gmSecret?: string;
+  readonly visibility: AudienceVisibility;
+}
+
+@Component({
+  selector: 'lw-npc-card',
+  standalone: true,
+  imports: [NgpButton, NgpAvatar, NgpAvatarFallback, NgpAvatarImage, LwBadgeComponent, LwButtonComponent],
+  templateUrl: './npc-card.component.html',
+  styleUrl: './npc-card.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class LwNpcCardComponent {
+  readonly npc = input.required<NpcCardVm>();
+  readonly variant = input<'dashboard-row' | 'compact' | 'standard' | 'detailed'>('standard');
+  readonly showGmSecret = input<boolean>(false);
+  readonly selected = input<boolean>(false);
+
+  readonly npcSelected = output<NpcCardVm>();
+  readonly spawnRequested = output<NpcCardVm>();
+
+  readonly dispositionTone = computed<LwBadgeTone>(() => {
+    switch (this.npc().disposition) {
+      case 'Friendly':
+        return 'emerald';
+      case 'Deceptive':
+        return 'gold';
+      case 'Hostile':
+        return 'crimson';
+      default:
+        return 'neutral';
+    }
+  });
+
+  readonly initials = computed(() => {
+    const parts = (this.npc().name || 'N').trim().split(/\s+/);
+    return parts.length >= 2
+      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase();
+  });
+}

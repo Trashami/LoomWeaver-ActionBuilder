@@ -7,6 +7,7 @@ using LoomWeaver.Modules.Audio;
 using LoomWeaver.Modules.Auth;
 using LoomWeaver.Modules.Characters;
 using LoomWeaver.Modules.Dice;
+using LoomWeaver.Modules.EffectStudio;
 using LoomWeaver.Modules.Encounters;
 using LoomWeaver.Modules.Knowledge;
 using LoomWeaver.Modules.Maps;
@@ -31,6 +32,7 @@ public static class LoomWeaverEndpoints
             api.MapLoomMapsEndpoints();
             api.MapCombatEncounterEndpoints();
             api.MapActionAndEffectEndpoints();
+            api.MapEffectStudioEndpoints();
             api.MapDiceForgeEndpoints();
             api.MapAudioAmbienceEndpoints();
             api.MapCampaignAnalyticsEndpoints();

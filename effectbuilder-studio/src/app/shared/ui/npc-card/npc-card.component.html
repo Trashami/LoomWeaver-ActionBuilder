@@ -1,0 +1,76 @@
+@let n = npc();
+@if (variant() === 'dashboard-row') {
+  <button
+    ngpButton
+    type="button"
+    class="lw-npc-row"
+    [class.lw-npc-row--selected]="selected()"
+    (click)="npcSelected.emit(n)"
+  >
+    <div
+      ngpAvatar
+      class="lw-npc-row__portrait"
+      [class.lw-npc-row__portrait--hostile]="n.disposition === 'Hostile'"
+    >
+      @if (n.avatarUrl) {
+        <img ngpAvatarImage [src]="n.avatarUrl" [alt]="n.name" />
+      } @else {
+        <span ngpAvatarFallback>{{ initials() }}</span>
+      }
+    </div>
+    <div class="lw-npc-row__info">
+      <strong class="lw-npc-row__name">{{ n.name }}</strong>
+      <span class="lw-npc-row__role">{{ n.title }}</span>
+      <small
+        class="lw-npc-row__attitude"
+        [class.lw-npc-row__attitude--hostile]="n.disposition === 'Hostile'"
+      >
+        {{ n.attitudeLabel || ('Neutral · ' + n.disposition) }}
+      </small>
+    </div>
+  </button>
+} @else {
+  <article
+    class="lw-npc-card"
+    [attr.data-variant]="variant()"
+    [class.lw-npc-card--selected]="selected()">
+    <div class="lw-npc-card__header">
+      <div class="lw-npc-card__id" (click)="npcSelected.emit(n)">
+        <span ngpAvatar class="lw-npc-card__avatar">
+          <span ngpAvatarFallback>{{ initials() }}</span>
+        </span>
+        <div>
+          <h4 class="lw-npc-card__name">{{ n.name }}</h4>
+          <span class="lw-npc-card__title">{{ n.title }} · {{ n.faction }}</span>
+        </div>
+      </div>
+      <div class="lw-npc-card__badges">
+        <lw-badge [label]="n.disposition" [tone]="dispositionTone()" />
+        <lw-badge [label]="n.locationName" tone="neutral" />
+      </div>
+    </div>
+
+    @if (variant() !== 'compact') {
+      <p class="lw-npc-card__summary">{{ n.summary }}</p>
+    }
+
+    @if (variant() === 'detailed' && showGmSecret() && n.gmSecret; as secret) {
+      <div class="lw-npc-card__secret">
+        <lw-badge label="GM Canon Secret" tone="gm" />
+        <span>{{ secret }}</span>
+      </div>
+    }
+
+    <div class="lw-npc-card__footer">
+      <code>{{ n.compositeKey }}</code>
+      <div class="lw-npc-card__actions">
+        <lw-button variant="ghost" size="sm" (pressed)="npcSelected.emit(n)">
+          Inspect
+        </lw-button>
+        <lw-button variant="secondary" size="sm" (pressed)="spawnRequested.emit(n)">
+          Send to VTT
+        </lw-button>
+      </div>
+    </div>
+  </article>
+}

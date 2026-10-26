@@ -1,0 +1,107 @@
+<section class="lw-fx-timeline" aria-label="Multi-Track Visual Effect Timeline">
+  <!-- Left Track Header & Controls Column -->
+  <div class="lw-fx-timeline__left">
+    <div class="lw-fx-timeline__transport">
+      <span class="lw-fx-timeline__title">Timeline</span>
+      <button
+        ngpButton
+        type="button"
+        class="lw-fx-play-btn"
+        [attr.aria-label]="isPlaying() ? 'Pause Playback' : 'Start Playback'"
+        (click)="playToggled.emit()">
+        <lw-icon [name]="isPlaying() ? 'pause' : 'play'" [size]="15" />
+      </button>
+      <span class="lw-fx-time-readout">
+        {{ formatTime(playheadSeconds()) }} / {{ formatTime(totalDurationSeconds()) }}
+      </span>
+    </div>
+
+    <div class="lw-fx-timeline__track-labels">
+      @for (track of tracks(); track track.id) {
+        <div
+          class="lw-fx-track-row-label"
+          [class.lw-fx-track-row-label--selected]="selectedTrackId() === track.id"
+          (click)="trackSelected.emit(track.id)">
+          <button
+            ngpButton
+            type="button"
+            class="lw-fx-vis-btn"
+            [class.lw-fx-vis-btn--off]="!track.visible"
+            aria-label="Toggle Track Visibility"
+            (click)="$event.stopPropagation(); trackVisibilityToggled.emit(track.id)">
+            <lw-icon [name]="track.visible ? 'eye' : 'eye-off'" [size]="14" />
+          </button>
+          <button
+            ngpButton
+            type="button"
+            class="lw-fx-expand-btn"
+            aria-label="Expand Track Keyframes"
+            (click)="$event.stopPropagation(); trackExpandedToggled.emit(track.id)">
+            <span>+</span>
+          </button>
+          <span class="lw-fx-track-name">{{ track.label }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right Timeline Ruler & Clips Lane -->
+  <div class="lw-fx-timeline__right" #lanesContainer (click)="onRulerClick($event, lanesContainer)">
+    <!-- Ruler Marks (0s .. 5s) -->
+    <div class="lw-fx-ruler">
+      @for (sec of timeMarkers(); track sec) {
+        <div
+          class="lw-fx-ruler__mark"
+          [style.left.%]="(sec / totalDurationSeconds()) * 100">
+          <span class="lw-fx-ruler__label">{{ sec }}s</span>
+        </div>
+      }
+    </div>
+
+    <!-- Track Clip Lanes -->
+    <div class="lw-fx-lanes">
+      @for (track of tracks(); track track.id) {
+        <div
+          class="lw-fx-lane"
+          [class.lw-fx-lane--selected]="selectedTrackId() === track.id"
+          [class.lw-fx-lane--muted]="!track.visible"
+          (click)="trackSelected.emit(track.id)">
+          @if (track.trackType === 'Audio') {
+            <div
+              class="lw-fx-audio-wave"
+              [style.left.%]="trackLeftPct(track)"
+              [style.width.%]="trackWidthPct(track)">
+              <svg viewBox="0 0 400 22" preserveAspectRatio="none" class="lw-fx-wave-svg">
+                <path
+                  d="M0,11 Q12,3 24,11 T48,11 Q62,1 76,11 T104,11 Q120,2 136,11 T168,11 Q185,1 202,11 T236,11 Q255,3 274,11 T310,11 Q330,5 350,11 T400,11"
+                  fill="none"
+                  stroke="#a855f7"
+                  stroke-width="3" />
+                <path
+                  d="M0,11 Q12,18 24,11 T48,11 Q62,20 76,11 T104,11 Q120,19 136,11 T168,11 Q185,21 202,11 T236,11 Q255,18 274,11 T310,11 Q330,16 350,11 T400,11"
+                  fill="none"
+                  stroke="#c084fc"
+                  stroke-width="2"
+                  opacity="0.75" />
+              </svg>
+            </div>
+          } @else {
+            <div
+              class="lw-fx-clip-bar"
+              [style.left.%]="trackLeftPct(track)"
+              [style.width.%]="trackWidthPct(track)"
+              [style.--clip-color]="track.colorHex"
+              [style.--clip-accent]="track.accentHex">
+              <span class="lw-fx-clip-bar__streak"></span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Red Playhead Vertical Line & Handle -->
+    <div class="lw-fx-playhead" [style.left.%]="playheadPercent()">
+      <span class="lw-fx-playhead__knob"></span>
+    </div>
+  </div>
+</section>

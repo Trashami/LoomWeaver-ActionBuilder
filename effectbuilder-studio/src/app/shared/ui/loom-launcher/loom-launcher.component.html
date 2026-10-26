@@ -1,0 +1,75 @@
+@if (store.loomDrawerOpen()) {
+  <section class="lw-loom-drawer" aria-label="The Loom Campaign Memory Assistant">
+    <header class="lw-loom-drawer__header">
+      <div class="lw-loom-drawer__brand">
+        <div>
+          <h3 class="lw-loom-drawer__title">The Loom · Campaign Memory</h3>
+          <span class="lw-loom-drawer__subtitle">
+            Strict zero-generation recall · Scoped to {{ store.viewerRole() === 'gm' ? 'GM Canon + Secrets' : 'Player-Safe Canon' }}
+          </span>
+        </div>
+      </div>
+      <div class="lw-loom-drawer__header-actions">
+        <a class="lw-loom-drawer__full-link" routerLink="/loom" (click)="store.toggleLoomDrawer(false)">
+          Full Workspace
+        </a>
+        <lw-button variant="ghost" size="sm" icon="x" (pressed)="store.toggleLoomDrawer(false)">
+          Close
+        </lw-button>
+      </div>
+    </header>
+
+    <div class="lw-loom-drawer__search">
+      <input
+        ngpInput
+        type="text"
+        class="lw-loom-drawer__input"
+        [ngModel]="store.loomQuery()"
+        (ngModelChange)="store.loomQuery.set($event)"
+        placeholder="Ask The Loom about sessions, NPCs, locations, clues, or quests..." />
+      <div class="lw-loom-drawer__chips">
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Kildrid')">
+          Kildrid Stone Sense
+        </button>
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Emrys')">
+          Lord Emrys in Cinth
+        </button>
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Chokrah')">
+          Chokrah Cargo Manifest
+        </button>
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Artificers')">
+          Artificers Guild
+        </button>
+      </div>
+    </div>
+
+    <div class="lw-loom-drawer__results">
+      @for (cit of store.loomCitations(); track cit.compositeKey) {
+        <article class="lw-loom-drawer__citation">
+          <div class="lw-loom-drawer__citation-top">
+            <strong>{{ cit.title }}</strong>
+            <div class="lw-loom-drawer__citation-badges">
+              <lw-badge [label]="cit.entityType" tone="neutral" />
+              <lw-badge [label]="cit.visibility" [tone]="cit.visibility === 'gm' ? 'gm' : 'emerald'" />
+            </div>
+          </div>
+          <p class="lw-loom-drawer__excerpt">{{ cit.excerpt }}</p>
+          <div class="lw-loom-drawer__citation-actions">
+            <button
+              type="button"
+              class="lw-loom-drawer__cite-btn"
+              (click)="store.inspectEntity(cit.compositeKey)">
+              Inspect Graph Node
+            </button>
+            <a
+              class="lw-loom-drawer__cite-link"
+              [routerLink]="cit.routeLink"
+              (click)="store.toggleLoomDrawer(false)">
+              Open in {{ cit.routeLink }}
+            </a>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+}

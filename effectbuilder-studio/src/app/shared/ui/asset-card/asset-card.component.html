@@ -1,0 +1,63 @@
+<article
+  class="lw-asset-card"
+  [attr.data-variant]="resolvedConfig().variant"
+  [class.lw-asset-card--selected]="selected()"
+  [class.lw-asset-card--locked]="isLocked()">
+  @if (resolvedConfig().variant !== 'compact') {
+    <div class="lw-asset-card__media" (click)="assetSelected.emit(asset())">
+      @if (asset().previewUrl; as imgUrl) {
+        <img class="lw-asset-card__img" [src]="imgUrl" [alt]="asset().name" loading="lazy" />
+      } @else {
+        <div class="lw-asset-card__placeholder">
+          <lw-icon name="layers" [size]="28" />
+        </div>
+      }
+      <div class="lw-asset-card__badges">
+        <lw-badge [label]="asset().category" tone="neutral" />
+        <lw-badge [label]="asset().entitlement" [tone]="badgeTone()" />
+      </div>
+    </div>
+  }
+
+  <div class="lw-asset-card__body">
+    <div class="lw-asset-card__header">
+      <div>
+        <h4 class="lw-asset-card__title">{{ asset().name }}</h4>
+        <span class="lw-asset-card__meta">by {{ asset().creatorName }} · {{ asset().systemCode }}</span>
+      </div>
+      @if (resolvedConfig().variant === 'compact') {
+        <lw-badge [label]="asset().entitlement" [tone]="badgeTone()" />
+      }
+    </div>
+
+    @if (resolvedConfig().variant === 'detailed') {
+      <p class="lw-asset-card__summary">{{ asset().summary }}</p>
+    }
+
+    <div class="lw-asset-card__footer">
+      @if (resolvedConfig().showPrice && asset().priceLabel) {
+        <span class="lw-asset-card__price">{{ asset().priceLabel }}</span>
+      }
+      <div class="lw-asset-card__actions">
+        @if (resolvedConfig().showPreviewButton) {
+          <lw-button variant="ghost" size="sm" icon="eye" (pressed)="previewRequested.emit(asset())">
+            Preview
+          </lw-button>
+        }
+        @if (isLocked() && resolvedConfig().showUnlockAction) {
+          <lw-button variant="gold" size="sm" icon="lock" (pressed)="unlockRequested.emit(asset())">
+            Unlock
+          </lw-button>
+        } @else {
+          <lw-button
+            [variant]="selected() ? 'primary' : 'secondary'"
+            size="sm"
+            icon="check"
+            (pressed)="assetSelected.emit(asset())">
+            {{ selected() ? 'Active' : primaryActionLabel() }}
+          </lw-button>
+        }
+      </div>
+    </div>
+  </div>
+</article>

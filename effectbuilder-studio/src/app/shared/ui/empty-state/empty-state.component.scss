@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+
+.lw-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.65rem;
+  padding: 2rem 1.5rem;
+  border-radius: var(--lw-radius-lg);
+  border: 1px dashed var(--lw-border-subtle);
+  background: rgba(18, 23, 34, 0.55);
+}
+
+.lw-empty__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lw-accent-gold-soft);
+  color: var(--lw-accent-gold);
+}
+
+.lw-empty__title {
+  margin: 0;
+  font-family: var(--lw-font-display);
+  font-size: 1rem;
+  color: var(--lw-text-primary);
+}
+
+.lw-empty__description {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 0.85rem;
+  color: var(--lw-text-secondary);
+}

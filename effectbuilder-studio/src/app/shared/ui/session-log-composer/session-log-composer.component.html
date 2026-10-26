@@ -1,0 +1,107 @@
+<section
+  ngpTabset
+  [ngpTabsetValue]="activeTab()"
+  class="lw-session-composer"
+  aria-label="Session Log and Campaign Memory Composer"
+>
+  <header class="lw-session-composer__tabs-bar">
+    <nav ngpTabList class="lw-session-composer__tabs" role="tablist">
+      @for (tab of tabs; track tab.id) {
+        <button
+          ngpButton
+          ngpTabButton
+          [ngpTabButtonValue]="tab.id"
+          type="button"
+          role="tab"
+          class="lw-session-composer__tab"
+          [class.lw-session-composer__tab--active]="activeTab() === tab.id"
+          [attr.aria-selected]="activeTab() === tab.id"
+          (click)="selectTab(tab.id)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </nav>
+
+    <div class="lw-session-composer__filters">
+      <button
+        ngpButton
+        type="button"
+        class="lw-session-composer__scope-pill"
+        (click)="cycleScope()"
+        title="Click to cycle note visibility scope"
+      >
+        <span>
+          {{ noteScope() === 'gm' ? 'GM Only' : noteScope() === 'private' ? 'Private' : 'Shared with Party' }}
+        </span>
+      </button>
+
+      <button ngpButton type="button" class="lw-session-composer__date-pill">
+        <span>{{ dateFilterLabel() }}</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="lw-session-composer__body">
+    <div class="lw-session-composer__input-row">
+      <input
+        ngpInput
+        type="text"
+        class="lw-session-composer__input"
+        placeholder="Add a note, ruling, or moment... (Ctrl + Enter to save)"
+        [ngModel]="draftText()"
+        (ngModelChange)="draftText.set($event)"
+        (keydown)="onKeyDown($event)"
+      />
+    </div>
+
+    @if (entries().length > 0) {
+      <div class="lw-session-composer__recent">
+        @for (entry of entries().slice(0, 2); track entry.id) {
+          <div class="lw-session-composer__entry">
+            <span class="lw-session-composer__entry-time">{{ entry.timestamp }}</span>
+            <span class="lw-session-composer__entry-scope" [attr.data-scope]="entry.scope">
+              {{ entry.scope === 'gm' ? 'GM' : entry.scope === 'private' ? 'Private' : 'Party' }}
+            </span>
+            <span class="lw-session-composer__entry-text">{{ entry.text }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <footer class="lw-session-composer__toolbar">
+      <div ngpToolbar class="lw-session-composer__format-tools">
+        <button ngpButton type="button" class="lw-session-composer__tool-btn" title="Bold" (click)="insertToken('**bold**')">
+          <strong>B</strong>
+        </button>
+        <button ngpButton type="button" class="lw-session-composer__tool-btn" title="Italic" (click)="insertToken('*italic*')">
+          <em>I</em>
+        </button>
+        <button ngpButton type="button" class="lw-session-composer__tool-btn" title="Bullet List" (click)="insertToken('• ')">
+          <span>List</span>
+        </button>
+        <button ngpButton type="button" class="lw-session-composer__tool-btn" title="Checklist Beat" (click)="insertToken('[ ] ')">
+          <span>Beat</span>
+        </button>
+        <button ngpButton type="button" class="lw-session-composer__tool-btn" title="Link Campaign Entity" (click)="insertToken('@Brother Malric')">
+          <span>&#64;Entity</span>
+        </button>
+        <button
+          ngpButton
+          type="button"
+          class="lw-session-composer__tool-btn lw-session-composer__tool-btn--accent"
+          title="Query or Index in The Loom"
+          (click)="loomFormatRequested.emit(draftText())"
+        >
+          <span>Recall in Loom</span>
+        </button>
+      </div>
+
+      <div class="lw-session-composer__submit-group">
+        <button ngpButton type="button" class="lw-session-composer__save-btn" (click)="submitNote()">
+          <span>Save to Campaign</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+</section>

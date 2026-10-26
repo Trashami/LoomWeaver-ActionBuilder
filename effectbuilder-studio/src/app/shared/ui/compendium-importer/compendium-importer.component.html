@@ -1,0 +1,54 @@
+<div class="lw-compendium">
+  <div class="lw-compendium__top">
+    <div>
+      <span class="lw-compendium__eyebrow">5e SRD + Icrandor Canon Compendium</span>
+      <h4 class="lw-compendium__title">One-Click Import into {{ targetLabel() }}</h4>
+    </div>
+    <div class="lw-compendium__cats">
+      @for (cat of categories; track cat) {
+        <button
+          type="button"
+          class="lw-compendium__cat-btn"
+          [class.lw-compendium__cat-btn--active]="selectedCategory() === cat"
+          (click)="selectedCategory.set(cat)"
+        >
+          {{ cat }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <input
+    type="text"
+    class="lw-compendium__search"
+    [value]="searchQuery()"
+    (input)="onSearchInput($event)"
+    placeholder="Search spells, artificer relics, feats, or companion gear (e.g. Quiet Maw, Luminary, Laksis)..."
+  />
+
+  <div class="lw-compendium__grid">
+    @for (entry of filteredEntries(); track entry.id) {
+      <article class="lw-compendium__card">
+        <div class="lw-compendium__card-head">
+          <div>
+            <span class="lw-compendium__tier">{{ entry.category }} · {{ entry.levelOrTier }}</span>
+            <h5>{{ entry.name }}</h5>
+          </div>
+          <lw-badge [label]="entry.actionEconomy" tone="gold" />
+        </div>
+        <p class="lw-compendium__desc">{{ entry.summary }}</p>
+        <div class="lw-compendium__card-foot">
+          <code>{{ entry.mechanicalPayload }}</code>
+          <lw-button
+            variant="primary"
+            size="sm"
+            icon="Download"
+            (pressed)="entryImported.emit(entry)"
+          >
+            Import {{ entry.category }}
+          </lw-button>
+        </div>
+      </article>
+    }
+  </div>
+</div>

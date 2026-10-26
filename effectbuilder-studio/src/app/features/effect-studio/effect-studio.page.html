@@ -1,0 +1,97 @@
+<div class="lw-fx-studio-shell">
+  <!-- 1. Global LoomWeaver Top Navigation Bar -->
+  <lw-effect-top-navbar
+    [searchQuery]="studio.globalHeaderSearch()"
+    [userInitials]="auth.isAuthenticated() ? auth.activeProfile().displayName.slice(0, 2).toUpperCase() : 'JD'"
+    (searchChanged)="studio.globalHeaderSearch.set($event)"
+    (accountPressed)="auth.openAuthModal('login')"
+    (settingsPressed)="studio.reducedMotion.set(!studio.reducedMotion())" />
+
+  <!-- 2. Effect Sub-Header Bar (Back, Title, Design/Preview/In-Game Test, Undo/Redo, Save, Export) -->
+  <lw-effect-sub-header
+    [effectName]="studio.effectName()"
+    [effectSubtitle]="studio.effectSubtitle()"
+    [statusLabel]="studio.statusLabel()"
+    [activeMode]="studio.activeMode()"
+    [canUndo]="studio.canUndo()"
+    [canRedo]="studio.canRedo()"
+    (nameChanged)="studio.effectName.set($event)"
+    (modeChanged)="onModeChanged($event)"
+    (undoRequested)="studio.undo()"
+    (redoRequested)="studio.redo()"
+    (saveRequested)="studio.saveEffectDocument(auth.activeProfile().role)"
+    (exportRequested)="studio.exportEffectJson()"
+    (backRequested)="onNavigateBack()" />
+
+  @if (studio.toastBanner(); as toast) {
+    <div class="lw-fx-toast" role="status" aria-live="polite">
+      {{ toast }}
+    </div>
+  }
+
+  <!-- 3. Main 4-Column Studio Workspace -->
+  <main class="lw-fx-workspace">
+    <!-- Far-Left Vertical Icon Rail -->
+    <lw-effect-tool-rail
+      [activeTool]="studio.activeRailTool()"
+      (toolSelected)="studio.activeRailTool.set($event)" />
+
+    <!-- Left Emitter Library Drawer -->
+    <lw-emitter-library-panel
+      [emitters]="studio.filteredEmitters()"
+      [activeEmitterId]="studio.activeEmitterId()"
+      [searchQuery]="studio.librarySearch()"
+      [selectedCategory]="studio.libraryCategory()"
+      [categories]="studio.categories()"
+      (searchChanged)="studio.librarySearch.set($event)"
+      (categoryChanged)="studio.libraryCategory.set($event)"
+      (emitterSelected)="studio.selectEmitter($event)" />
+
+    <!-- Center 3D Dungeon Stage + Bottom Multi-Track Timeline -->
+    <div class="lw-fx-center-column">
+      <lw-effect-viewport-stage
+        [activeProperties]="studio.activeProperties()"
+        [motionAndForces]="studio.motionAndForces()"
+        [tracks]="studio.tracks()"
+        [cameraPreset]="studio.activeCameraPreset()"
+        [activeGizmo]="studio.activeGizmoTool()"
+        [isPlaying]="studio.isPlaying()"
+        [playheadSeconds]="studio.playheadSeconds()"
+        [totalDurationSeconds]="studio.totalDurationSeconds()"
+        [reducedMotion]="studio.reducedMotion()"
+        [testResult]="studio.lastInGameTestResult()"
+        (cameraPresetChanged)="studio.activeCameraPreset.set($event)"
+        (gizmoSelected)="studio.activeGizmoTool.set($event)"
+        (playheadUpdated)="studio.playheadSeconds.set($event)"
+        (addLayerRequested)="studio.addTimelineLayer()"
+        (duplicateLayerRequested)="studio.duplicateSelectedLayer()" />
+
+      <lw-effect-timeline-dock
+        [tracks]="studio.tracks()"
+        [selectedTrackId]="studio.selectedTrackId()"
+        [isPlaying]="studio.isPlaying()"
+        [playheadSeconds]="studio.playheadSeconds()"
+        [totalDurationSeconds]="studio.totalDurationSeconds()"
+        (playToggled)="studio.isPlaying.set(!studio.isPlaying())"
+        (playheadScrubbed)="studio.playheadSeconds.set($event)"
+        (trackSelected)="studio.selectedTrackId.set($event)"
+        (trackVisibilityToggled)="studio.toggleTrackVisibility($event)"
+        (trackExpandedToggled)="studio.toggleTrackExpanded($event)" />
+    </div>
+
+    <!-- Right Properties, Layers & Advanced Inspector -->
+    <lw-effect-properties-inspector
+      [activeTab]="studio.activeInspectorTab()"
+      [properties]="studio.activeProperties()"
+      [motionForces]="studio.motionAndForces()"
+      [tracks]="studio.tracks()"
+      [selectedTrackId]="studio.selectedTrackId()"
+      (tabChanged)="studio.activeInspectorTab.set($event)"
+      (propertiesPatched)="studio.patchProperties($event)"
+      (motionPatched)="studio.patchMotionForces($event)"
+      (trackVisibilityToggled)="studio.toggleTrackVisibility($event)"
+      (addLayerRequested)="studio.addTimelineLayer()" />
+  </main>
+
+  <lw-auth-modal />
+</div>

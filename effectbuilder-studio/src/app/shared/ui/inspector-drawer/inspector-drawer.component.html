@@ -1,0 +1,263 @@
+<aside
+  ngpTabset
+  [ngpTabsetValue]="activeTab()"
+  class="lw-inspector"
+  aria-label="Act Guide and Contextual Inspector"
+>
+  <header class="lw-inspector__act-header">
+    <h2 class="lw-inspector__act-title">Act I — Shadows in the Stone</h2>
+  </header>
+
+  <nav ngpTabList class="lw-inspector__tabs" role="tablist">
+    @for (tab of tabs; track tab.id) {
+      <button
+        ngpButton
+        ngpTabButton
+        [ngpTabButtonValue]="tab.id"
+        type="button"
+        role="tab"
+        class="lw-inspector__tab"
+        [class.lw-inspector__tab--active]="activeTab() === tab.id"
+        [attr.aria-selected]="activeTab() === tab.id"
+        (click)="activeTab.set(tab.id)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  <div class="lw-inspector__scroll">
+    <div class="lw-inspector__hero-card">
+      <div class="lw-inspector__hero-art">
+        <div class="lw-inspector__hero-glow"></div>
+      </div>
+      <blockquote class="lw-inspector__epigraph">
+        "Old stones remember. And something stirs beneath them still."
+      </blockquote>
+    </div>
+
+    @if (store.inspectedEntity(); as entity) {
+      <section class="lw-inspector__entity-focus">
+        <div class="lw-inspector__entity-top">
+          <div>
+            <span class="lw-inspector__eyebrow">Selected Canon Node</span>
+            <h3 class="lw-inspector__entity-title">{{ entity.name }}</h3>
+            <span class="lw-inspector__entity-sub">{{ entity.subtitle }}</span>
+          </div>
+          <button
+            ngpButton
+            type="button"
+            class="lw-inspector__clear-btn"
+            (click)="store.inspectEntity(null)"
+            title="Clear entity focus"
+          >
+            <lw-icon name="close" [size]="14" />
+          </button>
+        </div>
+
+        <div class="lw-inspector__badges">
+          <lw-badge [label]="entity.entityType" tone="gold" />
+          <lw-badge [label]="entity.visibility" [tone]="entity.visibility === 'gm' ? 'gm' : 'emerald'" />
+          <lw-badge [label]="entity.canonStatus" [tone]="entity.canonStatus === 'draft' ? 'draft' : 'approved'" />
+        </div>
+
+        <p class="lw-inspector__summary-text">{{ entity.summary }}</p>
+
+        <div class="lw-inspector__entity-actions">
+          <a ngpButton class="lw-inspector__route-btn" [routerLink]="entity.routeLink">
+            <span>Open {{ entity.routeLink }}</span>
+          </a>
+          @if (entity.canonStatus === 'draft' && store.viewerRole() === 'gm') {
+            <lw-button
+              variant="gold"
+              size="sm"
+              (pressed)="store.approveDraftEntity(entity.compositeKey)"
+            >
+              Approve Canon
+            </lw-button>
+          }
+        </div>
+
+        @if (store.inspectedEntityEdges().length > 0) {
+          <div class="lw-inspector__edges">
+            @for (edge of store.inspectedEntityEdges().slice(0, 4); track edge.peerKey + edge.relationshipType) {
+              <button
+                ngpButton
+                type="button"
+                class="lw-inspector__edge-pill"
+                (click)="store.inspectEntity(edge.peerKey)"
+              >
+                <span class="lw-inspector__edge-rel">{{ edge.relationshipType }}</span>
+                <span class="lw-inspector__edge-peer">{{ edge.peerName }}</span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (activeTab() === 'guide') {
+      <section class="lw-inspector__section">
+        <button
+          ngpButton
+          type="button"
+          class="lw-inspector__section-header"
+          (click)="summaryExpanded.set(!summaryExpanded())"
+        >
+          <span>Summary</span>
+          <lw-icon [name]="summaryExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+        </button>
+        @if (summaryExpanded()) {
+          <p class="lw-inspector__summary-text">
+            A crumbling chapel stands on the edge of the Whispering Woods. Strange noises and missing travelers have drawn the party here, where an uneasy silence hangs over the ruins.
+          </p>
+        }
+      </section>
+
+      <section class="lw-inspector__section">
+        <button
+          ngpButton
+          type="button"
+          class="lw-inspector__section-header"
+          (click)="beatsExpanded.set(!beatsExpanded())"
+        >
+          <span>Scene Beats</span>
+          <lw-icon [name]="beatsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+        </button>
+        @if (beatsExpanded()) {
+          <div class="lw-inspector__checklist">
+            @for (beat of sceneBeats(); track beat.id) {
+              <button
+                ngpButton
+                ngpCheckbox
+                [ngpCheckboxChecked]="beat.done"
+                type="button"
+                class="lw-inspector__check-row"
+                [class.lw-inspector__check-row--done]="beat.done"
+                (click)="toggleBeat(beat.id)"
+              >
+                <span class="lw-inspector__checkbox" [class.lw-inspector__checkbox--checked]="beat.done">
+                  @if (beat.done) {
+                    <lw-icon name="check" [size]="12" />
+                  }
+                </span>
+                <span class="lw-inspector__check-label">{{ beat.label }}</span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="lw-inspector__section">
+        <button
+          ngpButton
+          type="button"
+          class="lw-inspector__section-header"
+          (click)="keyNpcsExpanded.set(!keyNpcsExpanded())"
+        >
+          <span>Key NPCs</span>
+          <lw-icon [name]="keyNpcsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+        </button>
+        @if (keyNpcsExpanded()) {
+          <div class="lw-inspector__npc-list">
+            @for (npc of keyNpcs; track npc.compositeKey) {
+              <button
+                ngpButton
+                type="button"
+                class="lw-inspector__npc-row"
+                (click)="inspectNpc(npc.compositeKey)"
+              >
+                <span
+                  ngpAvatar
+                  class="lw-inspector__npc-avatar"
+                  [style.border-color]="npc.ringColor"
+                >
+                  <span ngpAvatarFallback>{{ npc.initials }}</span>
+                </span>
+                <span class="lw-inspector__npc-copy">
+                  <strong>{{ npc.name }}</strong>
+                  <small>{{ npc.role }}</small>
+                </span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      @if (store.viewerRole() === 'gm') {
+        <section class="lw-inspector__section">
+          <button
+            ngpButton
+            type="button"
+            class="lw-inspector__section-header"
+            (click)="secretsExpanded.set(!secretsExpanded())"
+          >
+            <span class="lw-inspector__secret-heading">Secrets</span>
+            <lw-icon [name]="secretsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+          </button>
+          @if (secretsExpanded()) {
+            <div class="lw-inspector__secret-box">
+              <span class="lw-inspector__secret-dot"></span>
+              <p>A sealed crypt lies beneath the altar. Brother Malric knows more than he admits.</p>
+            </div>
+          }
+        </section>
+      }
+
+      <section class="lw-inspector__section">
+        <button
+          ngpButton
+          type="button"
+          class="lw-inspector__section-header"
+          (click)="goalsExpanded.set(!goalsExpanded())"
+        >
+          <span>Goals</span>
+          <lw-icon [name]="goalsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
+        </button>
+        @if (goalsExpanded()) {
+          <div class="lw-inspector__checklist">
+            @for (goal of sceneGoals(); track goal.id) {
+              <button
+                ngpButton
+                ngpCheckbox
+                [ngpCheckboxChecked]="goal.done"
+                type="button"
+                class="lw-inspector__check-row"
+                [class.lw-inspector__check-row--done]="goal.done"
+                (click)="toggleGoal(goal.id)"
+              >
+                <span class="lw-inspector__checkbox" [class.lw-inspector__checkbox--checked]="goal.done">
+                  @if (goal.done) {
+                    <lw-icon name="check" [size]="12" />
+                  }
+                </span>
+                <span class="lw-inspector__check-label">{{ goal.label }}</span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+    } @else {
+      <section class="lw-inspector__section">
+        <div class="lw-inspector__tab-list">
+          @for (entity of store.authorizedEntities().slice(0, 8); track entity.compositeKey) {
+            <button
+              ngpButton
+              type="button"
+              class="lw-inspector__npc-row"
+              (click)="store.inspectEntity(entity.compositeKey)"
+            >
+              <span ngpAvatar class="lw-inspector__npc-avatar">
+                <span ngpAvatarFallback>{{ entity.name.slice(0, 2).toUpperCase() }}</span>
+              </span>
+              <span class="lw-inspector__npc-copy">
+                <strong>{{ entity.name }}</strong>
+                <small>{{ entity.subtitle }}</small>
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</aside>

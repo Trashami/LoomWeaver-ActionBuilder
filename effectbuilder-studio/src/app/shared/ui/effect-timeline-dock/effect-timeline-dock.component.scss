@@ -1,0 +1,222 @@
+:host {
+  display: block;
+}
+
+.lw-fx-timeline {
+  height: 196px;
+  margin: 0 12px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(118, 152, 136, 0.24);
+  background: rgba(7, 15, 12, 0.95);
+  display: grid;
+  grid-template-columns: 224px 1fr;
+  overflow: hidden;
+}
+
+.lw-fx-timeline__left {
+  border-right: 1px solid rgba(118, 152, 136, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.lw-fx-timeline__transport {
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(118, 152, 136, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lw-fx-timeline__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #edf5f0;
+}
+
+.lw-fx-play-btn {
+  width: 28px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(125, 160, 142, 0.3);
+  background: rgba(16, 32, 26, 0.92);
+  color: #f3f7f5;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.lw-fx-play-btn:hover {
+  border-color: #d4a853;
+  color: #fde047;
+}
+
+.lw-fx-time-readout {
+  font-family: var(--lw-font-mono, monospace);
+  font-size: 0.73rem;
+  color: #93aca0;
+}
+
+.lw-fx-timeline__track-labels {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+
+.lw-fx-track-row-label {
+  height: 29px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.76rem;
+  color: #c2d4ca;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(118, 152, 136, 0.08);
+}
+
+.lw-fx-track-row-label--selected {
+  background: rgba(212, 168, 83, 0.12);
+  color: #fae3a4;
+}
+
+.lw-fx-vis-btn,
+.lw-fx-expand-btn {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  background: transparent;
+  color: #88a295;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lw-fx-vis-btn--off {
+  opacity: 0.4;
+}
+
+.lw-fx-track-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lw-fx-timeline__right {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 18px;
+}
+
+.lw-fx-ruler {
+  position: relative;
+  height: 38px;
+  border-bottom: 1px solid rgba(118, 152, 136, 0.2);
+}
+
+.lw-fx-ruler__mark {
+  position: absolute;
+  top: 8px;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lw-fx-ruler__mark::after {
+  content: '';
+  margin-top: 4px;
+  width: 1px;
+  height: 8px;
+  background: rgba(148, 178, 162, 0.4);
+}
+
+.lw-fx-ruler__label {
+  font-size: 0.71rem;
+  color: #93aca0;
+}
+
+.lw-fx-lanes {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  background-image: linear-gradient(to right, rgba(125, 160, 142, 0.08) 1px, transparent 1px);
+  background-size: 20% 100%;
+}
+
+.lw-fx-lane {
+  position: relative;
+  height: 29px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(118, 152, 136, 0.1);
+}
+
+.lw-fx-lane--muted {
+  opacity: 0.35;
+}
+
+.lw-fx-clip-bar {
+  position: absolute;
+  height: 17px;
+  border-radius: 4px;
+  border: 1px solid var(--clip-accent, #fde047);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--clip-color, #d97706) 65%, #09130f) 0%,
+    color-mix(in srgb, var(--clip-accent, #fde047) 75%, var(--clip-color, #d97706)) 50%,
+    color-mix(in srgb, var(--clip-color, #d97706) 55%, #09130f) 100%
+  );
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+}
+
+.lw-fx-clip-bar__streak {
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 5%, var(--clip-accent, #ffffff) 48%, transparent 95%);
+  opacity: 0.9;
+}
+
+.lw-fx-audio-wave {
+  position: absolute;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.lw-fx-wave-svg {
+  width: 100%;
+  height: 18px;
+}
+
+.lw-fx-playhead {
+  position: absolute;
+  top: 10px;
+  bottom: 0;
+  width: 2px;
+  background: #ef4444;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.lw-fx-playhead__knob {
+  position: absolute;
+  top: -4px;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.85);
+}

@@ -1,0 +1,46 @@
+<section class="lw-emitter-lib" aria-label="Emitter Library">
+  <header class="lw-emitter-lib__head">
+    <h2 class="lw-emitter-lib__title">{{ title() }}</h2>
+
+    <label class="lw-emitter-lib__search">
+      <lw-icon name="search" [size]="14" />
+      <input
+        type="search"
+        placeholder="Search effects..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchChanged.emit($event)" />
+    </label>
+
+    <div class="lw-emitter-lib__select-wrap">
+      <select
+        class="lw-emitter-lib__select"
+        aria-label="Filter Emitter Category"
+        [ngModel]="selectedCategory()"
+        (ngModelChange)="categoryChanged.emit($event)">
+        @for (cat of categories(); track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+    </div>
+  </header>
+
+  <div class="lw-emitter-lib__grid">
+    @for (item of emitters(); track item.id) {
+      <button
+        ngpButton
+        type="button"
+        class="lw-emitter-card"
+        [class.lw-emitter-card--active]="activeEmitterId() === item.id"
+        [style.--emitter-primary]="item.colorPrimaryHex"
+        [style.--emitter-secondary]="item.colorSecondaryHex"
+        (click)="emitterSelected.emit(item)">
+        <div class="lw-emitter-card__art" [attr.data-emitter]="item.id">
+          <span class="lw-emitter-card__glow"></span>
+          <span class="lw-emitter-card__core"></span>
+          <span class="lw-emitter-card__ring"></span>
+        </div>
+        <span class="lw-emitter-card__label">{{ item.name }}</span>
+      </button>
+    }
+  </div>
+</section>

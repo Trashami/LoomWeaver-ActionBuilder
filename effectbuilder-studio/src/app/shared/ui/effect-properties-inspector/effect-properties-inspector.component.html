@@ -1,0 +1,467 @@
+<aside class="lw-fx-inspector" aria-label="Effect Properties Inspector">
+  <!-- Top Tabs: Properties | Layers | Advanced -->
+  <div class="lw-fx-inspector__tabs" role="tablist">
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-fx-insp-tab"
+      [class.lw-fx-insp-tab--active]="activeTab() === 'properties'"
+      (click)="tabChanged.emit('properties')">
+      Properties
+    </button>
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-fx-insp-tab"
+      [class.lw-fx-insp-tab--active]="activeTab() === 'layers'"
+      (click)="tabChanged.emit('layers')">
+      Layers
+    </button>
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-fx-insp-tab"
+      [class.lw-fx-insp-tab--active]="activeTab() === 'advanced'"
+      (click)="tabChanged.emit('advanced')">
+      Advanced
+    </button>
+  </div>
+
+  <div class="lw-fx-inspector__body">
+    @if (activeTab() === 'properties') {
+      <!-- Emitter Type Header & Thumbnail -->
+      <div class="lw-fx-emitter-head">
+        <span class="lw-fx-field-label">Emitter Type</span>
+        <div class="lw-fx-emitter-type-row">
+          <div
+            class="lw-fx-emitter-thumb"
+            [style.--thumb-color]="properties().colorPrimaryHex">
+            <span class="lw-fx-emitter-thumb__flare"></span>
+          </div>
+          <div class="lw-fx-emitter-select-col">
+            <select
+              class="lw-fx-select"
+              aria-label="Emitter Type"
+              [ngModel]="properties().emitterType"
+              (ngModelChange)="patchProp({ emitterType: $event })">
+              @for (et of emitterTypes; track et) {
+                <option [value]="et">{{ et }}</option>
+              }
+            </select>
+            <span class="lw-fx-emitter-rune-sub">RUNIC VORTEX CORE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shape Dropdown -->
+      <div class="lw-fx-prop-row">
+        <span class="lw-fx-prop-row__label">Shape</span>
+        <select
+          class="lw-fx-select"
+          aria-label="Emitter Shape"
+          [ngModel]="properties().shape"
+          (ngModelChange)="patchProp({ shape: $event })">
+          @for (sh of shapes; track sh) {
+            <option [value]="sh">{{ sh }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Radius -->
+      <div class="lw-fx-slider-row">
+        <span class="lw-fx-slider-row__label">Radius</span>
+        <input
+          type="range"
+          min="0.5"
+          max="10"
+          step="0.1"
+          class="lw-fx-range"
+          [ngModel]="properties().radius"
+          (ngModelChange)="patchProp({ radius: +$event })" />
+        <span class="lw-fx-val-pill">{{ properties().radius.toFixed(1) }}</span>
+      </div>
+
+      <!-- Height -->
+      <div class="lw-fx-slider-row">
+        <span class="lw-fx-slider-row__label">Height</span>
+        <input
+          type="range"
+          min="0.5"
+          max="12"
+          step="0.1"
+          class="lw-fx-range"
+          [ngModel]="properties().height"
+          (ngModelChange)="patchProp({ height: +$event })" />
+        <span class="lw-fx-val-pill">{{ properties().height.toFixed(1) }}</span>
+      </div>
+
+      <!-- Emission Rate -->
+      <div class="lw-fx-slider-row">
+        <span class="lw-fx-slider-row__label">Emission Rate</span>
+        <input
+          type="range"
+          min="10"
+          max="400"
+          step="5"
+          class="lw-fx-range"
+          [ngModel]="properties().emissionRate"
+          (ngModelChange)="patchProp({ emissionRate: +$event })" />
+        <span class="lw-fx-val-pill">{{ properties().emissionRate }}</span>
+      </div>
+
+      <!-- Lifetime (s) -->
+      <div class="lw-fx-slider-row">
+        <span class="lw-fx-slider-row__label">Lifetime (s)</span>
+        <input
+          type="range"
+          min="0.3"
+          max="8.0"
+          step="0.1"
+          class="lw-fx-range"
+          [ngModel]="properties().lifetimeSeconds"
+          (ngModelChange)="patchProp({ lifetimeSeconds: +$event })" />
+        <span class="lw-fx-val-pill">{{ properties().lifetimeSeconds.toFixed(1) }}</span>
+      </div>
+
+      <!-- Speed -->
+      <div class="lw-fx-slider-row">
+        <span class="lw-fx-slider-row__label">Speed</span>
+        <input
+          type="range"
+          min="0.2"
+          max="8.0"
+          step="0.1"
+          class="lw-fx-range"
+          [ngModel]="properties().speed"
+          (ngModelChange)="patchProp({ speed: +$event })" />
+        <span class="lw-fx-val-pill">{{ properties().speed.toFixed(1) }}</span>
+      </div>
+
+      <!-- Spread -->
+      <div class="lw-fx-slider-row">
+        <span class="lw-fx-slider-row__label">Spread</span>
+        <input
+          type="range"
+          min="0"
+          max="180"
+          step="1"
+          class="lw-fx-range"
+          [ngModel]="properties().spreadDegrees"
+          (ngModelChange)="patchProp({ spreadDegrees: +$event })" />
+        <span class="lw-fx-val-pill">{{ properties().spreadDegrees }}°</span>
+      </div>
+
+      <!-- Collapsible Section: Particle Appearance -->
+      <div class="lw-fx-accordion">
+        <button
+          ngpButton
+          type="button"
+          class="lw-fx-accordion__head"
+          (click)="appearanceExpanded.set(!appearanceExpanded())">
+          <div class="lw-fx-accordion__title">
+            <lw-icon name="wand" [size]="14" />
+            <span>Particle Appearance</span>
+          </div>
+          <lw-icon [name]="appearanceExpanded() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+        </button>
+
+        @if (appearanceExpanded()) {
+          <div class="lw-fx-accordion__content">
+            <!-- Material -->
+            <div class="lw-fx-prop-row">
+              <span class="lw-fx-prop-row__label">Material</span>
+              <div class="lw-fx-material-select-wrap">
+                <span
+                  class="lw-fx-material-dot"
+                  [style.background]="properties().colorPrimaryHex"></span>
+                <select
+                  class="lw-fx-select lw-fx-select--with-dot"
+                  aria-label="Particle Material"
+                  [ngModel]="properties().materialName"
+                  (ngModelChange)="patchProp({ materialName: $event })">
+                  @for (mat of materials; track mat) {
+                    <option [value]="mat">{{ mat }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <!-- Color Gradient Swatch + Eyedropper -->
+            <div class="lw-fx-prop-row">
+              <span class="lw-fx-prop-row__label">Color</span>
+              <div class="lw-fx-color-row">
+                <label
+                  class="lw-fx-gradient-bar"
+                  [style.background]="
+                    'linear-gradient(90deg, ' +
+                    properties().colorSecondaryHex +
+                    ' 0%, ' +
+                    properties().colorPrimaryHex +
+                    ' 100%)'
+                  ">
+                  <input
+                    type="color"
+                    class="lw-fx-color-native"
+                    [ngModel]="properties().colorPrimaryHex"
+                    (ngModelChange)="patchProp({ colorPrimaryHex: $event })" />
+                </label>
+                <button
+                  ngpButton
+                  type="button"
+                  class="lw-fx-pipette-btn"
+                  aria-label="Sample Color">
+                  <lw-icon name="pipette" [size]="14" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Size -->
+            <div class="lw-fx-slider-row">
+              <span class="lw-fx-slider-row__label">Size</span>
+              <input
+                type="range"
+                min="0.1"
+                max="3.0"
+                step="0.1"
+                class="lw-fx-range"
+                [ngModel]="properties().sizeMax"
+                (ngModelChange)="patchProp({ sizeMax: +$event })" />
+              <span class="lw-fx-val-pill lw-fx-val-pill--wide">
+                {{ properties().sizeMin.toFixed(1) }} – {{ properties().sizeMax.toFixed(1) }}
+              </span>
+            </div>
+
+            <!-- Opacity -->
+            <div class="lw-fx-slider-row">
+              <span class="lw-fx-slider-row__label">Opacity</span>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                step="2"
+                class="lw-fx-range"
+                [ngModel]="properties().opacityPercent"
+                (ngModelChange)="patchProp({ opacityPercent: +$event })" />
+              <span class="lw-fx-val-pill">{{ properties().opacityPercent }}%</span>
+            </div>
+
+            <!-- Blend Mode -->
+            <div class="lw-fx-prop-row">
+              <span class="lw-fx-prop-row__label">Blend Mode</span>
+              <select
+                class="lw-fx-select"
+                aria-label="Blend Mode"
+                [ngModel]="properties().blendMode"
+                (ngModelChange)="patchProp({ blendMode: $event })">
+                @for (bm of blendModes; track bm) {
+                  <option [value]="bm">{{ bm }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Cast Light + Light Intensity -->
+            <div class="lw-fx-check-block">
+              <label class="lw-fx-check-label">
+                <input
+                  type="checkbox"
+                  [ngModel]="properties().castLight"
+                  (ngModelChange)="patchProp({ castLight: $event })" />
+                <span>Cast Light</span>
+              </label>
+
+              <div class="lw-fx-slider-row lw-fx-slider-row--sub">
+                <span class="lw-fx-slider-row__label">Light Intensity</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="3.5"
+                  step="0.1"
+                  class="lw-fx-range"
+                  [disabled]="!properties().castLight"
+                  [ngModel]="properties().lightIntensity"
+                  (ngModelChange)="patchProp({ lightIntensity: +$event })" />
+                <span class="lw-fx-val-pill">{{ properties().lightIntensity.toFixed(1) }}</span>
+              </div>
+            </div>
+
+            <!-- Receive Shadows -->
+            <label class="lw-fx-check-label">
+              <input
+                type="checkbox"
+                [ngModel]="properties().receiveShadows"
+                (ngModelChange)="patchProp({ receiveShadows: $event })" />
+              <span>Receive Shadows</span>
+            </label>
+          </div>
+        }
+      </div>
+
+      <!-- Motion & Forces Accordion -->
+      <div class="lw-fx-accordion">
+        <button
+          ngpButton
+          type="button"
+          class="lw-fx-accordion__head"
+          (click)="motionExpanded.set(!motionExpanded())">
+          <div class="lw-fx-accordion__title">
+            <lw-icon name="compass" [size]="14" />
+            <span>Motion &amp; Forces</span>
+          </div>
+          <lw-icon [name]="motionExpanded() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+        </button>
+        @if (motionExpanded()) {
+          <div class="lw-fx-accordion__content">
+            <div class="lw-fx-slider-row">
+              <span class="lw-fx-slider-row__label">Vortex Spin</span>
+              <input
+                type="range"
+                min="0.2"
+                max="6.0"
+                step="0.2"
+                class="lw-fx-range"
+                [ngModel]="motionForces().vortexStrength"
+                (ngModelChange)="patchMotion({ vortexStrength: +$event })" />
+              <span class="lw-fx-val-pill">{{ motionForces().vortexStrength.toFixed(1) }}</span>
+            </div>
+            <div class="lw-fx-slider-row">
+              <span class="lw-fx-slider-row__label">Spiral Turns</span>
+              <input
+                type="range"
+                min="1.0"
+                max="5.0"
+                step="0.2"
+                class="lw-fx-range"
+                [ngModel]="motionForces().spiralFrequency"
+                (ngModelChange)="patchMotion({ spiralFrequency: +$event })" />
+              <span class="lw-fx-val-pill">{{ motionForces().spiralFrequency.toFixed(1) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Collision Accordion -->
+      <div class="lw-fx-accordion">
+        <button
+          ngpButton
+          type="button"
+          class="lw-fx-accordion__head"
+          (click)="collisionExpanded.set(!collisionExpanded())">
+          <div class="lw-fx-accordion__title">
+            <lw-icon name="shield" [size]="14" />
+            <span>Collision</span>
+          </div>
+          <lw-icon [name]="collisionExpanded() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+        </button>
+        @if (collisionExpanded()) {
+          <div class="lw-fx-accordion__content">
+            <label class="lw-fx-check-label">
+              <input
+                type="checkbox"
+                [ngModel]="motionForces().enableCollision"
+                (ngModelChange)="patchMotion({ enableCollision: $event })" />
+              <span>Collide with Dungeon Floor &amp; Walls</span>
+            </label>
+          </div>
+        }
+      </div>
+
+      <!-- Attached Models Accordion -->
+      <div class="lw-fx-accordion">
+        <button
+          ngpButton
+          type="button"
+          class="lw-fx-accordion__head"
+          (click)="modelsExpanded.set(!modelsExpanded())">
+          <div class="lw-fx-accordion__title">
+            <lw-icon name="cube" [size]="14" />
+            <span>Attached Models</span>
+          </div>
+          <lw-icon [name]="modelsExpanded() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+        </button>
+        @if (modelsExpanded()) {
+          <div class="lw-fx-accordion__content">
+            <div class="lw-fx-prop-row">
+              <span class="lw-fx-prop-row__label">Mesh Socket</span>
+              <span class="lw-fx-val-pill lw-fx-val-pill--wide">{{ motionForces().attachedModelKey }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Sound Accordion -->
+      <div class="lw-fx-accordion">
+        <button
+          ngpButton
+          type="button"
+          class="lw-fx-accordion__head"
+          (click)="soundExpanded.set(!soundExpanded())">
+          <div class="lw-fx-accordion__title">
+            <lw-icon name="music" [size]="14" />
+            <span>Sound</span>
+          </div>
+          <lw-icon [name]="soundExpanded() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+        </button>
+        @if (soundExpanded()) {
+          <div class="lw-fx-accordion__content">
+            <div class="lw-fx-slider-row">
+              <span class="lw-fx-slider-row__label">Cue Volume</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                class="lw-fx-range"
+                [ngModel]="motionForces().soundVolumePercent"
+                (ngModelChange)="patchMotion({ soundVolumePercent: +$event })" />
+              <span class="lw-fx-val-pill">{{ motionForces().soundVolumePercent }}%</span>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (activeTab() === 'layers') {
+      <div class="lw-fx-layers-tab">
+        @for (trk of tracks(); track trk.id) {
+          <div class="lw-fx-layer-card">
+            <div>
+              <strong>{{ trk.label }}</strong>
+              <small>{{ trk.trackType }} · {{ trk.startTimeSeconds }}s – {{ trk.endTimeSeconds }}s</small>
+            </div>
+            <button
+              ngpButton
+              type="button"
+              class="lw-fx-pipette-btn"
+              (click)="trackVisibilityToggled.emit(trk.id)">
+              <lw-icon [name]="trk.visible ? 'eye' : 'eye-off'" [size]="14" />
+            </button>
+          </div>
+        }
+        <button
+          ngpButton
+          type="button"
+          class="lw-fx-add-layer-full"
+          (click)="addLayerRequested.emit()">
+          <lw-icon name="plus" [size]="14" />
+          <span>Add Timeline Layer</span>
+        </button>
+      </div>
+    } @else {
+      <div class="lw-fx-layers-tab">
+        <div class="lw-fx-layer-card">
+          <div>
+            <strong>Babylon.js GPU Shader Profile</strong>
+            <small>WebGL2 / WebGPU Hardware Instanced Emitters</small>
+          </div>
+        </div>
+        <div class="lw-fx-layer-card">
+          <div>
+            <strong>Authoritative Server Sync</strong>
+            <small>Connected to /api/v2/effects/studio</small>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</aside>

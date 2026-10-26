@@ -1,0 +1,116 @@
+:host {
+  display: block;
+}
+
+.lw-architect-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.9rem;
+}
+
+.lw-architect-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  background: rgba(9, 24, 20, 0.88);
+  border: 1px solid rgba(212, 168, 83, 0.24);
+}
+
+.lw-architect-card__header,
+.lw-architect-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.lw-architect-card__footer span {
+  font-size: 0.72rem;
+  color: #96b0a7;
+}
+
+.lw-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.lw-field-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.24rem;
+  font-size: 0.73rem;
+  color: #b7ccc4;
+}
+
+.lw-input {
+  background: rgba(13, 33, 27, 0.92);
+  border: 1px solid rgba(212, 168, 83, 0.28);
+  border-radius: 7px;
+  color: #f4efe2;
+  font-size: 0.76rem;
+  padding: 0.34rem 0.55rem;
+}
+
+.lw-pill-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.lw-arch-pill {
+  background: rgba(16, 38, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #d8e5e0;
+  font-size: 0.71rem;
+  padding: 0.22rem 0.58rem;
+  cursor: pointer;
+}
+
+.lw-arch-pill--active {
+  background: rgba(212, 168, 83, 0.2);
+  border-color: #d4a853;
+  color: #ffe29a;
+}
+
+.lw-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  color: #cfe0d9;
+}
+
+.lw-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.lw-item-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.36rem 0.55rem;
+  border-radius: 7px;
+  background: rgba(14, 34, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.73rem;
+}
+
+.lw-remove-btn {
+  background: rgba(239, 93, 114, 0.16);
+  border: 1px solid rgba(239, 93, 114, 0.4);
+  border-radius: 5px;
+  color: #ff9aa8;
+  font-size: 0.68rem;
+  padding: 0.15rem 0.42rem;
+  cursor: pointer;
+}

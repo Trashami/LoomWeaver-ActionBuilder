@@ -1,0 +1,43 @@
+@if (routerLink(); as route) {
+  <a
+    ngpButton
+    class="lw-btn"
+    [class.lw-btn--emerald]="variant() === 'emerald' || variant() === 'primary'"
+    [class.lw-btn--gold]="variant() === 'gold'"
+    [class.lw-btn--secondary]="variant() === 'secondary'"
+    [class.lw-btn--ghost]="variant() === 'ghost'"
+    [class.lw-btn--danger]="variant() === 'danger'"
+    [class.lw-btn--sm]="size() === 'sm'"
+    [class.lw-btn--lg]="size() === 'lg'"
+    [routerLink]="route">
+    @if (iconOnly() && icon(); as iconName) {
+      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 14 : 16" />
+    }
+    @if (label()) {
+      <span>{{ label() }}</span>
+    }
+    <ng-content />
+  </a>
+} @else {
+  <button
+    ngpButton
+    type="button"
+    class="lw-btn"
+    [class.lw-btn--emerald]="variant() === 'emerald' || variant() === 'primary'"
+    [class.lw-btn--gold]="variant() === 'gold'"
+    [class.lw-btn--secondary]="variant() === 'secondary'"
+    [class.lw-btn--ghost]="variant() === 'ghost'"
+    [class.lw-btn--danger]="variant() === 'danger'"
+    [class.lw-btn--sm]="size() === 'sm'"
+    [class.lw-btn--lg]="size() === 'lg'"
+    [disabled]="disabled()"
+    (click)="pressed.emit()">
+    @if (iconOnly() && icon(); as iconName) {
+      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 14 : 16" />
+    }
+    @if (label()) {
+      <span>{{ label() }}</span>
+    }
+    <ng-content />
+  </button>
+}

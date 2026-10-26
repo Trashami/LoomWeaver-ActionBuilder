@@ -1,0 +1,129 @@
+<div class="lw-fx-subheader">
+  <div class="lw-fx-subheader__left">
+    <button
+      ngpButton
+      type="button"
+      class="lw-fx-back-btn"
+      aria-label="Back to LoomWeaver"
+      (click)="backRequested.emit()">
+      <lw-icon name="arrow-left" [size]="16" />
+    </button>
+
+    <div class="lw-fx-title-block">
+      <div class="lw-fx-title-row">
+        @if (editingTitle()) {
+          <input
+            type="text"
+            class="lw-fx-title-input"
+            [ngModel]="effectName()"
+            (blur)="commitTitle(titleBox.value)"
+            (keydown.enter)="commitTitle(titleBox.value)"
+            #titleBox />
+        } @else {
+          <h1 class="lw-fx-title" (click)="startEditing()">{{ effectName() }}</h1>
+          <button
+            ngpButton
+            type="button"
+            class="lw-fx-edit-btn"
+            aria-label="Rename Effect"
+            (click)="startEditing()">
+            <lw-icon name="pen" [size]="13" />
+          </button>
+        }
+      </div>
+      <div class="lw-fx-subtitle">
+        <span>{{ effectSubtitle() }}</span>
+        <span class="lw-fx-dot">·</span>
+        <span [class.lw-fx-status--saved]="statusLabel() === 'Saved'">{{ statusLabel() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="lw-fx-mode-tabs" role="tablist" aria-label="Effect Studio Workspace Mode">
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-fx-mode-tab"
+      [class.lw-fx-mode-tab--active]="activeMode() === 'design'"
+      [attr.aria-selected]="activeMode() === 'design'"
+      (click)="modeChanged.emit('design')">
+      <lw-icon name="wand" [size]="14" />
+      <span>Design</span>
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-fx-mode-tab"
+      [class.lw-fx-mode-tab--active]="activeMode() === 'preview'"
+      [attr.aria-selected]="activeMode() === 'preview'"
+      (click)="modeChanged.emit('preview')">
+      <lw-icon name="play" [size]="14" />
+      <span>Preview</span>
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-fx-mode-tab"
+      [class.lw-fx-mode-tab--active]="activeMode() === 'ingame'"
+      [attr.aria-selected]="activeMode() === 'ingame'"
+      (click)="modeChanged.emit('ingame')">
+      <lw-icon name="target" [size]="14" />
+      <span>In-Game Test</span>
+    </button>
+  </div>
+
+  <div class="lw-fx-subheader__actions">
+    <div class="lw-fx-history-group">
+      <button
+        ngpButton
+        type="button"
+        class="lw-fx-history-btn"
+        [disabled]="!canUndo()"
+        aria-label="Undo"
+        (click)="undoRequested.emit()">
+        <lw-icon name="undo" [size]="15" />
+      </button>
+      <button
+        ngpButton
+        type="button"
+        class="lw-fx-history-btn"
+        [disabled]="!canRedo()"
+        aria-label="Redo"
+        (click)="redoRequested.emit()">
+        <lw-icon name="redo" [size]="15" />
+      </button>
+    </div>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-fx-save-btn"
+      (click)="saveRequested.emit()">
+      <lw-icon name="save" [size]="15" />
+      <span>Save</span>
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-fx-export-btn"
+      (click)="exportRequested.emit()">
+      <lw-icon name="upload" [size]="15" />
+      <span>Export</span>
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-fx-more-btn"
+      aria-label="More Options"
+      (click)="exportRequested.emit()">
+      <lw-icon name="more-vertical" [size]="15" />
+    </button>
+  </div>
+</div>

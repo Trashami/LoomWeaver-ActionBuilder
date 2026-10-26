@@ -1,0 +1,86 @@
+.lw-session-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.05rem;
+  border-radius: 12px;
+  background: rgba(16, 15, 24, 0.9);
+  border: 1px solid rgba(229, 184, 92, 0.22);
+}
+
+.lw-session-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lw-session-card__eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(229, 184, 92, 0.86);
+}
+
+.lw-session-card__title {
+  margin: 0.14rem 0 0;
+  font-size: 1rem;
+  color: #f6f1e6;
+}
+
+.lw-session-card__summary {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(214, 208, 196, 0.86);
+  line-height: 1.48;
+}
+
+.lw-session-card__highlights {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: #dcd5c7;
+}
+
+.lw-session-card__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
+}
+
+.lw-session-card__link-group {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(229, 184, 92, 0.3);
+  background: rgba(229, 184, 92, 0.09);
+}
+
+.lw-session-card__deep-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #ffe299;
+  text-decoration: none;
+}
+
+.lw-session-card__inspect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.45rem;
+  border: none;
+  border-left: 1px solid rgba(229, 184, 92, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  color: #5ce5a0;
+  cursor: pointer;
+}

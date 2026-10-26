@@ -1,0 +1,308 @@
+@if (auth.authModalOpen()) {
+  <div
+    class="lw-auth-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="lw-auth-modal-title"
+    (click)="auth.closeAuthModal()"
+  >
+    <div
+      ngpTabset
+      [ngpTabsetValue]="auth.authModalTab()"
+      class="lw-auth-dialog"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="lw-auth-header">
+        <div class="lw-auth-brand">
+          <img src="/LoomWeaverCrow.png" alt="LoomWeaver Raven Crest" class="lw-auth-logo" />
+          <div>
+            <span class="lw-auth-eyebrow">LoomWeaver Unified Authentication</span>
+            <h2 id="lw-auth-modal-title">
+              @switch (auth.authModalTab()) {
+                @case ('login') { Sign In to LoomWeaver }
+                @case ('register') { Create Your Account }
+                @case ('request') { Request Guild Access }
+              }
+            </h2>
+          </div>
+        </div>
+        <button
+          ngpButton
+          type="button"
+          class="lw-auth-close"
+          aria-label="Close authentication dialog"
+          (click)="auth.closeAuthModal()"
+        >
+          <lw-icon name="close" [size]="18" />
+        </button>
+      </header>
+
+      <div ngpTabList class="lw-auth-tabs" role="tablist">
+        <button
+          ngpButton
+          ngpTabButton
+          ngpTabButtonValue="login"
+          type="button"
+          role="tab"
+          class="lw-auth-tab"
+          [class.lw-auth-tab--active]="auth.authModalTab() === 'login'"
+          (click)="selectTab('login')"
+        >
+          <span>Sign In</span>
+        </button>
+        <button
+          ngpButton
+          ngpTabButton
+          ngpTabButtonValue="register"
+          type="button"
+          role="tab"
+          class="lw-auth-tab"
+          [class.lw-auth-tab--active]="auth.authModalTab() === 'register'"
+          (click)="selectTab('register')"
+        >
+          <span>Create Account</span>
+        </button>
+        <button
+          ngpButton
+          ngpTabButton
+          ngpTabButtonValue="request"
+          type="button"
+          role="tab"
+          class="lw-auth-tab"
+          [class.lw-auth-tab--active]="auth.authModalTab() === 'request'"
+          (click)="selectTab('request')"
+        >
+          <span>Request Access</span>
+        </button>
+      </div>
+
+      @if (auth.authError()) {
+        <div class="lw-auth-alert" role="alert">
+          <span>{{ auth.authError() }}</span>
+        </div>
+      }
+
+      @if (auth.authNotice()) {
+        <div class="lw-auth-notice" role="status">
+          <span>{{ auth.authNotice() }}</span>
+        </div>
+      }
+
+      @if (auth.authModalTab() === 'login') {
+        <div class="lw-google-slot">
+          <div id="lw-google-btn-container"></div>
+        </div>
+
+        <div class="lw-auth-divider">
+          <span>OR SIGN IN WITH CREDENTIALS</span>
+        </div>
+
+        <form class="lw-auth-form" (ngSubmit)="submitLogin()">
+          <label class="lw-auth-field">
+            <span>Email Address or Username</span>
+            <input
+              ngpInput
+              type="text"
+              name="loginIdentifier"
+              autocomplete="username"
+              placeholder="e.g. GeoJason or jtromborg1@gmail.com"
+              [ngModel]="loginIdentifier()"
+              (ngModelChange)="loginIdentifier.set($event)"
+              required
+            />
+          </label>
+
+          <label class="lw-auth-field">
+            <span>Password</span>
+            <input
+              ngpInput
+              type="password"
+              name="loginPassword"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              [ngModel]="loginPassword()"
+              (ngModelChange)="loginPassword.set($event)"
+              required
+            />
+          </label>
+
+          <div class="lw-auth-actions">
+            <lw-button
+              variant="gold"
+              size="md"
+              [disabled]="auth.authLoading()"
+              (pressed)="submitLogin()"
+            >
+              {{ auth.authLoading() ? 'Verifying Credentials...' : 'Authenticate & Enter Studio' }}
+            </lw-button>
+          </div>
+        </form>
+      } @else if (auth.authModalTab() === 'register') {
+        <form class="lw-auth-form" (ngSubmit)="submitRegister()">
+          <label class="lw-auth-field">
+            <span>Email Address</span>
+            <input
+              ngpInput
+              type="email"
+              name="registerEmail"
+              autocomplete="email"
+              placeholder="adventurer@realm.com"
+              [ngModel]="registerEmail()"
+              (ngModelChange)="registerEmail.set($event)"
+              required
+            />
+          </label>
+
+          <div class="lw-auth-row">
+            <label class="lw-auth-field">
+              <span>Username</span>
+              <input
+                ngpInput
+                type="text"
+                name="registerUsername"
+                autocomplete="username"
+                placeholder="Unique handle"
+                [ngModel]="registerUsername()"
+                (ngModelChange)="registerUsername.set($event)"
+                required
+              />
+            </label>
+
+            <label class="lw-auth-field">
+              <span>Display Name</span>
+              <input
+                ngpInput
+                type="text"
+                name="registerDisplayName"
+                autocomplete="name"
+                placeholder="Table Name"
+                [ngModel]="registerDisplayName()"
+                (ngModelChange)="registerDisplayName.set($event)"
+              />
+            </label>
+          </div>
+
+          <label class="lw-auth-field">
+            <span>Password (minimum 6 characters)</span>
+            <input
+              ngpInput
+              type="password"
+              name="registerPassword"
+              autocomplete="new-password"
+              placeholder="Create a strong password"
+              [ngModel]="registerPassword()"
+              (ngModelChange)="registerPassword.set($event)"
+              required
+            />
+          </label>
+
+          <div class="lw-auth-role-picker">
+            <span class="lw-auth-role-label">Account Role</span>
+            <div class="lw-auth-role-grid">
+              <button
+                ngpButton
+                type="button"
+                class="lw-auth-role-card"
+                [class.lw-auth-role-card--active]="registerRole() === 'gm'"
+                (click)="registerRole.set('gm')"
+              >
+                <strong>Game Master &amp; Creator</strong>
+                <span>Campaign Studio, LoomMaps, Weave AI &amp; 85/15 Marketplace</span>
+              </button>
+              <button
+                ngpButton
+                type="button"
+                class="lw-auth-role-card"
+                [class.lw-auth-role-card--active]="registerRole() === 'players'"
+                (click)="registerRole.set('players')"
+              >
+                <strong>Free Player Seat</strong>
+                <span>100% free forever — character sheets, 2.5D VTT &amp; witness-scoped Loom</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="lw-auth-actions">
+            <lw-button
+              variant="gold"
+              size="md"
+              [disabled]="auth.authLoading()"
+              (pressed)="submitRegister()"
+            >
+              {{ auth.authLoading() ? 'Creating Account...' : 'Create Account & Sign In' }}
+            </lw-button>
+          </div>
+        </form>
+      } @else {
+        <form class="lw-auth-form" (ngSubmit)="submitAccessRequest()">
+          <label class="lw-auth-field">
+            <span>Email Address</span>
+            <input
+              ngpInput
+              type="email"
+              name="reqEmail"
+              placeholder="adventurer@example.com"
+              [ngModel]="reqEmail()"
+              (ngModelChange)="reqEmail.set($event)"
+              required
+            />
+          </label>
+
+          <div class="lw-auth-row">
+            <label class="lw-auth-field">
+              <span>Desired Username</span>
+              <input
+                ngpInput
+                type="text"
+                name="reqUsername"
+                placeholder="Unique handle"
+                [ngModel]="reqUsername()"
+                (ngModelChange)="reqUsername.set($event)"
+                required
+              />
+            </label>
+            <label class="lw-auth-field">
+              <span>Display Name</span>
+              <input
+                ngpInput
+                type="text"
+                name="reqDisplayName"
+                placeholder="DM or Player Name"
+                [ngModel]="reqDisplayName()"
+                (ngModelChange)="reqDisplayName.set($event)"
+              />
+            </label>
+          </div>
+
+          <label class="lw-auth-field">
+            <span>Campaign or Invitation Note (Optional)</span>
+            <input
+              ngpInput
+              type="text"
+              name="reqNotes"
+              placeholder="e.g. Invited to Icrandor Campaign"
+              [ngModel]="reqNotes()"
+              (ngModelChange)="reqNotes.set($event)"
+            />
+          </label>
+
+          <div class="lw-auth-actions">
+            <lw-button
+              variant="gold"
+              size="md"
+              [disabled]="auth.authLoading()"
+              (pressed)="submitAccessRequest()"
+            >
+              Submit Access Request
+            </lw-button>
+          </div>
+        </form>
+      }
+
+      <footer class="lw-auth-footer">
+        <lw-badge label="Unified .loom-weaver.com SSO" tone="emerald" />
+        <span>Single sign-on across LoomWeaver, LoomMaps, VTT, ActionBuilder &amp; EffectBuilder.</span>
+      </footer>
+    </div>
+  </div>
+}

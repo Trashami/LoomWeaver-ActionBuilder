@@ -1,0 +1,130 @@
+.lw-layers-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: rgba(8, 22, 18, 0.9);
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  min-width: 285px;
+  max-width: 330px;
+}
+
+.lw-layers-drawer__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.lw-drawer-tab {
+  background: rgba(15, 36, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #b7ccc4;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.38rem 0.4rem;
+  cursor: pointer;
+}
+
+.lw-drawer-tab--active {
+  background: rgba(212, 168, 83, 0.2);
+  border-color: #d4a853;
+  color: #ffe29a;
+}
+
+.lw-layers-drawer__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lw-layers-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.lw-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 310px;
+  overflow-y: auto;
+}
+
+.lw-layer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 9px;
+  background: rgba(14, 32, 27, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.lw-layer-card--active {
+  border-color: #d4a853;
+  background: rgba(212, 168, 83, 0.12);
+}
+
+.lw-layer-card__top,
+.lw-layer-card__meta,
+.lw-layer-card__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+}
+
+.lw-layer-card__toggles,
+.lw-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.lw-mini-btn {
+  background: rgba(20, 46, 39, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #d6e4df;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.48rem;
+  cursor: pointer;
+}
+
+.lw-mini-btn--active {
+  border-color: #2ed39a;
+  color: #9ff7d6;
+}
+
+.lw-blend-select,
+.lw-object-search {
+  background: rgba(10, 25, 21, 0.92);
+  border: 1px solid rgba(212, 168, 83, 0.28);
+  border-radius: 6px;
+  color: #f4efe2;
+  font-size: 0.75rem;
+  padding: 0.28rem 0.5rem;
+}
+
+.lw-stamp-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem;
+  border-radius: 9px;
+  background: rgba(12, 28, 24, 0.92);
+  border: 1px solid rgba(46, 211, 154, 0.25);
+  font-size: 0.76rem;
+}
+
+.lw-stamp-inspector label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
