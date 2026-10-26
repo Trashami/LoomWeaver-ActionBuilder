@@ -229,12 +229,12 @@ INSERT INTO `lw_combat_telemetry` (`campaign_id`, `character_key`, `character_na
 ON DUPLICATE KEY UPDATE `total_damage_dealt`=VALUES(`total_damage_dealt`), `last_hits`=VALUES(`last_hits`);
 
 
--- 9. World Atlas Maps (World -> Continent -> Region -> Settlement -> District -> Building)
+-- 9. World Atlas Maps (World -> Continent -> Region -> Settlement -> District -> Building -> Site -> Floor -> Room)
 CREATE TABLE IF NOT EXISTS `lw_world_maps` (
   `map_id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
   `name` VARCHAR(160) NOT NULL,
-  `scope_level` ENUM('World','Continent','Region','Settlement','District','Building') NOT NULL DEFAULT 'World',
+  `scope_level` ENUM('World','Continent','Region','Settlement','District','Building','Site','Floor','Room','WildernessArea') NOT NULL DEFAULT 'World',
   `parent_map_id` VARCHAR(64) NULL,
   `parent_location_key` VARCHAR(64) NULL,
   `image_url` VARCHAR(500) NOT NULL,
@@ -247,20 +247,22 @@ CREATE TABLE IF NOT EXISTS `lw_world_maps` (
   CONSTRAINT `fk_lw_world_maps_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. World Locations & Hierarchy
+-- 10. World Locations & Hierarchy (Extended to Site, Floor, Room, WildernessArea)
 CREATE TABLE IF NOT EXISTS `lw_world_locations` (
   `location_key` VARCHAR(64) NOT NULL PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
   `composite_key` VARCHAR(160) NOT NULL,
   `name` VARCHAR(160) NOT NULL,
   `location_type` VARCHAR(64) NOT NULL,
-  `hierarchy_level` ENUM('World','Continent','Region','Settlement','District','Building') NOT NULL DEFAULT 'Settlement',
+  `hierarchy_level` ENUM('World','Continent','Region','Settlement','District','Building','Site','Floor','Room','WildernessArea') NOT NULL DEFAULT 'Settlement',
+  `area_code` VARCHAR(32) NULL,
   `parent_location_key` VARCHAR(64) NULL,
   `map_id` VARCHAR(64) NULL,
   `child_map_id` VARCHAR(64) NULL,
   `linked_scene_key` VARCHAR(64) NULL,
   `x_percent` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
   `y_percent` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
+  `polygon_points_json` JSON NULL,
   `discovery_status` ENUM('visited','known','rumor','undiscovered') NOT NULL DEFAULT 'known',
   `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
   `artwork_url` VARCHAR(500) NOT NULL,
@@ -269,6 +271,7 @@ CREATE TABLE IF NOT EXISTS `lw_world_locations` (
   `culture_and_traditions` TEXT NOT NULL,
   `local_myths` TEXT NOT NULL,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_world_loc_campaign_key` (`campaign_id`, `location_key`),
   CONSTRAINT `fk_lw_world_locations_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -307,3 +310,419 @@ CREATE TABLE IF NOT EXISTS `lw_world_history_events` (
   `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
   CONSTRAINT `fk_lw_world_history_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 13. Campaign Membership & Identity Reconciliation (lw_users <-> lw_auth_users <-> Character Seats)
+CREATE TABLE IF NOT EXISTS `lw_campaign_members` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `auth_email` VARCHAR(255) NOT NULL,
+  `member_role` ENUM('gm','player','spectator') NOT NULL DEFAULT 'player',
+  `assigned_character_key` VARCHAR(64) NULL,
+  `joined_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_campaign_member` (`campaign_id`, `user_id`),
+  CONSTRAINT `fk_lw_camp_members_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_camp_members_user` FOREIGN KEY (`user_id`) REFERENCES `lw_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 14. Adventures & Immutable Published Versions (Authoritative Module Identity & Provenance)
+CREATE TABLE IF NOT EXISTS `lw_adventures` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `slug` VARCHAR(96) NOT NULL UNIQUE,
+  `title` VARCHAR(160) NOT NULL,
+  `subtitle` VARCHAR(255) NOT NULL DEFAULT '',
+  `system_code` ENUM('dnd5e','pf2e','vampire_v5','system-neutral') NOT NULL DEFAULT 'dnd5e',
+  `adventure_format` ENUM('one-shot','weekend','campaign-act','full-campaign') NOT NULL DEFAULT 'campaign-act',
+  `expected_duration_minutes` INT NOT NULL DEFAULT 240,
+  `recommended_level_range` VARCHAR(64) NOT NULL DEFAULT 'Levels 5–8',
+  `author_user_id` BIGINT UNSIGNED NOT NULL DEFAULT 1,
+  `author_handle` VARCHAR(96) NOT NULL DEFAULT '@GeoJason',
+  `premise` TEXT NOT NULL,
+  `background_truth` TEXT NOT NULL,
+  `hero_artwork_url` VARCHAR(500) NOT NULL DEFAULT '/combat-caves.jpg',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lw_adventure_versions` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `adventure_id` VARCHAR(64) NOT NULL,
+  `version_tag` VARCHAR(32) NOT NULL DEFAULT '1.0.0',
+  `schema_version` VARCHAR(64) NOT NULL DEFAULT 'loomweaver.adventure/1',
+  `is_immutable_published` TINYINT(1) NOT NULL DEFAULT 1,
+  `changelog_summary` VARCHAR(500) NOT NULL DEFAULT 'Initial playable adventure package release.',
+  `manifest_json` JSON NULL,
+  `published_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_adv_version` (`adventure_id`, `version_tag`),
+  CONSTRAINT `fk_lw_adv_versions_adv` FOREIGN KEY (`adventure_id`) REFERENCES `lw_adventures` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 15. Marketplace Module Installations & Package-ID-to-Campaign-ID Remapping
+-- (Structure prepared for portable module installations without cross-campaign leakage)
+CREATE TABLE IF NOT EXISTS `lw_module_installations` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `adventure_version_id` VARCHAR(64) NOT NULL,
+  `installed_by_user_id` BIGINT UNSIGNED NOT NULL,
+  `installation_status` ENUM('installed','updating','conflict_review','archived') NOT NULL DEFAULT 'installed',
+  `local_revision` INT NOT NULL DEFAULT 1,
+  `installed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_campaign_installation` (`campaign_id`, `adventure_version_id`),
+  CONSTRAINT `fk_lw_install_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_install_adv_ver` FOREIGN KEY (`adventure_version_id`) REFERENCES `lw_adventure_versions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lw_module_id_maps` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `installation_id` BIGINT UNSIGNED NOT NULL,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `package_node_id` VARCHAR(64) NOT NULL,
+  `campaign_node_id` VARCHAR(64) NOT NULL,
+  `campaign_composite_key` VARCHAR(160) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_install_pkg_node` (`installation_id`, `package_node_id`),
+  KEY `ix_lw_id_map_campaign_node` (`campaign_id`, `campaign_node_id`),
+  CONSTRAINT `fk_lw_id_map_install` FOREIGN KEY (`installation_id`) REFERENCES `lw_module_installations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 16. Adventure Nodes (Chapters, Locations, Sites, Floors, Keyed Rooms, Scenes, Encounters, NPCs, Characters, Clues, Hazards, Treasures, Secrets, Rules, Handouts)
+CREATE TABLE IF NOT EXISTS `lw_adventure_nodes` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `adventure_version_id` VARCHAR(64) NOT NULL,
+  `parent_node_id` VARCHAR(64) NULL,
+  `node_kind` ENUM('adventure','chapter','location','scene','encounter','npc','character','clue','hazard','treasure','secret','rule','handout','map_region') NOT NULL,
+  `location_type` ENUM('none','region','city','district','site','floor','room','wilderness_area') NOT NULL DEFAULT 'none',
+  `area_key` VARCHAR(32) NULL,
+  `title` VARCHAR(160) NOT NULL,
+  `subtitle` VARCHAR(200) NOT NULL DEFAULT '',
+  `summary` TEXT NOT NULL,
+  `sensory_description` TEXT NULL,
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  `default_state` ENUM('unresolved','discovered','completed','optional') NOT NULL DEFAULT 'unresolved',
+  `route_link` VARCHAR(255) NOT NULL DEFAULT '/campaigns',
+  `artwork_url` VARCHAR(500) NOT NULL DEFAULT '/combat-caves.jpg',
+  `linked_entity_composite_key` VARCHAR(160) NULL,
+  `linked_scene_key` VARCHAR(64) NULL,
+  `revision` INT NOT NULL DEFAULT 1,
+  `metadata_json` JSON NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY `ix_lw_adv_nodes_campaign_kind` (`campaign_id`, `node_kind`),
+  KEY `ix_lw_adv_nodes_parent` (`campaign_id`, `parent_node_id`),
+  CONSTRAINT `fk_lw_adv_nodes_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_adv_nodes_version` FOREIGN KEY (`adventure_version_id`) REFERENCES `lw_adventure_versions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 17. Ordered Typed Adventure Content Blocks (Read-Aloud, Prose, GM Notes, Skill Checks, Tables, Tactics, Rewards)
+CREATE TABLE IF NOT EXISTS `lw_adventure_blocks` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `node_id` VARCHAR(64) NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 10,
+  `block_kind` ENUM('prose','readAloud','gmNote','table','image','check','reference','tactics','reward','condition') NOT NULL,
+  `audience` ENUM('public','players','gm') NOT NULL DEFAULT 'gm',
+  `shareable` TINYINT(1) NOT NULL DEFAULT 1,
+  `title` VARCHAR(160) NOT NULL DEFAULT '',
+  `content` TEXT NOT NULL,
+  `payload_json` JSON NULL,
+  KEY `ix_lw_adv_blocks_node` (`node_id`, `sort_order`),
+  CONSTRAINT `fk_lw_adv_blocks_node` FOREIGN KEY (`node_id`) REFERENCES `lw_adventure_nodes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 18. Typed Adventure Relationships & Why-Included Context Explanations
+CREATE TABLE IF NOT EXISTS `lw_adventure_links` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `from_node_id` VARCHAR(64) NOT NULL,
+  `to_node_id` VARCHAR(64) NOT NULL,
+  `link_type` ENUM('CONTAINS','OCCURS_AT','PLANS','PLAYED','FEATURES','USES','HAS_CLUE','HAS_HAZARD','HAS_TREASURE','REVEALS','LEADS_TO','DEPICTS','REFERENCES','ASSIGNED_MAP') NOT NULL,
+  `why_included_label` VARCHAR(160) NOT NULL DEFAULT 'Linked to this scene',
+  `direction_or_exit_label` VARCHAR(96) NULL,
+  `condition_expr` VARCHAR(255) NULL,
+  `sort_order` INT NOT NULL DEFAULT 10,
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  UNIQUE KEY `uk_lw_adv_link` (`campaign_id`, `from_node_id`, `to_node_id`, `link_type`),
+  KEY `ix_lw_adv_links_to` (`campaign_id`, `to_node_id`),
+  CONSTRAINT `fk_lw_adv_links_from` FOREIGN KEY (`from_node_id`) REFERENCES `lw_adventure_nodes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_adv_links_to` FOREIGN KEY (`to_node_id`) REFERENCES `lw_adventure_nodes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 19. Adventure Dependencies & Compendium Resolution Status
+CREATE TABLE IF NOT EXISTS `lw_adventure_dependencies` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `adventure_version_id` VARCHAR(64) NOT NULL,
+  `dependency_type` ENUM('compendium-creature','compendium-item','compendium-spell','module','system-ruleset') NOT NULL,
+  `source_reference` VARCHAR(128) NOT NULL,
+  `display_name` VARCHAR(160) NOT NULL,
+  `occurrence_count` INT NOT NULL DEFAULT 1,
+  `resolution_status` ENUM('resolved','missing','custom-bound') NOT NULL DEFAULT 'resolved',
+  `resolved_composite_key` VARCHAR(160) NULL,
+  CONSTRAINT `fk_lw_adv_deps_ver` FOREIGN KEY (`adventure_version_id`) REFERENCES `lw_adventure_versions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20. Adventure Assets & Clickable Map-Region Polygons
+CREATE TABLE IF NOT EXISTS `lw_adventure_assets` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `adventure_version_id` VARCHAR(64) NOT NULL,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `asset_kind` ENUM('map-image','portrait','handout','battlemap-scene','audio') NOT NULL,
+  `title` VARCHAR(160) NOT NULL,
+  `file_path` VARCHAR(500) NOT NULL,
+  `content_hash` VARCHAR(128) NOT NULL DEFAULT 'sha256:loomweaver-curated',
+  `width_px` INT NOT NULL DEFAULT 1920,
+  `height_px` INT NOT NULL DEFAULT 1080,
+  `attribution` VARCHAR(255) NOT NULL DEFAULT 'LoomWeaver Studio & Campaign Creator',
+  `distribution_permission` ENUM('included','creator-licensed','private-campaign') NOT NULL DEFAULT 'included',
+  `audience` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  `linked_scene_key` VARCHAR(64) NULL,
+  `map_regions_json` JSON NULL,
+  CONSTRAINT `fk_lw_adv_assets_ver` FOREIGN KEY (`adventure_version_id`) REFERENCES `lw_adventure_versions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 21. Durable Planned Sessions & Reusable Session Content Links
+CREATE TABLE IF NOT EXISTS `lw_sessions` (
+  `session_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `adventure_version_id` VARCHAR(64) NOT NULL,
+  `session_number` INT NOT NULL,
+  `title` VARCHAR(160) NOT NULL,
+  `chapter_node_id` VARCHAR(64) NULL,
+  `primary_location_node_id` VARCHAR(64) NULL,
+  `assigned_scene_key` VARCHAR(64) NULL,
+  `session_state` ENUM('planned','live','completed') NOT NULL DEFAULT 'live',
+  `scheduled_date_label` VARCHAR(128) NOT NULL DEFAULT '',
+  `epigraph` VARCHAR(500) NOT NULL DEFAULT '',
+  `summary` TEXT NOT NULL,
+  `artwork_url` VARCHAR(500) NOT NULL DEFAULT '/combat-caves.jpg',
+  `objectives_json` JSON NULL,
+  `stopping_points_json` JSON NULL,
+  `revision` INT NOT NULL DEFAULT 1,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_campaign_session_num` (`campaign_id`, `session_number`),
+  CONSTRAINT `fk_lw_sessions_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lw_session_content` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `session_id` VARCHAR(64) NOT NULL,
+  `node_id` VARCHAR(64) NOT NULL,
+  `content_role` ENUM('scene','location','room','npc','character','encounter','clue','hazard','treasure','handout','battlemap','rule') NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 10,
+  `why_included_label` VARCHAR(160) NOT NULL DEFAULT 'Planned for Session',
+  `is_optional` TINYINT(1) NOT NULL DEFAULT 0,
+  UNIQUE KEY `uk_lw_session_content_node` (`session_id`, `node_id`),
+  CONSTRAINT `fk_lw_session_content_ses` FOREIGN KEY (`session_id`) REFERENCES `lw_sessions` (`session_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_session_content_node` FOREIGN KEY (`node_id`) REFERENCES `lw_adventure_nodes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 22. Durable Play Progress, Session Beats, Play Events, Knowledge Grants & Idempotent Rewards
+CREATE TABLE IF NOT EXISTS `lw_adventure_progress` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `session_id` VARCHAR(64) NULL,
+  `node_id` VARCHAR(64) NULL,
+  `beat_key` VARCHAR(64) NOT NULL,
+  `label` VARCHAR(255) NOT NULL,
+  `progress_state` ENUM('unresolved','discovered','completed','optional') NOT NULL DEFAULT 'unresolved',
+  `is_done` TINYINT(1) NOT NULL DEFAULT 0,
+  `outcome_notes` VARCHAR(500) NOT NULL DEFAULT '',
+  `revision` INT NOT NULL DEFAULT 1,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_campaign_beat` (`campaign_id`, `beat_key`),
+  CONSTRAINT `fk_lw_adv_progress_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lw_play_events` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `session_id` VARCHAR(64) NULL,
+  `node_id` VARCHAR(64) NULL,
+  `event_kind` VARCHAR(64) NOT NULL,
+  `actor_label` VARCHAR(128) NOT NULL DEFAULT 'GM',
+  `summary` VARCHAR(500) NOT NULL,
+  `payload_json` JSON NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `ix_lw_play_events_campaign` (`campaign_id`, `created_at`),
+  CONSTRAINT `fk_lw_play_events_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lw_knowledge_grants` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `target_node_id` VARCHAR(64) NOT NULL,
+  `target_composite_key` VARCHAR(160) NOT NULL,
+  `granted_to_scope` ENUM('party','character','user') NOT NULL DEFAULT 'party',
+  `granted_to_character_key` VARCHAR(64) NOT NULL DEFAULT 'all-party',
+  `granted_by_role` VARCHAR(32) NOT NULL DEFAULT 'gm',
+  `reason_label` VARCHAR(255) NOT NULL DEFAULT 'Revealed at the table',
+  `granted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_knowledge_grant` (`campaign_id`, `target_node_id`, `granted_to_scope`, `granted_to_character_key`),
+  CONSTRAINT `fk_lw_grants_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lw_reward_awards` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `session_id` VARCHAR(64) NULL,
+  `source_node_id` VARCHAR(64) NOT NULL,
+  `idempotency_key` VARCHAR(128) NOT NULL UNIQUE,
+  `reward_kind` ENUM('xp','item','currency','boon') NOT NULL DEFAULT 'xp',
+  `xp_amount` INT NOT NULL DEFAULT 0,
+  `currency_label` VARCHAR(64) NOT NULL DEFAULT '',
+  `item_composite_key` VARCHAR(160) NULL,
+  `summary` VARCHAR(255) NOT NULL,
+  `awarded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_lw_rewards_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- SEED: ADVENTURES, VERSIONS, NODES, BLOCKS, LINKS, SESSIONS & PROGRESS
+-- =============================================================================
+
+INSERT INTO `lw_campaign_members` (`campaign_id`, `user_id`, `auth_email`, `member_role`, `assigned_character_key`) VALUES
+(1, 1, 'jtromborg1@gmail.com', 'gm', NULL),
+(1, 2, 'player@loom-weaver.com', 'player', 'pc-dal')
+ON DUPLICATE KEY UPDATE `member_role`=VALUES(`member_role`), `assigned_character_key`=VALUES(`assigned_character_key`);
+
+INSERT INTO `lw_adventures` (`id`, `slug`, `title`, `subtitle`, `system_code`, `adventure_format`, `expected_duration_minutes`, `recommended_level_range`, `author_user_id`, `author_handle`, `premise`, `background_truth`, `hero_artwork_url`) VALUES
+('adv-shadow-mountain', 'shadow-of-the-mountain', 'Shadow of the Mountain', 'Whispering Woods, The Ruined Chapel, and the Road to Cinth', 'dnd5e', 'full-campaign', 1440, 'Levels 5–9', 1, '@GeoJason',
+ 'Missing travelers, rhythmic tremors in the deep granite, and a half-buried chapel on the edge of the Whispering Woods draw the party into a web woven by the Council reformer Emrys Driothe.',
+ 'Emrys carries Sidhe Ard blood and cannot slay the life-bound dragon Vaelkorath beneath the mountain himself. The Order of Priors siphons student magic through Chokrah rituals while Emrys steers the party toward the runic cavern.',
+ '/combat-caves.jpg'),
+('adv-starstone-vaults', 'echoes-of-the-starstone', 'Echoes of the Starstone', 'Siege of the Spire & The Clockwork Vaults of Absalom', 'pf2e', 'campaign-act', 480, 'Levels 4–7', 1, '@GeoJason',
+ 'Ancient brass gears beneath the Absalom Grand Bazaar awaken as the High Clockmaster seals the lower Starstone conduit.',
+ 'The Vault Warden construct is bound directly to the Starstone harmonic spire.',
+ '/landing-assets/engines/engine-3-loommaps-atlas.jpg')
+ON DUPLICATE KEY UPDATE `title`=VALUES(`title`), `premise`=VALUES(`premise`);
+
+INSERT INTO `lw_adventure_versions` (`id`, `adventure_id`, `version_tag`, `schema_version`, `is_immutable_published`, `changelog_summary`, `manifest_json`) VALUES
+('adv-ver-sotm-1-0', 'adv-shadow-mountain', '1.0.0', 'loomweaver.adventure/1', 1, 'Playable Session & Location Adventure Graph with Keyed Chapel Rooms (C1–C3) and Cinth Act.',
+ JSON_OBJECT('schemaVersion', 'loomweaver.adventure/1', 'moduleId', 'shadow-of-the-mountain', 'version', '1.0.0', 'system', 'dnd5e', 'format', 'full-campaign')),
+('adv-ver-starstone-1-0', 'adv-starstone-vaults', '1.0.0', 'loomweaver.adventure/1', 1, 'Absalom Clockwork Vaults playable module.',
+ JSON_OBJECT('schemaVersion', 'loomweaver.adventure/1', 'moduleId', 'echoes-of-the-starstone', 'version', '1.0.0', 'system', 'pf2e', 'format', 'campaign-act'))
+ON DUPLICATE KEY UPDATE `changelog_summary`=VALUES(`changelog_summary`);
+
+INSERT INTO `lw_module_installations` (`id`, `campaign_id`, `adventure_version_id`, `installed_by_user_id`, `installation_status`, `local_revision`) VALUES
+(1, 1, 'adv-ver-sotm-1-0', 1, 'installed', 15),
+(2, 2, 'adv-ver-starstone-1-0', 1, 'installed', 6)
+ON DUPLICATE KEY UPDATE `local_revision`=VALUES(`local_revision`);
+
+-- Seed Adventure Nodes for Campaign 1 (Chapters, Locations, Keyed Rooms C1-C3, Scenes, NPCs, Encounters, Clues, Hazards, Treasures, Rules)
+INSERT INTO `lw_adventure_nodes` (`id`, `campaign_id`, `adventure_version_id`, `parent_node_id`, `node_kind`, `location_type`, `area_key`, `title`, `subtitle`, `summary`, `sensory_description`, `visibility`, `default_state`, `route_link`, `artwork_url`, `linked_entity_composite_key`, `linked_scene_key`, `metadata_json`) VALUES
+('node-chap-whispering', 1, 'adv-ver-sotm-1-0', NULL, 'chapter', 'region', 'CH4', 'Chapter 4: Shadows in the Stone', 'Whispering Woods & The Ruined Chapel Approach', 'The party follows tracks of missing scouts into the Whispering Woods where an Ekkosian wayside chapel hides pre-Moonlight Wars runes.', 'Cold mist curls around mossy Ekkosian boundary stones; the bedrock hums with a faint, rhythmic scraping from leagues to the south.', 'players', 'discovered', '/campaigns', '/combat-caves.jpg', NULL, 'scene-plains-red', JSON_OBJECT('expectedSessions', 2, 'levelRange', '6–7')),
+('node-loc-ruined-chapel', 1, 'adv-ver-sotm-1-0', 'node-chap-whispering', 'location', 'site', 'CHAPEL', 'The Ruined Chapel', 'Crumbling Ekkosian Sanctuary on the Edge of Whispering Woods', 'A half-buried stone chapel whose bell tower collapsed during the Moonlight Wars. Travelers have vanished near its courtyard, and Brother Malric tends a lone lantern inside.', 'Cracked slate roof tiles, damp incense mixed with ozone, and ancient scratch marks echoing up through the altar flagstones.', 'players', 'discovered', '/maps?scene=scene-plains-red', '/combat-caves.jpg', '1:Location:loc-plains-red', 'scene-plains-red', JSON_OBJECT('exits', JSON_ARRAY('C1: Ruined Nave', 'C2: Moonlit Courtyard', 'C3: Sealed Altar Crypt'))),
+('node-room-c1-nave', 1, 'adv-ver-sotm-1-0', 'node-loc-ruined-chapel', 'location', 'room', 'C1', 'C1: The Shattered Nave', 'Entry Hall & Brother Malric''s Lantern Post', 'Overturned oak pews flank a cracked mosaic of Ekkos, Mother of the Abandoned. Brother Malric keeps vigil by a brass brazier while hiding ledger pages under his vestments.', 'Rain drips through ribs of blackened timber; warm tallow candle-smoke fights the chill draft rising from the northern flagstones.', 'players', 'completed', '/maps?scene=scene-plains-red', '/combat-caves.jpg', '1:Location:loc-plains-red', 'scene-plains-red', JSON_OBJECT('exits', JSON_ARRAY('South: Whispering Woods Road', 'East: C2 Moonlit Courtyard', 'Down (Hidden): C3 Sealed Altar Crypt'), 'mapPolygon', JSON_ARRAY(JSON_OBJECT('x', 18, 'y', 24), JSON_OBJECT('x', 46, 'y', 24), JSON_OBJECT('x', 46, 'y', 62), JSON_OBJECT('x', 18, 'y', 62)))),
+('node-room-c2-courtyard', 1, 'adv-ver-sotm-1-0', 'node-loc-ruined-chapel', 'location', 'room', 'C2', 'C2: Moonlit Cloister Courtyard', 'Overgrown Flagstone Yard & Fallen Bell Tower', 'Shattered gargoyles and waist-high brambles choke the cloister yard. Fresh boot-tracks and dragged satchel marks lead toward the sunken crypt stairs.', 'Silver moonlight cuts through dead yew branches; shadows detach unnatural angles from the broken masonry.', 'players', 'unresolved', '/encounters?focus=enc-cinth-ballroom', '/tactical-combat-engine.jpg', '1:Location:loc-plains-red', 'scene-plains-red', JSON_OBJECT('exits', JSON_ARRAY('West: C1 Shattered Nave', 'North Stairs: C3 Sealed Altar Crypt'), 'mapPolygon', JSON_ARRAY(JSON_OBJECT('x', 48, 'y', 20), JSON_OBJECT('x', 78, 'y', 20), JSON_OBJECT('x', 78, 'y', 58), JSON_OBJECT('x', 48, 'y', 58)))),
+('node-room-c3-crypt', 1, 'adv-ver-sotm-1-0', 'node-loc-ruined-chapel', 'location', 'room', 'C3', 'C3: Sealed Altar Crypt', 'Subterranean Resonance Vault Beneath the Chapel', 'Beneath the displaced altar slab descends a spiral of basalt steps into a vaulted ossuary carved with pre-Council containment glyphs that echo the southern mountain prison.', 'Cold blue runelight pulses in time with a distant subterranean heartbeat; the scent of Chokrah residue lingers on a stone lectern.', 'gm', 'unresolved', '/maps?scene=scene-mountain-prison', '/the-weave-graph-engine.jpg', '1:Location:loc-cinth', 'scene-mountain-prison', JSON_OBJECT('exits', JSON_ARRAY('Up: C1 Shattered Nave Altar', 'South Passage: C2 Courtyard Stairs'), 'mapPolygon', JSON_ARRAY(JSON_OBJECT('x', 30, 'y', 64), JSON_OBJECT('x', 72, 'y', 64), JSON_OBJECT('x', 72, 'y', 90), JSON_OBJECT('x', 30, 'y', 90)))),
+('node-loc-cinth-gala', 1, 'adv-ver-sotm-1-0', 'node-chap-whispering', 'location', 'city', 'CINTH', 'City of Cinth & Grand Masquerade Rotunda', 'Inland Metropolis near the Plains of Vistagh', 'High nobility, the Artificers Guild brass foundry, and the Lord of Cinth''s glass rotunda where Emrys Driothe greets the party.', 'Polished obsidian pillars, phosphor-bronze chandeliers, and string quartets masking the metallic tang of blood.', 'players', 'discovered', '/maps?scene=scene-cinth-gala', '/six-engines-showcase.jpg', '1:Location:loc-cinth', 'scene-cinth-gala', JSON_OBJECT('exits', JSON_ARRAY('Artificers Quarter', 'Grand Ballroom Balcony', 'Cinth Sky-Dock'))),
+('node-scene-chapel-arrival', 1, 'adv-ver-sotm-1-0', 'node-room-c1-nave', 'scene', 'room', 'S15-1', 'Scene 1: Vigil in the Shattered Nave', 'Roleplay & Investigation with Brother Malric', 'The party enters C1 out of the Whispering Woods mist, questions Brother Malric, and notices stone-scraping vibrations beneath the altar.', 'Lantern light flickers across defaced Ekkosian reliefs.', 'players', 'completed', '/campaigns', '/combat-caves.jpg', NULL, 'scene-plains-red', JSON_OBJECT('sceneOrder', 1)),
+('node-scene-courtyard-ambush', 1, 'adv-ver-sotm-1-0', 'node-room-c2-courtyard', 'scene', 'room', 'S15-2', 'Scene 2: Ambush in the Moonlit Courtyard', 'Tactical Skirmish Among the Cloister Ruins', 'As the party traces the missing scout tracks across C2, Shadow Stalkers bound to the mountain''s poisoned roots strike from the fallen bell tower.', 'Bramble-choked flagstones provide half-cover; moonlight reveals shadow tendencies.', 'players', 'unresolved', '/arcane-screen', '/tactical-combat-engine.jpg', '1:Encounter:enc-cinth-ballroom', 'scene-plains-red', JSON_OBJECT('sceneOrder', 2)),
+('node-scene-crypt-descent', 1, 'adv-ver-sotm-1-0', 'node-room-c3-crypt', 'scene', 'room', 'S15-3', 'Scene 3: What Stirs Beneath the Altar', 'Crypt Puzzle, Chokrah Manifest & Runic Echo', 'Unsealing C3 reveals a Prior siphon ledger and a resonant stone plinth that harmonizes with Kildrid''s stone sense and the party''s Luminaries.', 'Runic frost coats the ossuary arches.', 'gm', 'unresolved', '/weave?node=sec-emrys-trap', '/the-weave-graph-engine.jpg', '1:Secret:sec-emrys-trap', 'scene-mountain-prison', JSON_OBJECT('sceneOrder', 3)),
+('node-npc-malric', 1, 'adv-ver-sotm-1-0', 'node-room-c1-nave', 'npc', 'none', 'NPC-1', 'Brother Malric', 'Chapel Keeper · Cautious Ekkosian Friar', 'Tends the ruined sanctuary and claims bandits took the missing scouts, but secretly fears the Order of Priors who visited the crypt three nights ago.', NULL, 'players', 'discovered', '/campaigns?inspect=npc-emrys', '/icrandor_world_dashboard.jpg', '1:NPC:npc-emrys', NULL, JSON_OBJECT('initials', 'BM', 'disposition', 'Cautious', 'dispositionTone', 'gold', 'ringColor', '#d9b77a', 'motive', 'Protect the remaining street-children from Prior inquisitors without exposing his past.', 'dialogue', '"Do not lift the altar stone after dark. What scratches beneath the mountain has long fingers."')),
+('node-npc-elowen', 1, 'adv-ver-sotm-1-0', 'node-room-c1-nave', 'npc', 'none', 'NPC-2', 'Sister Elowen', 'Wayward Healer · Guarded Witness', 'Treats a wounded Vale scout near the nave entrance and recognizes the star-etched fletching on the recovered arrow.', NULL, 'players', 'discovered', '/campaigns?inspect=npc-kutler', '/six-engines-showcase.jpg', '1:NPC:npc-kutler', NULL, JSON_OBJECT('initials', 'SE', 'disposition', 'Guarded', 'dispositionTone', 'emerald', 'ringColor', '#49e892', 'motive', 'Keep the wounded Vale scout alive until the party clears the courtyard.', 'dialogue', '"The shadows did not kill the scouts outright—they dragged them toward the crypt stairs."')),
+('node-npc-emrys', 1, 'adv-ver-sotm-1-0', 'node-loc-cinth-gala', 'npc', 'none', 'NPC-3', 'Emrys Driothe', 'Reformer of the New Council of Magic', 'Benevolent-seeming statesman in Cinth who secretly orchestrates the Priors and seeks to divert the party into the bound dragon''s mountain prison.', NULL, 'players', 'discovered', '/campaigns?inspect=npc-emrys', '/the-weave-graph-engine.jpg', '1:NPC:npc-emrys', 'scene-cinth-gala', JSON_OBJECT('initials', 'ED', 'disposition', 'Deceptive', 'dispositionTone', 'gold', 'ringColor', '#d9b77a', 'motive', 'Learn the party''s return route to Vandia and steer them into the runed cavern.', 'dialogue', '"The old Council hoarded magic for wizards alone. We open the doors to every gift."')),
+('node-enc-shadow-stalker', 1, 'adv-ver-sotm-1-0', 'node-room-c2-courtyard', 'encounter', 'room', 'ENC-15', 'Shadow Stalker Pack in the Courtyard', 'Hard Encounter · 3 Shadow Stalkers & 1 Corrupt Prior Hound', 'Triggered when a character crosses the midpoint of C2 or inspects the crypt stairwell without extinguishing bright light.', NULL, 'players', 'unresolved', '/encounters?focus=enc-cinth-ballroom', '/tactical-combat-engine.jpg', '1:Encounter:enc-cinth-ballroom', 'scene-plains-red', JSON_OBJECT('difficulty', 'Hard', 'xpReward', 1800, 'trigger', 'Crossing courtyard midline or disturbing the fallen bell', 'terrain', 'Collapsed bell tower (+2 AC half cover), bramble patches (difficult terrain)', 'tactics', 'Shadow Stalkers teleport between dim pillars to flank spellcasters; retreat into C3 if reduced below 15 HP.')),
+('node-clue-crypt-tracks', 1, 'adv-ver-sotm-1-0', 'node-room-c2-courtyard', 'clue', 'room', 'CLUE-1', 'Scratched Basalt & Dragged Satchel Tracks', 'Discovered Clue · Connects C2 Courtyard to C3 Crypt', 'Boot prints mixed with clawed drag marks lead from the broken cloister wall directly to the mortared seam under the altar.', NULL, 'players', 'discovered', '/loom?query=mountain+stone+sense', '/combat-caves.jpg', '1:Clue:clue-kildrid-tremor', NULL, JSON_OBJECT('checkSkill', 'Survival or Stonecunning', 'dc', 13)),
+('node-clue-chokrah-seal', 1, 'adv-ver-sotm-1-0', 'node-room-c3-crypt', 'clue', 'room', 'CLUE-2', 'Signed Chokrah Siphon Manifest & Prior Seal', 'Undiscovered Crypt Evidence · Links Chapel to Cinth Priors', 'Wax-sealed cargo ledger in C3 proving Chokrah shipments from the Lost Isles are titrated to extract innate magic from Prior students.', NULL, 'gm', 'unresolved', '/weave?node=clue-chokrah-manifest', '/the-weave-graph-engine.jpg', '1:Clue:clue-chokrah-manifest', NULL, JSON_OBJECT('checkSkill', 'Investigation or Arcana', 'dc', 15)),
+('node-haz-crypt-glyph', 1, 'adv-ver-sotm-1-0', 'node-room-c3-crypt', 'hazard', 'room', 'HAZ-1', 'Anelith Feedback Ward on the Crypt Seal', 'Magical Trap · DC 15 Intelligence (Arcana) / Thieves'' Tools', 'Lifting the C3 altar slab without speaking the Ekkosian cadence or chiseling the lead shunt releases a 15-ft pulse of necrotic-radiant static (3d8 damage, DEX save DC 15 half).', NULL, 'gm', 'unresolved', '/encounters', '/tactical-combat-engine.jpg', NULL, NULL, JSON_OBJECT('detectDc', 14, 'disarmDc', 15, 'damage', '3d8 Necrotic/Radiant')),
+('node-trs-star-arrow', 1, 'adv-ver-sotm-1-0', 'node-room-c3-crypt', 'treasure', 'room', 'TRS-1', 'Star-Etched Edhellain Wayfinder Quiver & 450 gp', 'Crypt Reliquary Cache · +1200 Party XP & Lineage Relic', 'A silver-chased quiver bearing the royal crest of Edhellain and a pouch of pre-war gold crowns hidden behind the ossuary lectern.', NULL, 'players', 'unresolved', '/assets?inspect=art-luminary-well', '/dice-physics-engine.jpg', '1:Artifact:art-luminary-well', NULL, JSON_OBJECT('xpAmount', 1200, 'currencyLabel', '450 gp + Star-Etched Quiver', 'idempotencyKey', 'reward-c3-star-arrow')),
+('node-rule-shadow-tether', 1, 'adv-ver-sotm-1-0', 'node-chap-whispering', 'rule', 'none', 'RULE-1', 'Adventure-Wide Rule: Poisoned Root & Stone Tremor Resonance', 'Applies across Whispering Woods, Ruined Chapel & Mountain Approach', 'Whenever a spell of 3rd level or higher is cast underground, Kildrid''s stone sense detects the directional bearing of the bound dragon''s runes.', NULL, 'players', 'discovered', '/loom', '/icrandor_world_dashboard.jpg', '1:Clue:clue-kildrid-tremor', NULL, JSON_OBJECT('scope', 'Adventure-wide rule'))
+ON DUPLICATE KEY UPDATE `title`=VALUES(`title`), `summary`=VALUES(`summary`), `default_state`=VALUES(`default_state`);
+
+-- Seed Typed Adventure Content Blocks (Read-Aloud, GM Notes, Checks with Outcomes, Tactics)
+INSERT INTO `lw_adventure_blocks` (`id`, `campaign_id`, `node_id`, `sort_order`, `block_kind`, `audience`, `shareable`, `title`, `content`, `payload_json`) VALUES
+('blk-c1-readaloud', 1, 'node-room-c1-nave', 10, 'readAloud', 'players', 1, 'Read-Aloud: Entering the Shattered Nave',
+ 'Old stones remember. Rain needles through the ribs of the collapsed roof, hissing against a single brass brazier before the cracked mosaic of Ekkos. An elderly friar in rain-darkened wool lifts a shuttered lantern toward your cloaks: "If you seek the scouts from the Vale road, lower your steel. The stone beneath this floor has been listening since sundown."',
+ JSON_OBJECT('roomKey', 'C1')),
+('blk-c1-check-malric', 1, 'node-room-c1-nave', 20, 'check', 'gm', 0, 'Insight or Persuasion: Brother Malric''s Hesitation',
+ 'DC 14 Wisdom (Insight) or Charisma (Persuasion) while speaking with Brother Malric.',
+ JSON_OBJECT('skill', 'Insight / Persuasion', 'dc', 14, 'passOutcome', 'Malric admits that three robed Prior inspectors descended beneath the altar three nights ago carrying crates stamped with the Lost Isles Chokrah mark.', 'failOutcome', 'Malric insists only forest wolves prowl the courtyard, though his eyes dart toward the chipped mortar around the altar plinth.')),
+('blk-c2-readaloud', 1, 'node-room-c2-courtyard', 10, 'readAloud', 'players', 1, 'Read-Aloud: The Moonlit Cloister Yard',
+ 'The fallen bronze bell lies half-sunk in black brambles at the center of the courtyard. Between the leaning arches, the mist does not drift with the wind—it pools around three elongated silhouettes crouched above a torn leather messenger satchel.',
+ JSON_OBJECT('roomKey', 'C2')),
+('blk-c2-check-tracks', 1, 'node-room-c2-courtyard', 20, 'check', 'gm', 0, 'Survival or Stonecunning: Tracing the Dragged Satchel',
+ 'DC 13 Wisdom (Survival) or Dwarven Stonecunning along the northern cloister flagstones.',
+ JSON_OBJECT('skill', 'Survival / Stonecunning', 'dc', 13, 'passOutcome', 'You spot fresh chisel marks and Chokrah dust leading down the exterior cellar steps into Room C3, plus the ambush positions on the bell tower ledge.', 'failOutcome', 'You follow the tracks to the center of the yard but trigger the Shadow Stalkers'' surprise leap from the bell tower arch.')),
+('blk-c3-readaloud', 1, 'node-room-c3-crypt', 10, 'readAloud', 'gm', 1, 'Read-Aloud: Unsealing the Altar Crypt',
+ 'The basalt steps spiral down into air colder than winter river-water. Blue containment runes—carved by the same hand that bound the southern mountain—throb along a vaulted ossuary. On a stone lectern rests a brass siphon vial still warm to the touch.',
+ JSON_OBJECT('roomKey', 'C3')),
+('blk-c3-check-ward', 1, 'node-room-c3-crypt', 20, 'check', 'gm', 0, 'Arcana or Thieves'' Tools: Disarming the Anelith Feedback Ward',
+ 'DC 15 Intelligence (Arcana) or Dexterity (Thieves'' Tools) on the copper-inlaid altar seal.',
+ JSON_OBJECT('skill', 'Arcana / Thieves'' Tools', 'dc', 15, 'passOutcome', 'You ground the runic charge harmlessly into the bedrock and recover the Signed Chokrah Siphon Manifest and Star-Etched Quiver intact.', 'failOutcome', 'A silent arc of emerald-crimson static lashes 15 ft across the stairs (3d8 damage) and alerts the remaining courtyard stalkers.'))
+ON DUPLICATE KEY UPDATE `title`=VALUES(`title`), `content`=VALUES(`content`);
+
+-- Seed Typed Adventure Links (Explicit graph edges with why_included_label)
+INSERT INTO `lw_adventure_links` (`campaign_id`, `from_node_id`, `to_node_id`, `link_type`, `why_included_label`, `direction_or_exit_label`, `sort_order`, `visibility`) VALUES
+(1, 'node-chap-whispering', 'node-loc-ruined-chapel', 'CONTAINS', 'Chapter 4 Primary Site', NULL, 10, 'players'),
+(1, 'node-loc-ruined-chapel', 'node-room-c1-nave', 'CONTAINS', 'Keyed Room C1 in Ruined Chapel', 'Main Entrance', 10, 'players'),
+(1, 'node-loc-ruined-chapel', 'node-room-c2-courtyard', 'CONTAINS', 'Keyed Room C2 in Ruined Chapel', 'East Cloister Arch', 20, 'players'),
+(1, 'node-loc-ruined-chapel', 'node-room-c3-crypt', 'CONTAINS', 'Keyed Room C3 beneath Ruined Chapel', 'Subterranean Altar Stairs', 30, 'gm'),
+(1, 'node-room-c1-nave', 'node-room-c2-courtyard', 'LEADS_TO', 'East Archway Exit to C2', 'East -> C2: Moonlit Courtyard', 10, 'players'),
+(1, 'node-room-c1-nave', 'node-room-c3-crypt', 'LEADS_TO', 'Hidden Altar Stairs to C3', 'Down -> C3: Sealed Altar Crypt', 20, 'gm'),
+(1, 'node-room-c2-courtyard', 'node-room-c3-crypt', 'LEADS_TO', 'Sunken Cellar Steps to C3', 'North -> C3: Sealed Altar Crypt', 10, 'players'),
+(1, 'node-scene-chapel-arrival', 'node-room-c1-nave', 'OCCURS_AT', 'Occurs in C1: Shattered Nave', NULL, 10, 'players'),
+(1, 'node-scene-courtyard-ambush', 'node-room-c2-courtyard', 'OCCURS_AT', 'Occurs in C2: Moonlit Courtyard', NULL, 20, 'players'),
+(1, 'node-scene-crypt-descent', 'node-room-c3-crypt', 'OCCURS_AT', 'Occurs in C3: Sealed Altar Crypt', NULL, 30, 'gm'),
+(1, 'node-scene-chapel-arrival', 'node-npc-malric', 'FEATURES', 'Present in C1 · Chapel Keeper', NULL, 10, 'players'),
+(1, 'node-scene-chapel-arrival', 'node-npc-elowen', 'FEATURES', 'Present in C1 · Tending Wounded Scout', NULL, 20, 'players'),
+(1, 'node-scene-courtyard-ambush', 'node-enc-shadow-stalker', 'USES', 'Active Encounter in C2 Courtyard', NULL, 10, 'players'),
+(1, 'node-room-c2-courtyard', 'node-clue-crypt-tracks', 'HAS_CLUE', 'Discovered in C2 Flagstones', NULL, 10, 'players'),
+(1, 'node-room-c3-crypt', 'node-clue-chokrah-seal', 'HAS_CLUE', 'Hidden on C3 Ossuary Lectern', NULL, 10, 'gm'),
+(1, 'node-room-c3-crypt', 'node-haz-crypt-glyph', 'HAS_HAZARD', 'Wards the C3 Altar Slab', NULL, 20, 'gm'),
+(1, 'node-room-c3-crypt', 'node-trs-star-arrow', 'HAS_TREASURE', 'Cached in C3 Reliquary Niche', NULL, 30, 'players')
+ON DUPLICATE KEY UPDATE `why_included_label`=VALUES(`why_included_label`);
+
+-- Seed Planned & Live Sessions (`lw_sessions` & `lw_session_content`)
+INSERT INTO `lw_sessions` (`session_id`, `campaign_id`, `adventure_version_id`, `session_number`, `title`, `chapter_node_id`, `primary_location_node_id`, `assigned_scene_key`, `session_state`, `scheduled_date_label`, `epigraph`, `summary`, `artwork_url`, `objectives_json`, `stopping_points_json`, `revision`) VALUES
+('session-15', 1, 'adv-ver-sotm-1-0', 15, 'Session 15 — The Ruined Chapel', 'node-chap-whispering', 'node-loc-ruined-chapel', 'scene-plains-red', 'live', 'Saturday, May 17 · 7:00 PM',
+ '"Old stones remember. And something stirs beneath them still."',
+ 'A crumbling chapel stands on the edge of the Whispering Woods. Strange noises and missing travelers have drawn the party here, where an uneasy silence hangs over the ruins.',
+ '/combat-caves.jpg',
+ JSON_ARRAY('Question Brother Malric in C1 without alerting Prior watchers', 'Survive the Shadow Stalker ambush in C2 Moonlit Courtyard', 'Unseal C3 Altar Crypt and recover the Chokrah siphon evidence'),
+ JSON_ARRAY('After the C2 Courtyard skirmish (short rest breakpoint)', 'Upon opening the C3 Crypt reliquary and reading Emrys''s seal (cliffhanger)'),
+ 4),
+('session-14', 1, 'adv-ver-sotm-1-0', 14, 'Session 14 — Brass Gears & Velvet Fangs', 'node-chap-whispering', 'node-loc-cinth-gala', 'scene-cinth-gala', 'completed', 'Saturday, May 10 · Completed',
+ '"Behind every polished mask in Cinth, a gear turns or a fang waits."',
+ 'The party arrived in Cinth, allied with the Artificers Guild, met the self-styled Council reformer Emrys Driothe at the Lord''s masquerade, and repelled the vampire coven.',
+ '/six-engines-showcase.jpg',
+ JSON_ARRAY('Inspect the Cinth Artificers Guild defenses', 'Converse with Emrys Driothe at the gala', 'Stop the Crimson Covenant ambush'),
+ JSON_ARRAY('Departure toward Whispering Woods chapel trail'),
+ 8),
+('session-2-6', 2, 'adv-ver-starstone-1-0', 6, 'Session 6 — The Clockwork Vaults', NULL, NULL, 'scene-cinth-gala', 'planned', 'Sunday, May 18 · 6:00 PM',
+ '"Every gear in Absalom turns toward the Starstone."',
+ 'The party descends beneath the Grand Bazaar into the sealed clockwork vaults.',
+ '/landing-assets/engines/engine-3-loommaps-atlas.jpg',
+ JSON_ARRAY('Enter the Clockwork Vaults beneath Absalom', 'Bypass the brass pendulum ward', 'Confront the Vault Automaton Warden'),
+ JSON_ARRAY('Before the Starstone inner seal'),
+ 2)
+ON DUPLICATE KEY UPDATE `title`=VALUES(`title`), `summary`=VALUES(`summary`), `assigned_scene_key`=VALUES(`assigned_scene_key`);
+
+INSERT INTO `lw_session_content` (`campaign_id`, `session_id`, `node_id`, `content_role`, `sort_order`, `why_included_label`, `is_optional`) VALUES
+(1, 'session-15', 'node-loc-ruined-chapel', 'location', 10, 'Primary Session 15 Site', 0),
+(1, 'session-15', 'node-room-c1-nave', 'room', 20, 'Entry Scene · Present in C1', 0),
+(1, 'session-15', 'node-room-c2-courtyard', 'room', 30, 'Ambush Area · Present in C2', 0),
+(1, 'session-15', 'node-room-c3-crypt', 'room', 40, 'Climax Vault · Present in C3', 0),
+(1, 'session-15', 'node-scene-chapel-arrival', 'scene', 50, 'Planned Scene 1 (Completed)', 0),
+(1, 'session-15', 'node-scene-courtyard-ambush', 'scene', 60, 'Planned Scene 2 (Active)', 0),
+(1, 'session-15', 'node-scene-crypt-descent', 'scene', 70, 'Planned Scene 3 (Crypt Finale)', 0),
+(1, 'session-15', 'node-npc-malric', 'npc', 80, 'Present in C1 · Chapel Keeper', 0),
+(1, 'session-15', 'node-npc-elowen', 'npc', 90, 'Present in C1 · Wounded Scout Healer', 0),
+(1, 'session-15', 'node-npc-emrys', 'npc', 95, 'Linked via Order of Priors Seal in C3', 1),
+(1, 'session-15', 'node-enc-shadow-stalker', 'encounter', 100, 'Triggered in C2 Courtyard', 0),
+(1, 'session-15', 'node-clue-crypt-tracks', 'clue', 110, 'Discovered in C2 Flagstones', 0),
+(1, 'session-15', 'node-clue-chokrah-seal', 'clue', 120, 'Hidden in C3 Ossuary', 0),
+(1, 'session-15', 'node-haz-crypt-glyph', 'hazard', 130, 'Wards the C3 Altar Slab', 0),
+(1, 'session-15', 'node-trs-star-arrow', 'treasure', 140, 'Reward Cache in C3 Crypt', 0),
+(1, 'session-15', 'node-rule-shadow-tether', 'rule', 150, 'Adventure-wide rule', 0)
+ON DUPLICATE KEY UPDATE `why_included_label`=VALUES(`why_included_label`);
+
+-- Seed Session Beats & Play Progress (`lw_adventure_progress`)
+INSERT INTO `lw_adventure_progress` (`campaign_id`, `session_id`, `node_id`, `beat_key`, `label`, `progress_state`, `is_done`, `outcome_notes`) VALUES
+(1, 'session-15', 'node-room-c1-nave', 'beat-1', 'Arrival at the ruined chapel', 'completed', 1, 'Party entered C1 Shattered Nave out of the Whispering Woods mist.'),
+(1, 'session-15', 'node-npc-malric', 'beat-2', 'Speaking with Brother Malric', 'completed', 1, 'Questioned Malric by the brazier; sensed his fear of the Priors.'),
+(1, 'session-15', 'node-clue-crypt-tracks', 'beat-3', 'Tracks leading to the crypt', 'discovered', 0, 'Boot tracks and dragged satchel marks lead through C2 toward C3.'),
+(1, 'session-15', 'node-enc-shadow-stalker', 'beat-4', 'Ambush in the courtyard', 'unresolved', 0, 'Shadow Stalkers wait atop the fallen bell tower in C2.'),
+(1, 'session-15', 'node-room-c3-crypt', 'beat-5', 'Discover what stirs beneath the chapel', 'unresolved', 0, 'Unseal the C3 altar slab and inspect the Chokrah siphon lectern.')
+ON DUPLICATE KEY UPDATE `label`=VALUES(`label`), `progress_state`=VALUES(`progress_state`), `is_done`=VALUES(`is_done`);
+

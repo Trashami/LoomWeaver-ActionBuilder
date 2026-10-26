@@ -229,6 +229,12 @@ server {
 EOF
 
 ln -sfn /etc/nginx/sites-available/effectbuilder-loom-weaver /etc/nginx/sites-enabled/effectbuilder-loom-weaver
+mkdir -p /etc/systemd/system/effectbuilder.service.d
+cat << 'EOF' > /etc/systemd/system/effectbuilder.service.d/database.conf
+[Service]
+Environment="ConnectionStrings__MythWeaver=Server=localhost;Port=3306;Database=jane_scrum;User ID=root;Password=Sp34kFri3nd4nd3nt3r!;SslMode=Preferred;"
+Environment="Jwt__Secret=MythWeaver_Super_Secure_Secret_Key_For_Jwt_Token_Generation_2026_Tromborg_DND_12345!"
+EOF
 nginx -t
 systemctl daemon-reload
 systemctl restart effectbuilder.service

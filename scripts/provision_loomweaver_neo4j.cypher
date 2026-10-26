@@ -6,11 +6,14 @@
 CREATE CONSTRAINT lw_entity_composite IF NOT EXISTS
 FOR (e:Entity) REQUIRE (e.namespace, e.campaignId, e.compositeKey) IS UNIQUE;
 
+CREATE CONSTRAINT lw_adventure_node_unique IF NOT EXISTS
+FOR (a:AdventureNode) REQUIRE (a.namespace, a.campaignId, a.nodeId) IS UNIQUE;
+
 CREATE INDEX lw_entity_visibility IF NOT EXISTS
 FOR (e:Entity) ON (e.namespace, e.campaignId, e.visibility);
 
-// Rebuild node graph cleanly under loomweaver namespace
-MATCH (n) DETACH DELETE n;
+// Rebuild node graph cleanly ONLY within the 'loomweaver' namespace (never unscoped)
+MATCH (n {namespace: 'loomweaver'}) DETACH DELETE n;
 
 MERGE (camp:Entity:Campaign {
   namespace: 'loomweaver',
@@ -309,4 +312,340 @@ MERGE (secretTrap)-[:ABOUT {visibility: 'gm'}]->(dragon)
 MERGE (emrys)-[:KNOWS_ABOUT {visibility: 'gm'}]->(secretTrap)
 MERGE (emrys)-[:CONTROLS {visibility: 'gm'}]->(priors)
 MERGE (emrys)-[:SEARCHING_FOR {visibility: 'gm'}]->(luminary)
-MERGE (dragon)-[:IMPRISONED_IN {visibility: 'gm'}]->(mountainVault);
+MERGE (dragon)-[:IMPRISONED_IN {visibility: 'gm'}]->(mountainVault)
+
+// =============================================================================
+// Adventure & Contextual Session Guide Graph Projection
+// =============================================================================
+MERGE (advVer:Entity:AdventureNode:AdventureVersion {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'adv-ver-sotm-1-0',
+  entityId: 'adv-ver-sotm-1-0',
+  compositeKey: '1:AdventureVersion:adv-ver-sotm-1-0',
+  entityType: 'AdventureVersion',
+  entityKey: 'adv-ver-sotm-1-0',
+  name: 'Shadow of the Mountain v1.0.0',
+  subtitle: 'Playable Adventure Package · D&D 5e',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/campaigns'
+})
+MERGE (chap4:Entity:AdventureNode:Chapter {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-chap-whispering',
+  entityId: 'node-chap-whispering',
+  compositeKey: '1:Chapter:node-chap-whispering',
+  entityType: 'Chapter',
+  entityKey: 'node-chap-whispering',
+  name: 'Chapter 4: Shadows in the Stone',
+  subtitle: 'Whispering Woods & The Ruined Chapel',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/campaigns'
+})
+MERGE (ses15:Entity:AdventureNode:Session {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'session-15',
+  entityId: 'session-15',
+  compositeKey: '1:Session:session-15',
+  entityType: 'Session',
+  entityKey: 'session-15',
+  name: 'Session 15 — The Ruined Chapel',
+  subtitle: 'Live Session Plan · Whispering Woods',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/campaigns?session=session-15'
+})
+MERGE (chapelSite:Entity:AdventureNode:Location {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-loc-ruined-chapel',
+  entityId: 'loc-ruined-chapel',
+  compositeKey: '1:Location:loc-ruined-chapel',
+  entityType: 'Location',
+  entityKey: 'loc-ruined-chapel',
+  locationType: 'site',
+  areaKey: 'CHAPEL',
+  name: 'The Ruined Chapel',
+  subtitle: 'Crumbling Ekkosian Sanctuary · Site',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/maps?scene=scene-plains-red'
+})
+MERGE (roomC1:Entity:AdventureNode:Location:Room {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-room-c1-nave',
+  entityId: 'room-c1-nave',
+  compositeKey: '1:Location:room-c1-nave',
+  entityType: 'Location',
+  entityKey: 'room-c1-nave',
+  locationType: 'room',
+  areaKey: 'C1',
+  name: 'C1: The Shattered Nave',
+  subtitle: 'Entry Hall & Brother Malric Lantern Post',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/maps?scene=scene-plains-red'
+})
+MERGE (roomC2:Entity:AdventureNode:Location:Room {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-room-c2-courtyard',
+  entityId: 'room-c2-courtyard',
+  compositeKey: '1:Location:room-c2-courtyard',
+  entityType: 'Location',
+  entityKey: 'room-c2-courtyard',
+  locationType: 'room',
+  areaKey: 'C2',
+  name: 'C2: Moonlit Cloister Courtyard',
+  subtitle: 'Overgrown Flagstone Yard & Fallen Bell Tower',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/encounters?focus=enc-cinth-ballroom'
+})
+MERGE (roomC3:Entity:AdventureNode:Location:Room {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-room-c3-crypt',
+  entityId: 'room-c3-crypt',
+  compositeKey: '1:Location:room-c3-crypt',
+  entityType: 'Location',
+  entityKey: 'room-c3-crypt',
+  locationType: 'room',
+  areaKey: 'C3',
+  name: 'C3: Sealed Altar Crypt',
+  subtitle: 'Subterranean Resonance Vault Beneath the Chapel',
+  visibility: 'gm',
+  canonStatus: 'approved',
+  route: '/maps?scene=scene-mountain-prison'
+})
+MERGE (scnArrival:Entity:AdventureNode:Scene {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-scene-chapel-arrival',
+  entityId: 'scene-chapel-arrival',
+  compositeKey: '1:Scene:scene-chapel-arrival',
+  entityType: 'Scene',
+  entityKey: 'scene-chapel-arrival',
+  name: 'Scene 1: Vigil in the Shattered Nave',
+  subtitle: 'Roleplay & Investigation in C1',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/campaigns'
+})
+MERGE (scnAmbush:Entity:AdventureNode:Scene {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-scene-courtyard-ambush',
+  entityId: 'scene-courtyard-ambush',
+  compositeKey: '1:Scene:scene-courtyard-ambush',
+  entityType: 'Scene',
+  entityKey: 'scene-courtyard-ambush',
+  name: 'Scene 2: Ambush in the Moonlit Courtyard',
+  subtitle: 'Tactical Skirmish in C2',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/arcane-screen'
+})
+MERGE (scnCrypt:Entity:AdventureNode:Scene {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-scene-crypt-descent',
+  entityId: 'scene-crypt-descent',
+  compositeKey: '1:Scene:scene-crypt-descent',
+  entityType: 'Scene',
+  entityKey: 'scene-crypt-descent',
+  name: 'Scene 3: What Stirs Beneath the Altar',
+  subtitle: 'Crypt Puzzle & Chokrah Manifest in C3',
+  visibility: 'gm',
+  canonStatus: 'approved',
+  route: '/weave?node=sec-emrys-trap'
+})
+MERGE (malric:Entity:AdventureNode:NPC {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-npc-malric',
+  entityId: 'npc-malric',
+  compositeKey: '1:NPC:npc-malric',
+  entityType: 'NPC',
+  entityKey: 'npc-malric',
+  name: 'Brother Malric',
+  subtitle: 'Chapel Keeper · Cautious',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/campaigns?inspect=npc-emrys'
+})
+MERGE (elowen:Entity:AdventureNode:NPC {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-npc-elowen',
+  entityId: 'npc-elowen',
+  compositeKey: '1:NPC:npc-elowen',
+  entityType: 'NPC',
+  entityKey: 'npc-elowen',
+  name: 'Sister Elowen',
+  subtitle: 'Healer · Guarded',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/campaigns?inspect=npc-kutler'
+})
+MERGE (encStalker:Entity:AdventureNode:Encounter {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-enc-shadow-stalker',
+  entityId: 'enc-shadow-stalker',
+  compositeKey: '1:Encounter:enc-shadow-stalker',
+  entityType: 'Encounter',
+  entityKey: 'enc-shadow-stalker',
+  name: 'Shadow Stalker Pack in the Courtyard',
+  subtitle: 'Hard Encounter · Room C2',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/encounters?focus=enc-cinth-ballroom'
+})
+MERGE (clueTracks:Entity:AdventureNode:Clue {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-clue-crypt-tracks',
+  entityId: 'clue-crypt-tracks',
+  compositeKey: '1:Clue:clue-crypt-tracks',
+  entityType: 'Clue',
+  entityKey: 'clue-crypt-tracks',
+  name: 'Scratched Basalt & Dragged Satchel Tracks',
+  subtitle: 'Discovered Clue · Room C2 to C3',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/loom?query=mountain+stone+sense'
+})
+MERGE (clueChokrah:Entity:AdventureNode:Clue {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-clue-chokrah-seal',
+  entityId: 'clue-chokrah-manifest',
+  compositeKey: '1:Clue:clue-chokrah-manifest',
+  entityType: 'Clue',
+  entityKey: 'clue-chokrah-manifest',
+  name: 'Signed Chokrah Siphon Manifest',
+  subtitle: 'Undiscovered Evidence · Room C3',
+  visibility: 'gm',
+  canonStatus: 'approved',
+  route: '/weave?node=clue-chokrah-manifest'
+})
+MERGE (hazGlyph:Entity:AdventureNode:Hazard {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-haz-crypt-glyph',
+  entityId: 'haz-crypt-glyph',
+  compositeKey: '1:Hazard:haz-crypt-glyph',
+  entityType: 'Hazard',
+  entityKey: 'haz-crypt-glyph',
+  name: 'Anelith Feedback Ward on the Crypt Seal',
+  subtitle: 'Magical Trap · DC 15 Arcana / Thieves Tools',
+  visibility: 'gm',
+  canonStatus: 'approved',
+  route: '/encounters'
+})
+MERGE (trsArrow:Entity:AdventureNode:Treasure {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'node-trs-star-arrow',
+  entityId: 'trs-star-arrow',
+  compositeKey: '1:Treasure:trs-star-arrow',
+  entityType: 'Treasure',
+  entityKey: 'trs-star-arrow',
+  name: 'Star-Etched Edhellain Quiver & 450 gp',
+  subtitle: 'Crypt Reliquary Cache · Room C3',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/assets?inspect=art-luminary-well'
+})
+MERGE (mapRegC1:AdventureNode:MapRegion {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'mapreg-c1',
+  sceneKey: 'scene-plains-red',
+  areaKey: 'C1',
+  name: 'Polygon Region C1: Shattered Nave',
+  visibility: 'players'
+})
+MERGE (mapRegC2:AdventureNode:MapRegion {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'mapreg-c2',
+  sceneKey: 'scene-plains-red',
+  areaKey: 'C2',
+  name: 'Polygon Region C2: Moonlit Courtyard',
+  visibility: 'players'
+})
+MERGE (mapRegC3:AdventureNode:MapRegion {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'mapreg-c3',
+  sceneKey: 'scene-mountain-prison',
+  areaKey: 'C3',
+  name: 'Polygon Region C3: Sealed Altar Crypt',
+  visibility: 'gm'
+})
+MERGE (compStalker:AdventureNode:CompendiumEntry {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  installationId: 1,
+  nodeId: 'comp-shadow-stalker',
+  name: 'Shadow Stalker (CR 5)',
+  systemCode: 'dnd5e',
+  visibility: 'players'
+})
+
+// Adventure Hierarchy & Session Guide Relationships
+MERGE (advVer)-[:CONTAINS {visibility: 'players', whyIncluded: 'Chapter 4 of Shadow of the Mountain'}]->(chap4)
+MERGE (chap4)-[:CONTAINS {visibility: 'players', whyIncluded: 'Primary Chapter Site'}]->(chapelSite)
+MERGE (chapelSite)-[:CONTAINS {visibility: 'players', whyIncluded: 'Present in Ruined Chapel (C1)'}]->(roomC1)
+MERGE (chapelSite)-[:CONTAINS {visibility: 'players', whyIncluded: 'Present in Ruined Chapel (C2)'}]->(roomC2)
+MERGE (chapelSite)-[:CONTAINS {visibility: 'gm', whyIncluded: 'Hidden Beneath Ruined Chapel (C3)'}]->(roomC3)
+MERGE (scnArrival)-[:OCCURS_AT {visibility: 'players', whyIncluded: 'Occurs in C1: Shattered Nave'}]->(roomC1)
+MERGE (scnAmbush)-[:OCCURS_AT {visibility: 'players', whyIncluded: 'Occurs in C2: Moonlit Courtyard'}]->(roomC2)
+MERGE (scnCrypt)-[:OCCURS_AT {visibility: 'gm', whyIncluded: 'Occurs in C3: Sealed Altar Crypt'}]->(roomC3)
+MERGE (ses15)-[:PLAYED {visibility: 'players', whyIncluded: 'Completed in Session 15'}]->(scnArrival)
+MERGE (ses15)-[:PLANS {visibility: 'players', whyIncluded: 'Planned for Session 15'}]->(scnAmbush)
+MERGE (ses15)-[:PLANS {visibility: 'gm', whyIncluded: 'Planned Finale for Session 15'}]->(scnCrypt)
+MERGE (scnArrival)-[:FEATURES {visibility: 'players', whyIncluded: 'Authored in Scene 1 (C1)'}]->(malric)
+MERGE (scnArrival)-[:FEATURES {visibility: 'players', whyIncluded: 'Authored in Scene 1 (C1)'}]->(elowen)
+MERGE (malric)-[:CURRENTLY_IN {visibility: 'players', whyIncluded: 'Present in C1'}]->(roomC1)
+MERGE (elowen)-[:CURRENTLY_IN {visibility: 'players', whyIncluded: 'Present in C1'}]->(roomC1)
+MERGE (scnAmbush)-[:USES {visibility: 'players', whyIncluded: 'Triggered in C2 Courtyard'}]->(encStalker)
+MERGE (roomC2)-[:HAS {visibility: 'players', role: 'Clue', whyIncluded: 'Present in C2'}]->(clueTracks)
+MERGE (roomC3)-[:HAS {visibility: 'gm', role: 'Clue', whyIncluded: 'Present in C3'}]->(clueChokrah)
+MERGE (roomC3)-[:HAS {visibility: 'gm', role: 'Hazard', whyIncluded: 'Present in C3'}]->(hazGlyph)
+MERGE (roomC3)-[:HAS {visibility: 'players', role: 'Treasure', whyIncluded: 'Present in C3'}]->(trsArrow)
+MERGE (clueTracks)-[:REVEALS {visibility: 'gm', whyIncluded: 'Points to Sealed Crypt'}]->(roomC3)
+MERGE (clueChokrah)-[:REVEALS {visibility: 'gm', whyIncluded: 'Exposes Priors Siphon'}]->(secretTrap)
+MERGE (scnArrival)-[:LEADS_TO {visibility: 'players', exitLabel: 'East Archway to Courtyard'}]->(scnAmbush)
+MERGE (scnAmbush)-[:LEADS_TO {visibility: 'gm', exitLabel: 'Sunken Crypt Stairs'}]->(scnCrypt)
+MERGE (mapRegC1)-[:DEPICTS {visibility: 'players'}]->(roomC1)
+MERGE (mapRegC2)-[:DEPICTS {visibility: 'players'}]->(roomC2)
+MERGE (mapRegC3)-[:DEPICTS {visibility: 'gm'}]->(roomC3)
+MERGE (encStalker)-[:REFERENCES {visibility: 'players'}]->(compStalker);
