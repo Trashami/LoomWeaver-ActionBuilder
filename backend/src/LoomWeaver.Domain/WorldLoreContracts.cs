@@ -30,12 +30,11 @@ public sealed record WorldMapRegionOverlayDto(
 );
 
 public sealed record MarkerVisualStyleDto(
-    string IconMode = "vector",
-    string VectorIcon = "map-pin",
-    string? StampUrl = null,
-    string? StampLabel = null,
+    string IconMode = "default",
+    string DefaultIconName = "landmark",
+    string? StampImageUrl = null,
     bool ShowIcon = true,
-    string ColorHex = "#49e892",
+    string ColorHex = "#d9b77a",
     string FontFamily = "Cinzel",
     string LabelPosition = "right",
     double IconScale = 1.0
@@ -59,7 +58,7 @@ public sealed record WorldMapMarkerDto(
     int QuestCount,
     int NpcCount,
     int SecretCount,
-    int? AttachedSessionId = null,
+    string? AttachedSessionId = null,
     string? AttachedSessionLabel = null,
     string? PlayerVisibilityPolicy = "auto_lore_revealed",
     MarkerVisualStyleDto? Style = null
@@ -139,7 +138,7 @@ public sealed record LocationInspectorDetailDto(
     IReadOnlyList<LocationRelatedEntityDto> RelatedEntities,
     IReadOnlyList<LocationHistoryEventDto> HistoryEvents,
     IReadOnlyList<LocationSecretDto> Secrets,
-    int? AttachedSessionId = null,
+    string? AttachedSessionId = null,
     string? AttachedSessionLabel = null,
     string? PlayerVisibilityPolicy = "auto_lore_revealed",
     MarkerVisualStyleDto? Style = null
@@ -242,7 +241,7 @@ public sealed record UpsertLocationRequest(
     string? LocalMyths,
     IReadOnlyList<LocationAttributeDto>? Attributes,
     IReadOnlyList<string>? Tags,
-    int? AttachedSessionId = null,
+    string? AttachedSessionId = null,
     string? AttachedSessionLabel = null,
     string? PlayerVisibilityPolicy = null,
     MarkerVisualStyleDto? Style = null

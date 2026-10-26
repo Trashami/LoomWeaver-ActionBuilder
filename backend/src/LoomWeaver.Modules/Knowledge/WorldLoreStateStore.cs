@@ -313,8 +313,8 @@ public static class WorldLoreStateStore
                 [],
                 [],
                 [],
-                14,
-                "Session 14 · Velvet & Fangs at the Cinth Masquerade"
+                "sess-15",
+                "Session 15 · The Ruined Chapel & Masquerade of Cinth"
             ),
             new(
                 "loc-artificers-skydock",
@@ -337,7 +337,7 @@ public static class WorldLoreStateStore
                     new("Parent City", "City of Cinth", "loc-cinth", "location"),
                     new("Controlling Guild", "Artificers Guild of Cinth", "lore-artificers-guild", "lore"),
                     new("Docked Vessel", "Captain Kutler's Skyship (Claimed by Fivi)", "1:NPC:npc-kutler", "entity"),
-                    new("Attached Session", "Session 14 · Velvet & Fangs at the Cinth Masquerade", "14", "session")
+                    new("Attached Session", "Session 15 · The Ruined Chapel & Masquerade of Cinth", "sess-15", "session")
                 ],
                 "Constructed after the hundred-year Moonlight Wars by non-magical engineers determined never again to be helpless before wizard councils or ancient monsters.",
                 "Master riggers test brass pressure-valves and clockwork ballistae while skyship hulls moor to copper lightning spires.",
@@ -353,8 +353,8 @@ public static class WorldLoreStateStore
                     new("hist-skydock-14", "Session 14: Alliance at the Sky-Dock", "14th of Frostfall, 1004 A.M.", 14, "Major Events", "The party befriended the Artificers Guild engineers and inspected the high airship moorings of Cinth.", "players")
                 ],
                 [],
-                14,
-                "Session 14 · Velvet & Fangs at the Cinth Masquerade"
+                "sess-15",
+                "Session 15 · The Ruined Chapel & Masquerade of Cinth"
             ),
             new(
                 "loc-karak-thul",
@@ -387,8 +387,8 @@ public static class WorldLoreStateStore
                 ],
                 [],
                 [],
-                13,
-                "Session 13 · Stone-Sense on the Cinth Road"
+                "sess-13",
+                "Session 13 · Crossing the Plains of Red"
             ),
             new(
                 "loc-well-of-life",
@@ -424,8 +424,8 @@ public static class WorldLoreStateStore
                     new("hist-well-12", "Session 12: Trial at the Well of Life", "5th of Frostfall, 1004 A.M.", 12, "Historical Discoveries", "The party passed the Well of Life sanctuary northeast of the cliff house bearing the recovered Luminary.", "players")
                 ],
                 [],
-                12,
-                "Session 12 · Sanctuary of the Well of Life"
+                "sess-12",
+                "Session 12 · Departure from Vandia & Well of Life"
             ),
             new("loc-crimson-ambush", "1:Location:loc-crimson-ambush", 1, "Crimson Court Road Ambush", "Active Encounter", "Building", "loc-plains-red", "The Plains of Red", "/tactical-combat-engine.jpg",
                 "A shattered wayside watchtower along the southern edge of the Plains of Red where vampire outriders of the Crimson Court waylay envoys traveling to and from Cinth.",
@@ -435,7 +435,7 @@ public static class WorldLoreStateStore
                 "Carriages avoid the southern mile-markers after sundown.", "Broken wine crates stamped with Cinth noble seals litter the ditch.",
                 ["Encounters", "Cinth", "Crimson Court"], ["lore-kingdom-cinth"],
                 [new("1:Quest:quest-cinth-gala", "Masquerade of the Crimson Court", "Main Quest", "Quest", "Ambush Site", "/campaigns?inspect=quest-cinth-gala", "players"), new("1:Location:loc-plains-red", "The Plains of Red", "Crimson Steppe", "Location", "Surrounding Region", "/weave", "players")],
-                [], [], 15, "Session 15 · Shadows Beneath the Ruined Chapel")
+                [], [], "sess-15", "Session 15 · The Ruined Chapel & Masquerade of Cinth")
         ],
         [2] =
         [
