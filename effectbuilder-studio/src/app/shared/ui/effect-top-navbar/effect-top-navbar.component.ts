@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { FormsModule } from '@angular/forms';
 import { NgpButton } from 'ng-primitives/button';
 import {
-  CampaignEffectCharacterOptionVm,
-  CampaignEffectSpellAssignmentVm,
-  EffectCampaignSummaryVm,
+  CampaignCharacterOptionVm,
+  CampaignEffectAssignmentVm,
+  CampaignSummaryVm,
 } from '../../../features/effect-studio/models/effect-studio.models';
 
 @Component({
@@ -16,14 +16,14 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwEffectTopNavbarComponent {
-  readonly campaigns = input<readonly EffectCampaignSummaryVm[]>([]);
+  readonly campaigns = input<readonly CampaignSummaryVm[]>([]);
   readonly activeCampaignId = input<number>(1);
   readonly viewerRole = input<'gm' | 'players'>('gm');
-  readonly characters = input<readonly CampaignEffectCharacterOptionVm[]>([]);
-  readonly selectedCharacterKey = input<string>('char-kildrid');
-  readonly selectedSpellName = input<string>('Holy Light');
+  readonly characters = input<readonly CampaignCharacterOptionVm[]>([]);
+  readonly selectedCharacterKey = input<string>('pc-kildrid');
+  readonly selectedSpellName = input<string>('Rune Vortex');
   readonly activeEffectName = input<string>('Rune Vortex');
-  readonly assignments = input<readonly CampaignEffectSpellAssignmentVm[]>([]);
+  readonly assignments = input<readonly CampaignEffectAssignmentVm[]>([]);
   readonly isPushing = input<boolean>(false);
   readonly userDisplayName = input<string>('Jason (GeoJason)');
   readonly userInitials = input<string>('JA');
@@ -40,8 +40,13 @@ export class LwEffectTopNavbarComponent {
         id: 1,
         slug: 'shadow-of-the-mountain',
         name: 'Shadow of the Mountain',
+        subtitle: '',
+        systemCode: 'dnd5e',
+        worldName: 'Icrandor',
+        currentAct: 'Act II',
         currentSessionNumber: 14,
-        tone: 'High Fantasy',
+        currentLocationName: 'Cinth',
+        weaveEnabled: true,
       },
   );
 
@@ -54,7 +59,7 @@ export class LwEffectTopNavbarComponent {
 
   readonly availableSpells = computed(() => {
     const ch = this.selectedCharacter();
-    const baseSpells = ch?.spells ?? ['Holy Light', 'Fireball', 'Magic Missile'];
+    const baseSpells = ch?.knownSpells ?? ['Rune Vortex', 'Fireball', 'Magic Missile'];
     const current = this.selectedSpellName().trim();
     if (current && !baseSpells.includes(current)) {
       return [current, ...baseSpells];

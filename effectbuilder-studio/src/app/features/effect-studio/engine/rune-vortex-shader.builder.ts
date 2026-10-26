@@ -20,7 +20,7 @@ import {
   EffectTimelineTrackVm,
 } from '../models/effect-studio.models';
 import {
-  ensureEffectGlslShaders,
+  ensureEffectBuilderShadersRegistered,
   getParticleAtlasTextures,
 } from './effect-glsl-shaders.registry';
 
@@ -43,12 +43,10 @@ export class RuneVortexShaderBuilder {
     props: EffectEmitterCardVm,
     forces: EffectMotionForceConfigVm,
   ): void {
-    ensureEffectGlslShaders();
+    ensureEffectBuilderShadersRegistered();
 
     if (!this.glowLayer) {
-      this.glowLayer = new GlowLayer('lw-fx-glow', scene, {
-        blurKernelSize: 48,
-      });
+      this.glowLayer = new GlowLayer('lw-fx-glow', scene, { blurKernelSize: 48 });
       this.glowLayer.intensity = 0.56;
     }
 
@@ -156,7 +154,6 @@ export class RuneVortexShaderBuilder {
       for (let s = 0; s <= steps; s++) {
         const u = s / steps;
         const angle = u * Math.PI * 2 * freq + phaseOffset;
-        // Hourglass / graceful S-curve vortex profile matching Image 2
         const waist =
           radius * (0.78 * Math.pow(1 - u, 0.52) + 0.18 * Math.sin(u * Math.PI * 1.65));
         const x = Math.cos(angle) * waist;
@@ -174,11 +171,7 @@ export class RuneVortexShaderBuilder {
 
       const ribbon = MeshBuilder.CreateRibbon(
         `lw-fx-vortex-ribbon-${r}`,
-        {
-          pathArray: [pathA, pathB],
-          sideOrientation: Mesh.DOUBLESIDE,
-          updatable: false,
-        },
+        { pathArray: [pathA, pathB], sideOrientation: Mesh.DOUBLESIDE, updatable: false },
         scene,
       );
 
@@ -188,15 +181,14 @@ export class RuneVortexShaderBuilder {
         { vertex: 'loomFireRibbon', fragment: 'loomFireRibbon' },
         {
           attributes: ['position', 'uv'],
-          uniforms: ['worldViewProjection', 'time', 'alpha', 'colorHot', 'colorMid', 'colorCool'],
+          uniforms: ['worldViewProjection', 'uFlame', 'uCore', 'uClock', 'uStrength'],
           needAlphaBlending: true,
         },
       );
-      shaderMat.setFloat('time', r * 1.3);
-      shaderMat.setFloat('alpha', alpha * (r % 2 === 0 ? 0.92 : 0.72));
-      shaderMat.setColor3('colorHot', secondary);
-      shaderMat.setColor3('colorMid', primary);
-      shaderMat.setColor3('colorCool', primary.scale(0.65));
+      shaderMat.setFloat('uClock', r * 1.3);
+      shaderMat.setFloat('uStrength', alpha * (r % 2 === 0 ? 1.15 : 0.9));
+      shaderMat.setColor3('uFlame', primary);
+      shaderMat.setColor3('uCore', secondary);
       shaderMat.backFaceCulling = false;
       shaderMat.alphaMode = 1;
       ribbon.material = shaderMat;
@@ -250,18 +242,14 @@ export class RuneVortexShaderBuilder {
     sparks.colorDead = new Color4(primary.r * 0.6, primary.g * 0.4, 0.05, 0);
     sparks.minSize = Math.max(0.08, props.sizeMin * 0.22);
     sparks.maxSize = Math.min(0.42, Math.max(0.18, props.sizeMax * 0.16));
-    sparks.minLifeTime = Math.max(0.5, props.lifetimeMin * 0.55);
-    sparks.maxLifeTime = Math.max(1.2, props.lifetimeMax * 0.65);
+    sparks.minLifeTime = Math.max(0.5, props.lifetimeSeconds * 0.45);
+    sparks.maxLifeTime = Math.max(1.2, props.lifetimeSeconds * 0.85);
     sparks.emitRate = Math.max(45, props.emissionRate * 1.85);
     sparks.blendMode =
-      props.blendMode === 'Alpha Blend'
+      props.blendMode === 'AlphaBlend'
         ? ParticleSystem.BLENDMODE_STANDARD
         : ParticleSystem.BLENDMODE_ADD;
-    sparks.gravity = new Vector3(
-      forces.windDirectionX * 0.4,
-      Math.max(1.2, -forces.gravity * 0.85),
-      0,
-    );
+    sparks.gravity = new Vector3(0, Math.max(1.2, forces.gravityY * 1.1), 0);
     sparks.minEmitPower = Math.max(0.4, props.speed * 0.25);
     sparks.maxEmitPower = Math.max(1.1, props.speed * 0.65);
     sparks.minAngularSpeed = -2.2;
@@ -283,7 +271,7 @@ export class RuneVortexShaderBuilder {
     embers.maxLifeTime = 2.1;
     embers.emitRate = Math.max(35, props.emissionRate * 1.15);
     embers.blendMode = ParticleSystem.BLENDMODE_ADD;
-    embers.gravity = new Vector3(forces.windDirectionX * 0.25, 2.2, 0);
+    embers.gravity = new Vector3(0, 2.2, 0);
     embers.minEmitPower = 0.5;
     embers.maxEmitPower = 1.65;
     embers.updateSpeed = 0.016;
@@ -324,15 +312,9 @@ export class RuneVortexShaderBuilder {
     const speed = Math.max(0.25, props.speed * 0.35);
     const vortex = Math.max(0.3, forces.vortexStrength * 0.22);
 
-    if (this.sigilDisc) {
-      this.sigilDisc.rotation.y = timeSeconds * 0.42 * speed;
-    }
-    if (this.outerRuneRing) {
-      this.outerRuneRing.rotation.y = -timeSeconds * 0.65 * speed;
-    }
-    if (this.innerRuneRing) {
-      this.innerRuneRing.rotation.y = timeSeconds * 0.95 * speed;
-    }
+    if (this.sigilDisc) this.sigilDisc.rotation.y = timeSeconds * 0.42 * speed;
+    if (this.outerRuneRing) this.outerRuneRing.rotation.y = -timeSeconds * 0.65 * speed;
+    if (this.innerRuneRing) this.innerRuneRing.rotation.y = timeSeconds * 0.95 * speed;
 
     this.vortexRibbons.forEach((ribbon, idx) => {
       const dir = idx % 2 === 0 ? 1 : -0.75;
@@ -342,7 +324,7 @@ export class RuneVortexShaderBuilder {
     });
 
     this.ribbonMaterials.forEach((mat, idx) => {
-      mat.setFloat('time', timeSeconds * (1.2 + idx * 0.15) + idx * 0.9);
+      mat.setFloat('uClock', timeSeconds * (1.2 + idx * 0.15) + idx * 0.9);
     });
 
     if (this.effectLight && props.castLight) {
@@ -393,7 +375,6 @@ export class RuneVortexShaderBuilder {
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, 256, 512);
     ctx.globalCompositeOperation = 'source-over';
-
     tex.update();
     return tex;
   }
@@ -410,7 +391,6 @@ export class RuneVortexShaderBuilder {
 
     const cx = 512;
     const cy = 512;
-
     const grad = ctx.createRadialGradient(cx, cy, 24, cx, cy, 496);
     grad.addColorStop(0, `${secondaryHex}aa`);
     grad.addColorStop(0.35, `${primaryHex}55`);
@@ -423,13 +403,7 @@ export class RuneVortexShaderBuilder {
     ctx.fill();
 
     ctx.strokeStyle = secondaryHex;
-    for (const [r, w] of [
-      [476, 7],
-      [442, 4],
-      [388, 6],
-      [296, 4],
-      [184, 5],
-    ]) {
+    for (const [r, w] of [[476, 7], [442, 4], [388, 6], [296, 4], [184, 5]]) {
       ctx.lineWidth = w;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -449,32 +423,7 @@ export class RuneVortexShaderBuilder {
 
     ctx.fillStyle = secondaryHex;
     ctx.font = 'bold 28px Georgia, serif';
-    const runes = [
-      'ᚠ',
-      'ᚢ',
-      'ᚦ',
-      'ᚨ',
-      'ᚱ',
-      'ᚲ',
-      'ᚷ',
-      'ᚹ',
-      'ᚺ',
-      'ᚾ',
-      'ᛁ',
-      'ᛃ',
-      'ᛇ',
-      'ᛈ',
-      'ᛉ',
-      'ᛊ',
-      'ᛏ',
-      'ᛒ',
-      'ᛖ',
-      'ᛗ',
-      'ᛚ',
-      'ᛜ',
-      'ᛞ',
-      'ᛟ',
-    ];
+    const runes = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛊ'];
     for (let i = 0; i < 32; i++) {
       const angle = (i * Math.PI * 2) / 32;
       const gx = cx + Math.cos(angle) * 415;
@@ -485,7 +434,6 @@ export class RuneVortexShaderBuilder {
       ctx.fillText(runes[i % runes.length], -10, 10);
       ctx.restore();
     }
-
     tex.update();
     return tex;
   }

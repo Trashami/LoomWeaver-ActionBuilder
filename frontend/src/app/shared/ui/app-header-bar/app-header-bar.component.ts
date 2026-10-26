@@ -1,0 +1,58 @@
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpInput } from 'ng-primitives/input';
+import { NgpToolbar } from 'ng-primitives/toolbar';
+import { CampaignVm, ViewerRole } from '../../../core/models/loomweaver.models';
+import { LwIconComponent } from '../icon/icon.component';
+
+@Component({
+  selector: 'lw-app-header-bar',
+  standalone: true,
+  imports: [
+    FormsModule,
+    RouterLink,
+    NgpButton,
+    NgpInput,
+    NgpAvatar,
+    NgpAvatarFallback,
+    NgpToolbar,
+    LwIconComponent,
+  ],
+  templateUrl: './app-header-bar.component.html',
+  styleUrl: './app-header-bar.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class LwAppHeaderBarComponent {
+  readonly campaigns = input.required<readonly CampaignVm[]>();
+  readonly activeCampaign = input.required<CampaignVm>();
+  readonly activeCampaignId = input.required<number>();
+  readonly viewerRole = input<ViewerRole>('gm');
+  readonly audioPlaying = input<boolean>(false);
+  readonly quickRollBanner = input<string>('1d20 Ready');
+  readonly loomOpen = input<boolean>(false);
+  readonly userDisplayName = input<string>('Dungeon Master');
+  readonly navCollapsed = input<boolean>(false);
+  readonly collapseIcon = input<'apps' | 'menu'>('apps');
+
+  readonly searchText = model<string>('');
+
+  readonly navToggleRequested = output<void>();
+  readonly campaignSelected = output<number>();
+  readonly searchSubmitted = output<string>();
+  readonly audioToggled = output<void>();
+  readonly quickRollRequested = output<void>();
+  readonly viewerRoleToggled = output<void>();
+  readonly loomToggled = output<void>();
+  readonly logoutRequested = output<void>();
+
+  onSubmitSearch(): void {
+    this.searchSubmitted.emit(this.searchText().trim());
+  }
+
+  userInitials(): string {
+    return (this.userDisplayName() || 'LW').slice(0, 2).toUpperCase();
+  }
+}

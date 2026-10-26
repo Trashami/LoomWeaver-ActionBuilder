@@ -47,6 +47,7 @@ const MATERIAL_ICON_MAP: Readonly<Record<string, string>> = {
   'chevron-right': 'chevron_right',
   'chevron-left': 'chevron_left',
   'alert-triangle': 'warning_amber',
+  apps: 'apps',
   menu: 'menu',
   x: 'close',
   close: 'close',

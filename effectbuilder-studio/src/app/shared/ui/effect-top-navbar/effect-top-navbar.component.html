@@ -27,7 +27,7 @@
           </select>
         </div>
         <span class="lw-campaign-picker__sub">
-          Campaign · {{ activeCampaign().currentSessionNumber }} sessions · {{ activeCampaign().tone }}
+          Campaign · {{ activeCampaign().currentSessionNumber }} sessions · High Fantasy
         </span>
       </div>
     </div>
@@ -55,7 +55,7 @@
           (ngModelChange)="characterChanged.emit($event)">
           @for (ch of characters(); track ch.characterKey) {
             <option [value]="ch.characterKey">
-              {{ ch.characterName }} ({{ ch.classSummary }})
+              {{ ch.name }} ({{ ch.classOrTitle }})
             </option>
           }
         </select>

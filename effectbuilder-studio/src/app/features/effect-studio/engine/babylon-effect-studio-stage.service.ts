@@ -15,7 +15,10 @@ import {
   EffectMotionForceConfigVm,
   EffectTimelineTrackVm,
 } from '../models/effect-studio.models';
-import { DungeonEnvironmentBuilder } from './dungeon-environment.builder';
+import {
+  DungeonEnvironmentBuilder,
+  DungeonEnvironmentNodes,
+} from './dungeon-environment.builder';
 import { RuneVortexShaderBuilder } from './rune-vortex-shader.builder';
 import { StructuralSpellFxEngine } from './structural-spell-fx.engine';
 
@@ -25,6 +28,7 @@ export class BabylonEffectStudioStageService {
   private engine: Engine | null = null;
   private scene: Scene | null = null;
   private camera: ArcRotateCamera | null = null;
+  private dungeonNodes: DungeonEnvironmentNodes | null = null;
   private readonly dungeonBuilder = new DungeonEnvironmentBuilder();
   private readonly vortexBuilder = new RuneVortexShaderBuilder();
   private readonly structuralFx = new StructuralSpellFxEngine();
@@ -87,7 +91,7 @@ export class BabylonEffectStudioStageService {
         hemi.diffuse = Color3.FromHexString('#e7e5e4');
         hemi.groundColor = Color3.FromHexString('#120f0c');
 
-        this.dungeonBuilder.buildDungeonStage(this.scene);
+        this.dungeonNodes = this.dungeonBuilder.build(this.scene);
         this.vortexBuilder.buildOrUpdateEffectMeshes(this.scene, props, forces);
 
         this.lastTickTime = performance.now();
@@ -136,14 +140,21 @@ export class BabylonEffectStudioStageService {
   }
 
   triggerStructuralSpellCast(emitter: EffectEmitterCardVm): void {
-    if (!this.scene) return;
+    if (!this.scene || !this.dungeonNodes) return;
     this.zone.runOutsideAngular(() => {
-      if (!this.scene) return;
-      const origin = this.dungeonBuilder.getCasterCastOrigin();
-      const target = this.dungeonBuilder.getPrimaryTargetImpactPoint();
-      this.structuralFx.playStructuralEffectForEmitter(this.scene, emitter, origin, target, () => {
-        this.dungeonBuilder.triggerTargetRecoil(0);
-      });
+      if (!this.scene || !this.dungeonNodes) return;
+      const sceneRef = this.scene;
+      const casterPos = this.dungeonNodes.casterToken.root.position.clone();
+      const targetTokens = this.dungeonNodes.targetTokens;
+      this.structuralFx.playStructuralEffectForEmitter(
+        sceneRef,
+        emitter,
+        casterPos,
+        targetTokens,
+        (hitTarget) => {
+          this.dungeonBuilder.triggerTargetRecoil(sceneRef, hitTarget);
+        },
+      );
     });
   }
 
@@ -180,6 +191,7 @@ export class BabylonEffectStudioStageService {
   dispose(): void {
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    this.dungeonNodes = null;
     this.scene?.dispose();
     this.engine?.dispose();
     this.scene = null;

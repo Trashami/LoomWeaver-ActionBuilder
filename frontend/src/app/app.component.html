@@ -3,189 +3,97 @@
   <lw-auth-modal />
 } @else {
   <div class="lw-shell">
-    <header class="lw-topbar">
-      <div class="lw-topbar__left">
-        <a class="lw-topbar__brand" routerLink="/home">
-          <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-topbar__logo" />
-          <div class="lw-topbar__titles">
-            <span class="lw-topbar__name">LoomWeaver</span>
-            <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
-          </div>
-        </a>
-
-        <div class="lw-topbar__divider"></div>
-
-        <div class="lw-campaign-picker">
-          <div class="lw-campaign-picker__body">
-            <div class="lw-campaign-picker__row">
-              <select
-                class="lw-campaign-picker__select"
-                [ngModel]="store.activeCampaignId()"
-                (ngModelChange)="store.setCampaign($event)"
-                aria-label="Active Campaign"
-              >
-                @for (camp of store.campaigns(); track camp.id) {
-                  <option [ngValue]="camp.id">{{ camp.name }}</option>
-                }
-              </select>
-            </div>
-            <span class="lw-campaign-picker__sub">
-              Campaign · {{ store.activeCampaign().currentSessionNumber }} sessions · High Fantasy
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <form class="lw-topbar__search" (ngSubmit)="submitGlobalSearch()">
-        <lw-icon name="search" [size]="16" />
-        <input
-          ngpInput
-          type="search"
-          class="lw-topbar__search-input"
-          placeholder="Search anything..."
-          [ngModel]="globalSearchText()"
-          (ngModelChange)="globalSearchText.set($event)"
-          name="globalLoomSearch"
-        />
-        <button
-          ngpButton
-          type="submit"
-          class="lw-topbar__kbd"
-          title="Open The Loom Campaign Memory"
-        >
-          Ctrl + K
-        </button>
-      </form>
-
-      <div ngpToolbar class="lw-topbar__right">
-        <button
-          ngpButton
-          type="button"
-          class="lw-topbar__icon-btn"
-          [class.lw-topbar__icon-btn--active]="audio.isPlaying()"
-          (click)="audio.togglePlayback()"
-          title="Toggle Ambient Audio Engine"
-        >
-          <lw-icon name="music" [size]="17" />
-        </button>
-
-        <button
-          ngpButton
-          type="button"
-          class="lw-topbar__icon-btn"
-          (click)="store.rollGlobalQuickD20()"
-          [title]="store.quickRollBanner()"
-        >
-          <lw-icon name="dices" [size]="17" />
-        </button>
-
-        <button
-          ngpButton
-          type="button"
-          class="lw-topbar__role-pill"
-          (click)="store.setViewerRole(store.viewerRole() === 'gm' ? 'players' : 'gm')"
-          title="Click to switch between GM View and Player View"
-        >
-          <span>{{ store.viewerRole() === 'gm' ? 'GM View' : 'Player View' }}</span>
-        </button>
-
-        <button
-          ngpButton
-          type="button"
-          class="lw-topbar__role-pill"
-          [class.lw-topbar__icon-btn--active]="store.loomDrawerOpen()"
-          (click)="store.toggleLoomDrawer()"
-          title="Open The Loom Campaign Memory"
-        >
-          <span>The Loom</span>
-        </button>
-
-        <a
-          ngpButton
-          class="lw-topbar__role-pill"
-          routerLink="/welcome"
-          title="View Public Marketing Site"
-        >
-          <span>Site</span>
-        </a>
-
-        <div class="lw-profile-pill">
-          <div ngpAvatar class="lw-profile-pill__avatar">
-            <span ngpAvatarFallback>
-              {{ auth.activeProfile().displayName.slice(0, 2).toUpperCase() }}
-            </span>
-          </div>
-          <div class="lw-profile-pill__info">
-            <strong>{{ auth.activeProfile().displayName }}</strong>
-            <span>{{ store.viewerRole() === 'gm' ? 'Dungeon Master' : 'Adventurer' }}</span>
-          </div>
-          <button
-            ngpButton
-            type="button"
-            class="lw-profile-pill__logout"
-            (click)="auth.logout()"
-            title="Sign Out"
-          >
-            <lw-icon name="close" [size]="13" />
-          </button>
-        </div>
-      </div>
-    </header>
+    <lw-app-header-bar
+      [campaigns]="store.campaigns()"
+      [activeCampaign]="store.activeCampaign()"
+      [activeCampaignId]="store.activeCampaignId()"
+      [viewerRole]="store.viewerRole()"
+      [audioPlaying]="audio.isPlaying()"
+      [quickRollBanner]="store.quickRollBanner()"
+      [loomOpen]="store.loomDrawerOpen()"
+      [userDisplayName]="auth.activeProfile().displayName"
+      [navCollapsed]="leftNavCollapsed()"
+      collapseIcon="apps"
+      [(searchText)]="globalSearchText"
+      (navToggleRequested)="toggleLeftNav()"
+      (campaignSelected)="store.setCampaign($event)"
+      (searchSubmitted)="submitGlobalSearch($event)"
+      (audioToggled)="audio.togglePlayback()"
+      (quickRollRequested)="store.rollGlobalQuickD20()"
+      (viewerRoleToggled)="store.setViewerRole(store.viewerRole() === 'gm' ? 'players' : 'gm')"
+      (loomToggled)="store.toggleLoomDrawer()"
+      (logoutRequested)="auth.logout()"
+    />
 
     <lw-loom-launcher />
 
-    <div class="lw-workspace">
-      <nav class="lw-sidebar" aria-label="Primary LoomWeaver Navigation">
-        <div class="lw-sidebar__nav-list">
-          @for (item of primarySidebarNav; track item.id) {
-            <a
-              ngpButton
-              class="lw-nav-link"
-              [routerLink]="item.route"
-              routerLinkActive="lw-nav-link--active"
-            >
-              <span class="lw-nav-link__label">{{ item.label }}</span>
-            </a>
-          }
-        </div>
-
-        <div class="lw-sidebar__divider"></div>
-
-        <div class="lw-sidebar__engines">
-          <button
-            ngpButton
-            type="button"
-            class="lw-sidebar__heading-btn"
-            (click)="showAllModules.set(!showAllModules())"
+    <div
+      class="lw-workspace"
+      [class.lw-workspace--nav-collapsed]="leftNavCollapsed()"
+    >
+      @if (!leftNavCollapsed()) {
+        <nav class="lw-sidebar" aria-label="Primary LoomWeaver Navigation">
+          <lw-scroll-area
+            tone="emerald"
+            [scrollbarWidth]="4"
+            thumbColor="#49e892"
+            trackColor="rgba(6, 22, 16, 0.78)"
+            padding="0.85rem 0.7rem"
           >
-            <span>Tactical & Studio Tools</span>
-            <lw-icon [name]="showAllModules() ? 'chevron-down' : 'chevron-right'" [size]="14" />
-          </button>
+            <div class="lw-sidebar__inner">
+              <div class="lw-sidebar__nav-list">
+                @for (item of primarySidebarNav; track item.id) {
+                  <a
+                    ngpButton
+                    class="lw-nav-link"
+                    [routerLink]="item.route"
+                    routerLinkActive="lw-nav-link--active"
+                  >
+                    <span class="lw-nav-link__label">{{ item.label }}</span>
+                  </a>
+                }
+              </div>
 
-          @if (showAllModules()) {
-            <div class="lw-sidebar__nav-list">
-              @for (item of engineSidebarNav; track item.id) {
-                <a
+              <div class="lw-sidebar__divider"></div>
+
+              <div class="lw-sidebar__engines">
+                <button
                   ngpButton
-                  class="lw-nav-link lw-nav-link--compact"
-                  [routerLink]="item.route"
-                  routerLinkActive="lw-nav-link--active"
+                  type="button"
+                  class="lw-sidebar__heading-btn"
+                  (click)="showAllModules.set(!showAllModules())"
                 >
-                  <span class="lw-nav-link__label">{{ item.label }}</span>
-                </a>
-              }
-            </div>
-          }
-        </div>
+                  <span>Tactical & Studio Tools</span>
+                  <lw-icon [name]="showAllModules() ? 'chevron-down' : 'chevron-right'" [size]="14" />
+                </button>
 
-        <div class="lw-sidebar__creed-card">
-          <p class="lw-sidebar__creed-title">The Loom remembers.</p>
-          <p class="lw-sidebar__creed-sub">
-            People change. Places endure.<br />
-            Every choice matters.
-          </p>
-        </div>
-      </nav>
+                @if (showAllModules()) {
+                  <div class="lw-sidebar__nav-list">
+                    @for (item of engineSidebarNav; track item.id) {
+                      <a
+                        ngpButton
+                        class="lw-nav-link lw-nav-link--compact"
+                        [routerLink]="item.route"
+                        routerLinkActive="lw-nav-link--active"
+                      >
+                        <span class="lw-nav-link__label">{{ item.label }}</span>
+                      </a>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="lw-sidebar__creed-card">
+                <p class="lw-sidebar__creed-title">The Loom remembers.</p>
+                <p class="lw-sidebar__creed-sub">
+                  People change. Places endure.<br />
+                  Every choice matters.
+                </p>
+              </div>
+            </div>
+          </lw-scroll-area>
+        </nav>
+      }
 
       <main class="lw-main">
         <lw-scroll-area

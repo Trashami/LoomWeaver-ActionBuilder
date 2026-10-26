@@ -1,4 +1,5 @@
 export * from './achievement-card/achievement-card.component';
+export * from './app-header-bar/app-header-bar.component';
 export * from './auth-modal/auth-modal.component';
 export * from './asset-card/asset-card.component';
 export * from './asset-card/asset-card.config';

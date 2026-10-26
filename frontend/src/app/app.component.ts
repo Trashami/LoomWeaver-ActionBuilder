@@ -1,15 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
 import { NgpButton } from 'ng-primitives/button';
-import { NgpInput } from 'ng-primitives/input';
-import { NgpToolbar } from 'ng-primitives/toolbar';
 import { filter } from 'rxjs';
 import { AuthSessionService } from './core/services/auth-session.service';
 import { LoomWeaverStoreService } from './core/services/loomweaver-store.service';
 import { WebAudioAmbienceService } from './features/assets/engine/web-audio-ambience.service';
 import {
+  LwAppHeaderBarComponent,
   LwAuthModalComponent,
   LwIconComponent,
   LwInspectorDrawerComponent,
@@ -28,15 +25,11 @@ interface StudioPrimaryNavItem {
   selector: 'lw-root',
   standalone: true,
   imports: [
-    FormsModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
     NgpButton,
-    NgpInput,
-    NgpAvatar,
-    NgpAvatarFallback,
-    NgpToolbar,
+    LwAppHeaderBarComponent,
     LwAuthModalComponent,
     LwIconComponent,
     LwInspectorDrawerComponent,
@@ -56,6 +49,7 @@ export class AppComponent {
   readonly currentUrl = signal<string>(this.router.url || '/');
   readonly globalSearchText = signal<string>('');
   readonly showAllModules = signal<boolean>(true);
+  readonly leftNavCollapsed = signal<boolean>(false);
 
   readonly isLandingSurface = computed(() => {
     const clean = this.currentUrl().split('?')[0].split('#')[0];
@@ -102,8 +96,12 @@ export class AppComponent {
       });
   }
 
-  submitGlobalSearch(): void {
-    const q = this.globalSearchText().trim();
+  toggleLeftNav(): void {
+    this.leftNavCollapsed.update((c) => !c);
+  }
+
+  submitGlobalSearch(query?: string): void {
+    const q = (query ?? this.globalSearchText()).trim();
     if (q) {
       this.store.setLoomSearchQuery(q);
     }

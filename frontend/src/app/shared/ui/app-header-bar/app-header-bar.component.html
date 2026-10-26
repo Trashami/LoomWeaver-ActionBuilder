@@ -1,0 +1,136 @@
+<header class="lw-topbar" role="banner">
+  <div class="lw-topbar__left">
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__square-btn lw-topbar__nav-toggle"
+      [class.lw-topbar__square-btn--active]="!navCollapsed()"
+      [attr.aria-expanded]="!navCollapsed()"
+      aria-label="Toggle Left Navigation Menu"
+      title="Collapse or Expand Navigation Menu"
+      (click)="navToggleRequested.emit()"
+    >
+      <lw-icon [name]="collapseIcon()" [size]="20" />
+    </button>
+
+    <a class="lw-topbar__brand-tile" routerLink="/home">
+      <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-topbar__logo" />
+      <div class="lw-topbar__titles">
+        <span class="lw-topbar__name">LoomWeaver</span>
+        <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
+      </div>
+    </a>
+
+    <div class="lw-campaign-tile">
+      <div class="lw-campaign-tile__body">
+        <select
+          class="lw-campaign-tile__select"
+          [ngModel]="activeCampaignId()"
+          (ngModelChange)="campaignSelected.emit($event)"
+          aria-label="Active Campaign"
+        >
+          @for (camp of campaigns(); track camp.id) {
+            <option [ngValue]="camp.id">{{ camp.name }}</option>
+          }
+        </select>
+        <span class="lw-campaign-tile__sub">
+          Campaign · {{ activeCampaign().currentSessionNumber }} sessions · High Fantasy
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <form class="lw-topbar__search" (ngSubmit)="onSubmitSearch()">
+    <lw-icon name="search" [size]="16" />
+    <input
+      ngpInput
+      type="search"
+      class="lw-topbar__search-input"
+      placeholder="Search anything..."
+      [ngModel]="searchText()"
+      (ngModelChange)="searchText.set($event)"
+      name="globalLoomSearch"
+    />
+    <button
+      ngpButton
+      type="submit"
+      class="lw-topbar__kbd"
+      title="Open The Loom Campaign Memory"
+    >
+      Ctrl + K
+    </button>
+  </form>
+
+  <div ngpToolbar class="lw-topbar__right">
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__square-btn"
+      [class.lw-topbar__square-btn--active]="audioPlaying()"
+      (click)="audioToggled.emit()"
+      title="Toggle Ambient Audio Engine"
+    >
+      <lw-icon name="music" [size]="18" />
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__square-btn"
+      (click)="quickRollRequested.emit()"
+      [title]="quickRollBanner()"
+    >
+      <lw-icon name="dices" [size]="18" />
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__rect-btn lw-topbar__rect-btn--gold"
+      (click)="viewerRoleToggled.emit()"
+      title="Switch between GM View and Player View"
+    >
+      <span>{{ viewerRole() === 'gm' ? 'GM View' : 'Player View' }}</span>
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__rect-btn"
+      [class.lw-topbar__square-btn--active]="loomOpen()"
+      (click)="loomToggled.emit()"
+      title="Open The Loom Campaign Memory"
+    >
+      <span>The Loom</span>
+    </button>
+
+    <a
+      ngpButton
+      class="lw-topbar__rect-btn"
+      routerLink="/welcome"
+      title="View Public Marketing Site"
+    >
+      <span>Site</span>
+    </a>
+
+    <div class="lw-profile-tile">
+      <div ngpAvatar class="lw-profile-tile__avatar">
+        <span ngpAvatarFallback>{{ userInitials() }}</span>
+      </div>
+      <div class="lw-profile-tile__info">
+        <strong>{{ userDisplayName() }}</strong>
+        <span>{{ viewerRole() === 'gm' ? 'Dungeon Master' : 'Adventurer' }}</span>
+      </div>
+    </div>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__square-btn lw-topbar__logout-tile"
+      (click)="logoutRequested.emit()"
+      title="Sign Out"
+    >
+      <lw-icon name="close" [size]="15" />
+    </button>
+  </div>
+</header>

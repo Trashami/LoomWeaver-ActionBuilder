@@ -151,66 +151,37 @@ public sealed class EffectStudioMySqlRepository(
             {
                 var spells = JsonSerializer.Deserialize<List<string>>(reader.GetString(6), JsonOpts) ?? [];
                 allForCampaign.Add(new CampaignEffectCharacterOptionDto(
-                    reader.GetString(0),
-                    reader.GetInt32(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.GetString(4),
-                    reader.GetString(5),
-                    spells
-                ));
+                    reader.GetString(0), reader.GetInt32(1), reader.GetString(2),
+                    reader.GetString(3), reader.GetString(4), reader.GetString(5), spells));
             }
         }
-        catch
-        {
-            // Fallback to seed list below
-        }
+        catch { }
 
         if (allForCampaign.Count == 0)
-        {
-            allForCampaign = SeedCharacters
-                .Where(c => c.CampaignId == campaignId || campaignId <= 0)
-                .ToList();
-        }
+            allForCampaign = SeedCharacters.Where(c => c.CampaignId == campaignId || campaignId <= 0).ToList();
 
-        if (isGm)
-        {
-            return allForCampaign;
-        }
+        if (isGm) return allForCampaign;
 
         var cleanUser = (username ?? string.Empty).Trim();
         var cleanBound = (boundCharacter ?? string.Empty).Trim();
         var playerMatches = allForCampaign.Where(c =>
             c.RoleScope == "player" &&
             (string.Equals(c.OwnerUsername, cleanUser, StringComparison.OrdinalIgnoreCase) ||
-             (!string.IsNullOrWhiteSpace(cleanBound) &&
-              c.Name.Contains(cleanBound, StringComparison.OrdinalIgnoreCase)) ||
-             (!string.IsNullOrWhiteSpace(cleanBound) &&
-              c.CharacterKey.EndsWith(cleanBound.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)))
+             (!string.IsNullOrWhiteSpace(cleanBound) && c.Name.Contains(cleanBound, StringComparison.OrdinalIgnoreCase)) ||
+             (!string.IsNullOrWhiteSpace(cleanBound) && c.CharacterKey.EndsWith(cleanBound.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)))
         ).ToList();
 
-        return playerMatches.Count > 0
-            ? playerMatches
-            : allForCampaign.Where(c => c.RoleScope == "player").Take(1).ToList();
+        return playerMatches.Count > 0 ? playerMatches : allForCampaign.Where(c => c.RoleScope == "player").Take(1).ToList();
     }
 
-    public async Task<IReadOnlyList<EffectStudioDocumentDto>> GetCampaignEffectsAsync(
-        int campaignId,
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<EffectStudioDocumentDto>> GetCampaignEffectsAsync(int campaignId, CancellationToken ct = default)
     {
         await EnsureSchemaAndSeedAsync(ct);
         var list = new List<EffectStudioDocumentDto>();
         try
         {
             await using var conn = await mysql.OpenConnectionAsync(ct);
-            const string sql = """
-                SELECT document_json
-                FROM lw_campaign_effects
-                WHERE campaign_id = @cid
-                ORDER BY updated_at DESC
-                LIMIT 100;
-                """;
-            await using var cmd = new MySqlCommand(sql, conn);
+            await using var cmd = new MySqlCommand("SELECT document_json FROM lw_campaign_effects WHERE campaign_id = @cid ORDER BY updated_at DESC LIMIT 100;", conn);
             cmd.Parameters.AddWithValue("@cid", campaignId);
             await using var reader = await cmd.ExecuteReaderAsync(ct);
             while (await reader.ReadAsync(ct))
@@ -219,17 +190,11 @@ public sealed class EffectStudioMySqlRepository(
                 if (doc is not null) list.Add(doc);
             }
         }
-        catch
-        {
-            // Fall through to validationEngine
-        }
-
+        catch { }
         return list.Count > 0 ? list : validationEngine.GetDocumentsForCampaign(campaignId);
     }
 
-    public async Task<IReadOnlyList<CampaignEffectSpellAssignmentDto>> GetCampaignAssignmentsAsync(
-        int campaignId,
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<CampaignEffectSpellAssignmentDto>> GetCampaignAssignmentsAsync(int campaignId, CancellationToken ct = default)
     {
         await EnsureSchemaAndSeedAsync(ct);
         var list = new List<CampaignEffectSpellAssignmentDto>();
@@ -237,12 +202,9 @@ public sealed class EffectStudioMySqlRepository(
         {
             await using var conn = await mysql.OpenConnectionAsync(ct);
             const string sql = """
-                SELECT id, campaign_id, campaign_name, character_key, character_name,
-                       spell_key, spell_name, effect_id, effect_name,
-                       assigned_by_username, assigned_by_role, updated_at, document_json
-                FROM lw_campaign_effect_assignments
-                WHERE campaign_id = @cid
-                ORDER BY updated_at DESC;
+                SELECT id, campaign_id, campaign_name, character_key, character_name, spell_key, spell_name,
+                       effect_id, effect_name, assigned_by_username, assigned_by_role, updated_at, document_json
+                FROM lw_campaign_effect_assignments WHERE campaign_id = @cid ORDER BY updated_at DESC;
                 """;
             await using var cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@cid", campaignId);
@@ -251,27 +213,12 @@ public sealed class EffectStudioMySqlRepository(
             {
                 var doc = JsonSerializer.Deserialize<EffectStudioDocumentDto>(reader.GetString(12), JsonOpts);
                 list.Add(new CampaignEffectSpellAssignmentDto(
-                    reader.GetInt64(0),
-                    reader.GetInt32(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.GetString(4),
-                    reader.GetString(5),
-                    reader.GetString(6),
-                    reader.GetString(7),
-                    reader.GetString(8),
-                    reader.GetString(9),
-                    reader.GetString(10),
-                    reader.GetDateTime(11).ToString("O"),
-                    doc
-                ));
+                    reader.GetInt64(0), reader.GetInt32(1), reader.GetString(2), reader.GetString(3),
+                    reader.GetString(4), reader.GetString(5), reader.GetString(6), reader.GetString(7),
+                    reader.GetString(8), reader.GetString(9), reader.GetString(10), reader.GetDateTime(11).ToString("O"), doc));
             }
         }
-        catch
-        {
-            return MemoryAssignments.Where(a => a.CampaignId == campaignId).ToList();
-        }
-
+        catch { return MemoryAssignments.Where(a => a.CampaignId == campaignId).ToList(); }
         return list;
     }
 
