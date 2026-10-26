@@ -1,0 +1,33 @@
+@let item = note();
+<article class="lw-scoped-note">
+  <div class="lw-scoped-note__top">
+    <div>
+      <span class="lw-scoped-note__meta">
+        Session {{ item.sessionNumber }} · Witnessed by {{ item.witnessCharacter }}
+      </span>
+      <h4 class="lw-scoped-note__title">{{ item.title }}</h4>
+    </div>
+    <lw-badge [label]="scopeLabel()" [tone]="scopeTone()" icon="Lock" />
+  </div>
+
+  <p class="lw-scoped-note__body">{{ item.content }}</p>
+
+  <div class="lw-scoped-note__footer">
+    <div class="lw-scoped-note__links">
+      @for (key of item.linkedEntityKeys; track key) {
+        <button
+          type="button"
+          class="lw-scoped-note__entity-pill"
+          (click)="inspectEntityRequested.emit(key)"
+        >
+          <lw-icon name="Network" [size]="12" />
+          <span>{{ key }}</span>
+        </button>
+      }
+    </div>
+    <a class="lw-scoped-note__deep-link" [routerLink]="item.deepLinkRoute">
+      <span>Open {{ item.deepLinkRoute }}</span>
+      <lw-icon name="ArrowRight" [size]="13" />
+    </a>
+  </div>
+</article>

@@ -1,0 +1,75 @@
+.lw-scoped-note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border-radius: 11px;
+  background: rgba(18, 17, 26, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.lw-scoped-note__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lw-scoped-note__meta {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(229, 184, 92, 0.82);
+}
+
+.lw-scoped-note__title {
+  margin: 0.12rem 0 0;
+  font-size: 0.95rem;
+  color: #f6f1e6;
+}
+
+.lw-scoped-note__body {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(214, 208, 196, 0.85);
+  line-height: 1.45;
+}
+
+.lw-scoped-note__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.15rem;
+}
+
+.lw-scoped-note__links {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.lw-scoped-note__entity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid rgba(229, 184, 92, 0.28);
+  background: rgba(229, 184, 92, 0.09);
+  color: #ffe299;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.lw-scoped-note__deep-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #5ce5a0;
+  text-decoration: none;
+}

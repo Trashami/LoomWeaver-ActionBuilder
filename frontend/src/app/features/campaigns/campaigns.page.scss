@@ -8,6 +8,13 @@
   gap: 1.25rem;
 }
 
+.lw-camp-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .lw-campaign-switcher {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -44,6 +51,12 @@
   gap: 0.5rem;
 }
 
+.lw-quest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 1rem;
+}
+
 .lw-filter-bar {
   display: flex;
   gap: 0.4rem;
@@ -63,4 +76,5 @@
   padding: 0.38rem 0.7rem;
   border-radius: var(--lw-radius-md);
   border: 1px solid var(--lw-border-gold);
+  text-decoration: none;
 }

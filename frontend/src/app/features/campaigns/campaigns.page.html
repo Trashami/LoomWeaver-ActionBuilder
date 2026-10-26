@@ -1,14 +1,15 @@
 <div class="lw-page">
   <lw-panel
-    eyebrow="Campaign Command"
+    eyebrow="Campaign Command & World Atlas"
     [title]="store.activeCampaign().name"
     [subtitle]="store.activeCampaign().subtitle + ' · World of ' + store.activeCampaign().worldName"
-    icon="flag"
-    [elevated]="true">
-    <div panelActions>
+    icon="Flag"
+    [elevated]="true"
+  >
+    <div panelActions class="lw-camp-actions">
       <a class="lw-action-link" routerLink="/arcane-screen">Open Live Arcane Screen</a>
       <a class="lw-action-link" routerLink="/maps">Open Map Studio</a>
-      <lw-button variant="secondary" size="sm" icon="book-open" (pressed)="store.toggleLoomDrawer(true)">
+      <lw-button variant="secondary" size="sm" icon="BookOpen" (pressed)="store.toggleLoomDrawer(true)">
         Search Canon in The Loom
       </lw-button>
     </div>
@@ -19,7 +20,8 @@
           type="button"
           class="lw-campaign-pill"
           [class.lw-campaign-pill--active]="camp.id === store.activeCampaignId()"
-          (click)="store.setCampaign(camp.id)">
+          (click)="store.setCampaign(camp.id)"
+        >
           <div class="lw-campaign-pill__top">
             <strong>{{ camp.name }}</strong>
             <lw-badge [label]="camp.systemLabel" tone="gold" />
@@ -31,17 +33,36 @@
   </lw-panel>
 
   <lw-panel
+    eyebrow="Shared lw-quest-tracker-card Primitive"
+    title="Multi-Step RPG Quest & Clue Investigation Tracker"
+    [subtitle]="questXpBanner()"
+    icon="Compass"
+  >
+    <div class="lw-quest-grid">
+      @for (quest of quests(); track quest.id) {
+        <lw-quest-tracker-card
+          [quest]="quest"
+          (stepToggled)="handleStepToggle($event)"
+          (clueInspected)="store.inspectEntity($event)"
+        />
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
     eyebrow="Canon & World Registry"
     title="Quests, NPCs, Locations, Factions, Clues & Secrets"
     subtitle="Filtered automatically by your active role preview (GM sees Secret nodes; Players see Player-Safe Canon)."
-    icon="compass">
+    icon="Compass"
+  >
     <div panelActions>
       <div class="lw-filter-bar">
         @for (cat of categories; track cat) {
           <lw-button
             [variant]="selectedCategory() === cat ? 'primary' : 'secondary'"
             size="sm"
-            (pressed)="selectedCategory.set(cat)">
+            (pressed)="selectedCategory.set(cat)"
+          >
             {{ cat }}
           </lw-button>
         }
@@ -56,14 +77,16 @@
           [active]="store.inspectedEntityKey() === entity.compositeKey"
           [canApprove]="store.viewerRole() === 'gm'"
           (inspectRequested)="store.inspectEntity($event.compositeKey)"
-          (approveRequested)="store.approveDraftEntity($event.compositeKey)" />
+          (approveRequested)="store.approveDraftEntity($event.compositeKey)"
+        />
       } @empty {
         <lw-empty-state
-          icon="lock"
+          icon="Lock"
           title="No Entities Visible for Filter"
           description="Switch to GM Role Preview in the top bar to inspect GM-scoped Secret entities or choose another category."
           actionLabel="Reset Filter"
-          (actionTriggered)="selectedCategory.set('All')" />
+          (actionTriggered)="selectedCategory.set('All')"
+        />
       }
     </div>
   </lw-panel>

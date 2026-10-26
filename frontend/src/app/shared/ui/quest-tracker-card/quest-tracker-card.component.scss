@@ -1,0 +1,113 @@
+.lw-quest-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(16, 15, 23, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  &--completed {
+    border-color: rgba(92, 229, 160, 0.45);
+    background: linear-gradient(135deg, rgba(92, 229, 160, 0.09), rgba(16, 15, 23, 0.94));
+  }
+}
+
+.lw-quest-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lw-quest-card__giver {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(229, 184, 92, 0.85);
+}
+
+.lw-quest-card__title {
+  margin: 0.12rem 0 0;
+  font-size: 0.98rem;
+  color: #f6f1e6;
+}
+
+.lw-quest-card__badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.lw-quest-card__locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.76rem;
+  color: rgba(214, 208, 196, 0.82);
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.lw-quest-card__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lw-quest-card__step {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(24, 22, 34, 0.8);
+  color: #e2dcd0;
+  text-align: left;
+  cursor: pointer;
+
+  &--done {
+    border-color: rgba(92, 229, 160, 0.4);
+    color: #98f5c4;
+  }
+}
+
+.lw-quest-card__step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.81rem;
+
+  small {
+    font-size: 0.7rem;
+    color: rgba(229, 184, 92, 0.8);
+  }
+}
+
+.lw-quest-card__clues {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.lw-quest-card__clue-label {
+  font-size: 0.72rem;
+  color: rgba(214, 208, 196, 0.72);
+}
+
+.lw-quest-card__clue-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(112, 214, 255, 0.3);
+  background: rgba(112, 214, 255, 0.08);
+  color: #a3e5ff;
+  font-size: 0.72rem;
+  cursor: pointer;
+}

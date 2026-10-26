@@ -34,4 +34,8 @@
   - **Music & Ambience Engine**: Browser Web Audio API 4-stem procedural soundscape synthesizer & crossfade mixer (`Ambient Drone`, `Exploration Harmony`, `Tension Pulse`, `Combat Percussion`) synchronized with .NET scene mood transitions.
   - **Campaign Analytics Ledgers**: .NET reporting engine aggregating party & per-character `lw-stat-radar` profiles, damage-by-type distributions, d20 entropy telemetry, character MVP ledgers, and automated campaign achievements.
   - **Shared Catalog Expansion**: `lw-dice-roller-tray`, `lw-audio-stem-mixer`, and `lw-achievement-card`.
-- **Stage 5 (Next):** **The Loom GraphRAG + The Weave Authoring + Marketplace Entitlements & Module Packager**.
+- **Stage 5 (Verified):**
+  - **The Loom GraphRAG**: Zero-generation campaign memory, per-player witness isolation (`Dal`, `Fivi`, `Kildrid`, `Kycius`, `Munk`), note privacy scoping (`private_player`, `gm_only`, `party_shared`), multi-hop Neo4j path citations, and deep links.
+  - **The Weave Authoring & World Graph**: Interactive SVG world graph with relationship filtering plus Creative AI draft generator (`NPC`, `Monster`, `Faction`, `Quest`, `Item`, `Spell`, `Loot Table`, `Session`) with 100% GM Authorship (`Approve`, `Edit/Re-Weave`, `Reject`).
+  - **Marketplace & Multi-Step Quests**: Creator-first **85/15 revenue split** calculator, one-click module importer, portable JSON campaign package exporter, frictionless 100% free player invite links, and multi-step RPG quest & clue tracker with automated XP rewards.
+  - **Shared Catalog Expansion**: `lw-scoped-note-card`, `lw-quest-tracker-card`, and `lw-creator-module-card`.

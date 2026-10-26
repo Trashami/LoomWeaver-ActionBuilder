@@ -1,0 +1,46 @@
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { LwBadgeComponent } from '../badge/badge.component';
+import { LwIconComponent } from '../icon/icon.component';
+
+export interface LwQuestStepItem {
+  readonly stepId: string;
+  readonly description: string;
+  readonly locationName: string;
+  readonly completed: boolean;
+}
+
+export interface LwQuestTrackerItem {
+  readonly id: string;
+  readonly title: string;
+  readonly questGiver: string;
+  readonly originLocation: string;
+  readonly completionLocation: string;
+  readonly prerequisites: string;
+  readonly xpReward: number;
+  readonly status: 'active' | 'completed' | string;
+  readonly clueKeys: readonly string[];
+  readonly steps: readonly LwQuestStepItem[];
+}
+
+export interface LwQuestStepToggleEvent {
+  readonly questId: string;
+  readonly stepId: string;
+}
+
+@Component({
+  selector: 'lw-quest-tracker-card',
+  standalone: true,
+  imports: [LwBadgeComponent, LwIconComponent],
+  templateUrl: './quest-tracker-card.component.html',
+  styleUrl: './quest-tracker-card.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class LwQuestTrackerCardComponent {
+  readonly quest = input.required<LwQuestTrackerItem>();
+  readonly stepToggled = output<LwQuestStepToggleEvent>();
+  readonly clueInspected = output<string>();
+
+  readonly completedCount = computed(
+    () => this.quest().steps.filter((s) => s.completed).length,
+  );
+}

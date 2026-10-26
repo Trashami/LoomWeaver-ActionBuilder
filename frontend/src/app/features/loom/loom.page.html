@@ -1,33 +1,53 @@
 <div class="lw-page">
   <lw-panel
-    eyebrow="Zero-Generation Living Campaign Memory"
-    title="The Loom · Full Recall & Citation Explorer"
-    subtitle="Included free for both GMs and Players. Never invents fiction—synthesizes only established canon and role-isolated session notes."
-    icon="book-open"
-    [elevated]="true">
-    <div panelActions>
+    eyebrow="Module 8 · Zero-Generation GraphRAG + Per-Player Knowledge Isolation"
+    title="The Loom · Living Campaign Memory & Scoped Note Vault"
+    subtitle="100% free for GMs and Players. Searches only established canon and role-isolated session notes—never invents lore."
+    icon="BookOpen"
+    [elevated]="true"
+  >
+    <div panelActions class="lw-loom-top-actions">
       <lw-badge
-        [label]="store.viewerRole() === 'gm' ? 'Scope: GM Canon + Secrets' : 'Scope: Player-Safe Canon Only'"
-        [tone]="store.viewerRole() === 'gm' ? 'gm' : 'emerald'" />
+        [label]="store.viewerRole() === 'gm' ? 'Scope: GM Canon + Secrets' : 'Scope: Player-Safe Canon'"
+        [tone]="store.viewerRole() === 'gm' ? 'gm' : 'emerald'"
+      />
+      <lw-badge [label]="'Witness Filter: ' + activeWitness()" tone="gold" />
       @if (store.weaveEnabled()) {
         <a class="lw-action-link" routerLink="/weave">Open Neo4j World Graph</a>
       }
     </div>
 
+    <div class="lw-witness-bar">
+      <span class="lw-witness-bar__label">Per-Player Knowledge Isolation:</span>
+      @for (witness of witnessOptions; track witness) {
+        <button
+          type="button"
+          class="lw-witness-pill"
+          [class.lw-witness-pill--active]="activeWitness() === witness"
+          (click)="selectWitness(witness)"
+        >
+          {{ witness }}
+        </button>
+      }
+    </div>
+
     <div class="lw-search-box">
-      <input
-        type="text"
-        class="lw-search-input"
-        [ngModel]="store.loomQuery()"
-        (ngModelChange)="store.loomQuery.set($event)"
-        placeholder="Ask The Loom any question about sessions, NPCs, locations, quests, or secrets..." />
+      <div class="lw-search-input-row">
+        <input
+          type="text"
+          class="lw-search-input"
+          [ngModel]="store.loomQuery()"
+          (ngModelChange)="executeGraphRagSearch($event)"
+          placeholder="Ask The Loom any question about sessions, NPCs, locations, quests, or secrets..."
+        />
+        <lw-button variant="primary" icon="Search" (pressed)="executeGraphRagSearch(store.loomQuery())">
+          Synthesize Canon
+        </lw-button>
+      </div>
 
       <div class="lw-prompt-list">
         @for (prompt of presetPrompts; track prompt) {
-          <lw-button
-            variant="secondary"
-            size="sm"
-            (pressed)="store.loomQuery.set(prompt)">
+          <lw-button variant="secondary" size="sm" (pressed)="executeGraphRagSearch(prompt)">
             {{ prompt }}
           </lw-button>
         }
@@ -36,14 +56,21 @@
 
     <div class="lw-synthesis-card">
       <div class="lw-synthesis-head">
-        <lw-icon name="check" [size]="16" />
-        <strong>Verified Canon Synthesis ({{ store.loomCitations().length }} Citations Matched)</strong>
+        <lw-icon name="Check" [size]="16" />
+        <strong>{{ synthesisBanner() }}</strong>
       </div>
-      <p>
-        Synthesized strictly from authorized <code>loomweaver.lw_entities</code> and Neo4j
-        <code>:Entity</code> records for <strong>{{ store.activeCampaign().name }}</strong>.
-        Click any citation below to inspect its graph edges or jump directly to its workspace.
-      </p>
+      <div class="lw-graph-paths">
+        @for (path of visibleGraphPaths(); track path.pathSummary) {
+          <div class="lw-graph-path-chip">
+            <lw-icon name="Network" [size]="13" />
+            <code>{{ path.pathSummary }}</code>
+            <lw-badge
+              [label]="path.visibility === 'gm' ? 'GM Secret Edge' : 'Party Edge'"
+              [tone]="path.visibility === 'gm' ? 'gm' : 'emerald'"
+            />
+          </div>
+        }
+      </div>
     </div>
 
     <div class="lw-citation-grid">
@@ -66,17 +93,97 @@
             <lw-button
               variant="secondary"
               size="sm"
-              icon="network"
-              (pressed)="store.inspectEntity(cit.compositeKey)">
+              icon="Network"
+              (pressed)="store.inspectEntity(cit.compositeKey)"
+            >
               Inspect in Graph Drawer
             </lw-button>
             <a class="lw-cite-open" [routerLink]="cit.routeLink">
               <span>Open {{ cit.routeLink }}</span>
-              <lw-icon name="arrow-right" [size]="14" />
+              <lw-icon name="ArrowRight" [size]="14" />
             </a>
           </div>
         </article>
       }
     </div>
   </lw-panel>
+
+  <div class="lw-loom-notes-layout">
+    <lw-panel
+      eyebrow="Shared lw-scoped-note-card Primitive"
+      title="Role & Player-Scoped Session Notes"
+      subtitle="Enforces privacy boundaries: Private to Adventurer, Shared with GM Only, or Shared with Party."
+    >
+      <div class="lw-notes-grid">
+        @for (note of visibleNotes(); track note.id) {
+          <lw-scoped-note-card
+            [note]="note"
+            (inspectEntityRequested)="store.inspectEntity($event)"
+          />
+        }
+      </div>
+    </lw-panel>
+
+    <lw-panel
+      eyebrow="Note Privacy Composer"
+      title="Record Scoped Session Note"
+      subtitle="Attach deep links and choose whether this memory is private to your character, GM-only, or party-wide."
+    >
+      <div class="lw-note-form">
+        <label>
+          <span>Note Title</span>
+          <input
+            type="text"
+            [ngModel]="newNoteTitle()"
+            (ngModelChange)="newNoteTitle.set($event)"
+            placeholder="e.g. Kildrid's Chisel Mark on the South Gate"
+          />
+        </label>
+
+        <div class="lw-note-form__row">
+          <label>
+            <span>Privacy Scope</span>
+            <select [ngModel]="newNoteScope()" (ngModelChange)="newNoteScope.set($event)">
+              <option value="party_shared">Shared with Party (Canon)</option>
+              <option value="private_player">Private to Adventurer Only</option>
+              <option value="gm_only">Shared with GM Only</option>
+            </select>
+          </label>
+          <label>
+            <span>Witness Adventurer</span>
+            <select [ngModel]="newNoteWitness()" (ngModelChange)="newNoteWitness.set($event)">
+              <option value="Dal">Dal</option>
+              <option value="Fivi">Fivi</option>
+              <option value="Kildrid">Kildrid</option>
+              <option value="Kycius">Kycius</option>
+              <option value="Munk">Munk</option>
+            </select>
+          </label>
+          <label>
+            <span>Deep-Link Target</span>
+            <select [ngModel]="newNoteRoute()" (ngModelChange)="newNoteRoute.set($event)">
+              <option value="/campaigns">/campaigns (World Dossiers)</option>
+              <option value="/maps">/maps (LoomMaps Studio)</option>
+              <option value="/arcane-screen">/arcane-screen (VTT)</option>
+              <option value="/characters">/characters (Character Studio)</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          <span>Establish Witnessed Memory</span>
+          <textarea
+            rows="3"
+            [ngModel]="newNoteContent()"
+            (ngModelChange)="newNoteContent.set($event)"
+            placeholder="Describe what was witnessed during the session..."
+          ></textarea>
+        </label>
+
+        <lw-button variant="primary" icon="Check" (pressed)="saveScopedNote()">
+          Commit Scoped Note to The Loom
+        </lw-button>
+      </div>
+    </lw-panel>
+  </div>
 </div>

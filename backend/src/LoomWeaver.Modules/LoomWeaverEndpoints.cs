@@ -7,7 +7,9 @@ using LoomWeaver.Modules.Audio;
 using LoomWeaver.Modules.Characters;
 using LoomWeaver.Modules.Dice;
 using LoomWeaver.Modules.Encounters;
+using LoomWeaver.Modules.Knowledge;
 using LoomWeaver.Modules.Maps;
+using LoomWeaver.Modules.Marketplace;
 using LoomWeaver.Modules.Statistics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -29,6 +31,8 @@ public static class LoomWeaverEndpoints
             api.MapDiceForgeEndpoints();
             api.MapAudioAmbienceEndpoints();
             api.MapCampaignAnalyticsEndpoints();
+            api.MapLoomAndWeaveEndpoints();
+            api.MapMarketplaceAndQuestEndpoints();
             MapCoreEndpoints(api);
         }
 

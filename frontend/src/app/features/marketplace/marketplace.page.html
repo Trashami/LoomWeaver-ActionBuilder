@@ -1,25 +1,78 @@
 <div class="lw-page">
   <lw-panel
-    eyebrow="Creator-First Economy & Tiers"
-    title="LoomWeaver Marketplace & Subscription Matrix"
-    subtitle="Players join tables 100% free via invite links. Creators keep up to 85% royalty on adventures, maps, dice skins, and spell packs."
-    icon="shopping-bag"
-    [elevated]="true">
-    <div panelActions>
-      <lw-badge label="85 / 15 Creator Royalty Split" tone="emerald" icon="sparkles" />
-      <a class="lw-action-link" routerLink="/assets">Open My Asset Library</a>
+    eyebrow="Module 10 · Creator-First 85/15 Economy & One-Click Module Importer"
+    title="LoomWeaver Marketplace, Entitlements & Campaign Packager"
+    [subtitle]="statusBanner()"
+    icon="ShoppingBag"
+    [elevated]="true"
+  >
+    <div panelActions class="lw-market-actions">
+      <lw-badge label="85 / 15 Creator Royalty Split" tone="emerald" icon="Sparkles" />
+      <lw-button variant="secondary" size="sm" icon="Download" (pressed)="exportCampaignPackage()">
+        Export Campaign Package (.json)
+      </lw-button>
+      <lw-button variant="primary" size="sm" icon="Users" (pressed)="generateFreePlayerInvite()">
+        Copy 100% Free Player Invite Link
+      </lw-button>
     </div>
 
+    <div class="lw-creator-tools-bar">
+      <div class="lw-royalty-calc">
+        <span class="lw-royalty-calc__label">
+          85/15 Creator Split Simulator (Module Price: ${{ calculatorPrice() }})
+        </span>
+        <input
+          type="range"
+          min="5"
+          max="60"
+          step="1"
+          [value]="calculatorPrice()"
+          (input)="onPriceSliderInput($event)"
+        />
+        <div class="lw-royalty-calc__pills">
+          <lw-badge [label]="'Creator Earns (85%): $' + creatorPayout()" tone="emerald" />
+          <lw-badge [label]="'Platform Hosting (15%): $' + platformFee()" tone="neutral" />
+        </div>
+      </div>
+
+      <div class="lw-invite-box">
+        <span class="lw-royalty-calc__label">Frictionless 100% Free Player Seat Invite URL</span>
+        <code>{{ generatedInviteUrl() }}</code>
+      </div>
+    </div>
+
+    @if (exportedManifestPreview(); as manifest) {
+      <pre class="lw-export-preview">{{ manifest }}</pre>
+    }
+
+    <div class="lw-creator-modules-grid">
+      @for (mod of creatorModules(); track mod.id) {
+        <lw-creator-module-card
+          [module]="mod"
+          (importRequested)="importCreatorModule($event)"
+        />
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
+    eyebrow="Table Accessibility & GM Subscriptions"
+    title="Subscription Matrix (Players Always Join 100% Free)"
+    subtitle="Never lock players behind GM-tier subscriptions simply to participate at the table."
+    icon="Shield"
+  >
     <div class="lw-tier-grid">
       @for (tier of store.subscriptionTiers(); track tier.code) {
         <div
           class="lw-tier-card"
-          [class.lw-tier-card--active]="activeTierCode() === tier.code">
+          [class.lw-tier-card--active]="activeTierCode() === tier.code"
+        >
           <div class="lw-tier-card__top">
             <h4>{{ tier.name }}</h4>
             <lw-badge
               [label]="tier.includesWeave ? 'The Loom + The Weave' : 'The Loom Included'"
-              [tone]="tier.includesWeave ? 'gold' : 'emerald'" />
+              [tone]="tier.includesWeave ? 'gold' : 'emerald'"
+            />
           </div>
           <div class="lw-tier-card__price">
             <strong>{{ tier.monthlyPrice }}</strong>
@@ -34,7 +87,8 @@
           <lw-button
             [variant]="activeTierCode() === tier.code ? 'gold' : 'secondary'"
             size="sm"
-            (pressed)="activeTierCode.set(tier.code)">
+            (pressed)="activeTierCode.set(tier.code)"
+          >
             {{ activeTierCode() === tier.code ? 'Current Active Plan' : 'Select ' + tier.name }}
           </lw-button>
         </div>
@@ -43,10 +97,11 @@
   </lw-panel>
 
   <lw-panel
-    eyebrow="One-Click Module & Cosmetic Storefront"
+    eyebrow="One-Click Cosmetic & Asset Storefront"
     title="Featured Creator Releases"
-    subtitle="Every storefront card is an instance of the shared lw-asset-card component."
-    icon="sparkles">
+    subtitle="Rendered with the shared lw-asset-card component."
+    icon="Sparkles"
+  >
     <div class="lw-store-grid">
       @for (asset of store.assets(); track asset.id) {
         <lw-asset-card
@@ -54,7 +109,8 @@
           primaryActionLabel="Import into Campaign"
           [config]="{ variant: 'detailed', showPrice: true, showUnlockAction: true }"
           (assetSelected)="store.unlockAsset($event.id)"
-          (unlockRequested)="store.unlockAsset($event.id)" />
+          (unlockRequested)="store.unlockAsset($event.id)"
+        />
       }
     </div>
   </lw-panel>
