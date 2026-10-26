@@ -40,8 +40,21 @@ public sealed record UserAccountProfileContract(
 );
 
 public sealed record AuthLoginRequest(
-    string AccountId,
+    string? Identifier,
+    string? AccountId,
+    string? Password,
     string? PasswordOrPin
+);
+
+public sealed record AuthGoogleLoginRequest(
+    string IdToken
+);
+
+public sealed record AuthAccountRequestDto(
+    string Email,
+    string Username,
+    string? DisplayName,
+    string? Notes
 );
 
 public sealed record AuthRegisterRequest(
@@ -55,7 +68,8 @@ public sealed record AuthRegisterRequest(
 public sealed record AuthSessionResponse(
     string Token,
     DateTimeOffset ExpiresAt,
-    UserAccountProfileContract Profile
+    UserAccountProfileContract Profile,
+    object? User = null
 );
 
 public sealed record StripeCheckoutRequest(

@@ -119,10 +119,13 @@ export class TableRealtimeSyncService {
 
   constructor() {
     this.initBroadcastChannel();
-    this.refreshPresence();
   }
 
   refreshPresence(): void {
+    const hasToken =
+      typeof localStorage !== 'undefined' && !!localStorage.getItem('mw_auth_token');
+    if (!hasToken) return;
+
     this.http
       .get<{
         seats: readonly TablePresenceSeatVm[];

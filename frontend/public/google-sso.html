@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoomWeaver · Google Single Sign-On Gateway</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 20%, #131c31 0%, #070b14 75%);
+      color: #f1f5f9;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+    }
+    .sso-card {
+      width: 100%;
+      max-width: 410px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 14px;
+      padding: 28px 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      text-align: center;
+    }
+    .sso-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #818cf8;
+      background: rgba(99, 102, 241, 0.14);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      color: #f8fafc;
+    }
+    p {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #94a3b8;
+      margin: 0 0 20px;
+    }
+    .google-slot {
+      display: flex;
+      justify-content: center;
+      min-height: 48px;
+      margin-bottom: 16px;
+    }
+    .existing-session {
+      display: none;
+      margin-bottom: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .existing-session.visible {
+      display: block;
+    }
+    .existing-label {
+      font-size: 12px;
+      color: #a7f3d0;
+      margin-bottom: 10px;
+    }
+    .btn-continue {
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-continue:hover {
+      filter: brightness(1.08);
+    }
+    .status {
+      font-size: 12px;
+      color: #cbd5e1;
+      min-height: 18px;
+      margin-top: 10px;
+    }
+    .status.error {
+      color: #f87171;
+    }
+    .status.ok {
+      color: #34d399;
+    }
+  </style>
+</head>
+<body>
+  <div class="sso-card">
+    <div class="sso-tag">LoomWeaver Unified Auth</div>
+    <h1>Continue with Google</h1>
+    <p id="targetOriginDesc">Completing Google OAuth2 sign-in for your LoomWeaver Studio workspace.</p>
+
+    <div id="existingBox" class="existing-session">
+      <div id="existingText" class="existing-label">Active LoomWeaver session found</div>
+      <button type="button" id="continueExistingBtn" class="btn-continue">Continue with Active Session</button>
+    </div>
+
+    <div class="google-slot">
+      <div id="googleBtnTarget"></div>
+    </div>
+
+    <div id="statusMsg" class="status">Select your Google account above to continue.</div>
+  </div>
+
+  <script>
+    (function () {
+      var CLIENT_ID = '280529007750-q5jrb7qbln2hpcaf8a62j4125oied8qs.apps.googleusercontent.com';
+      var params = new URLSearchParams(window.location.search);
+      var targetOrigin = params.get('origin') || 'https://actionbuilder.loom-weaver.com';
+      var statusEl = document.getElementById('statusMsg');
+      var descEl = document.getElementById('targetOriginDesc');
+      try {
+        var u = new URL(targetOrigin);
+        descEl.textContent = 'Signing in to ' + u.hostname + ' via LoomWeaver SSO.';
+      } catch (e) {}
+
+      function setSharedCookie(name, value, days) {
+        try {
+          var expires = new Date(Date.now() + (days || 30) * 864e5).toUTCString();
+          document.cookie =
+            name + '=' + encodeURIComponent(value) +
+            '; expires=' + expires +
+            '; path=/; domain=.loom-weaver.com; SameSite=Lax; Secure';
+        } catch (e) {}
+      }
+
+      function getSharedCookie(name) {
+        try {
+          var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+          return match ? decodeURIComponent(match[1]) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function notifyOpenerAndClose(payload) {
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage(payload, '*');
+          }
+        } catch (e) {}
+        statusEl.className = 'status ok';
+        statusEl.textContent = 'Authenticated! Returning to studio...';
+        setTimeout(function () {
+          window.close();
+        }, 250);
+      }
+
+      // Check if an existing valid session is already stored on loom-weaver.com
+      try {
+        var existingToken = localStorage.getItem('mw_auth_token') || getSharedCookie('mw_auth_token');
+        var existingUserRaw = localStorage.getItem('mw_user_profile') || getSharedCookie('mw_user_profile');
+        if (existingToken && existingUserRaw) {
+          var existingUser = JSON.parse(existingUserRaw);
+          if (existingUser && existingUser.username) {
+            var box = document.getElementById('existingBox');
+            var txt = document.getElementById('existingText');
+            var btn = document.getElementById('continueExistingBtn');
+            box.classList.add('visible');
+            txt.textContent = 'Signed in on LoomWeaver as ' + (existingUser.displayName || existingUser.username);
+            btn.textContent = 'Continue as ' + existingUser.username;
+            btn.onclick = function () {
+              setSharedCookie('mw_auth_token', existingToken, 30);
+              setSharedCookie('mw_user_profile', JSON.stringify(existingUser), 30);
+              notifyOpenerAndClose({
+                type: 'MW_GOOGLE_SSO_SESSION',
+                token: existingToken,
+                user: existingUser
+              });
+            };
+          }
+        }
+      } catch (e) {}
+
+      function handleGoogleCredential(response) {
+        if (!response || !response.credential) return;
+        statusEl.className = 'status';
+        statusEl.textContent = 'Verifying Google token with LoomWeaver...';
+
+        // Also send raw credential to opener immediately
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage({
+              type: 'MW_GOOGLE_SSO_CREDENTIAL',
+              idToken: response.credential
+            }, '*');
+          }
+        } catch (e) {}
+
+        fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: response.credential })
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error('Google authentication failed (' + res.status + ')');
+            return res.json();
+          })
+          .then(function (data) {
+            if (data && data.token && data.user) {
+              try {
+                localStorage.setItem('mw_auth_token', data.token);
+                localStorage.setItem('mw_user_profile', JSON.stringify(data.user));
+              } catch (e) {}
+              setSharedCookie('mw_auth_token', data.token, 30);
+              setSharedCookie('mw_user_profile', JSON.stringify(data.user), 30);
+              notifyOpenerAndClose({
+                type: 'MW_GOOGLE_SSO_SESSION',
+                token: data.token,
+                user: data.user,
+                idToken: response.credential
+              });
+            }
+          })
+          .catch(function (err) {
+            statusEl.className = 'status error';
+            statusEl.textContent = err.message || 'Google verification failed.';
+          });
+      }
+
+      function initGsi() {
+        if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+        window.google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: handleGoogleCredential,
+          auto_select: false,
+          cancel_on_tap_outside: false
+        });
+        window.google.accounts.id.renderButton(document.getElementById('googleBtnTarget'), {
+          theme: 'filled_black',
+          size: 'large',
+          shape: 'pill',
+          text: 'continue_with',
+          width: 320
+        });
+        window.google.accounts.id.prompt();
+      }
+
+      var s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.defer = true;
+      s.onload = initGsi;
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

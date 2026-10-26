@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using LoomWeaver.Domain;
+using LoomWeaver.Infrastructure.MySql;
 using LoomWeaver.Modules.Realtime;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -11,79 +10,6 @@ namespace LoomWeaver.Modules.Auth;
 
 public static class AuthAndCheckoutEndpoints
 {
-    private static readonly byte[] JwtSigningKey =
-        Encoding.UTF8.GetBytes("LoomWeaverV2-Polyglot-HMAC-SHA256-SigningKey-2026!");
-
-    private static readonly List<UserAccountProfileContract> Accounts = new()
-    {
-        new(
-            "acc-gm-trashami",
-            "trashami",
-            "Trashami · Master GM & Creator",
-            "gm@loom-weaver.com",
-            "gm",
-            "archmage",
-            "GM",
-            new[] { "asset-map-cinth", "asset-dice-runed-obsidian", "mod-cinth-masquerade-pack", "mod-shadow-mountain-raid" },
-            1842.50
-        ),
-        new(
-            "acc-player-fivi",
-            "fivi_fey",
-            "Fivi · Feywild Outcast (Free Player Seat)",
-            "fivi@loom-weaver.com",
-            "players",
-            "free_player",
-            "Fivi",
-            new[] { "asset-dice-runed-obsidian" },
-            0.00
-        ),
-        new(
-            "acc-player-dal",
-            "dal_ranger",
-            "Dal · Edhellainian Heir (Free Player Seat)",
-            "dal@loom-weaver.com",
-            "players",
-            "free_player",
-            "Dal",
-            new[] { "asset-map-cinth" },
-            0.00
-        ),
-        new(
-            "acc-player-kildrid",
-            "kildrid_stone",
-            "Kildrid · Dwarven Runesmith (Free Player Seat)",
-            "kildrid@loom-weaver.com",
-            "players",
-            "free_player",
-            "Kildrid",
-            Array.Empty<string>(),
-            0.00
-        ),
-        new(
-            "acc-player-kycius",
-            "kycius_blade",
-            "Kycius · Seeker of Truth (Free Player Seat)",
-            "kycius@loom-weaver.com",
-            "players",
-            "free_player",
-            "Kycius",
-            Array.Empty<string>(),
-            0.00
-        ),
-        new(
-            "acc-player-munk",
-            "munk_vanguard",
-            "Munk · Frontline Vanguard (Free Player Seat)",
-            "munk@loom-weaver.com",
-            "players",
-            "free_player",
-            "Munk",
-            Array.Empty<string>(),
-            0.00
-        )
-    };
-
     private static readonly List<StripeCheckoutSettlementResponse> SettlementLedger = new()
     {
         new(
@@ -114,89 +40,166 @@ public static class AuthAndCheckoutEndpoints
 
     public static RouteGroupBuilder MapAuthAndCheckoutEndpoints(this RouteGroupBuilder api)
     {
-        api.MapGet("/auth/accounts", () => Results.Ok(Accounts));
-
-        api.MapPost("/auth/login", (AuthLoginRequest req) =>
+        api.MapGet("/auth/accounts", (HttpContext ctx) =>
         {
-            var identifier = (req.AccountId ?? string.Empty).Trim();
-            var profile = Accounts.FirstOrDefault(a =>
-                string.Equals(a.AccountId, identifier, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(a.Username, identifier, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(a.Email, identifier, StringComparison.OrdinalIgnoreCase))
-                ?? Accounts[0];
-
-            var expiresAt = DateTimeOffset.UtcNow.AddDays(7);
-            var token = IssueHmacJwt(profile, expiresAt);
-
-            TableRealtimeEndpoints.RecordEvent(
-                1,
-                "auth_switch",
-                profile.DisplayName,
-                $"Authenticated session switched to {profile.DisplayName} (Role={profile.Role.ToUpperInvariant()}, Witness={profile.BoundCharacter}).",
-                "{}"
-            );
-
-            return Results.Ok(new AuthSessionResponse(token, expiresAt, profile));
+            var caller = ResolveAuthenticatedUser(ctx);
+            if (caller is null)
+            {
+                return Results.Json(new { message = "Authentication required." }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            return Results.Ok(MySqlUserAuthStore.GetPublicAccounts());
         });
 
-        api.MapPost("/auth/register", (AuthRegisterRequest req) =>
+        api.MapPost("/auth/login", async (
+            AuthLoginRequest req,
+            LoomWeaverMySqlRepository repo,
+            CancellationToken ct) =>
         {
-            var email = string.IsNullOrWhiteSpace(req.Email)
-                ? $"chronicler{Accounts.Count + 1}@loom-weaver.com"
-                : req.Email.Trim().ToLowerInvariant();
-            var existing = Accounts.FirstOrDefault(a =>
-                string.Equals(a.Email, email, StringComparison.OrdinalIgnoreCase));
-            if (existing is not null)
+            var identifier = !string.IsNullOrWhiteSpace(req.Identifier)
+                ? req.Identifier.Trim()
+                : (req.AccountId ?? string.Empty).Trim();
+            var password = !string.IsNullOrWhiteSpace(req.Password)
+                ? req.Password
+                : (req.PasswordOrPin ?? string.Empty);
+
+            if (string.IsNullOrWhiteSpace(identifier) || string.IsNullOrWhiteSpace(password))
             {
-                var existingExpires = DateTimeOffset.UtcNow.AddDays(7);
-                return Results.Ok(new AuthSessionResponse(IssueHmacJwt(existing, existingExpires), existingExpires, existing));
+                return Results.BadRequest(new { message = "Email/username and password are required." });
             }
 
-            var role = string.Equals(req.Role, "players", StringComparison.OrdinalIgnoreCase) ||
-                       string.Equals(req.Role, "player", StringComparison.OrdinalIgnoreCase)
-                ? "players"
-                : "gm";
-            var username = !string.IsNullOrWhiteSpace(req.Username)
-                ? req.Username.Trim().ToLowerInvariant()
-                : email.Split('@')[0];
-            var displayName = !string.IsNullOrWhiteSpace(req.DisplayName)
-                ? req.DisplayName.Trim()
-                : $"{username} · {(role == "gm" ? "Game Master" : "Free Player Seat")}";
-            var tierCode = role == "gm" ? "loremaster" : "free_player";
-            var boundCharacter = role == "gm" ? "GM" : "Fivi";
+            var user = await MySqlUserAuthStore.AuthenticateAsync(repo, identifier, password, ct);
+            if (user is null)
+            {
+                return Results.Json(
+                    new { message = "Invalid email/username or password." },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
 
-            var profile = new UserAccountProfileContract(
-                $"acc-{role}-{Guid.NewGuid():N}"[..18],
-                username,
-                displayName,
-                email,
-                role,
-                tierCode,
-                boundCharacter,
-                role == "gm" ? new[] { "asset-map-cinth", "asset-dice-runed-obsidian" } : new[] { "asset-dice-runed-obsidian" },
-                0.00
-            );
-
-            Accounts.Insert(0, profile);
-
-            var expiresAt = DateTimeOffset.UtcNow.AddDays(7);
-            var token = IssueHmacJwt(profile, expiresAt);
+            var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
+            var token = MySqlUserAuthStore.IssueHmacJwt(user, expiresAt);
+            var profile = MySqlUserAuthStore.ToContract(user);
+            var legacyUser = MySqlUserAuthStore.ToLegacyUserDto(user);
 
             TableRealtimeEndpoints.RecordEvent(
                 1,
-                "auth_register",
+                "auth_login",
                 profile.DisplayName,
-                $"New LoomWeaver account registered: {profile.DisplayName} ({profile.Email}, Role={profile.Role.ToUpperInvariant()}).",
+                $"Authenticated session established for {profile.DisplayName} ({profile.Email}, Role={profile.Role.ToUpperInvariant()}).",
                 "{}"
             );
 
-            return Results.Ok(new AuthSessionResponse(token, expiresAt, profile));
+            return Results.Ok(new AuthSessionResponse(token, expiresAt, profile, legacyUser));
         });
 
-        api.MapGet("/marketplace/settlements", () => Results.Ok(SettlementLedger));
-
-        api.MapPost("/marketplace/checkout", (StripeCheckoutRequest req) =>
+        api.MapPost("/auth/google", async (
+            AuthGoogleLoginRequest req,
+            LoomWeaverMySqlRepository repo,
+            CancellationToken ct) =>
         {
+            var user = await MySqlUserAuthStore.AuthenticateGoogleTokenAsync(repo, req.IdToken, ct);
+            if (user is null)
+            {
+                return Results.Json(
+                    new { message = "Google authentication failed. Invalid or expired Google ID token." },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
+            var token = MySqlUserAuthStore.IssueHmacJwt(user, expiresAt);
+            var profile = MySqlUserAuthStore.ToContract(user);
+            var legacyUser = MySqlUserAuthStore.ToLegacyUserDto(user);
+
+            return Results.Ok(new AuthSessionResponse(token, expiresAt, profile, legacyUser));
+        });
+
+        api.MapPost("/auth/register", async (
+            AuthRegisterRequest req,
+            LoomWeaverMySqlRepository repo,
+            CancellationToken ct) =>
+        {
+            if (string.IsNullOrWhiteSpace(req.Email) || !req.Email.Contains('@'))
+            {
+                return Results.BadRequest(new { message = "A valid email address is required." });
+            }
+            if (string.IsNullOrWhiteSpace(req.Password) || req.Password.Length < 6)
+            {
+                return Results.BadRequest(new { message = "Password must be at least 6 characters." });
+            }
+
+            try
+            {
+                var user = await MySqlUserAuthStore.RegisterAsync(
+                    repo,
+                    req.Email,
+                    req.Username ?? req.Email.Split('@')[0],
+                    req.DisplayName,
+                    req.Password,
+                    req.Role ?? "gm",
+                    ct);
+
+                var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
+                var token = MySqlUserAuthStore.IssueHmacJwt(user, expiresAt);
+                var profile = MySqlUserAuthStore.ToContract(user);
+                var legacyUser = MySqlUserAuthStore.ToLegacyUserDto(user);
+
+                TableRealtimeEndpoints.RecordEvent(
+                    1,
+                    "auth_register",
+                    profile.DisplayName,
+                    $"New LoomWeaver account registered: {profile.DisplayName} ({profile.Email}, Role={profile.Role.ToUpperInvariant()}).",
+                    "{}"
+                );
+
+                return Results.Ok(new AuthSessionResponse(token, expiresAt, profile, legacyUser));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        });
+
+        api.MapPost("/auth/request-account", (AuthAccountRequestDto req) =>
+        {
+            if (string.IsNullOrWhiteSpace(req.Email) || !req.Email.Contains('@') || string.IsNullOrWhiteSpace(req.Username))
+            {
+                return Results.BadRequest(new { success = false, message = "A valid email address and username are required." });
+            }
+
+            return Results.Ok(new
+            {
+                success = true,
+                message = "Your account request has been submitted for administrator review. Or use the Create Account tab to set your password and sign in immediately."
+            });
+        });
+
+        api.MapGet("/auth/me", (HttpContext ctx) =>
+        {
+            var user = ResolveAuthenticatedUser(ctx);
+            if (user is null)
+            {
+                return Results.Json(new { message = "Unauthorized or expired session." }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            return Results.Ok(MySqlUserAuthStore.ToLegacyUserDto(user));
+        });
+
+        api.MapGet("/marketplace/settlements", (HttpContext ctx) =>
+        {
+            if (ResolveAuthenticatedUser(ctx) is null)
+            {
+                return Results.Json(new { message = "Authentication required." }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            return Results.Ok(SettlementLedger);
+        });
+
+        api.MapPost("/marketplace/checkout", (StripeCheckoutRequest req, HttpContext ctx) =>
+        {
+            var caller = ResolveAuthenticatedUser(ctx);
+            if (caller is null)
+            {
+                return Results.Json(new { message = "Authentication required." }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+
             var gross = Math.Round(Math.Max(1.0, req.PriceUsd), 2);
             var creatorTransfer = Math.Round(gross * 0.85, 2);
             var platformFee = Math.Round(gross - creatorTransfer, 2);
@@ -217,20 +220,6 @@ public static class AuthAndCheckoutEndpoints
 
             SettlementLedger.Insert(0, settlement);
 
-            var accIdx = Accounts.FindIndex(a => a.AccountId == req.AccountId);
-            if (accIdx >= 0)
-            {
-                var current = Accounts[accIdx];
-                var updatedOwned = current.OwnedAssetIds.Contains(settlement.ItemId)
-                    ? current.OwnedAssetIds
-                    : current.OwnedAssetIds.Append(settlement.ItemId).ToList();
-                Accounts[accIdx] = current with
-                {
-                    OwnedAssetIds = updatedOwned,
-                    CreatorBalanceUsd = Math.Round(current.CreatorBalanceUsd + creatorTransfer, 2)
-                };
-            }
-
             TableRealtimeEndpoints.RecordEvent(
                 1,
                 "stripe_checkout",
@@ -245,27 +234,22 @@ public static class AuthAndCheckoutEndpoints
         return api;
     }
 
-    private static string IssueHmacJwt(UserAccountProfileContract profile, DateTimeOffset expiresAt)
+    public static StoredUserRecord? ResolveAuthenticatedUser(HttpContext ctx)
     {
-        var headerJson = JsonSerializer.Serialize(new { alg = "HS256", typ = "JWT" });
-        var payloadJson = JsonSerializer.Serialize(new
+        var authHeader = ctx.Request.Headers.Authorization.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(authHeader))
         {
-            sub = profile.AccountId,
-            usr = profile.Username,
-            role = profile.Role,
-            witness = profile.BoundCharacter,
-            tier = profile.TierCode,
-            exp = expiresAt.ToUnixTimeSeconds()
-        });
+            var fromHeader = MySqlUserAuthStore.VerifyHmacJwt(authHeader);
+            if (fromHeader is not null) return fromHeader;
+        }
 
-        var headerB64 = Base64UrlEncode(Encoding.UTF8.GetBytes(headerJson));
-        var payloadB64 = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
-        var unsignedToken = $"{headerB64}.{payloadB64}";
-        var sigBytes = HMACSHA256.HashData(JwtSigningKey, Encoding.UTF8.GetBytes(unsignedToken));
-        var sigB64 = Base64UrlEncode(sigBytes);
-        return $"{unsignedToken}.{sigB64}";
+        if (ctx.Request.Cookies.TryGetValue("mw_auth_token", out var cookieToken) &&
+            !string.IsNullOrWhiteSpace(cookieToken))
+        {
+            var fromCookie = MySqlUserAuthStore.VerifyHmacJwt(Uri.UnescapeDataString(cookieToken));
+            if (fromCookie is not null) return fromCookie;
+        }
+
+        return null;
     }
-
-    private static string Base64UrlEncode(byte[] bytes) =>
-        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }

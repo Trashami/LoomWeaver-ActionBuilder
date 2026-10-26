@@ -6,26 +6,29 @@ namespace LoomWeaver.Infrastructure.MySql;
 
 public sealed class LoomWeaverMySqlOptions
 {
+    public string? ConnectionString { get; set; }
     public string Server { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 3306;
     public string Database { get; set; } = "loomweaver";
     public string UserId { get; set; } = "loomweaver_app";
-    public string Password { get; set; } = "";
+    public string Password { get; set; } = "Sp34kFri3nd4nd3nt3r!";
 }
 
 public sealed class LoomWeaverMySqlRepository(LoomWeaverMySqlOptions options)
 {
     public string BuildConnectionString() =>
-        new MySqlConnectionStringBuilder
-        {
-            Server = options.Server,
-            Port = (uint)options.Port,
-            Database = options.Database,
-            UserID = options.UserId,
-            Password = options.Password,
-            SslMode = MySqlSslMode.None,
-            ConnectionTimeout = 5
-        }.ConnectionString;
+        !string.IsNullOrWhiteSpace(options.ConnectionString)
+            ? options.ConnectionString
+            : new MySqlConnectionStringBuilder
+            {
+                Server = options.Server,
+                Port = (uint)options.Port,
+                Database = options.Database,
+                UserID = options.UserId,
+                Password = options.Password,
+                SslMode = MySqlSslMode.None,
+                ConnectionTimeout = 5
+            }.ConnectionString;
 
     public async Task<IReadOnlyList<CampaignDto>> GetCampaignsAsync(CancellationToken ct = default)
     {

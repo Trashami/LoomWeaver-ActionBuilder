@@ -2,6 +2,10 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthSessionService } from '../../core/services/auth-session.service';
+import {
+  isSubdomainHost,
+  resolveDefaultStudioRouteForHost,
+} from '../../core/services/cookie-sso.helper';
 import { LwBadgeComponent, LwButtonComponent, LwIconComponent } from '../../shared/ui/public-api';
 
 export interface StorySlideVm {
@@ -173,10 +177,20 @@ export class LandingPageComponent implements OnInit {
     });
 
     const currentPath = this.router.url.split('?')[0];
-    if (currentPath === '/login') {
-      this.auth.openAuthModal('login');
-    } else if (currentPath === '/register') {
-      this.auth.openAuthModal('register');
+    const queryAuth = this.route.snapshot.queryParamMap.get('auth');
+    const returnUrl =
+      this.route.snapshot.queryParamMap.get('returnUrl') || resolveDefaultStudioRouteForHost();
+
+    if (isSubdomainHost()) {
+      if (this.auth.isAuthenticated()) {
+        void this.router.navigateByUrl(resolveDefaultStudioRouteForHost());
+        return;
+      }
+      this.auth.openAuthModal('login', resolveDefaultStudioRouteForHost());
+    } else if (currentPath === '/login' || queryAuth === 'login') {
+      this.auth.openAuthModal('login', returnUrl);
+    } else if (currentPath === '/register' || queryAuth === 'register') {
+      this.auth.openAuthModal('register', returnUrl);
     }
 
     const slug = this.route.snapshot.paramMap.get('slug');
@@ -185,12 +199,13 @@ export class LandingPageComponent implements OnInit {
     }
   }
 
-  enterStudioAsDemoGm(): void {
-    this.auth.loginAsAccount('acc-gm-trashami', true);
-  }
-
-  enterStudioAsFreePlayer(): void {
-    this.auth.loginAsAccount('acc-player-fivi', true);
+  enterStudioOrSignIn(targetRoute?: string): void {
+    const dest = targetRoute || resolveDefaultStudioRouteForHost();
+    if (this.auth.isAuthenticated()) {
+      void this.router.navigateByUrl(dest);
+    } else {
+      this.auth.openAuthModal('login', dest);
+    }
   }
 
   toggleFaq(id: string): void {

@@ -87,11 +87,12 @@ ln -sfn /var/www/loomweaver/assets /var/www/loomweaver/map-assets
 echo "5. Linking domain roots to /var/www/loomweaver..."
 ln -sfn /var/www/loomweaver /var/www/loom-weaver
 ln -sfn /var/www/loomweaver /var/www/mythweaver
-mkdir -p /var/www/loommaps /var/www/vtt3d/current /var/www/actionbuilder/current /var/www/effectbuilder/current
+mkdir -p /var/www/loommaps /var/www/vtt3d/current /var/www/actionbuilder/current /var/www/effectbuilder/current /var/www/generator/current
 ln -sfn /var/www/loomweaver/client /var/www/loommaps/client
 ln -sfn /var/www/loomweaver/client /var/www/vtt3d/current/client
 ln -sfn /var/www/loomweaver/client /var/www/actionbuilder/current/client
 ln -sfn /var/www/loomweaver/client /var/www/effectbuilder/current/client
+ln -sfn /var/www/loomweaver/client /var/www/generator/current/client
 
 chown -R iamtrash:www-data /var/www/loomweaver
 chmod -R 755 /var/www/loomweaver

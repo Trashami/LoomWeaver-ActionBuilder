@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthSessionService } from '../../../core/services/auth-session.service';
 import { LwBadgeComponent } from '../badge/badge.component';
@@ -16,29 +16,56 @@ import { LwIconComponent } from '../icon/icon.component';
 export class LwAuthModalComponent {
   readonly auth = inject(AuthSessionService);
 
-  readonly loginIdentifier = signal<string>('gm@loom-weaver.com');
-  readonly loginPassword = signal<string>('••••••••••••');
+  readonly loginIdentifier = signal<string>('');
+  readonly loginPassword = signal<string>('');
 
   readonly registerEmail = signal<string>('');
+  readonly registerUsername = signal<string>('');
   readonly registerDisplayName = signal<string>('');
   readonly registerPassword = signal<string>('');
   readonly registerRole = signal<'gm' | 'players'>('gm');
 
+  readonly reqEmail = signal<string>('');
+  readonly reqUsername = signal<string>('');
+  readonly reqDisplayName = signal<string>('');
+  readonly reqNotes = signal<string>('');
+
+  constructor() {
+    effect(() => {
+      const open = this.auth.authModalOpen();
+      const tab = this.auth.authModalTab();
+      if (open && tab === 'login') {
+        setTimeout(() => this.auth.initGoogleButton('lw-google-btn-container'), 60);
+      }
+    });
+  }
+
+  selectTab(tab: 'login' | 'register' | 'request'): void {
+    this.auth.authModalTab.set(tab);
+    this.auth.authError.set('');
+    this.auth.authNotice.set('');
+  }
+
   submitLogin(): void {
-    this.auth.loginWithCredentials(this.loginIdentifier(), this.loginPassword(), true);
+    this.auth.loginWithCredentials(this.loginIdentifier(), this.loginPassword());
   }
 
   submitRegister(): void {
     this.auth.registerAccount(
       this.registerEmail(),
+      this.registerUsername(),
       this.registerDisplayName(),
       this.registerPassword(),
       this.registerRole(),
-      true,
     );
   }
 
-  quickSignIn(accountId: string): void {
-    this.auth.loginAsAccount(accountId, true);
+  submitAccessRequest(): void {
+    this.auth.requestAccountAccess(
+      this.reqEmail(),
+      this.reqUsername(),
+      this.reqDisplayName(),
+      this.reqNotes(),
+    );
   }
 }

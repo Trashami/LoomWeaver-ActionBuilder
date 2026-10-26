@@ -1,4 +1,4 @@
-@if (isLandingSurface()) {
+@if (isLandingSurface() || !auth.isAuthenticated()) {
   <router-outlet />
   <lw-auth-modal />
 } @else {
@@ -26,18 +26,11 @@
           </select>
         </label>
 
-        <label class="lw-control-group">
-          <span>Account (JWT):</span>
-          <select
-            class="lw-select"
-            [ngModel]="auth.activeAccountId()"
-            (ngModelChange)="auth.loginAsAccount($event)"
-          >
-            @for (acc of auth.accounts(); track acc.accountId) {
-              <option [ngValue]="acc.accountId">{{ acc.displayName }}</option>
-            }
-          </select>
-        </label>
+        <lw-badge
+          [label]="auth.activeProfile().displayName"
+          tone="gold"
+          icon="ShieldCheck"
+        />
 
         <div class="lw-role-switch" role="group" aria-label="Viewer Role Scope">
           <button
@@ -97,10 +90,10 @@
         <lw-button
           variant="secondary"
           size="sm"
-          icon="KeyRound"
-          (pressed)="auth.openAuthModal('login')"
+          icon="X"
+          (pressed)="auth.logout()"
         >
-          {{ auth.isAuthenticated() ? 'Account' : 'Sign In' }}
+          Sign Out
         </lw-button>
 
         <a class="lw-market-pill" routerLink="/welcome">

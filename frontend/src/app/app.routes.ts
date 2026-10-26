@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const APP_ROUTES: Routes = [
   {
@@ -34,26 +35,31 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'home',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/home/home.page').then((m) => m.HomePageComponent),
   },
   {
     path: 'campaigns',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/campaigns/campaigns.page').then((m) => m.CampaignsPageComponent),
   },
   {
     path: 'characters',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/characters/characters.page').then((m) => m.CharactersPageComponent),
   },
   {
     path: 'maps',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/maps/maps.page').then((m) => m.MapsPageComponent),
   },
   {
     path: 'arcane-screen',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/arcane-screen/arcane-screen.page').then(
         (m) => m.ArcaneScreenPageComponent,
@@ -61,26 +67,31 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'encounters',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/encounters/encounters.page').then((m) => m.EncountersPageComponent),
   },
   {
     path: 'dice',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/dice/dice.page').then((m) => m.DicePageComponent),
   },
   {
     path: 'effects',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/effects/effects.page').then((m) => m.EffectsPageComponent),
   },
   {
     path: 'assets',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/assets/assets.page').then((m) => m.AssetsPageComponent),
   },
   {
     path: 'marketplace',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/marketplace/marketplace.page').then(
         (m) => m.MarketplacePageComponent,
@@ -88,20 +99,23 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'statistics',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/statistics/statistics.page').then((m) => m.StatisticsPageComponent),
   },
   {
     path: 'loom',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/loom/loom.page').then((m) => m.LoomPageComponent),
   },
   {
     path: 'weave',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/weave/weave.page').then((m) => m.WeavePageComponent),
   },
-  // Legacy route redirects so every old or bookmarked link resolves cleanly
+  // Protected legacy route redirects
   { path: 'dashboard', redirectTo: 'home', pathMatch: 'full' },
   { path: 'dm-game', redirectTo: 'arcane-screen', pathMatch: 'full' },
   { path: 'player-game', redirectTo: 'arcane-screen', pathMatch: 'full' },

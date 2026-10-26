@@ -19,30 +19,49 @@
       </nav>
 
       <div class="lw-landing-cta">
-        <lw-button
-          variant="secondary"
-          size="sm"
-          icon="KeyRound"
-          (pressed)="auth.openAuthModal('login')"
-        >
-          Sign In
-        </lw-button>
-        <lw-button
-          variant="gold"
-          size="sm"
-          icon="UserPlus"
-          (pressed)="auth.openAuthModal('register')"
-        >
-          Join Free / Register
-        </lw-button>
-        <lw-button
-          variant="primary"
-          size="sm"
-          icon="Compass"
-          (pressed)="enterStudioAsDemoGm()"
-        >
-          Enter Studio
-        </lw-button>
+        @if (auth.isAuthenticated()) {
+          <lw-button
+            variant="gold"
+            size="sm"
+            icon="Compass"
+            (pressed)="enterStudioOrSignIn()"
+          >
+            Enter Studio ({{ auth.activeProfile().username }})
+          </lw-button>
+          <lw-button
+            variant="secondary"
+            size="sm"
+            icon="X"
+            (pressed)="auth.logout()"
+          >
+            Sign Out
+          </lw-button>
+        } @else {
+          <lw-button
+            variant="secondary"
+            size="sm"
+            icon="KeyRound"
+            (pressed)="auth.openAuthModal('login')"
+          >
+            Sign In
+          </lw-button>
+          <lw-button
+            variant="gold"
+            size="sm"
+            icon="UserPlus"
+            (pressed)="auth.openAuthModal('register')"
+          >
+            Create Account
+          </lw-button>
+          <lw-button
+            variant="primary"
+            size="sm"
+            icon="Shield"
+            (pressed)="auth.openAuthModal('request')"
+          >
+            Request Access
+          </lw-button>
+        }
       </div>
     </div>
   </header>
@@ -72,26 +91,26 @@
           <lw-button
             variant="gold"
             size="md"
-            icon="Sparkles"
+            icon="KeyRound"
+            (pressed)="enterStudioOrSignIn()"
+          >
+            {{ auth.isAuthenticated() ? 'Enter Studio Workspace' : 'Sign In to Enter Studio' }}
+          </lw-button>
+          <lw-button
+            variant="secondary"
+            size="md"
+            icon="UserPlus"
             (pressed)="auth.openAuthModal('register')"
           >
             Create Free Account
           </lw-button>
           <lw-button
-            variant="secondary"
-            size="md"
-            icon="KeyRound"
-            (pressed)="auth.openAuthModal('login')"
-          >
-            Sign In to Existing World
-          </lw-button>
-          <lw-button
             variant="primary"
             size="md"
-            icon="Crown"
-            (pressed)="enterStudioAsDemoGm()"
+            icon="Shield"
+            (pressed)="auth.openAuthModal('request')"
           >
-            Launch Live GM Studio Demo
+            Request Guild Access
           </lw-button>
         </div>
 
@@ -249,7 +268,7 @@
                 <button
                   type="button"
                   class="lw-cite-pill"
-                  (click)="enterStudioAsDemoGm()"
+                  (click)="enterStudioOrSignIn(cite.route)"
                 >
                   <lw-icon name="ExternalLink" [size]="13" />
                   <span>[{{ cite.kind }}] {{ cite.label }}</span>
