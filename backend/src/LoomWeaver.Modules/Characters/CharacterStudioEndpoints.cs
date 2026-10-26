@@ -1,5 +1,6 @@
 using LoomWeaver.Domain;
 using LoomWeaver.GameSystems;
+using LoomWeaver.Modules.Adventures;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -79,6 +80,22 @@ public static class CharacterStudioEndpoints
 
             var calculated = Engine.RecalculateSheet(draft);
             Sheets.Add(calculated);
+
+            AdventureGuideStateStore.RegisterCharacterOrNpc(
+                campaignId,
+                $"node-{key}",
+                compositeKey,
+                calculated.Name,
+                $"{calculated.AncestryOrClan} {calculated.ClassOrArchetype} · Lv.{calculated.Level}",
+                "Party Hero",
+                "gold",
+                "/characters-showcase.jpg",
+                $"Active party adventurer exploring the Ruined Chapel in Session 15.",
+                $"\"Ready at the table with {calculated.ClassOrArchetype} capabilities.\"",
+                "Party Roster · Populated from Character Studio",
+                $"/characters?focus={key}",
+                "players");
+
             return Results.Ok(calculated);
         });
 

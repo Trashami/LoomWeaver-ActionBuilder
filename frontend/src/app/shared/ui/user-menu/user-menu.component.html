@@ -1,0 +1,320 @@
+<div class="lw-user-menu">
+  <button
+    ngpButton
+    type="button"
+    class="lw-user-menu__trigger"
+    [class.lw-user-menu__trigger--active]="isOpen()"
+    [attr.aria-expanded]="isOpen()"
+    aria-haspopup="menu"
+    title="Account, Preferences & Sign Out"
+    (click)="toggleDropdown($event)"
+  >
+    <div ngpAvatar class="lw-user-menu__avatar">
+      <span ngpAvatarFallback>{{ userInitials() }}</span>
+    </div>
+    <div class="lw-user-menu__info">
+      <strong class="lw-user-menu__name">{{ userDisplayName() }}</strong>
+      <span class="lw-user-menu__tier">{{ tierBadgeLabel() }}</span>
+    </div>
+    <lw-icon [name]="isOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+  </button>
+
+  @if (isOpen()) {
+    <div
+      class="lw-user-menu__dropdown"
+      role="menu"
+      [style.width]="panelWidth()"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header Section -->
+      <header class="lw-user-menu__header">
+        <div ngpAvatar class="lw-user-menu__avatar-lg">
+          <span ngpAvatarFallback>{{ userInitials() }}</span>
+        </div>
+        <div class="lw-user-menu__header-copy">
+          <h4 class="lw-user-menu__profile-name">{{ userDisplayName() }}</h4>
+          <p class="lw-user-menu__profile-email">{{ userEmail() }}</p>
+          <div class="lw-user-menu__badge-row">
+            <span class="lw-user-menu__pill lw-user-menu__pill--tier">
+              {{ tierBadgeLabel() }}
+            </span>
+            <span class="lw-user-menu__pill lw-user-menu__pill--role">
+              {{ isGm() ? 'GM View Active' : 'Player View Active' }}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Body -->
+      <lw-scroll-area
+        class="lw-user-menu__scroll"
+        tone="emerald"
+        [scrollbarWidth]="4"
+        thumbColor="#49e892"
+        trackColor="rgba(6, 22, 16, 0.78)"
+        maxHeight="calc(100vh - 14.5rem)"
+        padding="0.95rem 1.1rem"
+      >
+        <div class="lw-user-menu__body">
+          <!-- Threads Balance (Strictly visible ONLY when opted into Generative AI / The Weave) -->
+          @if (generativeAiEnabled()) {
+            <div class="lw-user-menu__credits">
+              <div class="lw-user-menu__credits-top">
+                <span class="lw-user-menu__credits-label">The Weave Threads</span>
+                <strong class="lw-user-menu__credits-count">{{ weaveThreadsCount() }} Threads</strong>
+              </div>
+              <div class="lw-user-menu__credits-sub">
+                <span>Optional AI Drafting Active</span>
+                <span>·</span>
+                <span>100% GM Review Gate</span>
+              </div>
+            </div>
+          }
+
+          <!-- Account Limits Matrix -->
+          <div class="lw-user-menu__limits">
+            <div class="lw-user-menu__limit-box">
+              <span class="lw-user-menu__limit-label">Active Campaigns</span>
+              <strong>{{ activeCampaignsLimit() }}</strong>
+            </div>
+            <div class="lw-user-menu__limit-box">
+              <span class="lw-user-menu__limit-label">Cloud Vault</span>
+              <strong>{{ storageLimitLabel() }}</strong>
+            </div>
+          </div>
+
+          <!-- Experience Mode Selector (Guided vs Experienced GM) -->
+          <div class="lw-user-menu__pref-box">
+            <div class="lw-user-menu__pref-header">
+              <span class="lw-user-menu__pref-label">Experience Mode</span>
+              <span
+                class="lw-user-menu__pref-status"
+                [class.lw-user-menu__pref-status--alt]="experienceMode() === 'advanced'"
+              >
+                {{ experienceMode() === 'guided' ? 'Guided GM Mode' : 'Experienced GM Mode' }}
+              </span>
+            </div>
+            <div class="lw-user-menu__pill-group">
+              <button
+                ngpButton
+                type="button"
+                class="lw-user-menu__mode-btn"
+                [class.lw-user-menu__mode-btn--active]="experienceMode() === 'guided'"
+                title="Guided GM Mode: Build, Prepare, Play, and Remember workflow"
+                (click)="setMode('guided')"
+              >
+                Guided GM
+              </button>
+              <button
+                ngpButton
+                type="button"
+                class="lw-user-menu__mode-btn"
+                [class.lw-user-menu__mode-btn--active]="experienceMode() === 'advanced'"
+                title="Experienced GM Mode: Direct access to all campaign, play, and studio tools"
+                (click)="setMode('advanced')"
+              >
+                Experienced GM
+              </button>
+            </div>
+          </div>
+
+          <!-- Generative AI Strict Opt-In Toggle (Off by Default) -->
+          <div class="lw-user-menu__pref-box">
+            <div class="lw-user-menu__pref-header">
+              <span class="lw-user-menu__pref-label">
+                {{ generativeAiEnabled() ? 'The Weave (Generative AI)' : 'Generative AI (Opt-In)' }}
+              </span>
+              <button
+                ngpSwitch
+                type="button"
+                class="lw-user-menu__switch"
+                [ngpSwitchChecked]="generativeAiEnabled()"
+                (ngpSwitchCheckedChange)="setGenerativeAi($event)"
+                aria-label="Toggle Generative AI Opt-In"
+              >
+                <span ngpSwitchThumb class="lw-user-menu__switch-thumb"></span>
+              </button>
+            </div>
+            <p class="lw-user-menu__pref-desc">
+              {{
+                generativeAiEnabled()
+                  ? 'Opt-in enabled. Optional AI drafting tools and Weave references are visible.'
+                  : 'Off by default. 100% AI-free authoring with The Loom memory active and all Weave references hidden.'
+              }}
+            </p>
+            <div class="lw-user-menu__pill-group">
+              <button
+                ngpButton
+                type="button"
+                class="lw-user-menu__mode-btn"
+                [class.lw-user-menu__mode-btn--active]="!generativeAiEnabled()"
+                title="Disable Generative AI and hide all Weave links and references across all pages"
+                (click)="setGenerativeAi(false)"
+              >
+                Disabled (Loom Only)
+              </button>
+              <button
+                ngpButton
+                type="button"
+                class="lw-user-menu__mode-btn"
+                [class.lw-user-menu__mode-btn--active]="generativeAiEnabled()"
+                title="Opt in to optional Generative AI drafting and The Weave tools"
+                (click)="setGenerativeAi(true)"
+              >
+                Opt-In to Generative AI
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Content Visibility Filter -->
+          <div class="lw-user-menu__pref-box">
+            <div class="lw-user-menu__pref-header">
+              <span class="lw-user-menu__pref-label">AI Content Filter</span>
+              <span
+                class="lw-user-menu__pref-status"
+                [class.lw-user-menu__pref-status--alt]="hideAiContent()"
+              >
+                {{ hideAiContent() ? 'AI Assets Hidden' : 'All Assets Visible' }}
+              </span>
+            </div>
+            <div class="lw-user-menu__pill-group">
+              <button
+                ngpButton
+                type="button"
+                class="lw-user-menu__mode-btn"
+                [class.lw-user-menu__mode-btn--active]="!hideAiContent()"
+                (click)="setHideAi(false)"
+              >
+                Show All
+              </button>
+              <button
+                ngpButton
+                type="button"
+                class="lw-user-menu__mode-btn"
+                [class.lw-user-menu__mode-btn--active]="hideAiContent()"
+                (click)="setHideAi(true)"
+              >
+                Hide AI Content
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Navigation Links from User Menu -->
+          <div class="lw-user-menu__nav">
+            @if (isGm()) {
+              <button
+                ngpButton
+                type="button"
+                class="lw-user-menu__nav-btn lw-user-menu__nav-btn--gm"
+                (click)="navigateTo(generativeAiEnabled() ? '/weave' : '/world-lore')"
+              >
+                <div class="lw-user-menu__nav-copy">
+                  <span>
+                    {{
+                      generativeAiEnabled()
+                        ? 'The Weave & World Connections'
+                        : 'The Loom World Connections'
+                    }}
+                  </span>
+                  <small>
+                    {{
+                      generativeAiEnabled()
+                        ? 'Interactive world atlas, lore & relationship graph'
+                        : 'Interactive world atlas, locations & canonical lore'
+                    }}
+                  </small>
+                </div>
+                <span class="lw-user-menu__gm-tag">GM TOOL</span>
+              </button>
+            }
+
+            <button
+              ngpButton
+              type="button"
+              class="lw-user-menu__nav-btn"
+              (click)="viewerRoleToggled.emit()"
+            >
+              <div class="lw-user-menu__nav-copy">
+                <span>Switch Table Role View</span>
+                <small>Currently viewing as {{ isGm() ? 'Game Master' : 'Adventurer (Player)' }}</small>
+              </div>
+              <lw-icon name="chevron-right" [size]="14" />
+            </button>
+
+            <button
+              ngpButton
+              type="button"
+              class="lw-user-menu__nav-btn"
+              (click)="navigateTo('/characters')"
+            >
+              <div class="lw-user-menu__nav-copy">
+                <span>Player History &amp; Character Studio</span>
+                <small>Party sheets, advancement &amp; play style</small>
+              </div>
+              <lw-icon name="chevron-right" [size]="14" />
+            </button>
+
+            <button
+              ngpButton
+              type="button"
+              class="lw-user-menu__nav-btn"
+              (click)="navigateTo('/dice')"
+            >
+              <div class="lw-user-menu__nav-copy">
+                <span>VTT &amp; 3D Dice Settings</span>
+                <small>Physics dice skins, audio &amp; table preferences</small>
+              </div>
+              <lw-icon name="chevron-right" [size]="14" />
+            </button>
+
+            <button
+              ngpButton
+              type="button"
+              class="lw-user-menu__nav-btn"
+              (click)="navigateTo('/welcome')"
+            >
+              <div class="lw-user-menu__nav-copy">
+                <span>About LoomWeaver &amp; Hall of Backers</span>
+                <small>Platform overview &amp; public showcase</small>
+              </div>
+              <lw-icon name="chevron-right" [size]="14" />
+            </button>
+          </div>
+
+          <button
+            ngpButton
+            type="button"
+            class="lw-user-menu__membership-btn"
+            (click)="navigateTo('/marketplace')"
+          >
+            {{
+              generativeAiEnabled()
+                ? 'Manage Membership & Threads'
+                : 'Manage Membership & Creator Store'
+            }}
+          </button>
+        </div>
+      </lw-scroll-area>
+
+      <!-- Sticky Footer with Sync Profile & Sign Out at the bottom -->
+      <footer class="lw-user-menu__footer">
+        <button
+          ngpButton
+          type="button"
+          class="lw-user-menu__footer-btn lw-user-menu__footer-btn--secondary"
+          (click)="onSyncProfile()"
+        >
+          Sync Profile
+        </button>
+        <button
+          ngpButton
+          type="button"
+          class="lw-user-menu__footer-btn lw-user-menu__footer-btn--danger"
+          (click)="onSignOut()"
+        >
+          Sign Out
+        </button>
+      </footer>
+    </div>
+  }
+</div>

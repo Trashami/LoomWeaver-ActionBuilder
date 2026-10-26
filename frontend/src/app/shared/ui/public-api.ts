@@ -40,6 +40,7 @@ export * from './session-recap-card/session-recap-card.component';
 export * from './stat-radar/stat-radar.component';
 export * from './tactical-stage-card/tactical-stage-card.component';
 export * from './upcoming-session-card/upcoming-session-card.component';
+export * from './user-menu/user-menu.component';
 export * from './atlas-layer-filters/atlas-layer-filters.component';
 export * from './world-atlas/world-atlas.component';
 export * from './location-inspector/location-inspector.component';

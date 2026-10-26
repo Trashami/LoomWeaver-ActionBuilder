@@ -37,7 +37,7 @@ export const LW_CAMPAIGNS: readonly CampaignVm[] = [
     currentAct: 'Act II: The Road to Cinth',
     currentSessionNumber: 14,
     currentLocationName: 'City of Cinth — Artificers Quarter',
-    weaveEnabled: true,
+    weaveEnabled: false,
   },
   {
     id: 2,
@@ -50,7 +50,7 @@ export const LW_CAMPAIGNS: readonly CampaignVm[] = [
     currentAct: 'Act I: Siege of the Spire',
     currentSessionNumber: 6,
     currentLocationName: 'Absalom Grand Bazaar',
-    weaveEnabled: true,
+    weaveEnabled: false,
   },
   {
     id: 3,

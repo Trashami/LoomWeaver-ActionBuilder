@@ -1,5 +1,6 @@
 using LoomWeaver.Domain;
 using LoomWeaver.Infrastructure.MySql;
+using LoomWeaver.Modules.Adventures;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -292,6 +293,23 @@ public static class LoomAndWeaveEndpoints
             };
 
             WeaveDrafts[idx] = updated;
+            if (updatedStatus == "approved" && string.Equals(updated.Category, "NPC", StringComparison.OrdinalIgnoreCase))
+            {
+                AdventureGuideStateStore.RegisterCharacterOrNpc(
+                    campaignId,
+                    $"node-{updated.Id}",
+                    updated.CompositeKey,
+                    updated.Name,
+                    updated.Subtitle,
+                    "Allied",
+                    "emerald",
+                    "/six-engines-showcase.jpg",
+                    updated.Summary,
+                    $"\"{updated.Subtitle}\"",
+                    "Approved in The Weave · Linked to Session 15",
+                    $"/weave?node={updated.Id}",
+                    updated.Visibility);
+            }
             return Results.Ok(updated);
         });
 

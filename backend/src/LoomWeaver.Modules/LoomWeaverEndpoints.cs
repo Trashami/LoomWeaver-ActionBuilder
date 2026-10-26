@@ -3,6 +3,7 @@ using LoomWeaver.GameSystems;
 using LoomWeaver.Infrastructure.MySql;
 using LoomWeaver.Infrastructure.Neo4j;
 using LoomWeaver.Modules.Actions;
+using LoomWeaver.Modules.Adventures;
 using LoomWeaver.Modules.Audio;
 using LoomWeaver.Modules.Auth;
 using LoomWeaver.Modules.Characters;
@@ -41,6 +42,7 @@ public static class LoomWeaverEndpoints
             api.MapMarketplaceAndQuestEndpoints();
             api.MapSessionChronicleEndpoints();
             api.MapCampaignDashboardEndpoints();
+            api.MapAdventureGuideEndpoints();
             api.MapTableRealtimeEndpoints();
             api.MapAuthAndCheckoutEndpoints();
             api.MapCompendiumAndStudioEndpoints();

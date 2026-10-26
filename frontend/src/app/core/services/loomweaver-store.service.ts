@@ -25,6 +25,11 @@ import {
 import { LW_CAMPAIGNS, LW_ENTITIES, LW_NAVIGATION } from './loomweaver-seed.data';
 
 const ACTIVE_CAMPAIGN_STORAGE_KEY = 'lw_active_campaign_id_v2';
+const GENERATIVE_AI_OPT_IN_STORAGE_KEY = 'lw_generative_ai_opt_in_v2';
+const HIDE_AI_CONTENT_STORAGE_KEY = 'lw_hide_ai_content_v2';
+const EXPERIENCE_MODE_STORAGE_KEY = 'lw_experience_mode_v2';
+
+export type LwExperienceMode = 'guided' | 'advanced';
 
 @Injectable({ providedIn: 'root' })
 export class LoomWeaverStoreService {
@@ -34,7 +39,13 @@ export class LoomWeaverStoreService {
   readonly campaigns = signal<readonly CampaignVm[]>(LW_CAMPAIGNS);
   readonly activeCampaignId = signal<number>(1);
   readonly viewerRole = signal<ViewerRole>('gm');
-  readonly weaveEnabled = signal<boolean>(true);
+  /**
+   * Generative AI (The Weave) is strictly Opt-In and OFF (false) by default.
+   */
+  readonly weaveEnabled = signal<boolean>(false);
+  readonly generativeAiEnabled = computed<boolean>(() => this.weaveEnabled());
+  readonly hideAiContent = signal<boolean>(true);
+  readonly experienceMode = signal<LwExperienceMode>('advanced');
   readonly loomDrawerOpen = signal<boolean>(false);
   readonly loomQuery = signal<string>(
     'What did Kildrid sense beneath the mountain on the road to Cinth?',
@@ -53,9 +64,24 @@ export class LoomWeaverStoreService {
   private readonly rawScenes = signal<readonly SceneVm[]>(LW_SCENES);
   private readonly rawEdges = signal<readonly GraphEdgeVm[]>(LW_GRAPH_EDGES);
   readonly telemetry = signal<readonly CombatTelemetryVm[]>(LW_TELEMETRY);
-  readonly subscriptionTiers = signal<readonly SubscriptionTierVm[]>(LW_SUBSCRIPTION_TIERS);
+  private readonly rawSubscriptionTiers = signal<readonly SubscriptionTierVm[]>(LW_SUBSCRIPTION_TIERS);
+
+  readonly subscriptionTiers = computed<readonly SubscriptionTierVm[]>(() => {
+    const weaveOn = this.weaveEnabled();
+    return this.rawSubscriptionTiers().map((tier) => {
+      if (weaveOn) return tier;
+      return {
+        ...tier,
+        includesWeave: false,
+        summary: tier.summary
+          .replace(', The Weave AI draft companion, and Neo4j World Graph', ', and Connected World & Lore Atlas')
+          .replace('The Weave AI draft companion', 'Connected World & Lore Studio'),
+      };
+    });
+  });
 
   constructor() {
+    this.restoreGenerativeAiPreference();
     this.restoreSavedCampaignSelection();
     this.verifyPolyglotHealth();
     this.refreshCampaignDashboard();
@@ -73,9 +99,22 @@ export class LoomWeaverStoreService {
 
   readonly authorizedEntities = computed<readonly EntityCardVm[]>(() => {
     const isGm = this.viewerRole() === 'gm';
-    return this.rawEntities().filter(
-      (e) => isGm || e.visibility === 'public' || e.visibility === 'players',
-    );
+    const weaveOn = this.weaveEnabled();
+    return this.rawEntities()
+      .filter(
+        (e) =>
+          (isGm || e.visibility === 'public' || e.visibility === 'players') &&
+          (weaveOn || e.canonStatus !== 'draft'),
+      )
+      .map((e) => {
+        if (!weaveOn && e.routeLink.startsWith('/weave')) {
+          return {
+            ...e,
+            routeLink: e.routeLink.replace(/^\/weave/, '/world-lore'),
+          };
+        }
+        return e;
+      });
   });
 
   readonly authorizedScenes = computed<readonly SceneVm[]>(() => {
@@ -108,6 +147,7 @@ export class LoomWeaverStoreService {
     const entity = this.inspectedEntity();
     if (!entity) return [];
     const entities = this.authorizedEntities();
+    const defaultRoute = this.weaveEnabled() ? '/weave' : '/world-lore';
     return this.authorizedGraphEdges()
       .filter(
         (edge) =>
@@ -123,7 +163,7 @@ export class LoomWeaverStoreService {
           peerKey,
           peerName: peer?.name ?? peerKey,
           peerType: peer?.entityType ?? 'Entity',
-          peerRoute: peer?.routeLink ?? '/weave',
+          peerRoute: peer?.routeLink ?? defaultRoute,
         };
       });
   });
@@ -157,7 +197,6 @@ export class LoomWeaverStoreService {
     if (!validated) return;
 
     this.activeCampaignId.set(validated.id);
-    this.weaveEnabled.set(validated.weaveEnabled);
     this.inspectedEntityKey.set(null);
 
     try {
@@ -172,6 +211,47 @@ export class LoomWeaverStoreService {
   setViewerRole(role: ViewerRole): void {
     this.viewerRole.set(role);
     this.refreshCampaignDashboard();
+  }
+
+  setGenerativeAiOptIn(enabled: boolean): void {
+    this.weaveEnabled.set(enabled);
+    this.campaigns.update((list) =>
+      list.map((c) => ({ ...c, weaveEnabled: enabled })),
+    );
+    if (!enabled) {
+      this.hideAiContent.set(true);
+      const inspected = this.inspectedEntity();
+      if (inspected && inspected.canonStatus === 'draft') {
+        this.inspectedEntityKey.set(null);
+      }
+    }
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(GENERATIVE_AI_OPT_IN_STORAGE_KEY, String(enabled));
+      }
+    } catch {}
+  }
+
+  toggleWeave(): void {
+    this.setGenerativeAiOptIn(!this.weaveEnabled());
+  }
+
+  setHideAiContent(hide: boolean): void {
+    this.hideAiContent.set(hide);
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(HIDE_AI_CONTENT_STORAGE_KEY, String(hide));
+      }
+    } catch {}
+  }
+
+  setExperienceMode(mode: LwExperienceMode): void {
+    this.experienceMode.set(mode);
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(EXPERIENCE_MODE_STORAGE_KEY, mode);
+      }
+    } catch {}
   }
 
   refreshCampaignDashboard(): void {
@@ -291,10 +371,6 @@ export class LoomWeaverStoreService {
       });
   }
 
-  toggleWeave(): void {
-    this.weaveEnabled.update((v) => !v);
-  }
-
   toggleLoomDrawer(open?: boolean): void {
     this.loomDrawerOpen.update((cur) => (open !== undefined ? open : !cur));
   }
@@ -353,6 +429,30 @@ export class LoomWeaverStoreService {
       });
   }
 
+  private restoreGenerativeAiPreference(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const savedOptIn = localStorage.getItem(GENERATIVE_AI_OPT_IN_STORAGE_KEY);
+      const isOptedIn = savedOptIn === 'true';
+      this.weaveEnabled.set(isOptedIn);
+      this.campaigns.update((list) =>
+        list.map((c) => ({ ...c, weaveEnabled: isOptedIn })),
+      );
+
+      const savedHide = localStorage.getItem(HIDE_AI_CONTENT_STORAGE_KEY);
+      if (savedHide !== null) {
+        this.hideAiContent.set(savedHide === 'true');
+      } else {
+        this.hideAiContent.set(!isOptedIn);
+      }
+
+      const savedMode = localStorage.getItem(EXPERIENCE_MODE_STORAGE_KEY);
+      if (savedMode === 'guided' || savedMode === 'advanced') {
+        this.experienceMode.set(savedMode);
+      }
+    } catch {}
+  }
+
   private restoreSavedCampaignSelection(): void {
     try {
       if (typeof localStorage === 'undefined') return;
@@ -361,7 +461,6 @@ export class LoomWeaverStoreService {
       const found = available.find((c) => c.id === saved) ?? available[0];
       if (found) {
         this.activeCampaignId.set(found.id);
-        this.weaveEnabled.set(found.weaveEnabled);
       }
     } catch {}
   }
