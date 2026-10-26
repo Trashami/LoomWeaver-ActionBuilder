@@ -16,6 +16,7 @@ import { QualityProfile } from '../../core/models/loomweaver.models';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import {
   BrushParameterState,
+  ChamberBuildIntent,
   LwAssetCardComponent,
   LwBadgeComponent,
   LwButtonComponent,
@@ -24,11 +25,15 @@ import {
   LwMapPresetBrowserComponent,
   LwMapStudioRibbonComponent,
   LwMapToolPanelComponent,
+  LwMapWallPathArchitectComponent,
   LwPanelComponent,
   LwRulesOptionSelectorComponent,
+  PathRibbonBuildIntent,
   RulesOptionItem,
+  WallOpeningInsertIntent,
 } from '../../shared/ui/public-api';
 import { MapHistoryEngineService } from './application/map-history-engine.service';
+import { MapSceneCommandsService } from './application/map-scene-commands.service';
 import { MapStudioStoreService } from './application/map-studio-store.service';
 import {
   MapCatalogAssetItem,
@@ -41,6 +46,7 @@ import {
   MapRenderMode,
   MapSceneGraphState,
 } from './engine/map-scene-contract';
+import { INITIAL_CINTH_SCENE_GRAPH } from './engine/map-scene-seed';
 import { BabylonMapStageService } from './engine/rendering/babylon-map-stage.service';
 
 @Component({
@@ -58,6 +64,7 @@ import { BabylonMapStageService } from './engine/rendering/babylon-map-stage.ser
     LwMapStudioRibbonComponent,
     LwMapLayersDrawerComponent,
     LwMapPresetBrowserComponent,
+    LwMapWallPathArchitectComponent,
     LwRulesOptionSelectorComponent,
   ],
   templateUrl: './maps.page.html',
@@ -68,6 +75,7 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('babylonCanvas') private canvasRef?: ElementRef<HTMLCanvasElement>;
 
   private readonly http = inject(HttpClient);
+  private readonly commands = inject(MapSceneCommandsService);
   readonly store = inject(LoomWeaverStoreService);
   readonly stage = inject(BabylonMapStageService);
   readonly studio = inject(MapStudioStoreService);
@@ -114,92 +122,14 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     'Classic 2D',
   ];
 
-  readonly sceneGraph = signal<MapSceneGraphState>({
-    sceneKey: 'scene-cinth-ballroom',
-    name: 'Cinth Grand Masquerade Ballroom',
-    biome: 'Obsidian & Gold Cathedral',
-    revision: 14,
-    scatterSeed: 1042,
-    scatterDensity: 65,
-    terrainRelief: 45,
-    stamps: [
-      {
-        id: 'st-emrys',
-        label: 'Lord Emrys Balcony Dais',
-        category: 'Token',
-        entityCompositeKey: '1:NPC:npc-emrys',
-        x: -5.5,
-        z: 3.5,
-        scale: 1.25,
-        rotationY: 0,
-        colorHex: '#d4a853',
-      },
-      {
-        id: 'st-kildrid',
-        label: 'Kildrid [Stone Sense]',
-        category: 'Token',
-        entityCompositeKey: '1:Character:char-kildrid',
-        x: 3.5,
-        z: -2.5,
-        scale: 1.15,
-        rotationY: 0.4,
-        colorHex: '#2ed39a',
-      },
-      {
-        id: 'st-pillar-1',
-        label: 'Cinth Gothic Pillar',
-        category: 'Architecture',
-        x: -8,
-        z: -6,
-        scale: 1.3,
-        rotationY: 0,
-        colorHex: '#8b7355',
-      },
-    ],
-    waterSplines: [
-      {
-        id: 'ws-canal',
-        name: 'Cinth Reflective Canal & Fountain Channel',
-        width: 2.6,
-        colorHex: '#1b6d82',
-        points: [
-          [-14, 0.14, -7],
-          [-4, 0.14, -2],
-          [5, 0.14, 2],
-          [14, 0.14, 7],
-        ],
-      },
-    ],
-    lights: [
-      {
-        id: 'lt-chandelier',
-        label: 'Grand Gold Chandelier',
-        x: 0,
-        y: 6.5,
-        z: 0,
-        range: 24,
-        intensity: 1.5,
-        colorHex: '#ffcf75',
-      },
-      {
-        id: 'lt-sconce',
-        label: 'Crimson Balcony Sconce',
-        x: -6,
-        y: 4.5,
-        z: 4,
-        range: 14,
-        intensity: 1.15,
-        colorHex: '#ef5d72',
-      },
-    ],
-  });
+  readonly sceneGraph = signal<MapSceneGraphState>(INITIAL_CINTH_SCENE_GRAPH);
 
   readonly commandLog = signal<readonly MapCommandEntry[]>([
     {
-      id: 'cmd-14',
-      timestamp: 'Rev 14',
-      toolId: 'lighting',
-      summary: 'Initialized Babylon.js 2.5D Chandelier & Canal Spline on Cinth Ballroom',
+      id: 'cmd-15',
+      timestamp: 'Rev 15',
+      toolId: 'walls',
+      summary: 'Initialized Cutaway Rotunda Walls, Fitted Portals & Curved Cobblestone Ribbon',
     },
   ]);
 
@@ -239,21 +169,25 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     this.history.pushSnapshot(this.captureCurrentSnapshot(label));
   }
 
+  private commitSceneUpdate(updater: (cur: MapSceneGraphState) => MapSceneGraphState): void {
+    this.sceneGraph.update((cur) => {
+      const updated = updater(cur);
+      this.stage.syncSceneGraph(updated);
+      return updated;
+    });
+  }
+
   selectScene(sceneKey: string, name: string, biome: string): void {
     this.recordHistoryBeforeEdit(`Switch Scene -> ${name}`);
     this.selectedSceneKey.set(sceneKey);
     this.studio.mapTitle.set(name);
-    this.sceneGraph.update((cur) => {
-      const next = {
-        ...cur,
-        sceneKey,
-        name,
-        biome,
-        scatterSeed: cur.scatterSeed + 17,
-      };
-      this.stage.syncSceneGraph(next);
-      return next;
-    });
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      sceneKey,
+      name,
+      biome,
+      scatterSeed: cur.scatterSeed + 17,
+    }));
   }
 
   applyPresetTemplate(preset: MapPresetTemplate): void {
@@ -261,17 +195,13 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     this.activePresetId.set(preset.id);
     this.studio.mapTitle.set(preset.name);
     this.studio.gridConfig.update((g) => ({ ...g, mapScope: preset.mapScope }));
-    this.sceneGraph.update((cur) => {
-      const next: MapSceneGraphState = {
-        ...cur,
-        name: preset.name,
-        biome: preset.baseBiome,
-        revision: cur.revision + 1,
-        scatterSeed: cur.scatterSeed + 29,
-      };
-      this.stage.syncSceneGraph(next);
-      return next;
-    });
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      name: preset.name,
+      biome: preset.baseBiome,
+      revision: cur.revision + 1,
+      scatterSeed: cur.scatterSeed + 29,
+    }));
   }
 
   equipCatalogAsset(asset: MapCatalogAssetItem): void {
@@ -293,17 +223,12 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     this.brushRadius.set(brush.radius);
     this.brushIntensity.set(brush.intensity);
     this.deterministicSeed.set(brush.seed);
-
-    this.sceneGraph.update((cur) => {
-      const next: MapSceneGraphState = {
-        ...cur,
-        scatterSeed: brush.seed,
-        scatterDensity: brush.intensity,
-        terrainRelief: brush.intensity,
-      };
-      this.stage.syncSceneGraph(next);
-      return next;
-    });
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      scatterSeed: brush.seed,
+      scatterDensity: brush.intensity,
+      terrainRelief: brush.intensity,
+    }));
   }
 
   onToolCommand(cmd: string): void {
@@ -318,117 +243,105 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
 
   applyCanvasStrokeAt(x: number, z: number): void {
     const tool = this.activeToolId();
-    const equipped = this.activeCatalogAsset();
     const snap = this.studio.gridConfig().snapToGrid;
     const px = snap ? Math.round(x * 2) / 2 : x;
     const pz = snap ? Math.round(z * 2) / 2 : z;
 
     this.recordHistoryBeforeEdit(`Tool [${tool}] at (${px}, ${pz})`);
-
-    this.sceneGraph.update((cur) => {
-      const nextRev = cur.revision + 1;
-      let stamps = cur.stamps;
-      let lights = cur.lights;
-      let waterSplines = cur.waterSplines;
-      let scatterSeed = cur.scatterSeed;
-
-      if (tool === 'stamps' || tool === 'walls') {
-        const newStampId = `st-${nextRev}`;
-        stamps = [
-          ...cur.stamps,
-          {
-            id: newStampId,
-            label:
-              tool === 'walls'
-                ? 'Obsidian Wall Segment'
-                : (equipped?.name ?? 'Gothic Arch Stamp'),
-            category: 'Architecture',
-            x: px,
-            z: pz,
-            scale: equipped?.defaultScale ?? 1.15,
-            rotationY: (nextRev % 6) * 0.5,
-            colorHex: tool === 'walls' ? '#6c8796' : '#d4a853',
-          },
-        ];
-        this.studio.selectedStampId.set(newStampId);
-      } else if (tool === 'lighting') {
-        lights = [
-          ...cur.lights,
-          {
-            id: `lt-${nextRev}`,
-            label: `Brazier Point Light #${nextRev}`,
-            x: px,
-            y: 4.5,
-            z: pz,
-            range: Math.max(8, this.brushRadius() * 3),
-            intensity: 1.35,
-            colorHex: '#ffae52',
-          },
-        ];
-      } else if (tool === 'water') {
-        const first = cur.waterSplines[0];
-        if (first) {
-          waterSplines = [
-            {
-              ...first,
-              points: [...first.points, [px, 0.14, pz]],
-            },
-          ];
-        }
-      } else {
-        scatterSeed = cur.scatterSeed + 31;
-      }
-
-      const updated: MapSceneGraphState = {
-        ...cur,
-        revision: nextRev,
-        scatterSeed,
-        stamps,
-        lights,
-        waterSplines,
-      };
-      this.stage.syncSceneGraph(updated);
+    this.commitSceneUpdate((cur) => {
+      const { nextGraph, newStampId } = this.commands.applyToolStroke(
+        cur,
+        tool,
+        px,
+        pz,
+        this.brushRadius(),
+        this.activeCatalogAsset(),
+      );
+      if (newStampId) this.studio.selectedStampId.set(newStampId);
       this.commandLog.update((logs) => [
         {
-          id: `cmd-${nextRev}`,
-          timestamp: `Rev ${nextRev}`,
+          id: `cmd-${nextGraph.revision}`,
+          timestamp: `Rev ${nextGraph.revision}`,
           toolId: tool,
           summary: `Applied [${tool}] at (${px}, ${pz}) on Level L${this.studio.activeLevelIndex()}`,
         },
         ...logs.slice(0, 5),
       ]);
-      return updated;
+      return nextGraph;
     });
+  }
+
+  buildWallChamber(intent: ChamberBuildIntent): void {
+    this.recordHistoryBeforeEdit(`Build Chamber -> ${intent.name}`);
+    const picked = this.stage.lastPickedCoords();
+    this.commitSceneUpdate((cur) =>
+      this.commands.appendWallChamber(
+        cur,
+        intent,
+        picked.x,
+        picked.z,
+        this.studio.activeLevelIndex(),
+        this.store.viewerRole(),
+      ),
+    );
+  }
+
+  insertWallOpening(intent: WallOpeningInsertIntent): void {
+    this.recordHistoryBeforeEdit(`Insert Opening [${intent.openingType}]`);
+    this.commitSceneUpdate((cur) => this.commands.appendWallOpening(cur, intent));
+  }
+
+  buildPathRibbon(intent: PathRibbonBuildIntent): void {
+    this.recordHistoryBeforeEdit(`Trace Path -> ${intent.name}`);
+    const picked = this.stage.lastPickedCoords();
+    this.commitSceneUpdate((cur) =>
+      this.commands.appendPathRibbon(
+        cur,
+        intent,
+        picked.x,
+        picked.z,
+        this.studio.activeLevelIndex(),
+        this.store.viewerRole(),
+      ),
+    );
+  }
+
+  deleteWallById(wallId: string): void {
+    this.recordHistoryBeforeEdit(`Delete Wall ${wallId}`);
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      walls: (cur.walls ?? []).filter((w) => w.id !== wallId),
+    }));
+  }
+
+  deletePathById(pathId: string): void {
+    this.recordHistoryBeforeEdit(`Delete Path ${pathId}`);
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      pathRibbons: (cur.pathRibbons ?? []).filter((p) => p.id !== pathId),
+    }));
   }
 
   updateStampTransform(change: { stampId: string; scale: number; rotationY: number }): void {
     this.recordHistoryBeforeEdit(`Transform Stamp ${change.stampId}`);
-    this.sceneGraph.update((cur) => {
-      const updated: MapSceneGraphState = {
-        ...cur,
-        revision: cur.revision + 1,
-        stamps: cur.stamps.map((s) =>
-          s.id === change.stampId
-            ? { ...s, scale: change.scale, rotationY: change.rotationY }
-            : s,
-        ),
-      };
-      this.stage.syncSceneGraph(updated);
-      return updated;
-    });
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      stamps: cur.stamps.map((s) =>
+        s.id === change.stampId ? { ...s, scale: change.scale, rotationY: change.rotationY } : s,
+      ),
+    }));
   }
 
   deleteStampById(stampId: string): void {
     this.recordHistoryBeforeEdit(`Delete Stamp ${stampId}`);
-    this.sceneGraph.update((cur) => {
-      const updated: MapSceneGraphState = {
-        ...cur,
-        revision: cur.revision + 1,
-        stamps: cur.stamps.filter((s) => s.id !== stampId),
-      };
-      this.stage.syncSceneGraph(updated);
-      return updated;
-    });
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      stamps: cur.stamps.filter((s) => s.id !== stampId),
+    }));
   }
 
   undoLastCommand(): void {

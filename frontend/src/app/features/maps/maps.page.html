@@ -149,6 +149,27 @@
     </div>
   </lw-panel>
 
+  <lw-panel
+    eyebrow="LoomMaps Stage 2 · Cutaway Walls, Fitted Portals & Curved Path Ribbons"
+    title="Procedural Chamber, Cutaway Wall & Path Ribbon Architect"
+    subtitle="Build multi-shape chambers (Octagon, Hexagon, L-Shape, Chaikin Cave), fit doors/secret portals along wall edges, and trace curved cobblestone roads or limestone cliff ridges."
+    icon="Shield"
+  >
+    <lw-map-wall-path-architect
+      [walls]="sceneGraph().walls ?? []"
+      [paths]="sceneGraph().pathRibbons ?? []"
+      [config]="{
+        variant: 'standard',
+        allowSecretDoors: store.viewerRole() === 'gm',
+        showPathBuilder: true
+      }"
+      (chamberBuildRequested)="buildWallChamber($event)"
+      (openingInsertRequested)="insertWallOpening($event)"
+      (pathRibbonBuildRequested)="buildPathRibbon($event)"
+      (wallDeleted)="deleteWallById($event)"
+      (pathDeleted)="deletePathById($event)" />
+  </lw-panel>
+
   @if (showCatalogSection()) {
     <lw-panel
       eyebrow="LoomMaps Stage 1 · Starting Environments & Reorganized /map-assets Library"

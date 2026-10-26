@@ -20,6 +20,8 @@ export * from './map-layers-drawer/map-layers-drawer.component';
 export * from './map-preset-browser/map-preset-browser.component';
 export * from './map-studio-ribbon/map-studio-ribbon.component';
 export * from './map-tool-panel/map-tool-panel.component';
+export * from './map-wall-path-architect/map-wall-path-architect.component';
+export * from './map-wall-path-architect/map-wall-path-architect.config';
 export * from './npc-card/npc-card.component';
 export * from './panel/panel.component';
 export * from './quest-tracker-card/quest-tracker-card.component';

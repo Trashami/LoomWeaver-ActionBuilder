@@ -18,6 +18,8 @@ import {
 } from '../map-scene-contract';
 import { SeededScatterEngine } from '../scatter/seeded-scatter.engine';
 import { TerrainMeshBuilder } from '../terrain/terrain-mesh.builder';
+import { WallMeshBuilder } from '../walls/wall-mesh.builder';
+import { PathRibbonEngine } from '../paths/path-ribbon.engine';
 import { WaterSplineBuilder } from '../water/water-spline.builder';
 
 @Injectable({ providedIn: 'root' })
@@ -110,8 +112,12 @@ export class BabylonMapStageService {
       state.scatterSeed,
       state.scatterDensity,
     );
+    const wallCount = WallMeshBuilder.rebuildWallMeshes(this.scene, state.walls, false);
+    const pathCount = PathRibbonEngine.rebuildPathRibbonMeshes(this.scene, state.pathRibbons);
     this.rebuildStamps(this.scene, state.stamps);
-    this.activeInstanceCount.set(scatterCount + state.stamps.length + state.lights.length);
+    this.activeInstanceCount.set(
+      scatterCount + state.stamps.length + state.lights.length + wallCount + pathCount,
+    );
   }
 
   private rebuildStamps(scene: Scene, stamps: readonly MapStampNode[]): void {
