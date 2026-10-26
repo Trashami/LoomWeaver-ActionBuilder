@@ -1,94 +1,380 @@
-<div class="lw-page">
-  <lw-panel
-    eyebrow="Campaign Command & World Atlas"
-    [title]="store.activeCampaign().name"
-    [subtitle]="store.activeCampaign().subtitle + ' · World of ' + store.activeCampaign().worldName"
-    icon="Flag"
-    [elevated]="true"
-  >
-    <div panelActions class="lw-camp-actions">
-      <a class="lw-action-link" routerLink="/arcane-screen">Open Live Arcane Screen</a>
-      <a class="lw-action-link" routerLink="/maps">Open Map Studio</a>
-      <lw-button variant="secondary" size="sm" icon="BookOpen" (pressed)="store.toggleLoomDrawer(true)">
-        Search Canon in The Loom
-      </lw-button>
-    </div>
+@let w = story.workspace();
+@let chain = story.storyChain();
 
-    <div class="lw-campaign-switcher">
-      @for (camp of store.campaigns(); track camp.id) {
-        <button
-          type="button"
-          class="lw-campaign-pill"
-          [class.lw-campaign-pill--active]="camp.id === store.activeCampaignId()"
-          (click)="store.setCampaign(camp.id)"
-        >
-          <div class="lw-campaign-pill__top">
-            <strong>{{ camp.name }}</strong>
-            <lw-badge [label]="camp.systemLabel" tone="gold" />
-          </div>
-          <span>{{ camp.currentAct }} · Session {{ camp.currentSessionNumber }} · {{ camp.currentLocationName }}</span>
-        </button>
-      }
-    </div>
-  </lw-panel>
-
-  <lw-panel
-    eyebrow="Shared lw-quest-tracker-card Primitive"
-    title="Multi-Step RPG Quest & Clue Investigation Tracker"
-    [subtitle]="questXpBanner()"
-    icon="Compass"
-  >
-    <div class="lw-quest-grid">
-      @for (quest of quests(); track quest.id) {
-        <lw-quest-tracker-card
-          [quest]="quest"
-          (stepToggled)="handleStepToggle($event)"
-          (clueInspected)="store.inspectEntity($event)"
-        />
-      }
-    </div>
-  </lw-panel>
-
-  <lw-panel
-    eyebrow="Canon & World Registry"
-    title="Quests, NPCs, Locations, Factions, Clues & Secrets"
-    subtitle="Filtered automatically by your active role preview (GM sees Secret nodes; Players see Player-Safe Canon)."
-    icon="Compass"
-  >
-    <div panelActions>
-      <div class="lw-filter-bar">
-        @for (cat of categories; track cat) {
-          <lw-button
-            [variant]="selectedCategory() === cat ? 'primary' : 'secondary'"
-            size="sm"
-            (pressed)="selectedCategory.set(cat)"
-          >
-            {{ cat }}
-          </lw-button>
-        }
+<div class="lw-story-page">
+  <header class="lw-story-top">
+    <div class="lw-story-top__title-group">
+      <span class="lw-story-top__icon"><lw-icon name="book-open" [size]="20" tone="gold" /></span>
+      <div>
+        <h1 class="lw-story-top__title">QUESTS &amp; STORY</h1>
+        <p class="lw-story-top__sub">Plan, organize, and track your campaign's story, acts, and key moments.</p>
       </div>
     </div>
 
-    <div class="lw-entity-grid">
-      @for (entity of filteredEntities(); track entity.compositeKey) {
-        <lw-entity-card
-          [entity]="entity"
-          variant="detailed"
-          [active]="store.inspectedEntityKey() === entity.compositeKey"
-          [canApprove]="store.viewerRole() === 'gm'"
-          [generativeAiEnabled]="isWeaveEnabled()"
-          (inspectRequested)="store.inspectEntity($event.compositeKey)"
-          (approveRequested)="store.approveDraftEntity($event.compositeKey)"
-        />
-      } @empty {
-        <lw-empty-state
-          icon="Lock"
-          title="No Entities Visible for Filter"
-          description="Switch to GM Role Preview in the top bar to inspect GM-scoped Secret entities or choose another category."
-          actionLabel="Reset Filter"
-          (actionTriggered)="selectedCategory.set('All')"
-        />
-      }
+    <div class="lw-story-top__tabs" role="tablist" aria-label="Quests and Story Views">
+      <button type="button" class="lw-story-tab" [class.lw-story-tab--active]="viewMode() === 'story-acts'" (click)="viewMode.set('story-acts')">Story &amp; Acts</button>
+      <button type="button" class="lw-story-tab" [class.lw-story-tab--active]="viewMode() === 'evidence-chain'" (click)="viewMode.set('evidence-chain')">Connected Chain &amp; Truth Ledger</button>
+      <button type="button" class="lw-story-tab" [class.lw-story-tab--active]="viewMode() === 'quests-registry'" (click)="viewMode.set('quests-registry')">Quest Steps &amp; Registry</button>
     </div>
-  </lw-panel>
+  </header>
+
+  @if (story.statusBanner(); as banner) {
+    <div class="lw-story-banner">
+      <span>{{ banner }}</span>
+      <button type="button" class="lw-story-banner__close" (click)="story.statusBanner.set('')">Dismiss</button>
+    </div>
+  }
+
+  <section
+    class="lw-story-hero"
+    [style.background-image]="'linear-gradient(90deg, rgba(5, 16, 12, 0.94) 0%, rgba(5, 16, 12, 0.72) 52%, rgba(5, 16, 12, 0.88) 100%), url(' + w.heroArtworkUrl + ')'"
+  >
+    <div class="lw-story-hero__content">
+      <span class="lw-story-hero__eyebrow">CAMPAIGN STORY OVERVIEW</span>
+      <h2 class="lw-story-hero__title">{{ w.campaignTitle }}</h2>
+      <p class="lw-story-hero__desc">{{ w.campaignSubtitle }}</p>
+
+      <div class="lw-story-hero__stats">
+        <div class="lw-story-stat">
+          <span class="lw-story-stat__circle"><lw-icon name="compass" [size]="16" tone="gold" /></span>
+          <div class="lw-story-stat__copy">
+            <small>Current Act</small><strong>{{ w.currentActLabel }}</strong><span>{{ w.currentActSub }}</span>
+          </div>
+        </div>
+        <div class="lw-story-stat">
+          <span class="lw-story-stat__circle"><lw-icon name="calendar" [size]="16" tone="gold" /></span>
+          <div class="lw-story-stat__copy">
+            <small>Next Session</small><strong>{{ w.nextSessionLabel }}</strong><span>{{ w.nextSessionSub }}</span>
+          </div>
+        </div>
+        <div class="lw-story-stat">
+          <span class="lw-story-stat__circle"><lw-icon name="history" [size]="16" tone="gold" /></span>
+          <div class="lw-story-stat__copy">
+            <small>Total Sessions</small><strong>{{ w.totalSessionsLabel }}</strong><span>{{ w.totalSessionsSub }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lw-story-hero__actions">
+      <button type="button" class="lw-hero-cta lw-hero-cta--primary" (click)="resumeCurrentSession()">
+        <span class="lw-hero-cta__left"><lw-icon name="play" [size]="14" tone="emerald" /><span>Resume Current Session</span></span>
+        <lw-icon name="chevron-right" [size]="14" />
+      </button>
+      <button type="button" class="lw-hero-cta lw-hero-cta--gold" (click)="openStoryPlanner()">
+        <span class="lw-hero-cta__left"><lw-icon name="book-open" [size]="14" tone="gold" /><span>{{ viewMode() === 'evidence-chain' ? 'Back to Story Acts' : 'Open Story Planner' }}</span></span>
+        <lw-icon name="chevron-right" [size]="14" />
+      </button>
+      <button type="button" class="lw-hero-cta lw-hero-cta--secondary" (click)="openAddBeatForAct('act-2')">
+        <span class="lw-hero-cta__left"><lw-icon name="plus" [size]="14" tone="gold" /><span>Add Story Beat</span></span>
+        <lw-icon name="chevron-right" [size]="14" />
+      </button>
+    </div>
+  </section>
+
+  @if (showAddBeatModal()) {
+    <section class="lw-add-beat-bar">
+      <div class="lw-add-beat-bar__head">
+        <strong>Add Chapter, Scene, or Story Beat</strong>
+        <button type="button" class="lw-story-banner__close" (click)="showAddBeatModal.set(false)">Cancel</button>
+      </div>
+      <div class="lw-add-beat-bar__row">
+        <select class="lw-story-select" [ngModel]="targetActId()" (ngModelChange)="targetActId.set($event)">
+          @for (act of w.acts; track act.id) {
+            <option [value]="act.id">{{ act.title }} — {{ act.subtitle }}</option>
+          }
+        </select>
+        <input type="text" class="lw-story-input" placeholder="e.g. 2.6 Unsealing the Chokrah Crypt..." [ngModel]="newBeatTitle()" (ngModelChange)="newBeatTitle.set($event)" />
+        <select class="lw-story-select" [ngModel]="newBeatKind()" (ngModelChange)="newBeatKind.set($event)">
+          <option value="scene">Scene</option>
+          <option value="quest">Quest</option>
+          <option value="location">Location</option>
+          <option value="clue">Clue</option>
+          <option value="lore">Lore</option>
+          <option value="npc">NPC</option>
+        </select>
+        <lw-button variant="primary" size="sm" icon="check" (pressed)="submitNewBeat()">Save Beat</lw-button>
+      </div>
+    </section>
+  }
+
+  @if (viewMode() === 'story-acts') {
+    <section class="lw-structure-section">
+      <div class="lw-structure-head">
+        <div class="lw-structure-head__left">
+          <lw-icon name="layers" [size]="18" tone="gold" />
+          <div>
+            <h3>CAMPAIGN STRUCTURE</h3>
+            <p>Organize your story into acts, with chapters, quests, and key moments. Click an element to view details and connections.</p>
+          </div>
+        </div>
+        <button type="button" class="lw-expand-btn" (click)="openStoryPlanner()">
+          <span>Inspect Chain ({{ chain.projectedRelationshipCount }} SQL+Neo4j Links)</span>
+          <lw-icon name="chevron-right" [size]="14" />
+        </button>
+      </div>
+
+      <div class="lw-acts-grid">
+        @for (act of w.acts; track act.id) {
+          <article class="lw-act-card" [class.lw-act-card--active]="act.status === 'In Progress'" [class.lw-act-card--unwritten]="act.status === 'Unwritten'">
+            <div class="lw-act-card__top">
+              <div class="lw-act-card__identity">
+                <span class="lw-act-card__numeral">{{ act.romanNumeral }}</span>
+                <div><h4>{{ act.title }}</h4><span>{{ act.subtitle }}</span></div>
+              </div>
+              <span class="lw-act-status" [attr.data-status]="act.status.toLowerCase().replace(' ', '-')">{{ act.status }}</span>
+            </div>
+
+            <p class="lw-act-card__synopsis">{{ act.synopsis }}</p>
+
+            @if (act.totalCount > 0) {
+              <div class="lw-act-progress">
+                <div class="lw-act-progress__track">
+                  <div class="lw-act-progress__fill" [attr.data-status]="act.status.toLowerCase().replace(' ', '-')" [style.width.%]="(act.completedCount / act.totalCount) * 100"></div>
+                </div>
+                <span class="lw-act-progress__count">{{ act.completedCount }} / {{ act.totalCount }}</span>
+              </div>
+
+              <div class="lw-act-beats">
+                @for (beat of act.beats; track beat.id) {
+                  <div class="lw-beat-row" [class.lw-beat-row--selected]="w.activeBeatId === beat.id" [class.lw-beat-row--in-progress]="beat.status === 'In Progress'" (click)="onBeatSelected(beat)">
+                    <span class="lw-beat-row__grip" aria-hidden="true"></span>
+                    <span class="lw-beat-row__icon"><lw-icon [name]="beatIcon(beat.kind)" [size]="13" tone="gold" /></span>
+                    <span class="lw-beat-row__title">{{ beat.title }}</span>
+                    <button type="button" class="lw-beat-row__pill" [attr.data-status]="beat.status.toLowerCase().replace(' ', '-')" title="Click to cycle status" (click)="story.cycleBeatStatus(beat, $event)">{{ beat.status }}</button>
+                  </div>
+                }
+              </div>
+
+              <button type="button" class="lw-act-add-btn" (click)="openAddBeatForAct(act.id)">+ Add Chapter or Scene</button>
+            } @else {
+              <div class="lw-act-empty">
+                <span class="lw-act-empty__icon"><lw-icon name="bookmark" [size]="20" tone="gold" /></span>
+                <strong>Future Act</strong>
+                <p>Add chapters, quests, and story beats as your campaign evolves.</p>
+              </div>
+              <button type="button" class="lw-act-add-btn lw-act-add-btn--emerald" (click)="openAddBeatForAct(act.id)">+ Add Act</button>
+            }
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="lw-bottom-strip">
+      <article class="lw-strip-panel">
+        <div class="lw-strip-panel__head">
+          <div class="lw-strip-panel__title">
+            <lw-icon name="calendar" [size]="16" tone="gold" />
+            <div><h4>SESSION SEQUENCE — ACT II</h4><p>Track your upcoming and recent sessions for this act.</p></div>
+          </div>
+          <a class="lw-strip-panel__link" routerLink="/loom">View All Sessions</a>
+        </div>
+
+        <div class="lw-session-seq">
+          @for (ses of w.sessionSequence; track ses.sessionId; let last = $last) {
+            <button
+              type="button"
+              class="lw-seq-card"
+              [class.lw-seq-card--live]="ses.status === 'live'"
+              [style.background-image]="'linear-gradient(180deg, rgba(6, 16, 12, 0.45) 0%, rgba(5, 14, 11, 0.96) 100%), url(' + ses.artworkUrl + ')'"
+              (click)="onSessionSelected(ses)"
+            >
+              <span class="lw-seq-card__badge" [attr.data-status]="ses.status">
+                @if (ses.status === 'completed') { <lw-icon name="check" [size]="11" tone="emerald" /> } @else { <lw-icon name="compass" [size]="11" tone="gold" /> }
+              </span>
+              <strong class="lw-seq-card__title">{{ ses.title }}</strong>
+              <span class="lw-seq-card__loc">{{ ses.locationLabel }}</span>
+              <small class="lw-seq-card__date">{{ ses.dateLabel }}</small>
+            </button>
+            @if (!last) { <span class="lw-seq-arrow"><lw-icon name="chevron-right" [size]="13" tone="gold" /></span> }
+          }
+        </div>
+      </article>
+
+      <article class="lw-strip-panel">
+        <div class="lw-strip-panel__head">
+          <div class="lw-strip-panel__title">
+            <lw-icon name="book-open" [size]="16" tone="gold" />
+            <div><h4>LORE &amp; CLUES — ACT II</h4><p>Key discoveries, notes, and handouts for this act.</p></div>
+          </div>
+          <a class="lw-strip-panel__link" routerLink="/world-lore">View All</a>
+        </div>
+
+        <div class="lw-feed-list">
+          @for (item of w.loreAndClues; track item.id) {
+            <button type="button" class="lw-feed-card" (click)="onFeedItemSelected(item)">
+              <div class="lw-feed-card__icon"><lw-icon [name]="item.kindLabel === 'Clue' ? 'search' : 'book-open'" [size]="14" tone="gold" /></div>
+              <div class="lw-feed-card__body">
+                <div class="lw-feed-card__top">
+                  <strong>{{ item.title }}</strong>
+                  <span class="lw-feed-card__pill" [attr.data-tone]="item.kindTone">{{ item.kindLabel }}</span>
+                  <small class="lw-feed-card__time">{{ item.relativeTime }}</small>
+                </div>
+                <p>{{ item.summary }}</p>
+              </div>
+            </button>
+          }
+        </div>
+      </article>
+
+      <article class="lw-strip-panel">
+        <div class="lw-strip-panel__head">
+          <div class="lw-strip-panel__title">
+            <lw-icon name="share-2" [size]="16" tone="gold" />
+            <div><h4>CONNECTED ELEMENTS</h4><p>Links for: <strong>{{ w.activeBeatTitle }}</strong></p></div>
+          </div>
+          <button type="button" class="lw-strip-panel__link" (click)="viewMode.set('evidence-chain')">View All</button>
+        </div>
+
+        <div class="lw-connected-list">
+          @for (grp of w.connectedGroups; track grp.category) {
+            <div class="lw-conn-group">
+              <div class="lw-conn-group__icon"><lw-icon [name]="grp.iconName" [size]="14" tone="gold" /></div>
+              <div class="lw-conn-group__body">
+                <strong>{{ grp.category }}</strong>
+                <div class="lw-conn-group__links">
+                  @for (lnk of grp.items; track lnk.compositeKey) {
+                    <button type="button" class="lw-conn-link" (click)="story.navigateConnectedElement(lnk.compositeKey, lnk.routeLink, lnk.locationKey)">{{ lnk.title }}</button>
+                  }
+                </div>
+              </div>
+              <span class="lw-conn-group__chev"><lw-icon name="chevron-right" [size]="12" tone="gold" /></span>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+  }
+
+  @if (viewMode() === 'evidence-chain') {
+    <section class="lw-chain-panel">
+      <div class="lw-chain-panel__head">
+        <div>
+          <span class="lw-story-hero__eyebrow">SQL AUTHORITATIVE RECORDS + NEO4J CONNECTED STORY GRAPH</span>
+          <h3>{{ chain.title }}</h3>
+          <p>{{ chain.subtitle }}</p>
+        </div>
+        <div class="lw-chain-panel__badges">
+          <lw-badge [label]="'Projected Edges: ' + chain.projectedRelationshipCount" tone="emerald" />
+          <lw-badge [label]="'Pending Outbox: ' + chain.pendingOutboxCount" tone="gold" />
+        </div>
+      </div>
+
+      <div class="lw-chain-flow">
+        @for (step of chain.steps; track step.stepId; let last = $last) {
+          <button type="button" class="lw-chain-node" (click)="story.navigateConnectedElement(step.compositeKey, step.routeLink)">
+            <div class="lw-chain-node__top">
+              <span class="lw-chain-node__role">{{ step.stepRole }}</span>
+              @if (step.truthAssessment; as truth) { <span class="lw-chain-node__truth" [attr.data-truth]="truth">{{ truth }}</span> }
+            </div>
+            <strong class="lw-chain-node__title">{{ step.title }}</strong>
+            <span class="lw-chain-node__sub">{{ step.subtitle }}</span>
+            <small class="lw-chain-node__question">{{ step.questionAnswered }}</small>
+            <div class="lw-chain-node__grants">Known by: {{ step.knownByCharacters.join(', ') }}</div>
+            @if (!last) { <div class="lw-chain-node__rel">{{ step.relationLabel }}</div> }
+          </button>
+        }
+      </div>
+
+      <div class="lw-claims-grid">
+        @for (claim of chain.claims; track claim.id) {
+          <article class="lw-claim-card">
+            <div class="lw-claim-card__head">
+              <div>
+                <span class="lw-story-hero__eyebrow">IN-WORLD CLAIM VS. GM CANONICAL TRUTH (REV {{ claim.revision }})</span>
+                <h4>{{ claim.title }}</h4>
+              </div>
+              <span class="lw-chain-node__truth" [attr.data-truth]="claim.truthAssessment">{{ claim.truthAssessment.toUpperCase() }}</span>
+            </div>
+            <p class="lw-claim-card__statement"><strong>In-World Claim:</strong> {{ claim.statement }}</p>
+            @if (claim.gmCanonicalTruth; as gmTruth) { <p class="lw-claim-card__gm-truth">{{ gmTruth }}</p> }
+            <div class="lw-claim-card__meta">
+              <span><strong>Supports:</strong> {{ claim.supportingSourceLabel }}</span>
+              <span><strong>Contradicts:</strong> {{ claim.contradictingSourceLabel }}</span>
+              <span><strong>Documented In:</strong> {{ claim.documentedLoreTitle }}</span>
+              <span><strong>Implicates:</strong> {{ claim.implicatedEntityName }}</span>
+              <span><strong>Character Knowledge Grants:</strong> {{ claim.knownByCharacters.join(', ') }}</span>
+            </div>
+            @if (store.viewerRole() === 'gm') {
+              <div class="lw-claim-card__actions">
+                <span>GM Truth Assessment:</span>
+                @for (opt of truthOptions; track opt) {
+                  <button type="button" class="lw-truth-btn" [class.lw-truth-btn--active]="claim.truthAssessment === opt" (click)="story.updateClaimTruth(claim.id, opt)">{{ opt }}</button>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      <div class="lw-rel-builder">
+        <div class="lw-rel-builder__head">
+          <h4>Persist SQL Relationship &amp; Project to Neo4j Outbox</h4>
+          <p>Tracks current vs. historical relationships (e.g., "Malric WAS_IN Crypt C3" vs. "Malric CURRENTLY_IN C1").</p>
+        </div>
+        @if (store.viewerRole() === 'gm') {
+          <div class="lw-add-beat-bar__row">
+            <input type="text" class="lw-story-input" [ngModel]="relFromKey()" (ngModelChange)="relFromKey.set($event)" placeholder="From (1:NPC:npc-malric)" />
+            <select class="lw-story-select" [ngModel]="relType()" (ngModelChange)="relType.set($event)">
+              <option value="CURRENTLY_IN">CURRENTLY_IN</option>
+              <option value="SUPPORTS">SUPPORTS</option>
+              <option value="CONTRADICTS">CONTRADICTS</option>
+              <option value="DOCUMENTED_IN">DOCUMENTED_IN</option>
+              <option value="IMPLICATES">IMPLICATES</option>
+              <option value="DISCOVERED">DISCOVERED</option>
+            </select>
+            <input type="text" class="lw-story-input" [ngModel]="relToKey()" (ngModelChange)="relToKey.set($event)" placeholder="To (1:Room:room-c3-crypt)" />
+            <input type="text" class="lw-story-input" [ngModel]="relWhyLabel()" (ngModelChange)="relWhyLabel.set($event)" placeholder="Why included / context" />
+            <lw-button variant="primary" size="sm" icon="check" (pressed)="submitNewRelationship()">Save &amp; Project</lw-button>
+          </div>
+        }
+        <div class="lw-rel-table">
+          @for (rel of chain.relationships; track rel.id) {
+            <div class="lw-rel-row" [class.lw-rel-row--historical]="rel.isHistorical">
+              <span class="lw-rel-row__from">{{ rel.fromName }}</span>
+              <span class="lw-rel-row__type">{{ rel.relationshipType }}</span>
+              <span class="lw-rel-row__to">{{ rel.toName }}</span>
+              <span class="lw-rel-row__why">{{ rel.whyIncludedLabel }}</span>
+              <span class="lw-rel-row__rev">SQL #{{ rel.id }} · Rev {{ rel.revision }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (viewMode() === 'quests-registry') {
+    <lw-panel eyebrow="Multi-Step RPG Quest & Clue Investigation Tracker" title="Active Campaign Quests & Automated XP Awards" [subtitle]="questXpBanner()" icon="Compass">
+      <div class="lw-quest-grid">
+        @for (quest of quests(); track quest.id) {
+          <lw-quest-tracker-card [quest]="quest" (stepToggled)="handleStepToggle($event)" (clueInspected)="store.inspectEntity($event)" />
+        }
+      </div>
+    </lw-panel>
+
+    <lw-panel eyebrow="Canon & World Registry" title="Quests, NPCs, Locations, Factions, Clues & Secrets" subtitle="Filtered automatically by your server-verified role and knowledge grants." icon="Compass">
+      <div panelActions>
+        <div class="lw-filter-bar">
+          @for (cat of categories; track cat) {
+            <lw-button [variant]="selectedCategory() === cat ? 'primary' : 'secondary'" size="sm" (pressed)="selectedCategory.set(cat)">{{ cat }}</lw-button>
+          }
+        </div>
+      </div>
+      <div class="lw-entity-grid">
+        @for (entity of filteredEntities(); track entity.compositeKey) {
+          <lw-entity-card
+            [entity]="entity"
+            variant="detailed"
+            [active]="store.inspectedEntityKey() === entity.compositeKey"
+            [canApprove]="store.viewerRole() === 'gm'"
+            [generativeAiEnabled]="isWeaveEnabled()"
+            (inspectRequested)="store.inspectEntity($event.compositeKey)"
+            (approveRequested)="store.approveDraftEntity($event.compositeKey)"
+          />
+        } @empty {
+          <lw-empty-state icon="Lock" title="No Entities Visible for Filter" description="Switch to GM Role Preview in the top bar to inspect GM-scoped Secret entities or choose another category." actionLabel="Reset Filter" (actionTriggered)="selectedCategory.set('All')" />
+        }
+      </div>
+    </lw-panel>
+  }
 </div>

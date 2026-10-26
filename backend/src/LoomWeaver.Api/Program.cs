@@ -48,9 +48,14 @@ namespace LoomWeaver.Api
             var app = builder.Build();
             app.UseCors();
 
-            // Initialize LoomWeaver V2 MySQL schema (lw_*) on startup when reachable
+            // Initialize LoomWeaver V2 MySQL schema (lw_*) and Neo4j story projections on startup when reachable
             var repo = app.Services.GetRequiredService<LoomWeaverMySqlRepository>();
-            _ = Task.Run(() => MySqlUserAuthStore.EnsureDatabaseReadyAsync(repo));
+            var graph = app.Services.GetRequiredService<LoomWeaverNeo4jService>();
+            _ = Task.Run(async () =>
+            {
+                await MySqlUserAuthStore.EnsureDatabaseReadyAsync(repo);
+                await LoomWeaver.Modules.Knowledge.ConnectedStoryEngine.EnsureSchemaAndSeedAsync(repo, graph);
+            });
 
             // Enforce OWASP security headers, auth rate-limiting, and unified JWT / HttpOnly cookie auth
             app.Use(async (context, next) =>

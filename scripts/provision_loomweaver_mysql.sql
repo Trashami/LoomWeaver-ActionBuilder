@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `lw_campaigns` (
 CREATE TABLE IF NOT EXISTS `lw_entities` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
-  `entity_type` ENUM('PlayerCharacter','NPC','Monster','Location','Faction','Quest','Artifact','Encounter','Session','Event','Secret','Clue','Claim','SourceRecord') NOT NULL,
+  `entity_type` ENUM('PlayerCharacter','NPC','Monster','Location','Faction','Quest','Artifact','Encounter','Session','Event','Secret','Clue','Claim','SourceRecord','Lore','Room','Scene','Chapter','Handout') NOT NULL,
   `entity_key` VARCHAR(64) NOT NULL,
   `name` VARCHAR(160) NOT NULL,
   `subtitle` VARCHAR(160) NOT NULL DEFAULT '',
@@ -141,15 +141,20 @@ CREATE TABLE IF NOT EXISTS `lw_combat_telemetry` (
   UNIQUE KEY `uk_lw_telemetry_char` (`campaign_id`, `character_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Transactional Outbox for Neo4j Projections
+-- 8. Transactional Outbox for Neo4j Projections (New events begin pending: projected_to_neo4j = 0)
 CREATE TABLE IF NOT EXISTS `lw_outbox_messages` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
   `event_type` VARCHAR(64) NOT NULL,
   `composite_key` VARCHAR(160) NOT NULL,
   `payload_json` JSON NOT NULL,
-  `projected_to_neo4j` TINYINT(1) NOT NULL DEFAULT 1,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `revision` INT NOT NULL DEFAULT 1,
+  `projected_to_neo4j` TINYINT(1) NOT NULL DEFAULT 0,
+  `retry_count` INT NOT NULL DEFAULT 0,
+  `last_error` VARCHAR(500) NULL,
+  `processed_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `ix_lw_outbox_pending` (`projected_to_neo4j`, `campaign_id`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================================================
@@ -247,10 +252,11 @@ CREATE TABLE IF NOT EXISTS `lw_world_maps` (
   CONSTRAINT `fk_lw_world_maps_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. World Locations & Hierarchy (Extended to Site, Floor, Room, WildernessArea)
+-- 10. World Locations & Hierarchy (Extended to Site, Floor, Room, WildernessArea; canonical entity_id reference)
 CREATE TABLE IF NOT EXISTS `lw_world_locations` (
   `location_key` VARCHAR(64) NOT NULL PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `entity_id` BIGINT UNSIGNED NULL,
   `composite_key` VARCHAR(160) NOT NULL,
   `name` VARCHAR(160) NOT NULL,
   `location_type` VARCHAR(64) NOT NULL,
@@ -272,13 +278,16 @@ CREATE TABLE IF NOT EXISTS `lw_world_locations` (
   `local_myths` TEXT NOT NULL,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY `uk_lw_world_loc_campaign_key` (`campaign_id`, `location_key`),
-  CONSTRAINT `fk_lw_world_locations_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+  KEY `ix_lw_world_loc_entity` (`entity_id`),
+  CONSTRAINT `fk_lw_world_locations_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_world_locations_entity` FOREIGN KEY (`entity_id`) REFERENCES `lw_entities` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 11. Lore Library Articles (System-Agnostic Extensible Taxonomy)
+-- 11. Lore Library Articles (System-Agnostic Extensible Taxonomy; canonical entity_id reference)
 CREATE TABLE IF NOT EXISTS `lw_lore_entries` (
   `id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `entity_id` BIGINT UNSIGNED NULL,
   `composite_key` VARCHAR(160) NOT NULL,
   `title` VARCHAR(160) NOT NULL,
   `subtitle` VARCHAR(200) NOT NULL DEFAULT '',
@@ -290,13 +299,16 @@ CREATE TABLE IF NOT EXISTS `lw_lore_entries` (
   `archived` TINYINT(1) NOT NULL DEFAULT 0,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT `fk_lw_lore_entries_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+  KEY `ix_lw_lore_entries_entity` (`entity_id`),
+  CONSTRAINT `fk_lw_lore_entries_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_lore_entries_entity` FOREIGN KEY (`entity_id`) REFERENCES `lw_entities` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 12. World History Events (Fictional Era Dates vs Real Session Dates)
+-- 12. World History Events (Fictional Era Dates vs Real Session Dates; canonical entity_id reference)
 CREATE TABLE IF NOT EXISTS `lw_world_history_events` (
   `id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `entity_id` BIGINT UNSIGNED NULL,
   `title` VARCHAR(160) NOT NULL,
   `era_name` VARCHAR(128) NOT NULL,
   `world_date_label` VARCHAR(128) NOT NULL,
@@ -308,7 +320,9 @@ CREATE TABLE IF NOT EXISTS `lw_world_history_events` (
   `location_key` VARCHAR(64) NULL,
   `map_id` VARCHAR(64) NULL,
   `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
-  CONSTRAINT `fk_lw_world_history_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+  KEY `ix_lw_world_history_entity` (`entity_id`),
+  CONSTRAINT `fk_lw_world_history_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_world_history_entity` FOREIGN KEY (`entity_id`) REFERENCES `lw_entities` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 13. Campaign Membership & Identity Reconciliation (lw_users <-> lw_auth_users <-> Character Seats)
@@ -385,10 +399,12 @@ CREATE TABLE IF NOT EXISTS `lw_module_id_maps` (
   CONSTRAINT `fk_lw_id_map_install` FOREIGN KEY (`installation_id`) REFERENCES `lw_module_installations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 16. Adventure Nodes (Chapters, Locations, Sites, Floors, Keyed Rooms, Scenes, Encounters, NPCs, Characters, Clues, Hazards, Treasures, Secrets, Rules, Handouts)
+-- 16. Adventure Nodes (Canonical entity_id + package_node_id separation for multi-account installations)
 CREATE TABLE IF NOT EXISTS `lw_adventure_nodes` (
   `id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `entity_id` BIGINT UNSIGNED NULL,
+  `package_node_id` VARCHAR(64) NULL,
   `adventure_version_id` VARCHAR(64) NOT NULL,
   `parent_node_id` VARCHAR(64) NULL,
   `node_kind` ENUM('adventure','chapter','location','scene','encounter','npc','character','clue','hazard','treasure','secret','rule','handout','map_region') NOT NULL,
@@ -409,8 +425,10 @@ CREATE TABLE IF NOT EXISTS `lw_adventure_nodes` (
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY `ix_lw_adv_nodes_campaign_kind` (`campaign_id`, `node_kind`),
   KEY `ix_lw_adv_nodes_parent` (`campaign_id`, `parent_node_id`),
+  KEY `ix_lw_adv_nodes_entity` (`entity_id`),
   CONSTRAINT `fk_lw_adv_nodes_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_lw_adv_nodes_version` FOREIGN KEY (`adventure_version_id`) REFERENCES `lw_adventure_versions` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_lw_adv_nodes_version` FOREIGN KEY (`adventure_version_id`) REFERENCES `lw_adventure_versions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lw_adv_nodes_entity` FOREIGN KEY (`entity_id`) REFERENCES `lw_entities` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 17. Ordered Typed Adventure Content Blocks (Read-Aloud, Prose, GM Notes, Skill Checks, Tables, Tactics, Rewards)
@@ -725,4 +743,129 @@ INSERT INTO `lw_adventure_progress` (`campaign_id`, `session_id`, `node_id`, `be
 (1, 'session-15', 'node-enc-shadow-stalker', 'beat-4', 'Ambush in the courtyard', 'unresolved', 0, 'Shadow Stalkers wait atop the fallen bell tower in C2.'),
 (1, 'session-15', 'node-room-c3-crypt', 'beat-5', 'Discover what stirs beneath the chapel', 'unresolved', 0, 'Unseal the C3 altar slab and inspect the Chokrah siphon lectern.')
 ON DUPLICATE KEY UPDATE `label`=VALUES(`label`), `progress_state`=VALUES(`progress_state`), `is_done`=VALUES(`is_done`);
+
+-- =============================================================================
+-- 23. Durable Campaign-Wide Relationships (`lw_entity_relationships`) & Claims (`lw_claims`)
+-- Separates GM Truth, In-World Testimony/Claims, and Character Knowledge Grants
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS `lw_claims` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `entity_id` BIGINT UNSIGNED NULL,
+  `composite_key` VARCHAR(160) NOT NULL,
+  `title` VARCHAR(160) NOT NULL,
+  `statement` TEXT NOT NULL,
+  `truth_assessment` ENUM('unverified','confirmed','disputed','disproven') NOT NULL DEFAULT 'unverified',
+  `gm_canonical_truth` TEXT NOT NULL,
+  `supporting_source_key` VARCHAR(160) NULL,
+  `contradicting_source_key` VARCHAR(160) NULL,
+  `documented_lore_id` VARCHAR(64) NULL,
+  `implicated_entity_key` VARCHAR(160) NULL,
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  `revision` INT NOT NULL DEFAULT 1,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_lw_claims_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lw_entity_relationships` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `from_entity_id` BIGINT UNSIGNED NULL,
+  `from_composite_key` VARCHAR(160) NOT NULL,
+  `relationship_type` VARCHAR(64) NOT NULL,
+  `to_entity_id` BIGINT UNSIGNED NULL,
+  `to_composite_key` VARCHAR(160) NOT NULL,
+  `why_included_label` VARCHAR(200) NOT NULL DEFAULT '',
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  `source_record_id` VARCHAR(160) NULL,
+  `valid_from_event_id` BIGINT UNSIGNED NULL,
+  `valid_until_event_id` BIGINT UNSIGNED NULL,
+  `revision` INT NOT NULL DEFAULT 1,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_lw_entity_rel` (`campaign_id`, `from_composite_key`, `relationship_type`, `to_composite_key`),
+  KEY `ix_lw_entity_rel_from` (`campaign_id`, `from_composite_key`),
+  KEY `ix_lw_entity_rel_to` (`campaign_id`, `to_composite_key`),
+  CONSTRAINT `fk_lw_entity_rel_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed Canonical Entities for the Complete Connected Story Chain
+INSERT INTO `lw_entities` (`campaign_id`, `entity_type`, `entity_key`, `name`, `subtitle`, `summary`, `visibility`, `canon_status`, `route_link`, `metadata_json`) VALUES
+(1, 'Session', 'session-15', 'Session 15 — The Ruined Chapel', 'Live Session · Act II: The Road to Cinth', 'The party investigates the Ruined Chapel on the edge of the Whispering Woods across keyed rooms C1, C2, and C3.', 'players', 'approved', '/campaigns?session=session-15', JSON_OBJECT('sessionNumber', 15, 'state', 'live')),
+(1, 'Scene', 'scene-crypt-descent', 'Investigate the Crypt', 'Scene 3 · Sealed Altar Crypt (Room C3)', 'Unsealing the displaced Ekkosian altar slab to investigate the subterranean resonance vault and the Chokrah siphon lectern.', 'players', 'approved', '/campaigns?scene=scene-crypt-descent', JSON_OBJECT('roomKey', 'C3', 'planned', true, 'played', false)),
+(1, 'Room', 'room-c3-crypt', 'Crypt C3: Sealed Altar Crypt', 'Keyed Room C3 · Beneath the Ruined Chapel', 'Vaulted basalt ossuary beneath the Ruined Chapel etched with pre-Council containment glyphs and a stone lectern bearing Chokrah residue.', 'players', 'approved', '/maps?scene=scene-mountain-prison', JSON_OBJECT('areaKey', 'C3', 'parentLocation', 'loc-ruined-chapel')),
+(1, 'Clue', 'clue-carvings-chapel', 'Carvings Beneath the Chapel', 'Discovered Clue · Strange Runes Matching the Mountain Tomb', 'Strange symbols carved beneath the chapel match those from the southern mountain tomb and speak of a life-bound dragon.', 'players', 'approved', '/world-lore?tab=lore&loreId=lore-priors-rituals', JSON_OBJECT('status', 'discovered')),
+(1, 'Claim', 'claim-priors-rituals', 'Claim about the Priors: Chokrah Siphon Crucible', 'Confirmed by Manifest · Unverified by Public Citizens', 'The Order of Priors uses titrated Chokrah shipments from the Lost Isles to siphon innate magic from street-born initiates for a dragon-scale ritual.', 'players', 'approved', '/world-lore?tab=lore&loreId=lore-priors-rituals', JSON_OBJECT('truthAssessment', 'confirmed', 'gmTruth', 'Confirmed: Emrys pools the stolen magic for the Luminary god-trap ritual.')),
+(1, 'SourceRecord', 'src-malric-testimony', 'Brother Malric''s Lantern Testimony', 'In-World Witness Testimony · Room C1', 'Brother Malric initially claimed forest bandits took the scouts, but under Insight admitted Prior inquisitors descended into Crypt C3 with Chokrah crates.', 'players', 'approved', '/campaigns?inspect=npc-malric', JSON_OBJECT('reliability', 'guarded-witness')),
+(1, 'Lore', 'lore-priors-rituals', 'Lore: The Priors'' Rituals & Chokrah Titration', 'Codex Entry · Factions & Forbidden Rites', 'Chronicles how Emrys distorted Ekkos''s street-schools into the Order of Priors, pooling siphoned student magic through Chokrah rituals.', 'players', 'approved', '/world-lore?tab=lore&loreId=lore-priors-rituals', JSON_OBJECT('category', 'Factions')),
+(1, 'Lore', 'lore-star-etched-arrow', 'The Star-Etched Arrow', 'Codex Entry · Artifacts & Edhellain Lineage', 'Found on a fallen Vale scout near the chapel courtyard; its star-etched silver fletching bears the royal mark of Edhellain.', 'players', 'approved', '/world-lore?tab=lore&loreId=lore-star-etched-arrow', JSON_OBJECT('category', 'Artifacts'))
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `summary`=VALUES(`summary`), `visibility`=VALUES(`visibility`);
+
+-- Seed Lore Articles in `lw_lore_entries` linked to `lw_entities`
+INSERT INTO `lw_lore_entries` (`id`, `campaign_id`, `composite_key`, `title`, `subtitle`, `category`, `excerpt`, `content`, `artwork_url`, `visibility`, `archived`) VALUES
+('lore-priors-rituals', 1, '1:Lore:lore-priors-rituals', 'Lore: Priors'' Rituals & The Chokrah Siphon', 'Order of Priors · Corrupted Sanctuaries of Ekkos', 'Factions',
+ 'Publicly the Priors rescue street children and teach discipline; secretly they siphon innate magic from initiates through Chokrah titration.',
+ 'Before the Sidhe Ard departed Icrandor, Ekkos left traces of her memory as Mother of the Abandoned. Centuries later, Emrys Driothe reshaped her street-schools into the Order of Priors. While publicly teaching discipline and basic magic to orphans, Prior alchemists use refined Chokrah from the Lost Isles to siphon a percentage of students'' innate gift—telling those children their spark simply ran out—so Emrys can pool the immense arcane reservoir required for a dragon-scale Luminary ritual.',
+ '/the-weave-graph-engine.jpg', 'players', 0),
+('lore-star-etched-arrow', 1, '1:Lore:lore-star-etched-arrow', 'The Star-Etched Arrow of the Vale', 'Recovered Scout Relic · Edhellain Royal Mark', 'Artifacts',
+ 'Found on a fallen scout in the Whispering Woods. The silver fletching bears the ancient royal mark of the Vale of Edhellain.',
+ 'Recovered near the shattered cloister arch of the Ruined Chapel, this star-etched arrow was loosed by a ranger of the Vale before the shadows dragged his satchel toward Crypt C3. Its silver-chased shaft carries the same royal house sigil that appears in the missing lineage pages of Edhellain.',
+ '/dice-physics-engine.jpg', 'players', 0)
+ON DUPLICATE KEY UPDATE `title`=VALUES(`title`), `excerpt`=VALUES(`excerpt`), `content`=VALUES(`content`);
+
+-- Seed Truth vs. Testimony Claims in `lw_claims`
+INSERT INTO `lw_claims` (`id`, `campaign_id`, `composite_key`, `title`, `statement`, `truth_assessment`, `gm_canonical_truth`, `supporting_source_key`, `contradicting_source_key`, `documented_lore_id`, `implicated_entity_key`, `visibility`, `revision`) VALUES
+('claim-priors-rituals', 1, '1:Claim:claim-priors-rituals', 'Claim about the Priors',
+ 'The Order of Priors conducts secret Chokrah rituals beneath Ekkosian chapels to siphon innate magic from street-born initiates.',
+ 'confirmed',
+ 'GM Canonical Truth: Confirmed. Emrys created the Priors from his mother Ekkos''s religion and pools the siphoned student magic to power the dragon-scale Luminary ritual.',
+ '1:Clue:clue-chokrah-manifest',
+ '1:Claim:claim-council-reform',
+ 'lore-priors-rituals',
+ '1:NPC:npc-emrys',
+ 'players', 3),
+('claim-council-reform', 1, '1:Claim:claim-council-reform', 'Public Claim: "The New Council Protects Every Gift"',
+ 'Emrys Driothe claims the reformed Council of Magic registers self-taught casters solely to protect clerics, warlocks, and artificers from persecution.',
+ 'disputed',
+ 'GM Canonical Truth: Partially true in public law, which makes it more dangerous—Emrys uses the registry to track bloodlines and harvest magic.',
+ '1:SourceRecord:src-malric-testimony',
+ '1:Clue:clue-chokrah-manifest',
+ 'lore-priors-rituals',
+ '1:NPC:npc-emrys',
+ 'players', 2)
+ON DUPLICATE KEY UPDATE `truth_assessment`=VALUES(`truth_assessment`), `gm_canonical_truth`=VALUES(`gm_canonical_truth`);
+
+-- Seed Play Events & Character Knowledge Grants for the Chapel Investigation Chain
+INSERT INTO `lw_play_events` (`id`, `campaign_id`, `session_id`, `node_id`, `event_kind`, `actor_label`, `summary`, `payload_json`) VALUES
+(1, 1, 'session-14', 'node-room-c3-crypt', 'prior_inspection', 'Order of Priors', 'Three Prior inspectors visited Crypt C3 with Chokrah crates while Brother Malric watched in fear.', JSON_OBJECT('locationKey', 'room-c3-crypt')),
+(2, 1, 'session-15', 'node-room-c1-nave', 'npc_relocated', 'Brother Malric', 'Brother Malric retreated from Crypt C3 to keep lantern vigil in C1 Shattered Nave.', JSON_OBJECT('from', 'room-c3-crypt', 'to', 'room-c1-nave')),
+(3, 1, 'session-15', 'node-clue-crypt-tracks', 'clue_discovered', 'Dal & Kildrid', 'Discovery during play: Dal and Kildrid discovered the Carvings Beneath the Chapel and dragged satchel tracks leading into Crypt C3.', JSON_OBJECT('characters', JSON_ARRAY('pc-dal', 'pc-kildrid', 'pc-kycius')))
+ON DUPLICATE KEY UPDATE `summary`=VALUES(`summary`);
+
+INSERT INTO `lw_knowledge_grants` (`campaign_id`, `target_node_id`, `target_composite_key`, `granted_to_scope`, `granted_to_character_key`, `granted_by_role`, `reason_label`) VALUES
+(1, 'node-clue-crypt-tracks', '1:Clue:clue-carvings-chapel', 'character', 'pc-dal', 'gm', 'Discovered the Vale scout arrow and chapel rune carvings during Session 15'),
+(1, 'node-clue-crypt-tracks', '1:Clue:clue-kildrid-tremor', 'character', 'pc-kildrid', 'gm', 'Felt the stone-sense resonance matching the southern mountain runes'),
+(1, 'node-clue-chokrah-seal', '1:Clue:clue-chokrah-manifest', 'character', 'pc-kycius', 'gm', 'Deciphered the wax-sealed Chokrah manifest on the C3 lectern'),
+(1, 'claim-priors-rituals', '1:Claim:claim-priors-rituals', 'party', 'all-party', 'gm', 'Supported by Chokrah manifest & Brother Malric testimony in Session 15')
+ON DUPLICATE KEY UPDATE `reason_label`=VALUES(`reason_label`);
+
+-- Seed Durable Campaign Relationships (`lw_entity_relationships`)
+-- Complete Chain: Session 15 -> Scene -> Crypt C3 -> Chokrah Manifest -> Claim about the Priors -> Lore: Priors' Rituals & NPC: Emrys + Character Discoveries
+INSERT INTO `lw_entity_relationships` (`campaign_id`, `from_composite_key`, `relationship_type`, `to_composite_key`, `why_included_label`, `visibility`, `source_record_id`, `valid_from_event_id`, `valid_until_event_id`, `revision`) VALUES
+(1, '1:Session:session-15', 'PLANS', '1:Scene:scene-crypt-descent', 'What are we preparing to play? Session 15 plans Investigate the Crypt', 'players', NULL, 2, NULL, 1),
+(1, '1:Scene:scene-crypt-descent', 'OCCURS_AT', '1:Room:room-c3-crypt', 'Where does it happen? Scene occurs at Crypt C3', 'players', NULL, 2, NULL, 1),
+(1, '1:Room:room-c3-crypt', 'CONTAINS', '1:Clue:clue-chokrah-manifest', 'What can the party find here? Crypt C3 contains the Chokrah manifest', 'players', NULL, 1, NULL, 1),
+(1, '1:Room:room-c3-crypt', 'CONTAINS', '1:Clue:clue-carvings-chapel', 'What can the party find here? Runic carvings beneath the chapel altar', 'players', NULL, 1, NULL, 1),
+(1, '1:Clue:clue-chokrah-manifest', 'SUPPORTS', '1:Claim:claim-priors-rituals', 'What does the evidence suggest? Chokrah manifest supports Claim about the Priors', 'players', '1:SourceRecord:src-malric-testimony', 3, NULL, 2),
+(1, '1:SourceRecord:src-malric-testimony', 'SUPPORTS', '1:Claim:claim-priors-rituals', 'Witness testimony confirming Prior inspectors brought Chokrah crates to C3', 'players', '1:SourceRecord:src-malric-testimony', 2, NULL, 1),
+(1, '1:Claim:claim-council-reform', 'CONTRADICTS', '1:Claim:claim-priors-rituals', 'Public Council reform narrative contradicts the secret Prior siphon claim', 'players', NULL, 1, NULL, 1),
+(1, '1:Claim:claim-priors-rituals', 'DOCUMENTED_IN', '1:Lore:lore-priors-rituals', 'Where is the supporting explanation? Documented in Lore: Priors'' rituals', 'players', NULL, 1, NULL, 1),
+(1, '1:Claim:claim-priors-rituals', 'IMPLICATES', '1:NPC:npc-emrys', 'Who is involved? Claim implicates Council reformer Emrys Driothe', 'players', NULL, 1, NULL, 1),
+(1, '1:Claim:claim-priors-rituals', 'IMPLICATES', '1:Faction:fac-priors', 'Who is involved? Implicates The Order of Priors', 'players', NULL, 1, NULL, 1),
+(1, '1:PlayerCharacter:pc-dal', 'DISCOVERED', '1:Clue:clue-carvings-chapel', 'Who actually knows this? Dal discovered the chapel carvings & Vale arrow', 'players', NULL, 3, NULL, 1),
+(1, '1:PlayerCharacter:pc-kildrid', 'DISCOVERED', '1:Clue:clue-kildrid-tremor', 'Who actually knows this? Kildrid sensed the runic scraping beneath the stone', 'players', NULL, 3, NULL, 1),
+(1, '1:PlayerCharacter:pc-kycius', 'DISCOVERED', '1:Clue:clue-chokrah-manifest', 'Who actually knows this? Kycius inspected the Chokrah manifest seal', 'players', NULL, 3, NULL, 1),
+(1, '1:NPC:npc-malric', 'WAS_IN', '1:Room:room-c3-crypt', 'Historical state: Malric was in Crypt C3 when the Priors arrived (Event 1)', 'players', NULL, 1, 2, 1),
+(1, '1:NPC:npc-malric', 'CURRENTLY_IN', '1:Location:room-c1-nave', 'Current state: Malric is currently keeping vigil in C1 Shattered Nave (Event 2+)', 'players', NULL, 2, NULL, 2)
+ON DUPLICATE KEY UPDATE `why_included_label`=VALUES(`why_included_label`), `visibility`=VALUES(`visibility`), `revision`=VALUES(`revision`);
+
 

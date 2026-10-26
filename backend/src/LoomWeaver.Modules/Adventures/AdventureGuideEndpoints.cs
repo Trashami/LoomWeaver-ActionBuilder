@@ -1,5 +1,6 @@
 using LoomWeaver.Domain;
 using LoomWeaver.Infrastructure.Neo4j;
+using LoomWeaver.Modules.Auth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -15,9 +16,10 @@ public static class AdventureGuideEndpoints
             string? role,
             string? scopeKind,
             string? scopeId,
-            string? filter) =>
+            string? filter,
+            HttpContext httpContext) =>
         {
-            var isGm = string.Equals(role ?? "gm", "gm", StringComparison.OrdinalIgnoreCase);
+            var isGm = CampaignAccessResolver.Resolve(httpContext, campaignId, role).IsEffectiveGm;
             var guide = AdventureGuideStateStore.BuildGuide(campaignId, isGm, scopeKind, scopeId, filter);
             return Results.Ok(guide);
         });
@@ -28,11 +30,14 @@ public static class AdventureGuideEndpoints
             string? role,
             string? scopeKind,
             string? scopeId,
-            string? filter) =>
+            string? filter,
+            HttpContext httpContext) =>
         {
-            var isGm = string.Equals(role ?? "gm", "gm", StringComparison.OrdinalIgnoreCase);
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
             AdventureGuideStateStore.ToggleBeat(beatId);
-            return Results.Ok(AdventureGuideStateStore.BuildGuide(campaignId, isGm, scopeKind, scopeId, filter));
+            return Results.Ok(AdventureGuideStateStore.BuildGuide(campaignId, access.IsEffectiveGm, scopeKind, scopeId, filter));
         });
 
         api.MapPost("/campaigns/{campaignId:int}/adventure-guide/nodes/{nodeId}/state", (
@@ -41,11 +46,14 @@ public static class AdventureGuideEndpoints
             UpdateNodeProgressStateRequest req,
             string? scopeKind,
             string? scopeId,
-            string? filter) =>
+            string? filter,
+            HttpContext httpContext) =>
         {
-            var isGm = string.Equals(req.Role ?? "gm", "gm", StringComparison.OrdinalIgnoreCase);
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, req.Role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
             AdventureGuideStateStore.UpdateNodeState(nodeId, req.ProgressState, req.OutcomeNotes);
-            return Results.Ok(AdventureGuideStateStore.BuildGuide(campaignId, isGm, scopeKind, scopeId, filter));
+            return Results.Ok(AdventureGuideStateStore.BuildGuide(campaignId, access.IsEffectiveGm, scopeKind, scopeId, filter));
         });
 
         api.MapPost("/campaigns/{campaignId:int}/adventure-guide/grants", (
@@ -54,11 +62,14 @@ public static class AdventureGuideEndpoints
             string? role,
             string? scopeKind,
             string? scopeId,
-            string? filter) =>
+            string? filter,
+            HttpContext httpContext) =>
         {
-            var isGm = string.Equals(role ?? "gm", "gm", StringComparison.OrdinalIgnoreCase);
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required to grant knowledge." }, statusCode: 403);
             AdventureGuideStateStore.GrantKnowledge(req);
-            return Results.Ok(AdventureGuideStateStore.BuildGuide(campaignId, isGm, scopeKind, scopeId, filter));
+            return Results.Ok(AdventureGuideStateStore.BuildGuide(campaignId, access.IsEffectiveGm, scopeKind, scopeId, filter));
         });
 
         api.MapPost("/campaigns/{campaignId:int}/adventure-guide/rewards/award", (
@@ -67,11 +78,14 @@ public static class AdventureGuideEndpoints
             string? role,
             string? scopeKind,
             string? scopeId,
-            string? filter) =>
+            string? filter,
+            HttpContext httpContext) =>
         {
-            var isGm = string.Equals(role ?? "gm", "gm", StringComparison.OrdinalIgnoreCase);
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required to award rewards." }, statusCode: 403);
             var (newlyAwarded, xpAwarded, message) = AdventureGuideStateStore.AwardReward(req);
-            var guide = AdventureGuideStateStore.BuildGuide(campaignId, isGm, scopeKind, scopeId, filter);
+            var guide = AdventureGuideStateStore.BuildGuide(campaignId, access.IsEffectiveGm, scopeKind, scopeId, filter);
             return Results.Ok(new
             {
                 newlyAwarded,
@@ -89,9 +103,13 @@ public static class AdventureGuideEndpoints
             string? scopeKind,
             string? scopeId,
             string? filter,
+            HttpContext httpContext,
             CancellationToken ct) =>
         {
-            var isGm = string.Equals(role ?? "gm", "gm", StringComparison.OrdinalIgnoreCase);
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
+            var isGm = access.IsEffectiveGm;
             var cleanName = string.IsNullOrWhiteSpace(req.Name) ? "Wandering Chapel Pilgrim" : req.Name.Trim();
             var slug = cleanName.ToLowerInvariant().Replace(' ', '-');
             var nodeId = $"node-npc-{slug}";
@@ -149,9 +167,13 @@ public static class AdventureGuideEndpoints
             string? scopeKind,
             string? scopeId,
             string? filter,
+            HttpContext httpContext,
             CancellationToken ct) =>
         {
-            var isGm = string.Equals(role ?? "gm", "gm", StringComparison.OrdinalIgnoreCase);
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
+            var isGm = access.IsEffectiveGm;
             var assigned = AdventureGuideStateStore.AssignBattlemap(req);
 
             await graph.ProjectBattlemapAssignmentAsync(

@@ -6,9 +6,12 @@ export const GAMEPLAY_DEFAULTS:GameplaySettings={enabled:false,move:'none',feet:
 export interface MageHandSettings { growth:number; wrist:number; wisps:number; path:{x:number;y:number}[]; }
 export const MAGE_HAND_DEFAULTS:MageHandSettings={growth:.22,wrist:.7,wisps:.65,path:[]};
 import { EASINGS, Easing, OpacityKeyframe } from '../shared/animation/animation-curves';
-export const EFFECT_KINDS = ['beam', 'lightning', 'projectile', 'burst', 'aura', 'sparks', 'ring', 'cone', 'wall', 'cloud', 'sigil', 'tether', 'whip'] as const;
+import { EXTENDED_EFFECT_KINDS, EXTENDED_VARIANTS } from './core-effect-extensions';
+export const BASE_EFFECT_KINDS = ['beam', 'lightning', 'projectile', 'burst', 'aura', 'sparks', 'ring', 'cone', 'wall', 'cloud', 'sigil', 'tether', 'whip'] as const;
+export const EFFECT_KINDS = [...BASE_EFFECT_KINDS, ...EXTENDED_EFFECT_KINDS] as const;
 export type EffectKind = typeof EFFECT_KINDS[number];
 export const VARIANTS: Record<EffectKind, readonly { id: string; name: string; description: string }[]> = {
+  ...EXTENDED_VARIANTS,
   beam: [
     { id: 'straight', name: 'Focused beam', description: 'A clean, concentrated ray of light.' },
     { id: 'wave', name: 'Energy wave', description: 'A broad, undulating stream.' },
@@ -145,9 +148,10 @@ export function defaultMotion(kind: EffectKind, variant?: string): EffectMotion 
 }
 export function createLayer(kind: EffectKind): EffectLayer {
   const variant = VARIANTS[kind][0].id;
+  const areaKinds = ['burst', 'aura', 'ring', 'cone', 'wall', 'cloud', 'sigil', 'shield', 'ground', 'emitter', 'vortex', 'portal', 'orbit', 'slash', 'symbol', 'eruption', 'distortion', 'sound'];
   return { ...(kind==='cone'?{cinematic:{...CINEMATIC_DEFAULTS}}:{}), lighting: {...LIGHT_DEFAULTS}, id: newId(), kind, variant, whip: { ...WHIP_DEFAULTS }, blendMode: 'normal', opacity: 1, offsetX: 0, offsetY: 0, easing: 'linear', opacityKeyframes: [], motion: {...defaultMotion(kind, variant),...(kind==='cone'?{direction:0}:{})}, color: kind === 'whip' ? '#369b45' : '#62e5ad', secondaryColor: kind === 'whip' ? '#b5e878' : '#e3fff4',
-    delay: 0, duration: kind === 'whip' ? 2200 : 1200, size: ['burst', 'aura', 'ring', 'cone', 'wall', 'cloud', 'sigil'].includes(kind) ? 85 : 7,
-    intensity: 0.9, spread: 55, count: 40, enabled: true, anchor: kind === 'cone' ? 'caster' : ['burst', 'aura', 'ring', 'sparks', 'wall', 'cloud', 'sigil'].includes(kind) ? 'target' : 'path' };
+    delay: 0, duration: kind === 'whip' ? 2200 : 1200, size: areaKinds.includes(kind) ? 75 : 8,
+    intensity: 0.9, spread: 55, count: 40, enabled: true, anchor: ['cone', 'slash', 'shield'].includes(kind) ? 'caster' : ['beam', 'lightning', 'projectile', 'tether', 'whip', 'chain_lightning', 'trail'].includes(kind) ? 'path' : 'target' };
 }
 export function createEffect(name = 'Untitled effect', kind: EffectKind = 'beam'): EffectDefinition {
   return { schemaVersion: 1, id: newId(), name, description: '', spellName: 'Eldritch Blast', layers: [createLayer(kind)], previewScene: defaultScene() };

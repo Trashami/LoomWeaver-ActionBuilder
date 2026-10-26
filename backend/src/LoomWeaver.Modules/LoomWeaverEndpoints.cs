@@ -40,6 +40,7 @@ public static class LoomWeaverEndpoints
             api.MapCampaignAnalyticsEndpoints();
             api.MapLoomAndWeaveEndpoints();
             api.MapWorldLoreEndpoints();
+            api.MapConnectedStoryEndpoints();
             api.MapMarketplaceAndQuestEndpoints();
             api.MapSessionChronicleEndpoints();
             api.MapCampaignDashboardEndpoints();

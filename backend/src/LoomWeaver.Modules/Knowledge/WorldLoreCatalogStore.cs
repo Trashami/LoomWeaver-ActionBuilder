@@ -171,6 +171,49 @@ public static class WorldLoreCatalogStore
                 1761250000000
             ),
             new(
+                "lore-priors-rituals",
+                "1:Faction:fac-priors",
+                1,
+                "Lore: Priors' Rituals & The Chokrah Siphon",
+                "Order of Priors · Corrupted Sanctuaries of Ekkos",
+                "Factions & Organizations",
+                "Publicly the Priors rescue street children and teach discipline; evidence in Crypt C3 reveals they titrate Chokrah to siphon innate magic.",
+                "Before the Sidhe Ard departed Icrandor, Ekkos left traces of her memory as Mother of the Abandoned. Centuries later, Emrys Driothe reshaped her street-schools into the Order of Priors. The Chokrah manifest recovered in Crypt C3 beneath @The Ruined Chapel supports the claim that Prior alchemists siphon a percentage of students' innate gift to fuel a dragon-scale ritual.",
+                "/the-weave-graph-engine.jpg",
+                ["Factions", "Chokrah", "Priors", "Rituals"],
+                ["1:Faction:fac-priors", "1:NPC:npc-emrys", "1:Clue:clue-chokrah-manifest", "1:Location:loc-ruined-chapel"],
+                [
+                    new("1:NPC:npc-emrys", "Emrys Driothe", "Council Reformer", "NPC", "Implicated Patron", "/campaigns?inspect=npc-emrys", "players"),
+                    new("1:Location:loc-ruined-chapel", "The Ruined Chapel", "Whispering Woods Shrine", "Location", "Crypt C3 Evidence Site", "/world-lore?location=loc-ruined-chapel", "players")
+                ],
+                "players",
+                false,
+                "1 day ago",
+                "30 mins ago",
+                1761504000000
+            ),
+            new(
+                "lore-star-etched-arrow",
+                "1:Artifact:art-luminary-well",
+                1,
+                "The Star-Etched Arrow",
+                "Recovered Vale Scout Relic · Royal Lineage Sigil",
+                "Artifacts & Relics",
+                "Found on a fallen scout in the Whispering Woods. The silver fletching bears the ancient royal mark of the Vale of Edhellain.",
+                "Recovered near the shattered cloister arch of @The Ruined Chapel, this star-etched arrow was loosed by a ranger of the Vale before the shadows dragged his satchel toward Crypt C3. Its silver-chased shaft carries the same royal house sigil that appears in the missing lineage pages of Edhellain.",
+                "/dice-physics-engine.jpg",
+                ["Artifacts", "Edhellain", "Clues", "Dal"],
+                ["1:PlayerCharacter:pc-dal", "1:Location:loc-ruined-chapel"],
+                [
+                    new("1:PlayerCharacter:pc-dal", "Dal Riata", "Elf Ranger · Royal Lineage", "PlayerCharacter", "Lineage Bearer", "/characters?focus=pc-dal", "players")
+                ],
+                "players",
+                false,
+                "2 days ago",
+                "2 hours ago",
+                1761503000000
+            ),
+            new(
                 "lore-gm-priors-chokrah",
                 "1:Secret:sec-emrys-trap",
                 1,

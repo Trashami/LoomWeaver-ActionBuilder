@@ -648,4 +648,88 @@ MERGE (scnAmbush)-[:LEADS_TO {visibility: 'gm', exitLabel: 'Sunken Crypt Stairs'
 MERGE (mapRegC1)-[:DEPICTS {visibility: 'players'}]->(roomC1)
 MERGE (mapRegC2)-[:DEPICTS {visibility: 'players'}]->(roomC2)
 MERGE (mapRegC3)-[:DEPICTS {visibility: 'gm'}]->(roomC3)
-MERGE (encStalker)-[:REFERENCES {visibility: 'players'}]->(compStalker);
+MERGE (encStalker)-[:REFERENCES {visibility: 'players'}]->(compStalker)
+
+// =============================================================================
+// Connected Story Chain Projection (Truth vs. Testimony vs. Character Knowledge)
+// Session 15 -> Scene -> Crypt C3 -> Chokrah Manifest -> Claim about the Priors -> Lore & Emrys
+// =============================================================================
+MERGE (claimPriors:Entity:Claim {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  entityId: 'claim-priors-rituals',
+  compositeKey: '1:Claim:claim-priors-rituals',
+  entityType: 'Claim',
+  entityKey: 'claim-priors-rituals',
+  name: 'Claim about the Priors: Chokrah Siphon',
+  subtitle: 'Truth Assessment: Confirmed by Manifest',
+  truthAssessment: 'confirmed',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/world-lore?tab=lore&loreId=lore-priors-rituals'
+})
+MERGE (claimReform:Entity:Claim {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  entityId: 'claim-council-reform',
+  compositeKey: '1:Claim:claim-council-reform',
+  entityType: 'Claim',
+  entityKey: 'claim-council-reform',
+  name: 'Public Claim: "The New Council Protects Every Gift"',
+  subtitle: 'Truth Assessment: Disputed Political Narrative',
+  truthAssessment: 'disputed',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/world-lore?tab=lore&loreId=lore-priors-rituals'
+})
+MERGE (srcMalric:Entity:SourceRecord {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  entityId: 'src-malric-testimony',
+  compositeKey: '1:SourceRecord:src-malric-testimony',
+  entityType: 'SourceRecord',
+  entityKey: 'src-malric-testimony',
+  name: 'Brother Malric Lantern Testimony',
+  subtitle: 'Witness Account · Room C1',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/campaigns?inspect=npc-malric'
+})
+MERGE (lorePriors:Entity:Lore {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  entityId: 'lore-priors-rituals',
+  compositeKey: '1:Lore:lore-priors-rituals',
+  entityType: 'Lore',
+  entityKey: 'lore-priors-rituals',
+  name: 'Lore: Priors'' Rituals & Chokrah Titration',
+  subtitle: 'Codex Article · Factions & Forbidden Rites',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/world-lore?tab=lore&loreId=lore-priors-rituals'
+})
+MERGE (clueCarvings:Entity:Clue {
+  namespace: 'loomweaver',
+  campaignId: 1,
+  entityId: 'clue-carvings-chapel',
+  compositeKey: '1:Clue:clue-carvings-chapel',
+  entityType: 'Clue',
+  entityKey: 'clue-carvings-chapel',
+  name: 'Carvings Beneath the Chapel',
+  subtitle: 'Discovered Clue · Matches Mountain Tomb Runes',
+  visibility: 'players',
+  canonStatus: 'approved',
+  route: '/world-lore?tab=lore&loreId=lore-priors-rituals'
+})
+
+MERGE (roomC3)-[:CONTAINS {sqlRelationshipId: 3, revision: 1, visibility: 'players', whyIncluded: 'Crypt C3 contains the Chokrah manifest'}]->(clueChokrah)
+MERGE (roomC3)-[:CONTAINS {sqlRelationshipId: 4, revision: 1, visibility: 'players', whyIncluded: 'Crypt C3 contains runic carvings matching the mountain prison'}]->(clueCarvings)
+MERGE (clueChokrah)-[:SUPPORTS {sqlRelationshipId: 5, revision: 2, visibility: 'players', whyIncluded: 'Manifest supports Claim about the Priors'}]->(claimPriors)
+MERGE (srcMalric)-[:SUPPORTS {sqlRelationshipId: 6, revision: 1, visibility: 'players', whyIncluded: 'Witness testimony supports Claim about the Priors'}]->(claimPriors)
+MERGE (claimReform)-[:CONTRADICTS {sqlRelationshipId: 7, revision: 1, visibility: 'players', whyIncluded: 'Public reform narrative contradicts secret siphon claim'}]->(claimPriors)
+MERGE (claimPriors)-[:DOCUMENTED_IN {sqlRelationshipId: 8, revision: 1, visibility: 'players', whyIncluded: 'Documented in Lore: Priors rituals'}]->(lorePriors)
+MERGE (claimPriors)-[:IMPLICATES {sqlRelationshipId: 9, revision: 1, visibility: 'players', whyIncluded: 'Implicates NPC: Emrys Driothe'}]->(emrys)
+MERGE (claimPriors)-[:IMPLICATES {sqlRelationshipId: 10, revision: 1, visibility: 'players', whyIncluded: 'Implicates Faction: Order of Priors'}]->(priors)
+MERGE (dal)-[:DISCOVERED {sqlRelationshipId: 11, revision: 1, visibility: 'players', session: 15, whyIncluded: 'Dal discovered the chapel carvings'}]->(clueCarvings)
+MERGE (kycius)-[:DISCOVERED {sqlRelationshipId: 13, revision: 1, visibility: 'players', session: 15, whyIncluded: 'Kycius deciphered the Chokrah manifest'}]->(clueChokrah)
+MERGE (malric)-[:WAS_IN {sqlRelationshipId: 14, revision: 1, validFromEventId: 1, validUntilEventId: 2, visibility: 'players', whyIncluded: 'Malric was in Crypt C3 during Prior inspection'}]->(roomC3);

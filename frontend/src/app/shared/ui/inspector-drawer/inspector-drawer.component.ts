@@ -21,6 +21,7 @@ import {
 } from '../../../core/models/adventure-guide.models';
 import { LocationRelatedEntityVm } from '../../../core/models/world-lore.models';
 import { AdventureGuideService } from '../../../core/services/adventure-guide.service';
+import { ConnectedStoryService } from '../../../core/services/connected-story.service';
 import { LoomWeaverStoreService } from '../../../core/services/loomweaver-store.service';
 import { WorldLoreFacadeService } from '../../../core/services/world-lore-facade.service';
 import { LwBadgeComponent } from '../badge/badge.component';
@@ -59,6 +60,7 @@ export class LwInspectorDrawerComponent {
   readonly store = inject(LoomWeaverStoreService);
   readonly worldLore = inject(WorldLoreFacadeService);
   readonly advGuide = inject(AdventureGuideService);
+  readonly connectedStory = inject(ConnectedStoryService);
   private readonly router = inject(Router);
 
   readonly generativeAiEnabled = input<boolean>(false);
@@ -79,6 +81,7 @@ export class LwInspectorDrawerComponent {
   readonly beatsExpanded = signal<boolean>(true);
   readonly keyNpcsExpanded = signal<boolean>(true);
   readonly encountersExpanded = signal<boolean>(true);
+  readonly chainExpanded = signal<boolean>(true);
   readonly secretsExpanded = signal<boolean>(true);
   readonly showQuickNpcCreator = signal<boolean>(false);
   readonly revealedCheckOutcomeIds = signal<readonly string[]>(['blk-c1-check-malric']);

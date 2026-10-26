@@ -4,6 +4,7 @@ import { clippedFireball, EffectWorld, FIREBALL_FLIGHT_FRACTION, FxPoint, seeded
 import { missilePosition, missileTiming } from '../missile-path';
 import { handFrame } from '../mage-hand-path';
 import { opacityAt } from '../../shared/animation/animation-curves';
+import { evaluateExtendedLayer } from './extended-frame-eval';
 
 export interface NativePoint extends FxPoint { height: number; }
 export interface NativeParticle extends NativePoint { size:number; alpha:number; rotation:number; stretch:number; tile:number; color:string; }
@@ -62,6 +63,7 @@ export function evaluateNativeLayer(l:EffectLayer,time:number,from:FxPoint,to:Fx
   if(c.style==='cone'||c.style==='beam'){const length=c.style==='beam'?f.length:reach,base=offset(from),center={x:base.x+Math.cos(angle)*length/2,y:base.y+Math.sin(angle)*length/2};field(center,length,c.style==='beam'?Math.max(size*10,22*scale):width,'cinematic',c.style==='cone'?1:0,20*scale,angle);}
   else {field(c.style==='cube'?offset({x:from.x+Math.cos(angle)*reach/2,y:from.y+Math.sin(angle)*reach/2}):f.anchor,width,width,'cinematic',c.style==='column'?2:c.style==='cube'?4:3,c.style==='column'?width*.5:12*scale);if(c.style==='column')out.fields[out.fields.length-1].vertical=true;}
  }
+ if(!l.cinematic&&evaluateExtendedLayer(l,f,out,from,to,scale,targets,offset))return out;
  const path=l.kind==='beam'||l.kind==='lightning'||l.kind==='tether';
  if(path){
   const strands=l.kind==='beam'?(variant===2?3:variant===4?2:1):l.kind==='lightning'?(variant===2?5:variant===4?3:1):variant===1?3:2;

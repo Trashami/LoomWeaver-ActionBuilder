@@ -1,10 +1,113 @@
-<div class="surface-controls"><button type="button" (click)="toggleView()" [attr.aria-pressed]="view3d()">{{view3d()?'Overhead view':'3D view'}}</button><label><input type="checkbox" [checked]="background()" (change)="background.set($any($event.target).checked)" /> Stone sample</label><label>Ambient <input aria-label="Map ambient light" type="range" min="0.05" max="1" step="0.01" [value]="ambient()" (input)="ambient.set(+$any($event.target).value)" /></label><label>Bump <input aria-label="Map bump strength" type="range" min="0" max="5" step="0.05" [value]="bump()" (input)="bump.set(+$any($event.target).value)" /></label><label>Height <input aria-label="Map height relief" type="range" min="0" max="0.45" step="0.01" [value]="relief()" (input)="relief.set(+$any($event.target).value)" /></label></div>@if(view3d()){<details class="camera-tools"><summary>Camera</summary><div><button (click)="inspect(-.25)" aria-label="Orbit left">Left</button><button (click)="inspect(.25)" aria-label="Orbit right">Right</button><button (click)="inspect(0,.12)">Higher</button><button (click)="inspect(0,-.12)">Lower</button><button (click)="inspect(0,0,.85)" aria-label="Zoom in">+</button><button (click)="inspect(0,0,1.15)" aria-label="Zoom out">-</button><button (click)="resetCamera()">Reset view</button></div></details>}
-@if(definition.previewScene.teleport?.enabled){<div class="teleport-tools"><label><input type="checkbox" [checked]="holdHidden()" (change)="holdHidden.set($any($event.target).checked)" /> Hold hidden</label><button type="button" (click)="reveal()">Reappear now</button></div>}
-<span class="renderer-status" role="status" title="Native Babylon meshes, shader materials, depth testing and scene lighting. Animation paths run on the CPU; graphics are drawn by WebGL.">{{rendererStatus()}}</span>
-<div #surface class="surface" (pointerdown)="pathPoint($event)" role="img" aria-label="Spell animation preview"></div>
-@for(token of tokens; track token.id) { <button class="token" [class.caster]="token.target<0" [class.destination]="token.target===3" [style.opacity]="token.target<0?casterFade:1" [class.prone]="token.target>=0 && pronePreview" [class.active]="multiTarget && boltTargets[activeBolt]===token.target" [style.left.%]="token.point.x*100" [style.top.%]="token.point.y*100" [attr.aria-label]="token.label+' token'" [title]="'Drag to move '+token.label+(multiTarget&&token.target>=0?'; click to assign selected bolt':'')" (pointerdown)="drag($event,token.target)" (click)="pick($event,token.target)" (keydown)="nudge($event,token.target)"><mw-icon name="user" /><span class="token-label">{{token.label}}</span>@if(multiTarget && token.target>=0 && boltsFor(token.target)){<span class="bolt-badge">{{boltsFor(token.target)}}</span>}</button> }
-@if(error()){<p role="alert">{{error()}}</p>}
-
-@if(definition.summon;as summon){@if(previewTime()>=summon.delay&&summonArtwork()){<img class="summon-artwork" [src]="summonArtwork()" [alt]="summon.name" [style.left.%]="summonPoint.x*100" [style.top.%]="summonPoint.y*100" [style.width.px]="summon.size*48" [style.height.px]="summon.size*48" />}}
-
-@if(editHandPath){<span class="path-hint">Click to add route points. Drag points to shape the path.</span>@for(point of handPoints;track $index){<button class="hand-waypoint" [style.left.%]="point.x*100" [style.top.%]="point.y*100" [attr.aria-label]="'Path waypoint '+($index+1)" (pointerdown)="movePoint($event,$index)" (pointermove)="pathPoint($event,$index)" (dblclick)="removePoint($event,$index)">{{$index+1}}</button>}}
+<div class="surface-controls">
+  <button type="button" (click)="toggleView()" [attr.aria-pressed]="view3d()">
+    {{ view3d() ? 'Overhead 2D view' : '3D perspective view' }}
+  </button>
+  <label title="a_forest_3_with_a_road_at_night_for_game.glb">
+    <input type="checkbox" [checked]="forestMap()" (change)="forestMap.set($any($event.target).checked)" />
+    3D Forest Road Map
+  </label>
+  <label title="Eclipse Abyss Sorceress &amp; 3 Male Goblins">
+    <input type="checkbox" [checked]="tokens3d()" (change)="tokens3d.set($any($event.target).checked)" />
+    3D Tokens (Sorceress &amp; 3 Goblins)
+  </label>
+  @if (!forestMap()) {
+    <label>
+      <input type="checkbox" [checked]="background()" (change)="background.set($any($event.target).checked)" />
+      Stone sample
+    </label>
+    <label>
+      Bump
+      <input aria-label="Map bump strength" type="range" min="0" max="5" step="0.05" [value]="bump()" (input)="bump.set(+$any($event.target).value)" />
+    </label>
+    <label>
+      Height
+      <input aria-label="Map height relief" type="range" min="0" max="0.45" step="0.01" [value]="relief()" (input)="relief.set(+$any($event.target).value)" />
+    </label>
+  }
+  <label>
+    Ambient
+    <input aria-label="Map ambient light" type="range" min="0.05" max="1" step="0.01" [value]="ambient()" (input)="ambient.set(+$any($event.target).value)" />
+  </label>
+</div>
+@if (view3d()) {
+  <details class="camera-tools" open>
+    <summary>Camera</summary>
+    <div>
+      <button (click)="inspect(-0.25)" aria-label="Orbit left">Left</button>
+      <button (click)="inspect(0.25)" aria-label="Orbit right">Right</button>
+      <button (click)="inspect(0, 0.12)">Higher</button>
+      <button (click)="inspect(0, -0.12)">Lower</button>
+      <button (click)="inspect(0, 0, 0.85)" aria-label="Zoom in">+</button>
+      <button (click)="inspect(0, 0, 1.15)" aria-label="Zoom out">-</button>
+      <button (click)="resetCamera()">Reset view</button>
+    </div>
+  </details>
+}
+@if (definition.previewScene.teleport?.enabled) {
+  <div class="teleport-tools">
+    <label>
+      <input type="checkbox" [checked]="holdHidden()" (change)="holdHidden.set($any($event.target).checked)" />
+      Hold hidden
+    </label>
+    <button type="button" (click)="reveal()">Reappear now</button>
+  </div>
+}
+<span class="renderer-status" role="status" title="Native Babylon meshes, 3D GLB map &amp; tokens, shader materials, depth testing and scene lighting.">
+  {{ rendererStatus() }}
+</span>
+<div #surface class="surface" (pointerdown)="pathPoint($event)" (wheel)="onSurfaceWheel($event)" role="img" aria-label="Spell animation preview"></div>
+@for (token of tokens; track token.id) {
+  <button
+    class="token"
+    [class.caster]="token.target < 0"
+    [class.destination]="token.target === 3"
+    [style.opacity]="token.target < 0 ? casterFade : 1"
+    [class.prone]="token.target >= 0 && pronePreview"
+    [class.active]="multiTarget && boltTargets[activeBolt] === token.target"
+    [style.left.%]="token.point.x * 100"
+    [style.top.%]="token.point.y * 100"
+    [attr.aria-label]="token.label + ' token'"
+    [title]="'Drag to move ' + token.label + (multiTarget && token.target >= 0 ? '; click to assign selected bolt' : '')"
+    (pointerdown)="drag($event, token.target)"
+    (click)="pick($event, token.target)"
+    (keydown)="nudge($event, token.target)"
+  >
+    <mw-icon name="user" />
+    <span class="token-label">{{ token.label }}</span>
+    @if (multiTarget && token.target >= 0 && boltsFor(token.target)) {
+      <span class="bolt-badge">{{ boltsFor(token.target) }}</span>
+    }
+  </button>
+}
+@if (error()) {
+  <p role="alert">{{ error() }}</p>
+}
+@if (definition.summon; as summon) {
+  @if (previewTime() >= summon.delay && summonArtwork()) {
+    <img
+      class="summon-artwork"
+      [src]="summonArtwork()"
+      [alt]="summon.name"
+      [style.left.%]="summonPoint.x * 100"
+      [style.top.%]="summonPoint.y * 100"
+      [style.width.px]="summon.size * 48"
+      [style.height.px]="summon.size * 48"
+    />
+  }
+}
+@if (editHandPath) {
+  <span class="path-hint">Click to add route points. Drag points to shape the path.</span>
+  @for (point of handPoints; track $index) {
+    <button
+      class="hand-waypoint"
+      [style.left.%]="point.x * 100"
+      [style.top.%]="point.y * 100"
+      [attr.aria-label]="'Path waypoint ' + ($index + 1)"
+      (pointerdown)="movePoint($event, $index)"
+      (pointermove)="pathPoint($event, $index)"
+      (dblclick)="removePoint($event, $index)"
+    >
+      {{ $index + 1 }}
+    </button>
+  }
+}

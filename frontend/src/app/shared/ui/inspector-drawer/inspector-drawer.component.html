@@ -348,6 +348,27 @@
                 }
               </section>
 
+              <section class="lw-inspector__section">
+                <lw-button variant="guide-header" size="sm" [fullWidth]="true" label="CONNECTED EVIDENCE, CLAIMS & LORE CHAIN" [trailingIcon]="chainExpanded() ? 'chevron-down' : 'chevron-right'" iconTone="gold" (pressed)="chainExpanded.set(!chainExpanded())" />
+                @if (chainExpanded()) {
+                  @for (claim of connectedStory.storyChain().claims; track claim.id) {
+                    <div class="lw-inspector__item-card">
+                      <div class="lw-inspector__item-head">
+                        <strong>{{ claim.title }}</strong>
+                        <lw-badge [label]="claim.truthAssessment" [tone]="claim.truthAssessment === 'confirmed' ? 'emerald' : 'gold'" />
+                      </div>
+                      <span class="lw-inspector__why-tag">Clue -> Claim -> Lore &amp; NPC -> Character Grants</span>
+                      <p class="lw-inspector__summary-text">{{ claim.statement }}</p>
+                      <small class="lw-inspector__entity-sub">Known by: {{ claim.knownByCharacters.join(', ') }}</small>
+                      <div class="lw-inspector__npc-links">
+                        <lw-button variant="guide-action" size="xs" [label]="claim.documentedLoreTitle || 'Lore Article'" (pressed)="connectedStory.navigateConnectedElement('1:Lore:' + (claim.documentedLoreId || 'lore-priors-rituals'), '/world-lore?tab=lore&loreId=lore-priors-rituals')" />
+                        <lw-button variant="guide-chip" size="xs" [label]="'Implicates: ' + (claim.implicatedEntityName || 'Emrys')" (pressed)="connectedStory.navigateConnectedElement(claim.implicatedEntityKey || '1:NPC:npc-emrys', '/campaigns?inspect=npc-emrys')" />
+                      </div>
+                    </div>
+                  }
+                }
+              </section>
+
               @if (store.viewerRole() === 'gm' && g.secrets.length > 0) {
                 <section class="lw-inspector__section">
                   <lw-button variant="guide-header" size="sm" [fullWidth]="true" label="SECRETS" [trailingIcon]="secretsExpanded() ? 'chevron-down' : 'chevron-right'" iconTone="gold" (pressed)="secretsExpanded.set(!secretsExpanded())" />

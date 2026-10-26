@@ -20,7 +20,20 @@ public static class EffectDefinitionValidator
         ["cloud"] = new[] { "fog", "poison", "storm", "darkness", "blizzard" },
         ["sigil"] = new[] { "ward", "runic", "summoning", "banishment", "teleport" },
         ["tether"] = new[] { "chain", "vine", "arcane", "soul", "gravity" },
-        ["whip"] = new[] { "vine", "chain", "flame", "lightning", "ribbon" }
+        ["whip"] = new[] { "vine", "chain", "flame", "lightning", "ribbon" },
+        ["chain_lightning"] = new[] { "arc_jump", "storm_chain", "forked_relay", "overload", "eldritch_arc" },
+        ["shield"] = new[] { "hex_dome", "aegis_wall", "crystal_shell", "runic_dome", "force_bubble" },
+        ["ground"] = new[] { "scorched_earth", "ice_sheet", "acid_pool", "web_snare", "corrupted_mire" },
+        ["emitter"] = new[] { "rain_deluge", "snow_flurry", "falling_leaves", "biolum_spores", "rising_motes" },
+        ["vortex"] = new[] { "arcane_funnel", "flame_cyclone", "maelstrom", "gravity_well", "astral_spiral" },
+        ["portal"] = new[] { "arcane_gate", "feywild_ring", "shadow_rift", "hellfire_maw", "astral_tear" },
+        ["orbit"] = new[] { "spirit_blades", "earth_stones", "star_crown", "wisp_lanterns", "runic_shards" },
+        ["slash"] = new[] { "crescent_cleave", "cross_slash", "overhead_slam", "whirlwind_arc", "piercing_lunge" },
+        ["symbol"] = new[] { "hunters_crest", "hex_brand", "divine_halo_glyph", "blood_sigil", "ancient_rune" },
+        ["eruption"] = new[] { "stone_spikes", "grasping_roots", "magma_fissure", "ice_spires", "eldritch_tendrils" },
+        ["distortion"] = new[] { "heat_shimmer", "psychic_ripple", "gravity_lens", "chrono_warp", "void_refraction" },
+        ["trail"] = new[] { "silk_ribbon", "ember_wake", "spinning_tooth", "stone_debris", "ice_fragments" },
+        ["sound"] = new[] { "arcane_chime", "fire_roar", "thunder_crack", "frost_shatter", "eldritch_hum" }
     };
 
     private static readonly Dictionary<string, (double Min, double Max)> MotionBounds = new()

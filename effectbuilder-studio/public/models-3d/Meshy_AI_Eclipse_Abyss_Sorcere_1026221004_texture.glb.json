@@ -1,0 +1,20 @@
+{
+  "pipeline": 4,
+  "id": "obj-48dcea15b4e71385",
+  "name": "Eclipse Abyss Sorcere",
+  "category": "players",
+  "group": "Player tokens",
+  "url": "/assets/object-library/models/obj-48dcea15b4e71385.glb",
+  "model3dUrl": "/assets/models-3d/Meshy_AI_Eclipse_Abyss_Sorcere_1026221004_texture.glb",
+  "sourceFile": "Meshy_AI_Eclipse_Abyss_Sorcere_1026221004_texture.glb",
+  "aliases": [],
+  "sourceHash": "48dcea15b4e713857afbd28efc508187777de7188eca99c736e38980d182cfc6",
+  "bytes": 4450884,
+  "originalBytes": 65861984,
+  "sourceTriangles": 2007824,
+  "parts": 1,
+  "animated": false,
+  "credit": {},
+  "defaultWidthFt": 5,
+  "previewUrl": "/assets/object-library/previews/obj-48dcea15b4e71385.webp"
+}

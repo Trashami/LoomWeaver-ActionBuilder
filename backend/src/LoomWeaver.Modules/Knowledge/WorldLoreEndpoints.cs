@@ -1,5 +1,6 @@
 using LoomWeaver.Domain;
 using LoomWeaver.Infrastructure.MySql;
+using LoomWeaver.Modules.Auth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -13,18 +14,20 @@ public static class WorldLoreEndpoints
         api.MapGet("/campaigns/{campaignId:int}/world-lore", (
             int campaignId,
             string? role,
-            string? mapId) =>
+            string? mapId,
+            HttpContext httpContext) =>
         {
-            var isGm = IsGm(role);
+            var isGm = IsGm(httpContext, campaignId, role);
             return Results.Ok(BuildWorkspace(campaignId, isGm, mapId));
         });
 
         api.MapGet("/campaigns/{campaignId:int}/world-lore/locations/{locationKey}", (
             int campaignId,
             string locationKey,
-            string? role) =>
+            string? role,
+            HttpContext httpContext) =>
         {
-            var isGm = IsGm(role);
+            var isGm = IsGm(httpContext, campaignId, role);
             var list = GetCampaignList(WorldLoreStateStore.LocationsByCampaign, campaignId);
             var found = list.FirstOrDefault(l =>
                 string.Equals(l.LocationKey, locationKey, StringComparison.OrdinalIgnoreCase) ||
@@ -41,9 +44,10 @@ public static class WorldLoreEndpoints
         api.MapPost("/campaigns/{campaignId:int}/world-lore/locations", (
             int campaignId,
             string? role,
-            UpsertLocationRequest req) =>
+            UpsertLocationRequest req,
+            HttpContext httpContext) =>
         {
-            if (!IsGm(role))
+            if (!IsGm(httpContext, campaignId, role))
             {
                 return Results.Json(new { message = "GM authorization required to create or edit locations." }, statusCode: 403);
             }
@@ -135,9 +139,10 @@ public static class WorldLoreEndpoints
             int campaignId,
             string locationKey,
             string? role,
-            LinkEntityToLocationRequest req) =>
+            LinkEntityToLocationRequest req,
+            HttpContext httpContext) =>
         {
-            if (!IsGm(role))
+            if (!IsGm(httpContext, campaignId, role))
             {
                 return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
             }
@@ -172,9 +177,10 @@ public static class WorldLoreEndpoints
             int campaignId,
             string locationKey,
             string secretId,
-            string? role) =>
+            string? role,
+            HttpContext httpContext) =>
         {
-            if (!IsGm(role))
+            if (!IsGm(httpContext, campaignId, role))
             {
                 return Results.Json(new { message = "GM authorization required to reveal secrets." }, statusCode: 403);
             }
@@ -188,18 +194,11 @@ public static class WorldLoreEndpoints
                 .Select(s => s.Id == secretId ? s with { RevealedToPlayers = !s.RevealedToPlayers } : s)
                 .ToList();
 
-            var revealedSecret = secrets.FirstOrDefault(s => s.Id == secretId);
-            var updatedDesc = cur.Description;
-            if (revealedSecret is { RevealedToPlayers: true } && !updatedDesc.Contains(revealedSecret.Title, StringComparison.OrdinalIgnoreCase))
-            {
-                updatedDesc = $"{cur.Description}\n\n[Revealed Truth — {revealedSecret.Title}]: {revealedSecret.Summary}";
-            }
-
+            // Keep secret text strictly inside protected Secret blocks; never mutate public Description prose
             var updated = cur with
             {
                 Visibility = "players",
                 DiscoveryStatus = cur.DiscoveryStatus == "undiscovered" ? "known" : cur.DiscoveryStatus,
-                Description = updatedDesc,
                 Secrets = secrets
             };
             locs[idx] = updated;
@@ -209,9 +208,10 @@ public static class WorldLoreEndpoints
         api.MapPost("/campaigns/{campaignId:int}/world-lore/maps/assign", (
             int campaignId,
             string? role,
-            WorldMapSummaryDto req) =>
+            WorldMapSummaryDto req,
+            HttpContext httpContext) =>
         {
-            if (!IsGm(role))
+            if (!IsGm(httpContext, campaignId, role))
             {
                 return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
             }
@@ -248,9 +248,10 @@ public static class WorldLoreEndpoints
         api.MapPost("/campaigns/{campaignId:int}/world-lore/lore", (
             int campaignId,
             string? role,
-            UpsertLoreEntryRequest req) =>
+            UpsertLoreEntryRequest req,
+            HttpContext httpContext) =>
         {
-            if (!IsGm(role))
+            if (!IsGm(httpContext, campaignId, role))
             {
                 return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
             }
@@ -309,9 +310,10 @@ public static class WorldLoreEndpoints
         api.MapPost("/campaigns/{campaignId:int}/world-lore/history", (
             int campaignId,
             string? role,
-            CreateWorldHistoryEventRequest req) =>
+            CreateWorldHistoryEventRequest req,
+            HttpContext httpContext) =>
         {
-            if (!IsGm(role))
+            if (!IsGm(httpContext, campaignId, role))
             {
                 return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
             }
@@ -343,9 +345,10 @@ public static class WorldLoreEndpoints
             string? role,
             string? q,
             LoomWeaverMySqlRepository repo,
+            HttpContext httpContext,
             CancellationToken ct) =>
         {
-            var isGm = IsGm(role);
+            var isGm = IsGm(httpContext, campaignId, role);
             var entities = await repo.GetAuthorizedEntitiesAsync(campaignId, isGm ? "gm" : "players", null, ct);
             var query = (q ?? "").Trim();
             var matches = entities
@@ -446,12 +449,12 @@ public static class WorldLoreEndpoints
             ChildMapId = loc.ChildMapId == "map-mountain-prison" ? null : loc.ChildMapId,
             RelatedEntities = loc.RelatedEntities.Where(r => r.Visibility != "gm").ToList(),
             HistoryEvents = loc.HistoryEvents.Where(h => h.Visibility != "gm").ToList(),
-            Secrets = []
+            Secrets = loc.Secrets.Where(s => s.RevealedToPlayers).ToList()
         };
     }
 
-    private static bool IsGm(string? role) =>
-        string.Equals(role, "gm", StringComparison.OrdinalIgnoreCase);
+    private static bool IsGm(HttpContext httpContext, int campaignId, string? role) =>
+        CampaignAccessResolver.Resolve(httpContext, campaignId, role).IsEffectiveGm;
 
     private static string NormalizeVis(string? vis) =>
         string.Equals(vis, "gm", StringComparison.OrdinalIgnoreCase) ? "gm" : "players";

@@ -1,0 +1,20 @@
+{
+  "pipeline": 4,
+  "id": "obj-74b7b1da3fd22d0c",
+  "name": "Goblin Male",
+  "category": "monsters",
+  "group": "Monster tokens",
+  "url": "/assets/object-library/models/obj-74b7b1da3fd22d0c.glb",
+  "model3dUrl": "/assets/models-3d/Meshy_AI_Goblin_Male_1026221232_texture.glb",
+  "sourceFile": "Meshy_AI_Goblin_Male_1026221232_texture.glb",
+  "aliases": [],
+  "sourceHash": "74b7b1da3fd22d0c87b179f762511f02ede0c087cae3f7c9aab277623efccdb1",
+  "bytes": 17609268,
+  "originalBytes": 89772500,
+  "sourceTriangles": 2221942,
+  "parts": 1,
+  "animated": false,
+  "credit": {},
+  "defaultWidthFt": 5,
+  "previewUrl": "/assets/object-library/previews/obj-74b7b1da3fd22d0c.webp"
+}

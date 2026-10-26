@@ -201,12 +201,12 @@
 
 .lw-inspector__hero-art {
   position: relative;
-  height: 112px;
+  min-height: 126px;
   background-position: center;
   background-size: cover;
   display: flex;
   align-items: flex-end;
-  padding: 0.45rem 0.6rem;
+  padding: 0.52rem 0.65rem;
 }
 
 .lw-inspector__hero-glow {
@@ -220,29 +220,27 @@
   z-index: 1;
   width: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.35rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.36rem;
 }
 
 .lw-inspector__map-badge {
-  font-size: 0.64rem;
+  font-size: 0.65rem;
   font-weight: 700;
   color: #f4e6c8;
-  background: rgba(5, 16, 12, 0.86);
-  border: 1px solid rgba(217, 183, 122, 0.36);
-  padding: 0.16rem 0.42rem;
-  border-radius: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: rgba(5, 16, 12, 0.9);
+  border: 1px solid rgba(217, 183, 122, 0.4);
+  padding: 0.18rem 0.46rem;
+  border-radius: 5px;
+  line-height: 1.25;
   max-width: 100%;
 }
 
 .lw-inspector__map-links {
   display: flex;
-  gap: 0.28rem;
+  flex-wrap: wrap;
+  gap: 0.32rem;
 }
 
 .lw-inspector__epigraph {

@@ -1,6 +1,8 @@
 using LoomWeaver.Domain;
 using LoomWeaver.Infrastructure.MySql;
+using LoomWeaver.Infrastructure.Neo4j;
 using LoomWeaver.Modules.Adventures;
+using LoomWeaver.Modules.Auth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -123,9 +125,11 @@ public static class LoomAndWeaveEndpoints
         api.MapGet("/campaigns/{campaignId:int}/notes", (
             int campaignId,
             string? role,
-            string? witness) =>
+            string? witness,
+            HttpContext httpContext) =>
         {
-            var isGm = string.Equals(role, "gm", StringComparison.OrdinalIgnoreCase);
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            var isGm = access.IsEffectiveGm;
             var filtered = CampaignNotes
                 .Where(n => n.CampaignId == campaignId)
                 .Where(n =>
@@ -166,10 +170,13 @@ public static class LoomAndWeaveEndpoints
             int campaignId,
             LoomGraphRagRequest req,
             LoomWeaverMySqlRepository repo,
+            LoomWeaverNeo4jService graph,
+            HttpContext httpContext,
             CancellationToken ct) =>
         {
-            var isGm = string.Equals(req.Role, "gm", StringComparison.OrdinalIgnoreCase);
-            var viewerRole = isGm ? "gm" : "players";
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, req.Role);
+            var isGm = access.IsEffectiveGm;
+            var viewerRole = access.EffectiveViewerRole;
             var witness = string.IsNullOrWhiteSpace(req.WitnessCharacter) ? "All Party" : req.WitnessCharacter.Trim();
             var q = string.IsNullOrWhiteSpace(req.Query) ? "What is happening in Cinth?" : req.Query.Trim();
 
@@ -198,6 +205,7 @@ public static class LoomAndWeaveEndpoints
                 .ToList();
 
             var matchingNotes = CampaignNotes
+                .Where(n => n.CampaignId == campaignId)
                 .Where(n =>
                     isGm ||
                     n.Scope == "party_shared" ||
@@ -211,11 +219,17 @@ public static class LoomAndWeaveEndpoints
                 .Take(4)
                 .ToList();
 
-            var graphPaths = BuildAuthorizedGraphPaths(isGm);
+            var graphPaths = await ConnectedStoryEngine.QueryAuthorizedLoomPathsAsync(campaignId, access, q, graph, ct);
+            var activeClaims = ConnectedStorySeedStore.Claims
+                .Where(c => c.CampaignId == campaignId && (isGm || c.Visibility != "gm"))
+                .ToList();
+            var claimSummary = activeClaims.Count > 0
+                ? $" Separated Truth vs. Testimony across {activeClaims.Count} claim(s) ({string.Join(", ", activeClaims.Select(c => $"{c.Title}: {c.TruthAssessment.ToUpperInvariant()}"))})."
+                : "";
 
             var synthesis =
                 $"[The Loom · Zero-Generation GraphRAG · Role={viewerRole.ToUpperInvariant()} · Witness={witness}]: " +
-                $"Synthesized {citations.Count} canonical record(s), {graphPaths.Count} Neo4j relationship path(s), and {matchingNotes.Count} scoped note(s) for \"{q}\". Zero unverified lore generated.";
+                $"Synthesized {citations.Count} canonical record(s), {graphPaths.Count} Neo4j+SQL relationship path(s), and {matchingNotes.Count} scoped note(s) for \"{q}\".{claimSummary} Zero unverified lore generated.";
 
             return Results.Ok(new LoomGraphRagResponse(
                 campaignId,
@@ -328,52 +342,4 @@ public static class LoomAndWeaveEndpoints
             "gm_only" => "gm_only",
             _ => "party_shared"
         };
-
-    private static IReadOnlyList<LoomGraphPathDto> BuildAuthorizedGraphPaths(bool isGm)
-    {
-        var list = new List<LoomGraphPathDto>
-        {
-            new(
-                "(Kildrid)-[:SENSED_TREMOR_BENEATH]->(Southern Mountain Cavern)",
-                "1:Character:char-kildrid",
-                "SENSED_TREMOR_BENEATH",
-                "1:Location:loc-mountain-cavern",
-                "players"
-            ),
-            new(
-                "(Kycius)-[:STITCHED_QUIET_MAW_FOR]->(Fivi & Dolly)",
-                "1:Character:char-kycius",
-                "STITCHED_QUIET_MAW_FOR",
-                "1:Character:char-fivi",
-                "players"
-            ),
-            new(
-                "(Captain Kutler)-[:PILOTS_SKYSHIP_FROM]->(Lost Isles Chokrah Route)",
-                "1:NPC:npc-kutler",
-                "PILOTS_SKYSHIP_FROM",
-                "1:Clue:clue-chokrah-manifest",
-                "players"
-            )
-        };
-
-        if (isGm)
-        {
-            list.Add(new(
-                "(Lord Emrys)-[:LIFE_BOUND_TO]->(Trapped Dragon Beneath the Mountain)",
-                "1:NPC:npc-emrys",
-                "LIFE_BOUND_TO",
-                "1:Location:loc-mountain-cavern",
-                "gm"
-            ));
-            list.Add(new(
-                "(Lord Emrys)-[:SIPHONS_INITIATE_MAGIC_VIA]->(The Priors & Chokrah)",
-                "1:NPC:npc-emrys",
-                "SIPHONS_INITIATE_MAGIC_VIA",
-                "1:Secret:sec-priors-siphon",
-                "gm"
-            ));
-        }
-
-        return list;
-    }
 }

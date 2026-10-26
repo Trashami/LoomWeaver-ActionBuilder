@@ -267,6 +267,69 @@ public sealed class LoomWeaverNeo4jService : IAsyncDisposable
         return new GraphSubgraphDto(campaignId, _options.Namespace, isGm ? "gm" : "players", nodes, fallbackEdges);
     }
 
+    public async Task<bool> ProjectEntityRelationshipAsync(
+        long sqlRelationshipId,
+        int campaignId,
+        string fromCompositeKey,
+        string relationshipType,
+        string toCompositeKey,
+        string visibility,
+        string whyIncluded,
+        int revision,
+        long? validFromEventId = null,
+        long? validUntilEventId = null,
+        CancellationToken ct = default)
+    {
+        lock (DynamicGraphNodes)
+        {
+            DynamicGraphEdges.RemoveAll(e =>
+                e.SourceKey == fromCompositeKey &&
+                e.TargetKey == toCompositeKey &&
+                e.RelationshipType == relationshipType);
+            DynamicGraphEdges.Add(new GraphEdgeDto(fromCompositeKey, toCompositeKey, relationshipType, visibility, whyIncluded));
+        }
+
+        if (_driver is null) return true;
+        try
+        {
+            await using var session = _driver.AsyncSession();
+            var safeRel = new string(relationshipType.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray()).ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(safeRel)) safeRel = "CONNECTED_TO";
+
+            var cypher = $$"""
+                MERGE (a:Entity {namespace: $ns, campaignId: $cid, compositeKey: $fromKey})
+                MERGE (b:Entity {namespace: $ns, campaignId: $cid, compositeKey: $toKey})
+                MERGE (a)-[r:{{safeRel}}]->(b)
+                FOREACH (_ IN CASE WHEN coalesce(r.revision, 0) <= $rev THEN [1] ELSE [] END |
+                    SET r.sqlRelationshipId = $sqlId,
+                        r.visibility = $vis,
+                        r.whyIncluded = $why,
+                        r.revision = $rev,
+                        r.validFromEventId = $vFrom,
+                        r.validUntilEventId = $vUntil
+                )
+                """;
+            await session.RunAsync(cypher, new
+            {
+                ns = _options.Namespace,
+                cid = campaignId,
+                fromKey = fromCompositeKey,
+                toKey = toCompositeKey,
+                sqlId = sqlRelationshipId,
+                vis = visibility,
+                why = whyIncluded,
+                rev = revision,
+                vFrom = validFromEventId ?? 0L,
+                vUntil = validUntilEventId ?? 0L
+            });
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_driver is not null)
