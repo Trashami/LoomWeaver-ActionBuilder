@@ -1,71 +1,200 @@
-:host {
-  display: block;
-}
-
-.lw-page {
+.lw-dice-page {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.lw-action-link {
-  padding: 0.4rem 0.75rem;
-  border-radius: var(--lw-radius-md);
-  border: 1px solid var(--lw-border-gold);
-  color: var(--lw-accent-gold);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.lw-roll-feed {
+.lw-dice-page__actions {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.lw-roll-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--lw-radius-md);
-  background: var(--lw-bg-surface);
-  border: 1px solid var(--lw-border-subtle);
+  gap: 0.55rem;
   flex-wrap: wrap;
 }
 
-.lw-roll-card__main {
+.lw-dice-page__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+
+  @media (max-width: 1080px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lw-dice-page__stage-col,
+.lw-dice-page__inspector-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lw-dice-page__viewport-wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(229, 184, 92, 0.3);
+  background: #0b0a10;
+  height: 350px;
+}
+
+.lw-dice-page__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+.lw-dice-page__viewport-hud {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+
+.lw-dice-page__quick-bar {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lw-dice-page__customizer,
+.lw-dice-page__ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(15, 14, 21, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  h4 {
+    margin: 0;
+    font-size: 0.96rem;
+    color: #f6f1e6;
+  }
+}
+
+.lw-dice-page__color-row {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  flex-wrap: wrap;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.74rem;
+    color: rgba(214, 208, 196, 0.8);
+  }
+}
+
+.lw-dice-page__slider-label {
+  flex: 1;
+  min-width: 140px;
+}
+
+.lw-dice-page__skin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.lw-dice-page__skin-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(24, 22, 33, 0.8);
+  color: #f6f1e6;
+  text-align: left;
+  cursor: pointer;
+
+  &--active {
+    border-color: #e5b85c;
+    background: rgba(229, 184, 92, 0.14);
+  }
+}
+
+.lw-dice-page__skin-swatches {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.lw-dice-page__swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.lw-dice-page__skin-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+
+  strong {
+    font-size: 0.84rem;
+  }
+
+  span {
+    font-size: 0.72rem;
+    color: rgba(214, 208, 196, 0.72);
+  }
+}
+
+.lw-dice-page__roll-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(23, 21, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  &--nat20 {
+    border-color: rgba(92, 229, 160, 0.65);
+    background: linear-gradient(135deg, rgba(92, 229, 160, 0.14), rgba(23, 21, 32, 0.92));
+  }
+
+  &--nat1 {
+    border-color: rgba(255, 92, 119, 0.65);
+    background: linear-gradient(135deg, rgba(255, 92, 119, 0.14), rgba(23, 21, 32, 0.92));
+  }
+}
+
+.lw-dice-page__roll-main {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 
   strong {
-    font-size: 0.92rem;
-    color: var(--lw-text-primary);
+    font-size: 0.86rem;
+    color: #f6f1e6;
   }
 
   span {
-    font-size: 0.78rem;
-    color: var(--lw-text-secondary);
+    font-size: 0.75rem;
+    color: rgba(214, 208, 196, 0.78);
   }
 }
 
-.lw-roll-card__right {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
+.lw-dice-page__digest {
+  font-size: 0.68rem;
+  color: rgba(229, 184, 92, 0.85);
 }
 
-.lw-roll-total {
-  font-family: var(--lw-font-display);
+.lw-dice-page__roll-total {
   font-size: 1.45rem;
-  font-weight: 700;
-  color: var(--lw-accent-gold);
-}
-
-.lw-skin-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 0.9rem;
+  font-weight: 800;
+  color: #ffe299;
+  min-width: 44px;
+  text-align: right;
 }

@@ -29,5 +29,9 @@
   - **Arcane Screen VTT + Encounters**: Live Babylon.js 3D/2D tactical combat stage, token targeting & range tether, per-turn Action Economy (`Action`, `Bonus Action`, `Reaction`, `Movement`), server-evaluated AC/DC hit and save resolution, and automated XP awards on encounter completion.
   - **ActionBuilder + EffectBuilder**: Guided When / If / Then rules composer paired with Babylon.js 3D spell trajectories (`arc`, `cone`, `beam`, `sigil`), timeline keyframe preview, and reduced-motion accessibility fallback.
   - **Shared Catalog Expansion**: `lw-npc-card`, `lw-creature-card`, and `lw-encounter-card`.
-- **Stage 4 (Next):** **Dice Forge 3D + Music & Ambience Web Audio Engine + Campaign Analytics Ledgers**.
-- **Stage 5:** **The Loom GraphRAG + The Weave Authoring + Marketplace Entitlements & Module Packager**.
+- **Stage 4 (Verified):**
+  - **Dice Forge 3D**: Babylon.js 3D polyhedral dice forge, live PBR skin customizer, Nat 20 / Nat 1 3D burst shaders, and .NET cryptographic dice engine (`RandomNumberGenerator.GetInt32` + SHA-256 verification digest) with Advantage/Disadvantage support.
+  - **Music & Ambience Engine**: Browser Web Audio API 4-stem procedural soundscape synthesizer & crossfade mixer (`Ambient Drone`, `Exploration Harmony`, `Tension Pulse`, `Combat Percussion`) synchronized with .NET scene mood transitions.
+  - **Campaign Analytics Ledgers**: .NET reporting engine aggregating party & per-character `lw-stat-radar` profiles, damage-by-type distributions, d20 entropy telemetry, character MVP ledgers, and automated campaign achievements.
+  - **Shared Catalog Expansion**: `lw-dice-roller-tray`, `lw-audio-stem-mixer`, and `lw-achievement-card`.
+- **Stage 5 (Next):** **The Loom GraphRAG + The Weave Authoring + Marketplace Entitlements & Module Packager**.

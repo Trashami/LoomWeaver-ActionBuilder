@@ -1,64 +1,146 @@
-<div class="lw-page">
+@let data = analytics();
+<div class="lw-stats-page">
   <lw-panel
-    eyebrow="Event-Backed Combat & Narrative Telemetry"
-    title="Party Statistics & Roll Ledgers"
-    subtitle="Every metric is derived from immutable combat, dice, and clue discovery ledgers stored in loomweaver.lw_combat_telemetry."
-    icon="bar-chart"
-    [elevated]="true">
-    <div panelActions>
-      <a class="lw-action-link" routerLink="/characters">Open Character Sheets</a>
-      <a class="lw-action-link" routerLink="/dice">Open Dice Forge</a>
+    eyebrow="Module 11 · .NET Reporting Engine + Telemetry Ledgers"
+    [title]="data.campaignName"
+    subtitle="Real-time combat telemetry, damage-by-element distributions, d20 entropy verification, and automated achievements."
+    [elevated]="true"
+  >
+    <div panelActions class="lw-stats-page__actions">
+      <lw-button variant="secondary" icon="Sparkles" (pressed)="refreshAnalytics()">
+        Sync Live Telemetry
+      </lw-button>
+      <a routerLink="/dice" class="lw-link-reset">
+        <lw-button variant="primary" icon="Dices">Roll in 3D Dice Forge</lw-button>
+      </a>
     </div>
 
-    <div class="lw-telemetry-table">
-      <div class="lw-telemetry-head">
-        <span>Hero</span>
-        <span>Total Damage</span>
-        <span>vs Dragons / Undead / Constructs</span>
-        <span>Last Hits</span>
-        <span>Nat 20 / Nat 1</span>
-        <span>Healing & Clues</span>
+    <div class="lw-stats-page__kpi-grid">
+      <div class="lw-stats-page__kpi-card">
+        <span>Sessions & Encounters</span>
+        <strong>{{ data.sessionsCompleted }} Sessions · {{ data.encountersCleared }} Cleared</strong>
+        <lw-badge label="100% Canon Verified" tone="emerald" />
+      </div>
+      <div class="lw-stats-page__kpi-card">
+        <span>Total Party XP Awarded</span>
+        <strong>{{ data.totalXpEarned.toLocaleString() }} XP</strong>
+        <lw-badge label="Automated Encounter XP" tone="gold" />
+      </div>
+      <div class="lw-stats-page__kpi-card">
+        <span>Authoritative Dice Rolled</span>
+        <strong>{{ data.totalDiceRolled }} Rolls ({{ data.nat20Count }} Nat 20s)</strong>
+        <lw-badge [label]="'Crit Rate: ' + nat20RatePercent() + '%'" tone="emerald" />
+      </div>
+      <div class="lw-stats-page__kpi-card">
+        <span>d20 Cryptographic Mean</span>
+        <strong>{{ data.averageD20Roll }}</strong>
+        <lw-badge [label]="'Nat 1s: ' + data.nat1Count" tone="neutral" />
+      </div>
+    </div>
+  </lw-panel>
+
+  <div class="lw-stats-page__two-col">
+    <lw-panel
+      eyebrow="Shared lw-stat-radar Primitive"
+      title="Party vs. Adventurer Play-Style Radar"
+      subtitle="Compare whole-table tactical balance against individual character telemetry vectors."
+    >
+      <div panelActions class="lw-stats-page__char-tabs">
+        @for (hero of data.characterTelemetry; track hero.characterId) {
+          <button
+            type="button"
+            class="lw-stats-page__tab"
+            [class.lw-stats-page__tab--active]="selectedCharacterId() === hero.characterId"
+            (click)="selectedCharacterId.set(hero.characterId)"
+          >
+            {{ hero.name }}
+          </button>
+        }
       </div>
 
-      @for (row of store.telemetry(); track row.characterKey) {
-        <div class="lw-telemetry-row" (click)="store.inspectEntity('1:Character:' + row.characterKey)">
-          <div class="lw-telemetry-hero">
-            <strong>{{ row.characterName }}</strong>
-            <span>{{ row.classSummary }}</span>
+      <div class="lw-stats-page__radar-pair">
+        <lw-stat-radar
+          title="Party Aggregate Profile"
+          subtitle="18 Sessions · 5 Adventurers"
+          [axes]="data.partyRadar"
+        />
+        <lw-stat-radar
+          [title]="selectedCharacter().name"
+          [subtitle]="selectedCharacter().classTitle"
+          [axes]="selectedCharacter().radarProfile"
+        />
+      </div>
+    </lw-panel>
+
+    <lw-panel
+      eyebrow="Elemental & Weapon Telemetry"
+      title="Damage by Type & Peak Single-Hit Records"
+      subtitle="Aggregated from Arcane Screen VTT combat resolution logs."
+    >
+      <div class="lw-stats-page__damage-list">
+        @for (row of data.damageBreakdown; track row.damageType) {
+          <div class="lw-stats-page__damage-row">
+            <div class="lw-stats-page__damage-head">
+              <strong>{{ row.damageType }}</strong>
+              <span>{{ row.totalDamage }} dmg ({{ row.sharePercent }}%) · Peak Hit: {{ row.peakSingleHit }}</span>
+            </div>
+            <div class="lw-stats-page__damage-bar">
+              <div
+                class="lw-stats-page__damage-fill"
+                [style.width.%]="row.sharePercent"
+                [style.background]="row.colorHex"
+              ></div>
+            </div>
+            <span class="lw-stats-page__damage-source">Signature: {{ row.signatureSource }}</span>
           </div>
-          <div class="lw-telemetry-num">{{ row.totalDamageDealt }}</div>
-          <div class="lw-telemetry-tags">
-            <lw-badge [label]="'Dragons: ' + row.damageVsDragons" tone="gold" />
-            <lw-badge [label]="'Undead: ' + row.damageVsUndead" tone="emerald" />
-            <lw-badge [label]="'Constructs: ' + row.damageVsConstructs" tone="neutral" />
-          </div>
-          <div class="lw-telemetry-num">{{ row.lastHits }}</div>
-          <div class="lw-telemetry-tags">
-            <lw-badge [label]="'Nat 20: ' + row.natural20Count" tone="gold" />
-            <lw-badge [label]="'Nat 1: ' + row.natural1Count" tone="crimson" />
-          </div>
-          <div class="lw-telemetry-tags">
-            <lw-badge [label]="'Heal: ' + row.healingDone" tone="emerald" />
-            <lw-badge [label]="'Clues: ' + row.cluesDiscovered" tone="neutral" />
-          </div>
-        </div>
-      }
+        }
+      </div>
+    </lw-panel>
+  </div>
+
+  <lw-panel
+    eyebrow="Party Performance Ledger"
+    title="Adventurer Combat, Mitigation & Investigation Breakdown"
+    subtitle="Tracks damage dealt, damage mitigated, healing/support, critical hits, and lore clues uncovered."
+  >
+    <div class="lw-stats-page__table-wrap">
+      <table class="lw-stats-page__table">
+        <thead>
+          <tr>
+            <th>Adventurer</th>
+            <th>Role / Lineage</th>
+            <th>Damage Dealt</th>
+            <th>Mitigated</th>
+            <th>Support / Ward</th>
+            <th>Nat 20 Crits</th>
+            <th>Clues Found</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (hero of data.characterTelemetry; track hero.characterId) {
+            <tr [class.lw-stats-page__row--selected]="selectedCharacterId() === hero.characterId">
+              <td><strong>{{ hero.name }}</strong></td>
+              <td>{{ hero.classTitle }}</td>
+              <td>{{ hero.totalDamageDealt }}</td>
+              <td>{{ hero.damageMitigated }}</td>
+              <td>{{ hero.supportAndHealing }}</td>
+              <td>{{ hero.criticalHits }}</td>
+              <td>{{ hero.cluesDiscovered }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </lw-panel>
 
   <lw-panel
-    eyebrow="Hexagonal Capability Comparison"
-    title="Party Radar Breakdown"
-    subtitle="Shared lw-stat-radar component instances."
-    icon="sparkles">
-    <div class="lw-radar-grid">
-      @for (row of store.telemetry(); track row.characterKey) {
-        <div class="lw-radar-box">
-          <lw-stat-radar
-            [title]="row.characterName"
-            [subtitle]="row.classSummary"
-            [axes]="row.radarAxes" />
-        </div>
+    eyebrow="Shared lw-achievement-card Primitive"
+    title="Automated Campaign Milestones & Mythic Feats"
+    subtitle="Unlocked automatically from encounter completions, narrative milestones, and critical roll events."
+  >
+    <div class="lw-stats-page__achievements-grid">
+      @for (ach of data.achievements; track ach.id) {
+        <lw-achievement-card [achievement]="ach" />
       }
     </div>
   </lw-panel>

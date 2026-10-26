@@ -1,40 +1,43 @@
 <div class="lw-page">
   <lw-panel
-    eyebrow="Synchronized Audio & Media"
-    title="Asset Library & Ambience Controller"
-    subtitle="Manage confidential creator uploads, licensed bundles, and multi-stem spatial soundscapes."
-    icon="music"
-    [elevated]="true">
-    <div panelActions>
-      <lw-badge [label]="'Playing: ' + activeTrack()" tone="emerald" icon="music" />
-      <a class="lw-action-link" routerLink="/marketplace">Expand Library in Marketplace</a>
+    eyebrow="Module 7 · Browser Web Audio API Multi-Stem Synthesizer + .NET Scene Transitions"
+    title="Music, Ambience & Adaptive Soundscape Studio"
+    subtitle="Mix 4 harmonic audio stems in real time, trigger smooth scene crossfades, and synchronize table ambience."
+    icon="Music"
+    [elevated]="true"
+  >
+    <div panelActions class="lw-assets-actions">
+      <lw-badge [label]="'Active Scene: ' + activePreset().name" tone="emerald" icon="Music" />
+      <lw-badge [label]="lastSyncBanner()" tone="gold" />
+      <a class="lw-action-link" routerLink="/arcane-screen">Open in Arcane Screen VTT</a>
     </div>
 
-    <div class="lw-stem-grid">
-      @for (stem of audioStems; track stem.name) {
-        <button
-          type="button"
-          class="lw-stem-card"
-          [class.lw-stem-card--active]="activeTrack() === stem.name"
-          (click)="activeTrack.set(stem.name)">
-          <strong>{{ stem.name }}</strong>
-          <span>{{ stem.mood }} · {{ stem.bpm }}</span>
-        </button>
-      }
-    </div>
+    <lw-audio-stem-mixer
+      [isPlaying]="audio.isPlaying()"
+      [activePresetId]="audio.activePresetId()"
+      [masterVolume]="audio.masterVolume()"
+      [stems]="audio.stems()"
+      [presets]="audio.presets()"
+      (togglePlaybackRequested)="audio.togglePlayback()"
+      (presetTransitionRequested)="handlePresetTransition($event)"
+      (stemGainChanged)="handleStemGainChange($event)"
+      (masterVolumeChanged)="audio.setMasterVolume($event)"
+    />
   </lw-panel>
 
   <lw-panel
-    eyebrow="Unified Asset Registry"
-    title="Installed & Entitlement-Aware Assets"
-    subtitle="Rendered with the shared lw-asset-card component across all asset categories."
-    icon="layers">
-    <div panelActions>
+    eyebrow="Canonical Asset Vault (/assets/map-assets)"
+    title="Organized 3D Models, 2D Stamps, Terrain Textures & Packs"
+    subtitle="Rendered with the shared lw-asset-card component across all entitlement-aware asset categories."
+    icon="Layers"
+  >
+    <div panelActions class="lw-assets-actions">
       @for (cat of categories; track cat) {
         <lw-button
           [variant]="selectedCategory() === cat ? 'gold' : 'secondary'"
           size="sm"
-          (pressed)="selectedCategory.set(cat)">
+          (pressed)="selectedCategory.set(cat)"
+        >
           {{ cat }}
         </lw-button>
       }
@@ -46,7 +49,8 @@
           [asset]="asset"
           [config]="{ variant: 'detailed', showPrice: true, showUnlockAction: true }"
           (assetSelected)="store.unlockAsset($event.id)"
-          (unlockRequested)="store.unlockAsset($event.id)" />
+          (unlockRequested)="store.unlockAsset($event.id)"
+        />
       }
     </div>
   </lw-panel>

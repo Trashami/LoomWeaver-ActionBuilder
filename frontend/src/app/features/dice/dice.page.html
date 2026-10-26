@@ -1,58 +1,133 @@
-<div class="lw-page">
+<div class="lw-dice-page">
   <lw-panel
-    eyebrow="3D Physics & Cosmetic Studio"
-    title="3D Dice Forge & Authoritative Roller"
-    subtitle="Server-authoritative cryptographic RNG paired with deterministic 3D rigid-body trays, material shaders, and critical burst FX."
-    icon="dice"
-    [elevated]="true">
-    <div panelActions>
-      <lw-button variant="gold" size="sm" icon="dice" (pressed)="rollDice(20, 1, 8, 'Attack Roll')">
-        Roll 1d20 + 8
+    eyebrow="Module 6 · Babylon.js 3D Polyhedral Renderer + .NET Cryptographic Entropy"
+    title="3D Dice Forge & Shader Lab"
+    subtitle="Customize PBR polyhedral materials, trigger Nat 20 / Nat 1 3D burst shaders, and execute SHA-256 verified server rolls."
+    [elevated]="true"
+  >
+    <div panelActions class="lw-dice-page__actions">
+      <lw-button variant="ghost" icon="Sparkles" (pressed)="toggleReducedMotion()">
+        {{ reducedMotion() ? 'Motion: Reduced' : 'Motion: Full 3D Tumble' }}
       </lw-button>
-      <lw-button variant="secondary" size="sm" (pressed)="rollDice(8, 2, 4, 'Radiant Smite')">
-        Roll 2d8 + 4
-      </lw-button>
-      <lw-button variant="secondary" size="sm" (pressed)="rollDice(6, 8, 0, 'Fireball Burst')">
-        Roll 8d6
-      </lw-button>
-      <a class="lw-action-link" routerLink="/statistics">View Roll Telemetry</a>
+      <a routerLink="/arcane-screen" class="lw-link-reset">
+        <lw-button variant="secondary" icon="Swords">Send Set to VTT</lw-button>
+      </a>
+      <a routerLink="/statistics" class="lw-link-reset">
+        <lw-button variant="primary" icon="BarChart3">Inspect Roll Telemetry</lw-button>
+      </a>
     </div>
 
-    <div class="lw-roll-feed">
-      @for (entry of rollHistory(); track entry.id) {
-        <div class="lw-roll-card">
-          <div class="lw-roll-card__main">
-            <strong>{{ entry.formula }}</strong>
-            <span>Skin: {{ entry.skinName }} · Faces: [{{ entry.values.join(', ') }}]</span>
-          </div>
-          <div class="lw-roll-card__right">
-            <lw-badge [label]="entry.outcome" tone="gold" />
-            <span class="lw-roll-total">{{ entry.total }}</span>
+    <div class="lw-dice-page__workspace">
+      <div class="lw-dice-page__stage-col">
+        <div class="lw-dice-page__viewport-wrap">
+          <canvas #diceCanvas class="lw-dice-page__canvas" aria-label="Babylon.js 3D Dice Forge Viewport"></canvas>
+          <div class="lw-dice-page__viewport-hud">
+            <lw-badge [label]="activeSkin().name" tone="gold" icon="Sparkles" />
+            <lw-badge [label]="'Nat 20 FX: ' + activeSkin().nat20ShaderName" tone="emerald" />
+            <lw-badge [label]="'Nat 1 FX: ' + activeSkin().nat1ShaderName" tone="crimson" />
           </div>
         </div>
-      }
-    </div>
-  </lw-panel>
 
-  <lw-panel
-    eyebrow="Reusable lw-asset-card Component"
-    title="Cosmetic Dice Skins, Trail Shaders & Acoustic Profiles"
-    subtitle="Configured via lw-asset-card without duplicating card markup."
-    icon="sparkles">
-    <div panelActions>
-      <a class="lw-action-link" routerLink="/marketplace">Get More Skins in Marketplace</a>
-    </div>
-    <div class="lw-skin-grid">
-      @for (skin of diceSkins(); track skin.id) {
-        <lw-asset-card
-          [asset]="skin"
-          [selected]="activeSkinId() === skin.id"
-          primaryActionLabel="Equip Skin"
-          [config]="{ variant: 'detailed', showPrice: true, showUnlockAction: true }"
-          (assetSelected)="activeSkinId.set($event.id)"
-          (unlockRequested)="store.unlockAsset($event.id)"
-          (previewRequested)="activeSkinId.set($event.id)" />
-      }
+        <lw-dice-roller-tray
+          [activeSkinName]="activeSkin().name"
+          (rollRequested)="handleTrayRoll($event)"
+        />
+
+        <div class="lw-dice-page__quick-bar">
+          <lw-button
+            variant="primary"
+            icon="Dices"
+            (pressed)="triggerSignaturePreset(20, 1, 8, 'Fivi Slingshot Tooth Strike', 'advantage')"
+          >
+            Roll 1d20+8 (ADV · Fivi Slingshot)
+          </lw-button>
+          <lw-button
+            variant="secondary"
+            icon="Swords"
+            (pressed)="triggerSignaturePreset(6, 2, 5, 'Munk Greatsword Cleave')"
+          >
+            Roll 2d6+5 (Munk Greatsword)
+          </lw-button>
+          <lw-button
+            variant="secondary"
+            icon="Sparkles"
+            (pressed)="triggerSignaturePreset(8, 3, 6, 'Kildrid Luminary Ward Pulse')"
+          >
+            Roll 3d8+6 (Kildrid Ward)
+          </lw-button>
+        </div>
+      </div>
+
+      <div class="lw-dice-page__inspector-col">
+        <div class="lw-dice-page__customizer">
+          <h4>PBR Material & Rune Customizer</h4>
+          <div class="lw-dice-page__color-row">
+            <label>
+              <span>Base Albedo</span>
+              <input type="color" [value]="customBaseHex()" (input)="onBaseHexInput($event)" />
+            </label>
+            <label>
+              <span>Emissive Rune Glow</span>
+              <input type="color" [value]="customRuneHex()" (input)="onRuneHexInput($event)" />
+            </label>
+            <label class="lw-dice-page__slider-label">
+              <span>Metallic Specular ({{ (customMetallic() * 100).toFixed(0) }}%)</span>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.04"
+                [value]="customMetallic()"
+                (input)="onMetallicInput($event)"
+              />
+            </label>
+          </div>
+
+          <div class="lw-dice-page__skin-list">
+            @for (skin of skins(); track skin.id) {
+              <button
+                type="button"
+                class="lw-dice-page__skin-card"
+                [class.lw-dice-page__skin-card--active]="activeSkinId() === skin.id"
+                (click)="selectSkin(skin)"
+              >
+                <div class="lw-dice-page__skin-swatches">
+                  <span class="lw-dice-page__swatch" [style.background]="skin.baseColorHex"></span>
+                  <span class="lw-dice-page__swatch" [style.background]="skin.runeColorHex"></span>
+                </div>
+                <div class="lw-dice-page__skin-info">
+                  <strong>{{ skin.name }}</strong>
+                  <span>{{ skin.materialType }} · {{ skin.unlockTier }}</span>
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="lw-dice-page__ledger">
+          <h4>Authoritative Cryptographic Roll Ledger</h4>
+          @for (roll of rollHistory(); track roll.id) {
+            <div
+              class="lw-dice-page__roll-card"
+              [class.lw-dice-page__roll-card--nat20]="roll.isNat20"
+              [class.lw-dice-page__roll-card--nat1]="roll.isNat1"
+            >
+              <div class="lw-dice-page__roll-main">
+                <strong>{{ roll.formula }} · {{ roll.label }}</strong>
+                <span>
+                  Kept: [{{ roll.keptRolls.join(', ') }}]
+                  @if (roll.rawRolls.length !== roll.keptRolls.length) {
+                    (Raw Pool: [{{ roll.rawRolls.join(', ') }}])
+                  }
+                  · {{ roll.shaderTriggered }}
+                </span>
+                <code class="lw-dice-page__digest">{{ roll.verificationDigest }}</code>
+              </div>
+              <div class="lw-dice-page__roll-total">{{ roll.total }}</div>
+            </div>
+          }
+        </div>
+      </div>
     </div>
   </lw-panel>
 </div>

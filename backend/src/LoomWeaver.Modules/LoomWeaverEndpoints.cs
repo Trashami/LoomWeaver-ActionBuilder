@@ -3,9 +3,12 @@ using LoomWeaver.GameSystems;
 using LoomWeaver.Infrastructure.MySql;
 using LoomWeaver.Infrastructure.Neo4j;
 using LoomWeaver.Modules.Actions;
+using LoomWeaver.Modules.Audio;
 using LoomWeaver.Modules.Characters;
+using LoomWeaver.Modules.Dice;
 using LoomWeaver.Modules.Encounters;
 using LoomWeaver.Modules.Maps;
+using LoomWeaver.Modules.Statistics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -23,6 +26,9 @@ public static class LoomWeaverEndpoints
             api.MapLoomMapsEndpoints();
             api.MapCombatEncounterEndpoints();
             api.MapActionAndEffectEndpoints();
+            api.MapDiceForgeEndpoints();
+            api.MapAudioAmbienceEndpoints();
+            api.MapCampaignAnalyticsEndpoints();
             MapCoreEndpoints(api);
         }
 
