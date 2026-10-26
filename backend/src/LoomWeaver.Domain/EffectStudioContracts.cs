@@ -22,7 +22,12 @@ public sealed record EffectEmitterCardDto(
     bool CastLight,
     double LightIntensity,
     bool ReceiveShadows,
-    string PreviewAccentHex
+    string PreviewAccentHex,
+    string? AppearanceId = null,
+    int? Count = null,
+    double? Scale = null,
+    string? BurstVariant = null,
+    string? SigilPattern = null
 );
 
 public sealed record EffectTimelineTrackDto(
@@ -35,7 +40,13 @@ public sealed record EffectTimelineTrackDto(
     double EndTimeSeconds,
     string ColorHex,
     string AccentHex,
-    string EmitterId
+    string EmitterId,
+    string? Anchor = null,
+    string? AppearanceId = null,
+    double? Scale = null,
+    int? Count = null,
+    int? OpacityPercent = null,
+    string? AnimationModifier = null
 );
 
 public sealed record EffectMotionForceConfigDto(

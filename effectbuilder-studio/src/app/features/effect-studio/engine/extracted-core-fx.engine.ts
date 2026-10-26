@@ -34,7 +34,6 @@ export class ExtractedCoreFxEngine {
     quad.material = mat;
     quad.isPickable = false;
     excludeMeshFromGlow(scene, quad);
-
     const t0 = performance.now();
     const obs = scene.onBeforeRenderObservable.add(() => {
       const u = Math.min(1, (performance.now() - t0) / p.durationMs);
@@ -50,8 +49,7 @@ export class ExtractedCoreFxEngine {
 
   playProjectile(
     scene: Scene, casterPos: Vector3, targetPos: Vector3, p: LayerExecutionParams,
-    targetInstance?: StudioTokenMiniatureInstance,
-    onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
+    targetInstance?: StudioTokenMiniatureInstance, onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
   ): void {
     ensureEffectBuilderShadersRegistered();
     const mat = createFireHitShaderMaterial(scene, `eb-proj-${Date.now()}`, p.mainHex, p.coreHex, p.smokeHex, 1, 42);
@@ -60,15 +58,13 @@ export class ExtractedCoreFxEngine {
     head.material = mat;
     head.isPickable = false;
     excludeMeshFromGlow(scene, head);
-
     const dist = Math.hypot(targetPos.x - casterPos.x, targetPos.z - casterPos.z) || 1;
     const arc = -Math.min(1.8, Math.max(0.75, dist * 0.16));
     const t0 = performance.now();
     const obs = scene.onBeforeRenderObservable.add(() => {
       const u = Math.min(1, (performance.now() - t0) / p.durationMs);
       const pt = fireballCurveXZ(casterPos, targetPos, u, arc);
-      const y = 0.95 + Math.sin(u * Math.PI) * 0.45;
-      head.position.set(pt.x, y, pt.z);
+      head.position.set(pt.x, 0.95 + Math.sin(u * Math.PI) * 0.45, pt.z);
       mat.setFloat('uProgress', u);
       mat.setFloat('uClock', (performance.now() - t0) / 1000);
       if (u >= 1) {
@@ -87,13 +83,10 @@ export class ExtractedCoreFxEngine {
     ensureEffectBuilderShadersRegistered();
     const atlas = getParticleAtlasTextures(scene);
     const boltCount = Math.max(1, Math.min(9, p.count || 3));
-    const launchGap = 85;
-
     for (let b = 0; b < boltCount; b++) {
       const lane = b - (boltCount - 1) / 2;
       const tok = targets[b % Math.max(1, targets.length)];
       const destPos = tok ? tok.root.position.clone() : new Vector3(2.8, 0, lane * 1.4);
-
       setTimeout(() => {
         const root = new TransformNode(`eb-volley-${b}-${Date.now()}`, scene);
         const { ribbonMesh, ribbonPositions, ribbonMat } = this.createRibbonTrail(scene, root, `eb-v-rib-${b}`, p.mainHex, p.coreHex);
@@ -109,7 +102,6 @@ export class ExtractedCoreFxEngine {
         headMat.disableLighting = true;
         headMat.alphaMode = Constants.ALPHA_ADD;
         head.material = headMat;
-
         const sample = (u: number): Vector3 => {
           const dx = destPos.x - casterPos.x;
           const dz = destPos.z - casterPos.z;
@@ -121,7 +113,6 @@ export class ExtractedCoreFxEngine {
           const inv = 1 - u;
           return spawn.scale(inv * inv).add(mid.scale(2 * inv * u)).add(dest.scale(u * u));
         };
-
         const t0 = performance.now();
         const obs = scene.onBeforeRenderObservable.add(() => {
           const elapsed = performance.now() - t0;
@@ -150,14 +141,13 @@ export class ExtractedCoreFxEngine {
             root.dispose();
           }
         });
-      }, b * launchGap);
+      }, b * 85);
     }
   }
 
   playObjectProjectile(
     scene: Scene, casterPos: Vector3, targetPos: Vector3, p: LayerExecutionParams,
-    targetInstance?: StudioTokenMiniatureInstance,
-    onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
+    targetInstance?: StudioTokenMiniatureInstance, onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
   ): void {
     const model = (p.variant || 'Tooth').toLowerCase();
     const mesh = model.includes('boulder') || model.includes('orb')
@@ -168,7 +158,6 @@ export class ExtractedCoreFxEngine {
     mat.emissiveColor = Color3.FromHexString(p.mainHex).scale(0.65);
     mesh.material = mat;
     mesh.isPickable = false;
-
     const origin = casterPos.add(new Vector3(0, 1.35, 0));
     const impact = targetPos.add(new Vector3(0, 1.1, 0));
     const t0 = performance.now();
@@ -223,21 +212,15 @@ export class ExtractedCoreFxEngine {
   }
 
   playCinematicVolume(
-    scene: Scene, casterPos: Vector3, targetPos: Vector3,
-    style: CinematicStyleKind, p: LayerExecutionParams,
-    targetInstance?: StudioTokenMiniatureInstance,
-    onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
+    scene: Scene, casterPos: Vector3, targetPos: Vector3, style: CinematicStyleKind, p: LayerExecutionParams,
+    targetInstance?: StudioTokenMiniatureInstance, onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
   ): void {
     ensureEffectBuilderShadersRegistered();
     const root = new TransformNode(`eb-cin-${style}-${Date.now()}`, scene);
     const mat = new ShaderMaterial(
       `eb-cin-mat-${Date.now()}`, scene,
       { vertex: 'loomCinematicVolume', fragment: 'loomCinematicVolume' },
-      {
-        attributes: ['position', 'uv'],
-        uniforms: ['worldViewProjection', 'uMain', 'uCore', 'uClock', 'uProgress', 'uStyle', 'uElement', 'uTurbulence', 'uAlpha'],
-        needAlphaBlending: true,
-      },
+      { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'uMain', 'uCore', 'uClock', 'uProgress', 'uStyle', 'uElement', 'uTurbulence', 'uAlpha'], needAlphaBlending: true },
     );
     mat.backFaceCulling = false;
     mat.alphaMode = Constants.ALPHA_COMBINE;
@@ -267,7 +250,6 @@ export class ExtractedCoreFxEngine {
     ground.parent = root;
     excludeMeshFromGlow(scene, ground);
 
-    // If Box Burst ('cube'), add a true 3D volumetric box shell so it isn't just a flat plane
     if (style === 'cube') {
       const cubeBox = MeshBuilder.CreateBox('eb-box-burst-vol', { size: 3.4 * p.scale }, scene);
       cubeBox.position.set(targetPos.x, 1.75 * p.scale, targetPos.z);
@@ -276,7 +258,6 @@ export class ExtractedCoreFxEngine {
       cubeBox.parent = root;
       excludeMeshFromGlow(scene, cubeBox);
     }
-
     if (targetInstance && onHitTarget) onHitTarget(targetInstance);
 
     const t0 = performance.now();
@@ -296,8 +277,7 @@ export class ExtractedCoreFxEngine {
 
   playDetailedBurst(
     scene: Scene, targetPos: Vector3, p: LayerExecutionParams,
-    targetInstance?: StudioTokenMiniatureInstance,
-    onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
+    targetInstance?: StudioTokenMiniatureInstance, onHitTarget?: (t: StudioTokenMiniatureInstance) => void,
   ): void {
     if (p.variant === 'simple') {
       this.playCinematicVolume(scene, targetPos, targetPos, 'nova', p, targetInstance, onHitTarget);
@@ -320,7 +300,6 @@ export class ExtractedCoreFxEngine {
     bb.isPickable = false;
     bb.parent = root;
     excludeMeshFromGlow(scene, bb);
-
     if (targetInstance && onHitTarget) onHitTarget(targetInstance);
 
     const t0 = performance.now();
@@ -347,7 +326,6 @@ export class ExtractedCoreFxEngine {
     mat.disableLighting = true;
     mat.alphaMode = Constants.ALPHA_ADD;
     ring.material = mat;
-
     const t0 = performance.now();
     const obs = scene.onBeforeRenderObservable.add(() => {
       const u = Math.min(1, (performance.now() - t0) / p.durationMs);
@@ -368,11 +346,7 @@ export class ExtractedCoreFxEngine {
     const mat = new ShaderMaterial(
       `eb-arc-mat-${Date.now()}`, scene,
       { vertex: 'loomArcaneVolume', fragment: 'loomArcaneVolume' },
-      {
-        attributes: ['position', 'uv'],
-        uniforms: ['worldViewProjection', 'uMain', 'uCore', 'uTime', 'uProgress', 'uMode', 'uVariant', 'uStrength'],
-        needAlphaBlending: true,
-      },
+      { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'uMain', 'uCore', 'uTime', 'uProgress', 'uMode', 'uVariant', 'uStrength'], needAlphaBlending: true },
     );
     mat.backFaceCulling = false;
     mat.alphaMode = Constants.ALPHA_COMBINE;
@@ -388,13 +362,8 @@ export class ExtractedCoreFxEngine {
     ground.parent = root;
     excludeMeshFromGlow(scene, ground);
 
-    // If Swirling Aura, add ascending 3D cylindrical shell around the anchor (not just a flat ground plane!)
     if (isAura) {
-      const cyl = MeshBuilder.CreateCylinder(
-        'eb-aura-cyl',
-        { diameterTop: 2.2 * p.scale, diameterBottom: 2.8 * p.scale, height: 2.8 * p.scale, tessellation: 28, sideOrientation: Mesh.DOUBLESIDE },
-        scene,
-      );
+      const cyl = MeshBuilder.CreateCylinder('eb-aura-cyl', { diameterTop: 2.2 * p.scale, diameterBottom: 2.8 * p.scale, height: 2.8 * p.scale, tessellation: 28, sideOrientation: Mesh.DOUBLESIDE }, scene);
       cyl.position.set(anchorPos.x, anchorPos.y + 1.45 * p.scale, anchorPos.z);
       cyl.material = mat;
       cyl.isPickable = false;
@@ -418,9 +387,7 @@ export class ExtractedCoreFxEngine {
     });
   }
 
-  playSmokeSparksOrDebris(
-    scene: Scene, anchorPos: Vector3, kind: 'smoke' | 'sparks' | 'debris', p: LayerExecutionParams,
-  ): void {
+  playSmokeSparksOrDebris(scene: Scene, anchorPos: Vector3, kind: 'smoke' | 'sparks' | 'debris', p: LayerExecutionParams): void {
     const atlas = getParticleAtlasTextures(scene);
     const root = new TransformNode(`eb-part-${kind}-${Date.now()}`, scene);
     const count = Math.max(6, Math.min(48, p.count || 20));
@@ -452,11 +419,7 @@ export class ExtractedCoreFxEngine {
       const u = Math.min(1, (performance.now() - t0) / p.durationMs);
       const grav = kind === 'smoke' ? -0.4 : 4.2;
       for (const it of items) {
-        it.mesh.position.set(
-          anchorPos.x + it.vx * dt,
-          Math.max(0.12, anchorPos.y + 0.35 + it.vy * dt - 0.5 * grav * dt * dt),
-          anchorPos.z + it.vz * dt,
-        );
+        it.mesh.position.set(anchorPos.x + it.vx * dt, Math.max(0.12, anchorPos.y + 0.35 + it.vy * dt - 0.5 * grav * dt * dt), anchorPos.z + it.vz * dt);
       }
       mat.alpha = p.opacity * (1 - u);
       if (u >= 1) {
@@ -467,9 +430,7 @@ export class ExtractedCoreFxEngine {
     });
   }
 
-  playLightAndSurfaceMark(
-    scene: Scene, anchorPos: Vector3, includeScorch: boolean, p: LayerExecutionParams,
-  ): void {
+  playLightAndSurfaceMark(scene: Scene, anchorPos: Vector3, includeScorch: boolean, p: LayerExecutionParams): void {
     const atlas = getParticleAtlasTextures(scene);
     const root = new TransformNode(`eb-light-mark-${Date.now()}`, scene);
     const light = new PointLight('eb-layer-light', new Vector3(anchorPos.x, anchorPos.y + 1.6, anchorPos.z), scene);
@@ -499,23 +460,16 @@ export class ExtractedCoreFxEngine {
       mat.alpha = 0.8 * gain;
       if (u >= 1) {
         scene.onBeforeRenderObservable.remove(obs);
-        light.dispose();
-        mat.dispose();
-        diff.dispose();
-        norm.dispose();
-        root.dispose();
+        [light, mat, diff, norm, root].forEach((d) => d.dispose());
       }
     });
   }
 
-  private createRibbonTrail(
-    scene: Scene, parent: TransformNode, name: string, flameHex: string, coreHex: string,
-  ): { ribbonMesh: Mesh; ribbonPositions: Float32Array; ribbonMat: ShaderMaterial } {
+  private createRibbonTrail(scene: Scene, parent: TransformNode, name: string, flameHex: string, coreHex: string) {
     const ribbonMesh = new Mesh(name, scene);
     ribbonMesh.isPickable = false;
     ribbonMesh.parent = parent;
     excludeMeshFromGlow(scene, ribbonMesh);
-
     const ribbonPositions = new Float32Array(34 * 2 * 3);
     const ribbonNormals = new Float32Array(34 * 2 * 3);
     const ribbonUVs = new Float32Array(34 * 2 * 2);
@@ -523,27 +477,11 @@ export class ExtractedCoreFxEngine {
     for (let i = 0; i < 34; i++) {
       ribbonUVs.set([i / 33, 0, i / 33, 1], i * 4);
       ribbonNormals.set([0, 1, 0, 0, 1, 0], i * 6);
-      if (i < 33) {
-        const j = i * 2;
-        ribbonIndices.push(j, j + 1, j + 2, j + 1, j + 3, j + 2);
-      }
+      if (i < 33) { const j = i * 2; ribbonIndices.push(j, j + 1, j + 2, j + 1, j + 3, j + 2); }
     }
-    const vd = new VertexData();
-    vd.positions = ribbonPositions;
-    vd.normals = ribbonNormals;
-    vd.uvs = ribbonUVs;
-    vd.indices = ribbonIndices;
+    const vd = Object.assign(new VertexData(), { positions: ribbonPositions, normals: ribbonNormals, uvs: ribbonUVs, indices: ribbonIndices });
     vd.applyToMesh(ribbonMesh, true);
-
-    const ribbonMat = new ShaderMaterial(
-      `${name}-mat`, scene,
-      { vertex: 'loomFireRibbon', fragment: 'loomFireRibbon' },
-      {
-        attributes: ['position', 'uv'],
-        uniforms: ['worldViewProjection', 'uFlame', 'uCore', 'uClock', 'uStrength'],
-        needAlphaBlending: true,
-      },
-    );
+    const ribbonMat = new ShaderMaterial(`${name}-mat`, scene, { vertex: 'loomFireRibbon', fragment: 'loomFireRibbon' }, { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'uFlame', 'uCore', 'uClock', 'uStrength'], needAlphaBlending: true });
     ribbonMat.backFaceCulling = false;
     ribbonMat.alphaMode = Constants.ALPHA_COMBINE;
     ribbonMat.setColor3('uFlame', Color3.FromHexString(flameHex));

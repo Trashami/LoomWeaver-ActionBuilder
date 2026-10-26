@@ -45,18 +45,26 @@
     <!-- Far-Left Vertical Icon Rail -->
     <lw-effect-tool-rail
       [activeTool]="studio.activeRailTool()"
-      (toolSelected)="studio.activeRailTool.set($event)" />
+      (toolSelected)="studio.selectRailTool($event)" />
 
-    <!-- Left Emitter Library Drawer -->
+    <!-- Left 3-Tab Library Drawer (Effects | Appearances | Presets) -->
     <lw-emitter-library-panel
+      [activeSection]="studio.activeLibrarySection()"
       [emitters]="studio.filteredEmitters()"
+      [appearances]="studio.appearances()"
+      [presets]="studio.presets()"
       [activeEmitterId]="studio.activeEmitterId()"
+      [activeAppearanceId]="studio.activeAppearanceId()"
+      [activePresetId]="studio.activePresetId()"
       [searchQuery]="studio.librarySearch()"
       [selectedCategory]="studio.libraryCategory()"
       [categories]="studio.categories()"
+      (sectionChanged)="studio.activeLibrarySection.set($event)"
       (searchChanged)="studio.librarySearch.set($event)"
       (categoryChanged)="studio.libraryCategory.set($event)"
-      (emitterSelected)="onEmitterSelected($event)" />
+      (emitterSelected)="onEmitterSelected($event)"
+      (appearanceSelected)="onAppearanceSelected($event)"
+      (presetSelected)="onPresetSelected($event)" />
 
     <!-- Center 3D Dungeon Stage + Bottom Multi-Track Timeline -->
     <div class="lw-fx-center-column">
@@ -90,7 +98,7 @@
         (trackExpandedToggled)="studio.toggleTrackExpanded($event)" />
     </div>
 
-    <!-- Right Properties, Layers & Advanced Inspector -->
+    <!-- Right Properties, Layers & Modifiers Inspector -->
     <lw-effect-properties-inspector
       [activeTab]="studio.activeInspectorTab()"
       [properties]="studio.activeProperties()"
@@ -100,6 +108,7 @@
       (tabChanged)="studio.activeInspectorTab.set($event)"
       (propertiesPatched)="studio.patchProperties($event)"
       (motionPatched)="studio.patchMotionForces($event)"
+      (trackPatched)="studio.patchTrack($event)"
       (trackVisibilityToggled)="studio.toggleTrackVisibility($event)"
       (addLayerRequested)="studio.addTimelineLayer()" />
   </main>
