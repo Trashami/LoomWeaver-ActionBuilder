@@ -52,6 +52,7 @@ public static class AuthAndCheckoutEndpoints
 
         api.MapPost("/auth/login", async (
             AuthLoginRequest req,
+            HttpContext httpCtx,
             LoomWeaverMySqlRepository repo,
             CancellationToken ct) =>
         {
@@ -77,6 +78,7 @@ public static class AuthAndCheckoutEndpoints
 
             var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
             var token = MySqlUserAuthStore.IssueHmacJwt(user, expiresAt);
+            AppendHttpOnlySessionCookie(httpCtx, token, expiresAt);
             var profile = MySqlUserAuthStore.ToContract(user);
             var legacyUser = MySqlUserAuthStore.ToLegacyUserDto(user);
 
@@ -93,6 +95,7 @@ public static class AuthAndCheckoutEndpoints
 
         api.MapPost("/auth/google", async (
             AuthGoogleLoginRequest req,
+            HttpContext httpCtx,
             LoomWeaverMySqlRepository repo,
             CancellationToken ct) =>
         {
@@ -106,6 +109,7 @@ public static class AuthAndCheckoutEndpoints
 
             var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
             var token = MySqlUserAuthStore.IssueHmacJwt(user, expiresAt);
+            AppendHttpOnlySessionCookie(httpCtx, token, expiresAt);
             var profile = MySqlUserAuthStore.ToContract(user);
             var legacyUser = MySqlUserAuthStore.ToLegacyUserDto(user);
 
@@ -114,6 +118,7 @@ public static class AuthAndCheckoutEndpoints
 
         api.MapPost("/auth/register", async (
             AuthRegisterRequest req,
+            HttpContext httpCtx,
             LoomWeaverMySqlRepository repo,
             CancellationToken ct) =>
         {
@@ -139,6 +144,7 @@ public static class AuthAndCheckoutEndpoints
 
                 var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
                 var token = MySqlUserAuthStore.IssueHmacJwt(user, expiresAt);
+                AppendHttpOnlySessionCookie(httpCtx, token, expiresAt);
                 var profile = MySqlUserAuthStore.ToContract(user);
                 var legacyUser = MySqlUserAuthStore.ToLegacyUserDto(user);
 
@@ -156,6 +162,12 @@ public static class AuthAndCheckoutEndpoints
             {
                 return Results.Conflict(new { message = ex.Message });
             }
+        });
+
+        api.MapPost("/auth/logout", (HttpContext httpCtx) =>
+        {
+            ClearHttpOnlySessionCookie(httpCtx);
+            return Results.Ok(new { success = true });
         });
 
         api.MapPost("/auth/request-account", (AuthAccountRequestDto req) =>
@@ -243,6 +255,13 @@ public static class AuthAndCheckoutEndpoints
             if (fromHeader is not null) return fromHeader;
         }
 
+        if (ctx.Request.Cookies.TryGetValue("lw_session_http", out var httpOnlyToken) &&
+            !string.IsNullOrWhiteSpace(httpOnlyToken))
+        {
+            var fromHttpCookie = MySqlUserAuthStore.VerifyHmacJwt(Uri.UnescapeDataString(httpOnlyToken));
+            if (fromHttpCookie is not null) return fromHttpCookie;
+        }
+
         if (ctx.Request.Cookies.TryGetValue("mw_auth_token", out var cookieToken) &&
             !string.IsNullOrWhiteSpace(cookieToken))
         {
@@ -251,5 +270,45 @@ public static class AuthAndCheckoutEndpoints
         }
 
         return null;
+    }
+
+    private static void AppendHttpOnlySessionCookie(HttpContext ctx, string token, DateTimeOffset expiresAt)
+    {
+        var host = ctx.Request.Host.Host.ToLowerInvariant();
+        var isHttps = ctx.Request.IsHttps ||
+                      string.Equals(ctx.Request.Headers["X-Forwarded-Proto"], "https", StringComparison.OrdinalIgnoreCase);
+
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            Expires = expiresAt
+        };
+
+        if (host.EndsWith("loom-weaver.com", StringComparison.Ordinal))
+        {
+            options.Domain = ".loom-weaver.com";
+        }
+
+        ctx.Response.Cookies.Append("lw_session_http", token, options);
+    }
+
+    private static void ClearHttpOnlySessionCookie(HttpContext ctx)
+    {
+        var host = ctx.Request.Host.Host.ToLowerInvariant();
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            Expires = DateTimeOffset.UnixEpoch
+        };
+        if (host.EndsWith("loom-weaver.com", StringComparison.Ordinal))
+        {
+            options.Domain = ".loom-weaver.com";
+        }
+        ctx.Response.Cookies.Delete("lw_session_http", options);
     }
 }

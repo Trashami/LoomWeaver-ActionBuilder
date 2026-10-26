@@ -304,6 +304,7 @@ export class AuthSessionService {
   }
 
   logout(): void {
+    this.http.post('/api/v2/auth/logout', {}).subscribe({ error: () => {} });
     this.clearLocalAndCookieState();
     void this.router.navigateByUrl('/welcome');
   }

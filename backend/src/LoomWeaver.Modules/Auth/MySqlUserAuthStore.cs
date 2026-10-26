@@ -24,8 +24,9 @@ public sealed record StoredUserRecord(
 
 public static class MySqlUserAuthStore
 {
-    private static readonly byte[] JwtSigningKey =
-        Encoding.UTF8.GetBytes("LoomWeaverV2-Polyglot-HMAC-SHA256-SigningKey-2026!");
+    private static readonly byte[] JwtSigningKey = Encoding.UTF8.GetBytes(
+        Environment.GetEnvironmentVariable("LOOMWEAVER_JWT_SECRET")
+        ?? "LoomWeaverV2-Polyglot-HMAC-SHA256-SigningKey-2026!");
 
     private const string GoogleClientId =
         "280529007750-q5jrb7qbln2hpcaf8a62j4125oied8qs.apps.googleusercontent.com";

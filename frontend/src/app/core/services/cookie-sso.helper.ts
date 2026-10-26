@@ -157,6 +157,13 @@ export function mountGoogleSignInButton(
       const ssoUrl = `https://www.loom-weaver.com/google-sso.html?origin=${encodeURIComponent(window.location.origin)}`;
       window.open(ssoUrl, 'mw_google_sso', 'width=460,height=560,resizable=yes,scrollbars=yes');
       const onMessage = (ev: MessageEvent) => {
+        if (
+          ev.origin !== 'https://www.loom-weaver.com' &&
+          ev.origin !== 'https://loom-weaver.com' &&
+          !ev.origin.startsWith('http://localhost:')
+        ) {
+          return;
+        }
         if (!ev.data || typeof ev.data !== 'object') return;
         if (ev.data.type === 'MW_GOOGLE_SSO_SESSION' && ev.data.token) {
           window.removeEventListener('message', onMessage);

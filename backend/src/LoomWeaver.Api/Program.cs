@@ -38,7 +38,11 @@ namespace LoomWeaver.Api
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
-                    policy.SetIsOriginAllowed(_ => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+                    policy
+                        .SetIsOriginAllowed(SecurityHardeningMiddleware.IsTrustedOrigin)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials());
             });
 
             var app = builder.Build();
@@ -48,17 +52,28 @@ namespace LoomWeaver.Api
             var repo = app.Services.GetRequiredService<LoomWeaverMySqlRepository>();
             _ = Task.Run(() => MySqlUserAuthStore.EnsureDatabaseReadyAsync(repo));
 
-            // Enforce unified JWT / .loom-weaver.com cookie authentication across all API routes
+            // Enforce OWASP security headers, auth rate-limiting, and unified JWT / HttpOnly cookie auth
             app.Use(async (context, next) =>
             {
+                SecurityHardeningMiddleware.ApplySecurityHeaders(context);
+
                 var path = context.Request.Path.Value ?? string.Empty;
                 if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (SecurityHardeningMiddleware.IsRateLimitedAuthRequest(context, path))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsync("{\"message\":\"Too many authentication attempts. Please wait 60 seconds and try again.\"}");
+                        return;
+                    }
+
                     var isPublicAuthOrHealth =
                         path.EndsWith("/health", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/login", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/register", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/google", StringComparison.OrdinalIgnoreCase) ||
+                        path.EndsWith("/auth/logout", StringComparison.OrdinalIgnoreCase) ||
                         path.EndsWith("/auth/request-account", StringComparison.OrdinalIgnoreCase);
 
                     if (!isPublicAuthOrHealth)
