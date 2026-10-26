@@ -5,8 +5,10 @@ import { NgpButton } from 'ng-primitives/button';
 import { NgpTabButton, NgpTabList, NgpTabset } from 'ng-primitives/tabs';
 import { EntityCardVm } from '../../../core/models/loomweaver.models';
 import {
+  LocationAttributeVm,
   LocationInspectorDetailVm,
   LocationRelatedEntityVm,
+  LoreEntryVm,
 } from '../../../core/models/world-lore.models';
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
@@ -36,8 +38,14 @@ export class LwLocationInspectorComponent {
   readonly location = input.required<LocationInspectorDetailVm>();
   readonly isGm = input<boolean>(false);
   readonly linkableEntities = input<readonly EntityCardVm[]>([]);
+  readonly loreEntries = input<readonly LoreEntryVm[]>([]);
+  readonly repositioningActive = input<boolean>(false);
 
   readonly closeRequested = output<void>();
+  readonly parentLocationSelected = output<string>();
+  readonly loreSelected = output<string>();
+  readonly repositionRequested = output<string | null>();
+  readonly openMapEditorRequested = output<string>();
   readonly relatedEntitySelected = output<LocationRelatedEntityVm>();
   readonly childMapRequested = output<string>();
   readonly secretRevealRequested = output<{ locationKey: string; secretId: string }>();
@@ -89,6 +97,66 @@ export class LwLocationInspectorComponent {
     }
     return base;
   });
+
+  readonly resolvedLoreArticles = computed(() => {
+    const loc = this.location();
+    const allLore = this.loreEntries();
+    return loc.linkedLoreIds.map((id) => {
+      const found = allLore.find((l) => l.id === id);
+      return found ?? {
+        id,
+        title: id.replace(/^lore-/, '').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        category: 'Campaign Codex',
+      };
+    });
+  });
+
+  toggleReposition(): void {
+    const loc = this.location();
+    this.repositionRequested.emit(this.repositioningActive() ? null : loc.locationKey);
+  }
+
+  onParentClicked(): void {
+    const parentKey = this.location().parentLocationKey;
+    if (parentKey) {
+      this.parentLocationSelected.emit(parentKey);
+    }
+  }
+
+  onAttributeClicked(attr: LocationAttributeVm): void {
+    if (attr.linkTargetKey) {
+      if (attr.linkType === 'location') {
+        this.parentLocationSelected.emit(attr.linkTargetKey);
+        return;
+      }
+      if (attr.linkType === 'lore') {
+        this.loreSelected.emit(attr.linkTargetKey);
+        return;
+      }
+      if (attr.linkType === 'entity') {
+        this.relatedEntitySelected.emit({
+          compositeKey: attr.linkTargetKey,
+          name: attr.value,
+          subtitle: attr.label,
+          entityType: 'NPC',
+          relationshipLabel: attr.label,
+          routeLink: '/campaigns',
+          visibility: 'players',
+        });
+        return;
+      }
+    }
+    const valLower = attr.value.toLowerCase();
+    const matchEnt = this.location().relatedEntities.find((r) => valLower.includes(r.name.toLowerCase()));
+    if (matchEnt) {
+      this.relatedEntitySelected.emit(matchEnt);
+      return;
+    }
+    const matchLore = this.resolvedLoreArticles()[0];
+    if (matchLore) {
+      this.loreSelected.emit(matchLore.id);
+    }
+  }
 
   openEditLocation(): void {
     const loc = this.location();

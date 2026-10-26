@@ -3,13 +3,26 @@
   ngpTabset
   [ngpTabsetValue]="activeTab()"
   class="lw-loc-inspector"
-  aria-label="World Location Contextual Inspector"
+  aria-label="Inspect Location Properties and Hyperlinked Canon"
 >
   <header class="lw-loc-inspector__header">
     <div class="lw-loc-inspector__title-wrap">
+      <span class="lw-loc-inspector__eyebrow">INSPECT · LOCATION PROPERTIES</span>
       <h2 class="lw-loc-inspector__title">{{ loc.name }}</h2>
       @if (loc.parentLocationName) {
-        <span class="lw-loc-inspector__parent">{{ loc.hierarchyLevel }} · {{ loc.parentLocationName }}</span>
+        @if (loc.parentLocationKey) {
+          <button
+            ngpButton
+            type="button"
+            class="lw-loc-inspector__parent-link"
+            (click)="onParentClicked()"
+          >
+            <span>{{ loc.hierarchyLevel }} · {{ loc.parentLocationName }}</span>
+            <lw-icon name="arrow-right" [size]="11" />
+          </button>
+        } @else {
+          <span class="lw-loc-inspector__parent">{{ loc.hierarchyLevel }} · {{ loc.parentLocationName }}</span>
+        }
       }
     </div>
     <button
@@ -42,7 +55,6 @@
   </nav>
 
   <div class="lw-loc-inspector__body">
-    <!-- Artwork & Badges -->
     <div class="lw-loc-inspector__art-frame">
       <img [src]="loc.artworkUrl" [alt]="loc.name" class="lw-loc-inspector__art" />
     </div>
@@ -56,12 +68,26 @@
       }
     </div>
 
-    <!-- GM Action Toolbar -->
+    <!-- GM Action Toolbar (Including Drag/Move & Map Editor Studio) -->
     @if (isGm()) {
       <div class="lw-loc-inspector__gm-bar">
+        <button
+          ngpButton
+          type="button"
+          class="lw-gm-chip"
+          [class.lw-gm-chip--active]="repositioningActive()"
+          (click)="toggleReposition()"
+        >
+          <lw-icon name="map-pin" [size]="12" />
+          <span>{{ repositioningActive() ? 'Dragging on Map (Click Pin to Set)' : 'Move / Drag Location' }}</span>
+        </button>
+        <button ngpButton type="button" class="lw-gm-chip lw-gm-chip--emerald" (click)="openMapEditorRequested.emit(loc.locationKey)">
+          <lw-icon name="compass" [size]="12" />
+          <span>Customize Icon & Map</span>
+        </button>
         <button ngpButton type="button" class="lw-gm-chip" (click)="openEditLocation()">
           <lw-icon name="pen" [size]="12" />
-          <span>Edit</span>
+          <span>Edit Properties</span>
         </button>
         <button ngpButton type="button" class="lw-gm-chip" (click)="openAddSublocation()">
           <lw-icon name="plus" [size]="12" />
@@ -71,12 +97,6 @@
           <lw-icon name="link" [size]="12" />
           <span>Link Entity</span>
         </button>
-        @if (loc.childMapId; as childMap) {
-          <button ngpButton type="button" class="lw-gm-chip" (click)="childMapRequested.emit(childMap)">
-            <lw-icon name="map" [size]="12" />
-            <span>Sub-Map</span>
-          </button>
-        }
       </div>
     }
 
@@ -95,12 +115,7 @@
           </label>
           <label>
             <span>Relationship Role</span>
-            <input
-              type="text"
-              [ngModel]="linkRoleLabel()"
-              (ngModelChange)="linkRoleLabel.set($event)"
-              placeholder="e.g. Notable NPC, Ruling Faction, Active Quest"
-            />
+            <input type="text" [ngModel]="linkRoleLabel()" (ngModelChange)="linkRoleLabel.set($event)" placeholder="e.g. Notable NPC, Ruling Faction" />
           </label>
           <div class="lw-loc-inspector__editor-btns">
             <lw-button variant="gold" size="sm" (pressed)="submitEntityLink()">Save Link</lw-button>
@@ -149,11 +164,7 @@
           </div>
           <label>
             <span>Description</span>
-            <textarea
-              rows="3"
-              [ngModel]="editDescription()"
-              (ngModelChange)="editDescription.set($event)"
-            ></textarea>
+            <textarea rows="3" [ngModel]="editDescription()" (ngModelChange)="editDescription.set($event)"></textarea>
           </label>
           <div class="lw-loc-inspector__editor-btns">
             <lw-button variant="gold" size="sm" (pressed)="submitLocationForm()">Save</lw-button>
@@ -167,29 +178,76 @@
       @case ('overview') {
         <p class="lw-loc-inspector__desc">{{ loc.description }}</p>
 
+        <!-- Attached Maps & Sessions Hyperlink Strip -->
+        <div class="lw-loc-inspector__hyperlinks">
+          @if (loc.attachedSessionLabel; as sessLabel) {
+            <a ngpButton class="lw-hyperlink-chip" [routerLink]="'/campaigns'" [queryParams]="{ session: loc.attachedSessionId }">
+              <lw-icon name="book-open" [size]="12" />
+              <span>{{ sessLabel }}</span>
+              <lw-icon name="arrow-right" [size]="11" />
+            </a>
+          }
+          @if (loc.childMapId; as childMap) {
+            <button ngpButton type="button" class="lw-hyperlink-chip lw-hyperlink-chip--emerald" (click)="childMapRequested.emit(childMap)">
+              <lw-icon name="map" [size]="12" />
+              <span>Open Attached Regional Map ({{ childMap }})</span>
+              <lw-icon name="arrow-right" [size]="11" />
+            </button>
+          }
+          @if (loc.linkedSceneKey; as sceneKey) {
+            <a ngpButton class="lw-hyperlink-chip" [routerLink]="'/maps'" [queryParams]="{ scene: sceneKey }">
+              <lw-icon name="swords" [size]="12" />
+              <span>Open Linked Tactical Battlemap ({{ sceneKey }})</span>
+              <lw-icon name="arrow-right" [size]="11" />
+            </a>
+          }
+        </div>
+
         @if (loc.attributes.length > 0) {
           <dl class="lw-loc-inspector__attrs">
             @for (attr of loc.attributes; track attr.label) {
               <div class="lw-loc-inspector__attr-row">
                 <dt>{{ attr.label }}</dt>
-                <dd>{{ attr.value }}</dd>
+                <dd>
+                  <button
+                    ngpButton
+                    type="button"
+                    class="lw-attr-link"
+                    (click)="onAttributeClicked(attr)"
+                  >
+                    <span>{{ attr.value }}</span>
+                    <lw-icon name="arrow-right" [size]="11" />
+                  </button>
+                </dd>
               </div>
             }
           </dl>
         }
 
+        @if (resolvedLoreArticles().length > 0) {
+          <div class="lw-loc-inspector__block">
+            <h3 class="lw-loc-inspector__section-title">LINKED LORE CODEX ARTICLES</h3>
+            <div class="lw-loc-inspector__rel-list">
+              @for (art of resolvedLoreArticles(); track art.id) {
+                <button ngpButton type="button" class="lw-rel-card" (click)="loreSelected.emit(art.id)">
+                  <div class="lw-rel-card__copy">
+                    <strong>{{ art.title }}</strong>
+                    <small>{{ art.category }} · Click to read in Lore Library</small>
+                  </div>
+                  <lw-icon name="arrow-right" [size]="13" />
+                </button>
+              }
+            </div>
+          </div>
+        }
+
         <div class="lw-loc-inspector__block">
-          <h3 class="lw-loc-inspector__section-title">RELATED ENTITIES</h3>
+          <h3 class="lw-loc-inspector__section-title">RELATED ENTITIES & HYPERLINKS</h3>
           <div class="lw-loc-inspector__rel-list">
             @for (rel of loc.relatedEntities; track rel.compositeKey) {
               <div class="lw-rel-row">
                 <span class="lw-rel-row__role">{{ rel.relationshipLabel }}</span>
-                <button
-                  ngpButton
-                  type="button"
-                  class="lw-rel-card"
-                  (click)="relatedEntitySelected.emit(rel)"
-                >
+                <button ngpButton type="button" class="lw-rel-card" (click)="relatedEntitySelected.emit(rel)">
                   <div class="lw-rel-card__copy">
                     <strong>{{ rel.name }}</strong>
                     <small>{{ rel.subtitle }}</small>
@@ -207,14 +265,7 @@
               <span class="lw-loc-inspector__section-title lw-loc-inspector__section-title--gold">
                 GM SECRETS ({{ loc.secrets.length }})
               </span>
-              <button
-                ngpButton
-                type="button"
-                class="lw-view-all-btn"
-                (click)="activeTab.set('secrets')"
-              >
-                Manage
-              </button>
+              <button ngpButton type="button" class="lw-view-all-btn" (click)="activeTab.set('secrets')">Manage</button>
             </div>
             @for (sec of loc.secrets; track sec.id) {
               <div class="lw-secret-card" [class.lw-secret-card--revealed]="sec.revealedToPlayers">
@@ -251,6 +302,20 @@
             <h4>Local Myths & Rumors</h4>
             <p>{{ loc.localMyths }}</p>
           </div>
+          @if (resolvedLoreArticles().length > 0) {
+            <div class="lw-loc-inspector__block">
+              <h3 class="lw-loc-inspector__section-title">LINKED LORE ENCYCLOPEDIA ENTRIES</h3>
+              @for (art of resolvedLoreArticles(); track art.id) {
+                <button ngpButton type="button" class="lw-rel-card" (click)="loreSelected.emit(art.id)">
+                  <div class="lw-rel-card__copy">
+                    <strong>{{ art.title }}</strong>
+                    <small>{{ art.category }}</small>
+                  </div>
+                  <lw-icon name="arrow-right" [size]="13" />
+                </button>
+              }
+            </div>
+          }
           <div class="lw-loc-inspector__tags">
             @for (tag of loc.tags; track tag) {
               <lw-badge [label]="tag" tone="neutral" />
@@ -264,12 +329,7 @@
           <h3 class="lw-loc-inspector__section-title">CONNECTED NPCS, FACTIONS & QUESTS</h3>
           <div class="lw-loc-inspector__rel-list">
             @for (rel of loc.relatedEntities; track rel.compositeKey) {
-              <button
-                ngpButton
-                type="button"
-                class="lw-rel-card"
-                (click)="relatedEntitySelected.emit(rel)"
-              >
+              <button ngpButton type="button" class="lw-rel-card" (click)="relatedEntitySelected.emit(rel)">
                 <div class="lw-rel-card__copy">
                   <strong>{{ rel.name }}</strong>
                   <small>{{ rel.relationshipLabel }} · {{ rel.subtitle }}</small>
@@ -279,12 +339,7 @@
             }
           </div>
           @if (loc.linkedSceneKey; as sceneKey) {
-            <a
-              ngpButton
-              class="lw-scene-jump-link"
-              [routerLink]="'/maps'"
-              [queryParams]="{ scene: sceneKey }"
-            >
+            <a ngpButton class="lw-scene-jump-link" [routerLink]="'/maps'" [queryParams]="{ scene: sceneKey }">
               <span>Open Linked Map Scene ({{ sceneKey }})</span>
               <lw-icon name="arrow-right" [size]="13" />
             </a>
