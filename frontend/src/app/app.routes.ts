@@ -4,7 +4,33 @@ export const APP_ROUTES: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'home',
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'welcome',
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'marketing',
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'features/:slug',
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
   {
     path: 'home',
@@ -87,5 +113,5 @@ export const APP_ROUTES: Routes = [
   { path: 'monsters', redirectTo: 'encounters', pathMatch: 'full' },
   { path: 'spells', redirectTo: 'effects', pathMatch: 'full' },
   { path: 'items', redirectTo: 'assets', pathMatch: 'full' },
-  { path: '**', redirectTo: 'home' },
+  { path: '**', redirectTo: '' },
 ];

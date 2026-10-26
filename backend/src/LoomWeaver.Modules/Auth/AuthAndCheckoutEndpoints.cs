@@ -118,9 +118,11 @@ public static class AuthAndCheckoutEndpoints
 
         api.MapPost("/auth/login", (AuthLoginRequest req) =>
         {
+            var identifier = (req.AccountId ?? string.Empty).Trim();
             var profile = Accounts.FirstOrDefault(a =>
-                string.Equals(a.AccountId, req.AccountId, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(a.Username, req.AccountId, StringComparison.OrdinalIgnoreCase))
+                string.Equals(a.AccountId, identifier, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(a.Username, identifier, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(a.Email, identifier, StringComparison.OrdinalIgnoreCase))
                 ?? Accounts[0];
 
             var expiresAt = DateTimeOffset.UtcNow.AddDays(7);
@@ -131,6 +133,60 @@ public static class AuthAndCheckoutEndpoints
                 "auth_switch",
                 profile.DisplayName,
                 $"Authenticated session switched to {profile.DisplayName} (Role={profile.Role.ToUpperInvariant()}, Witness={profile.BoundCharacter}).",
+                "{}"
+            );
+
+            return Results.Ok(new AuthSessionResponse(token, expiresAt, profile));
+        });
+
+        api.MapPost("/auth/register", (AuthRegisterRequest req) =>
+        {
+            var email = string.IsNullOrWhiteSpace(req.Email)
+                ? $"chronicler{Accounts.Count + 1}@loom-weaver.com"
+                : req.Email.Trim().ToLowerInvariant();
+            var existing = Accounts.FirstOrDefault(a =>
+                string.Equals(a.Email, email, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+            {
+                var existingExpires = DateTimeOffset.UtcNow.AddDays(7);
+                return Results.Ok(new AuthSessionResponse(IssueHmacJwt(existing, existingExpires), existingExpires, existing));
+            }
+
+            var role = string.Equals(req.Role, "players", StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(req.Role, "player", StringComparison.OrdinalIgnoreCase)
+                ? "players"
+                : "gm";
+            var username = !string.IsNullOrWhiteSpace(req.Username)
+                ? req.Username.Trim().ToLowerInvariant()
+                : email.Split('@')[0];
+            var displayName = !string.IsNullOrWhiteSpace(req.DisplayName)
+                ? req.DisplayName.Trim()
+                : $"{username} · {(role == "gm" ? "Game Master" : "Free Player Seat")}";
+            var tierCode = role == "gm" ? "loremaster" : "free_player";
+            var boundCharacter = role == "gm" ? "GM" : "Fivi";
+
+            var profile = new UserAccountProfileContract(
+                $"acc-{role}-{Guid.NewGuid():N}"[..18],
+                username,
+                displayName,
+                email,
+                role,
+                tierCode,
+                boundCharacter,
+                role == "gm" ? new[] { "asset-map-cinth", "asset-dice-runed-obsidian" } : new[] { "asset-dice-runed-obsidian" },
+                0.00
+            );
+
+            Accounts.Insert(0, profile);
+
+            var expiresAt = DateTimeOffset.UtcNow.AddDays(7);
+            var token = IssueHmacJwt(profile, expiresAt);
+
+            TableRealtimeEndpoints.RecordEvent(
+                1,
+                "auth_register",
+                profile.DisplayName,
+                $"New LoomWeaver account registered: {profile.DisplayName} ({profile.Email}, Role={profile.Role.ToUpperInvariant()}).",
                 "{}"
             );
 

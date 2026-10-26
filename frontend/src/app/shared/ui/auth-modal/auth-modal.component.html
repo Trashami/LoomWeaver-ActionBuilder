@@ -1,0 +1,189 @@
+@if (auth.authModalOpen()) {
+  <div
+    class="lw-auth-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="lw-auth-modal-title"
+    (click)="auth.closeAuthModal()"
+  >
+    <div class="lw-auth-dialog" (click)="$event.stopPropagation()">
+      <header class="lw-auth-header">
+        <div class="lw-auth-brand">
+          <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-auth-logo" />
+          <div>
+            <span class="lw-auth-eyebrow">LoomWeaver Sanctuary</span>
+            <h2 id="lw-auth-modal-title">
+              {{ auth.authModalTab() === 'login' ? 'Sign In to Your World' : 'Create Your Free Account' }}
+            </h2>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="lw-auth-close"
+          aria-label="Close authentication dialog"
+          (click)="auth.closeAuthModal()"
+        >
+          <lw-icon name="X" [size]="18" />
+        </button>
+      </header>
+
+      <div class="lw-auth-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="lw-auth-tab"
+          [class.lw-auth-tab--active]="auth.authModalTab() === 'login'"
+          [attr.aria-selected]="auth.authModalTab() === 'login'"
+          (click)="auth.authModalTab.set('login')"
+        >
+          <lw-icon name="KeyRound" [size]="15" />
+          <span>Sign In</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="lw-auth-tab"
+          [class.lw-auth-tab--active]="auth.authModalTab() === 'register'"
+          [attr.aria-selected]="auth.authModalTab() === 'register'"
+          (click)="auth.authModalTab.set('register')"
+        >
+          <lw-icon name="UserPlus" [size]="15" />
+          <span>Create Account</span>
+        </button>
+      </div>
+
+      @if (auth.authError()) {
+        <div class="lw-auth-alert" role="alert">
+          <lw-icon name="AlertTriangle" [size]="16" />
+          <span>{{ auth.authError() }}</span>
+        </div>
+      }
+
+      @if (auth.authModalTab() === 'login') {
+        <form class="lw-auth-form" (ngSubmit)="submitLogin()">
+          <label class="lw-auth-field">
+            <span>Email Address or Username</span>
+            <input
+              type="text"
+              name="loginIdentifier"
+              autocomplete="username"
+              placeholder="gm@loom-weaver.com or trashami"
+              [ngModel]="loginIdentifier()"
+              (ngModelChange)="loginIdentifier.set($event)"
+            />
+          </label>
+
+          <label class="lw-auth-field">
+            <span>Password</span>
+            <input
+              type="password"
+              name="loginPassword"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              [ngModel]="loginPassword()"
+              (ngModelChange)="loginPassword.set($event)"
+            />
+          </label>
+
+          <div class="lw-auth-actions">
+            <lw-button variant="gold" size="md" icon="Sparkles" (pressed)="submitLogin()">
+              Sign In &amp; Enter Studio
+            </lw-button>
+          </div>
+        </form>
+      } @else {
+        <form class="lw-auth-form" (ngSubmit)="submitRegister()">
+          <label class="lw-auth-field">
+            <span>Email Address</span>
+            <input
+              type="email"
+              name="registerEmail"
+              autocomplete="email"
+              placeholder="you@realm.com"
+              [ngModel]="registerEmail()"
+              (ngModelChange)="registerEmail.set($event)"
+            />
+          </label>
+
+          <label class="lw-auth-field">
+            <span>Display Name / Table Handle</span>
+            <input
+              type="text"
+              name="registerDisplayName"
+              autocomplete="name"
+              placeholder="Archmage Valen or Fivi"
+              [ngModel]="registerDisplayName()"
+              (ngModelChange)="registerDisplayName.set($event)"
+            />
+          </label>
+
+          <label class="lw-auth-field">
+            <span>Password</span>
+            <input
+              type="password"
+              name="registerPassword"
+              autocomplete="new-password"
+              placeholder="At least 4 characters"
+              [ngModel]="registerPassword()"
+              (ngModelChange)="registerPassword.set($event)"
+            />
+          </label>
+
+          <div class="lw-auth-role-picker">
+            <span class="lw-auth-role-label">Account Seat Type</span>
+            <div class="lw-auth-role-grid">
+              <button
+                type="button"
+                class="lw-auth-role-card"
+                [class.lw-auth-role-card--active]="registerRole() === 'gm'"
+                (click)="registerRole.set('gm')"
+              >
+                <lw-icon name="Crown" [size]="16" />
+                <strong>Game Master &amp; Creator</strong>
+                <span>Full worldbuilding, LoomMaps studio, Weave AI &amp; 85/15 Marketplace</span>
+              </button>
+              <button
+                type="button"
+                class="lw-auth-role-card"
+                [class.lw-auth-role-card--active]="registerRole() === 'players'"
+                (click)="registerRole.set('players')"
+              >
+                <lw-icon name="Shield" [size]="16" />
+                <strong>Free Player Seat</strong>
+                <span>100% free forever — character sheets, 2.5D VTT &amp; witness-scoped Loom</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="lw-auth-actions">
+            <lw-button variant="gold" size="md" icon="UserPlus" (pressed)="submitRegister()">
+              Create Free Account &amp; Enter World
+            </lw-button>
+          </div>
+        </form>
+      }
+
+      <div class="lw-auth-quick">
+        <div class="lw-auth-quick__header">
+          <span>Instant Campaign Seat Switcher (JWT Demo Accounts)</span>
+          <lw-badge label="HMAC-SHA256 Verified" tone="emerald" icon="ShieldCheck" />
+        </div>
+        <div class="lw-auth-quick__grid">
+          @for (acc of auth.accounts().slice(0, 4); track acc.accountId) {
+            <button
+              type="button"
+              class="lw-auth-seat-btn"
+              (click)="quickSignIn(acc.accountId)"
+            >
+              <div class="lw-auth-seat-btn__top">
+                <strong>{{ acc.displayName }}</strong>
+                <span class="lw-auth-seat-btn__role">{{ acc.role === 'gm' ? 'GM' : 'FREE PLAYER' }}</span>
+              </div>
+              <span class="lw-auth-seat-btn__email">{{ acc.email }} · Witness: {{ acc.boundCharacter }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

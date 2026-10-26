@@ -44,6 +44,14 @@ public sealed record AuthLoginRequest(
     string? PasswordOrPin
 );
 
+public sealed record AuthRegisterRequest(
+    string Email,
+    string DisplayName,
+    string? Username,
+    string? Password,
+    string? Role
+);
+
 public sealed record AuthSessionResponse(
     string Token,
     DateTimeOffset ExpiresAt,

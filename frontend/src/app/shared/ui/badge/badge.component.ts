@@ -6,6 +6,7 @@ export type LwBadgeTone =
   | 'gold'
   | 'emerald'
   | 'crimson'
+  | 'violet'
   | 'gm'
   | 'players'
   | 'public'

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 @Component({
   selector: 'lw-icon',
@@ -10,6 +10,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 export class LwIconComponent {
   readonly name = input.required<string>();
   readonly size = input<number>(16);
+
+  readonly normalizedName = computed(() =>
+    (this.name() || '')
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .toLowerCase(),
+  );
 }
 
 export { LwIconComponent as IconComponent };

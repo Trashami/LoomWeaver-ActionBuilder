@@ -2,12 +2,172 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>LoomWeaver V2 · Connected Tabletop RPG Campaign Studio</title>
+  <title>LoomWeaver | AI-Assisted TTRPG Campaign Management, Living Lore Memory &amp; Virtual Tabletop</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <meta name="description" content="LoomWeaver is the living world platform for D&amp;D 5e and tabletop RPGs. Search your campaign canon with The Loom (free), draft lore with The Weave under 100% GM authorship, and play on a 2.5D Virtual Tabletop.">
+  <meta name="keywords" content="TTRPG campaign manager, D&amp;D 5e virtual tabletop, VTT, RPG worldbuilding tool, campaign wiki, Game Master assistant, tabletop RPG software, LoomWeaver, LoomMaps">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="canonical" href="https://loom-weaver.com/">
+
+  <!-- Open Graph / Social Discovery -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LoomWeaver">
+  <meta property="og:title" content="LoomWeaver — Your Campaign. One Living World.">
+  <meta property="og:description" content="Unify campaign memory, optional GM-controlled worldbuilding, and 2.5D virtual tabletop combat in one platform. Free for players forever.">
+  <meta property="og:url" content="https://loom-weaver.com/">
+  <meta property="og:image" content="https://loom-weaver.com/tactical-combat-live-ui.jpg">
+  <meta property="og:image:alt" content="LoomWeaver 2.5D Virtual Tabletop and Campaign Knowledge Graph">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LoomWeaver — Your Campaign. One Living World.">
+  <meta name="twitter:description" content="Free living campaign memory (The Loom), GM-authored worldbuilding (The Weave), and a unified 2.5D Virtual Tabletop.">
+  <meta name="twitter:image" content="https://loom-weaver.com/tactical-combat-live-ui.jpg">
+
+  <!-- Structured Data (JSON-LD) for Search Engines & Rich Results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://loom-weaver.com/#organization",
+        "name": "LoomWeaver",
+        "url": "https://loom-weaver.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://loom-weaver.com/LoomWeaver.png"
+        },
+        "description": "Creator-first tabletop RPG platform combining living campaign memory, optional AI worldbuilding with 100% GM authorship, and an integrated 2.5D Virtual Tabletop."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://loom-weaver.com/#website",
+        "url": "https://loom-weaver.com/",
+        "name": "LoomWeaver",
+        "publisher": { "@id": "https://loom-weaver.com/#organization" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://loom-weaver.com/#application",
+        "name": "LoomWeaver",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web Browser",
+        "url": "https://loom-weaver.com/",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "Free forever for players and free Loom campaign memory search."
+        },
+        "featureList": [
+          "The Loom: Free natural-language campaign memory with per-player knowledge isolation and zero hallucination",
+          "The Weave: Optional creative worldbuilding companion with 100% GM review and authorship control",
+          "2.5D Virtual Tabletop with dynamic lighting, fog of war, 3D physics dice, and automated action economy",
+          "LoomMaps: Pro battle map and world atlas authoring studio with cutaway walls and ribbon splines",
+          "Creator Marketplace with an 85/15 creator-first revenue split"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://loom-weaver.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does LoomWeaver write my story or replace the Game Master?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Never. The Loom only searches and synthesizes your established campaign notes and session history—it never invents new canon. When you use The Weave to brainstorm NPCs, quests, or encounters, every draft requires explicit GM review to edit, re-weave, or reject before anything enters your world."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do my players have to pay for a subscription to join my table?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Players join via frictionless invite links for free and never need a paid subscription to access character sheets, the 2.5D Virtual Tabletop, or player-scoped Loom memory."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does LoomWeaver protect GM secrets from players?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Every note, NPC dossier, location, and session log supports granular privacy scoping—private to an individual player, shared with the GM only, or revealed to the party. When a player queries The Loom, it only synthesizes facts their specific character has witnessed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the revenue split on the LoomWeaver Creator Marketplace?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LoomWeaver offers a creator-first 85/15 revenue split on custom campaigns, adventure modules, maps, and ready-to-run encounters."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
 </head>
 <body>
-  <lw-root></lw-root>
+  <lw-root>
+    <!-- Pre-rendered semantic shell for search engine crawlers & instant First Contentful Paint -->
+    <main class="ssr-marketing-shell" style="max-width:1120px;margin:0 auto;padding:3rem 1.5rem;color:#f5ede0;font-family:'Inter',system-ui,sans-serif;background:#0b0f14;">
+      <header style="border-bottom:1px solid rgba(212,168,87,0.22);padding-bottom:1.5rem;margin-bottom:2.5rem;">
+        <p style="text-transform:uppercase;letter-spacing:0.16em;font-size:0.75rem;color:#d4a857;margin:0 0 0.5rem;">LoomWeaver — Tabletop RPG Operating System</p>
+        <h1 style="font-family:'Cinzel',Georgia,serif;font-size:2.5rem;line-height:1.15;margin:0 0 1rem;color:#fffdf9;">Your Campaign. One Living World.</h1>
+        <p style="font-size:1.125rem;line-height:1.65;color:#d6c7b2;max-width:68ch;margin:0;">
+          LoomWeaver unifies living campaign memory, optional GM-authored worldbuilding, and a 2.5D Virtual Tabletop into a single dark-fantasy studio. Built for D&amp;D 5e and custom tabletop RPG worlds—100% free for your players.
+        </p>
+      </header>
+
+      <section aria-labelledby="ssr-pillars-heading" style="margin-bottom:2.5rem;">
+        <h2 id="ssr-pillars-heading" style="font-family:'Cinzel',Georgia,serif;font-size:1.5rem;color:#f5ede0;margin:0 0 1rem;">Three Pillars Designed Around the Game Master</h2>
+        <div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
+          <article style="padding:1.25rem;border:1px solid rgba(212,168,87,0.2);border-radius:12px;background:rgba(19,26,36,0.85);">
+            <h3 style="font-family:'Cinzel',Georgia,serif;font-size:1.15rem;color:#d4a857;margin:0 0 0.5rem;">The Loom — Free Living Campaign Memory</h3>
+            <p style="margin:0;color:#d6c7b2;line-height:1.55;font-size:0.95rem;">
+              Ask natural-language questions across every session recap, NPC dossier, faction, and location. Zero generation—The Loom only cites your canon and enforces per-player knowledge isolation so GM secrets stay hidden.
+            </p>
+          </article>
+          <article style="padding:1.25rem;border:1px solid rgba(212,168,87,0.2);border-radius:12px;background:rgba(19,26,36,0.85);">
+            <h3 style="font-family:'Cinzel',Georgia,serif;font-size:1.15rem;color:#d4a857;margin:0 0 0.5rem;">The Weave — Optional Creative Companion</h3>
+            <p style="margin:0;color:#d6c7b2;line-height:1.55;font-size:0.95rem;">
+              Draft context-aware NPCs, monsters, quests, loot tables, and battle maps grounded in your campaign graph. Every output is a draft requiring 100% GM review—edit, re-weave, or reject before committing to canon.
+            </p>
+          </article>
+          <article style="padding:1.25rem;border:1px solid rgba(212,168,87,0.2);border-radius:12px;background:rgba(19,26,36,0.85);">
+            <h3 style="font-family:'Cinzel',Georgia,serif;font-size:1.15rem;color:#d4a857;margin:0 0 0.5rem;">Arcane Screen &amp; 2.5D Virtual Tabletop</h3>
+            <p style="margin:0;color:#d6c7b2;line-height:1.55;font-size:0.95rem;">
+              Run tactical encounters with 2.5D gradual lighting, line-of-sight fog of war, 3D physics dice, per-turn action economy tracking, spell shader effects, and automated XP awards.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section aria-labelledby="ssr-links-heading">
+        <h2 id="ssr-links-heading" style="font-family:'Cinzel',Georgia,serif;font-size:1.25rem;color:#f5ede0;margin:0 0 0.75rem;">Explore LoomWeaver Features</h2>
+        <nav aria-label="Primary Feature Pages">
+          <ul style="display:flex;flex-wrap:wrap;gap:1rem;list-style:none;padding:0;margin:0;">
+            <li><a href="/features/campaign-memory" style="color:#d4a857;text-decoration:underline;">The Loom Campaign Memory</a></li>
+            <li><a href="/features/worldbuilding-ai" style="color:#d4a857;text-decoration:underline;">The Weave Worldbuilding Studio</a></li>
+            <li><a href="/features/virtual-tabletop" style="color:#d4a857;text-decoration:underline;">2.5D Virtual Tabletop &amp; Combat Engine</a></li>
+            <li><a href="/features/world-atlas-quests" style="color:#d4a857;text-decoration:underline;">World Atlas &amp; Multi-Step Quests</a></li>
+            <li><a href="/features/creator-marketplace" style="color:#d4a857;text-decoration:underline;">Creator Marketplace (85/15 Split)</a></li>
+            <li><a href="/login" style="color:#d4a857;text-decoration:underline;">Sign In</a></li>
+            <li><a href="/register" style="color:#d4a857;text-decoration:underline;">Create Free Account</a></li>
+          </ul>
+        </nav>
+      </section>
+    </main>
+  </lw-root>
 </body>
 </html>

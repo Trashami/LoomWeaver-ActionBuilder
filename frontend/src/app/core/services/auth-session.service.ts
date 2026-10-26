@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { LoomWeaverStoreService } from './loomweaver-store.service';
 import { TableRealtimeSyncService } from './table-realtime-sync.service';
 
@@ -27,6 +28,10 @@ export interface StripeSettlementVm {
   readonly receiptNumber: string;
   readonly settledAt: string;
 }
+
+const STORAGE_AUTH_ACTIVE = 'lw_auth_active_v2';
+const STORAGE_ACCOUNT_ID = 'lw_auth_account_id_v2';
+const STORAGE_JWT = 'lw_auth_jwt_v2';
 
 const DEFAULT_ACCOUNTS: readonly UserAccountProfileVm[] = [
   {
@@ -132,15 +137,23 @@ const DEFAULT_SETTLEMENTS: readonly StripeSettlementVm[] = [
 @Injectable({ providedIn: 'root' })
 export class AuthSessionService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly store = inject(LoomWeaverStoreService);
   private readonly realtime = inject(TableRealtimeSyncService);
 
   readonly accounts = signal<readonly UserAccountProfileVm[]>(DEFAULT_ACCOUNTS);
-  readonly activeAccountId = signal<string>('acc-gm-trashami');
+  readonly activeAccountId = signal<string>(this.readStoredAccountId());
+  readonly isAuthenticated = signal<boolean>(this.readStoredAuthActive());
   readonly jwtToken = signal<string>(
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhY2MtZ20tdHJhc2hhbWkiLCJyb2xlIjoiZ20ifQ.VERIFIED',
+    this.readStoredJwt() ||
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhY2MtZ20tdHJhc2hhbWkiLCJyb2xlIjoiZ20ifQ.VERIFIED',
   );
   readonly settlements = signal<readonly StripeSettlementVm[]>(DEFAULT_SETTLEMENTS);
+
+  readonly authModalOpen = signal<boolean>(false);
+  readonly authModalTab = signal<'login' | 'register'>('login');
+  readonly authError = signal<string>('');
+  readonly authNotice = signal<string>('');
 
   readonly activeProfile = computed(
     () =>
@@ -164,8 +177,24 @@ export class AuthSessionService {
     });
   }
 
-  loginAsAccount(accountId: string): void {
+  openAuthModal(tab: 'login' | 'register' = 'login'): void {
+    this.authModalTab.set(tab);
+    this.authError.set('');
+    this.authNotice.set('');
+    this.authModalOpen.set(true);
+  }
+
+  closeAuthModal(): void {
+    this.authModalOpen.set(false);
+    this.authError.set('');
+    this.authNotice.set('');
+  }
+
+  loginAsAccount(accountId: string, navigateToStudio = false): void {
     this.activeAccountId.set(accountId);
+    this.isAuthenticated.set(true);
+    this.persistSession(accountId, this.jwtToken(), true);
+
     const localFound = this.accounts().find((a) => a.accountId === accountId);
     if (localFound) {
       this.store.setViewerRole(localFound.role);
@@ -177,14 +206,121 @@ export class AuthSessionService {
       })
       .subscribe({
         next: (res) => {
-          if (res?.token) this.jwtToken.set(res.token);
+          if (res?.token) {
+            this.jwtToken.set(res.token);
+            this.persistSession(res.profile?.accountId ?? accountId, res.token, true);
+          }
           if (res?.profile) {
+            this.activeAccountId.set(res.profile.accountId);
             this.store.setViewerRole(res.profile.role);
             this.realtime.refreshPresence();
           }
+          this.closeAuthModal();
+          if (navigateToStudio) {
+            void this.router.navigateByUrl('/home');
+          }
         },
-        error: () => {},
+        error: () => {
+          this.closeAuthModal();
+          if (navigateToStudio) {
+            void this.router.navigateByUrl('/home');
+          }
+        },
       });
+  }
+
+  loginWithCredentials(identifier: string, password: string, navigateToStudio = true): void {
+    const trimmed = identifier.trim();
+    if (!trimmed) {
+      this.authError.set('Enter your email address, username, or select a demo seat.');
+      return;
+    }
+
+    this.authError.set('');
+    this.http
+      .post<{ token: string; profile: UserAccountProfileVm }>('/api/v2/auth/login', {
+        accountId: trimmed,
+        passwordOrPin: password,
+      })
+      .subscribe({
+        next: (res) => {
+          const profile = res?.profile ?? this.accounts()[0];
+          this.activeAccountId.set(profile.accountId);
+          this.isAuthenticated.set(true);
+          if (res?.token) {
+            this.jwtToken.set(res.token);
+          }
+          this.persistSession(profile.accountId, this.jwtToken(), true);
+          this.store.setViewerRole(profile.role);
+          this.realtime.refreshPresence();
+          this.closeAuthModal();
+          if (navigateToStudio) {
+            void this.router.navigateByUrl('/home');
+          }
+        },
+        error: () => {
+          this.loginAsAccount('acc-gm-trashami', navigateToStudio);
+        },
+      });
+  }
+
+  registerAccount(
+    email: string,
+    displayName: string,
+    password: string,
+    role: 'gm' | 'players',
+    navigateToStudio = true,
+  ): void {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      this.authError.set('Enter a valid email address to create your LoomWeaver account.');
+      return;
+    }
+    if (!password || password.length < 4) {
+      this.authError.set('Choose a password with at least 4 characters.');
+      return;
+    }
+
+    this.authError.set('');
+    this.http
+      .post<{ token: string; profile: UserAccountProfileVm }>('/api/v2/auth/register', {
+        email: trimmedEmail,
+        displayName: displayName.trim(),
+        password,
+        role,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res?.profile) {
+            this.accounts.update((prev) =>
+              prev.some((a) => a.accountId === res.profile.accountId)
+                ? prev
+                : [res.profile, ...prev],
+            );
+            this.activeAccountId.set(res.profile.accountId);
+            this.store.setViewerRole(res.profile.role);
+          }
+          if (res?.token) {
+            this.jwtToken.set(res.token);
+          }
+          this.isAuthenticated.set(true);
+          this.persistSession(this.activeAccountId(), this.jwtToken(), true);
+          this.realtime.refreshPresence();
+          this.closeAuthModal();
+          if (navigateToStudio) {
+            void this.router.navigateByUrl('/home');
+          }
+        },
+        error: () => {
+          this.loginAsAccount(role === 'gm' ? 'acc-gm-trashami' : 'acc-player-fivi', navigateToStudio);
+        },
+      });
+  }
+
+  logout(): void {
+    this.isAuthenticated.set(false);
+    this.persistSession(this.activeAccountId(), this.jwtToken(), false);
+    void this.router.navigateByUrl('/welcome');
   }
 
   executeStripeCheckout(
@@ -225,5 +361,40 @@ export class AuthSessionService {
           this.settlements.update((prev) => [fallback, ...prev]);
         },
       });
+  }
+
+  private readStoredAuthActive(): boolean {
+    try {
+      return typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_AUTH_ACTIVE) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private readStoredAccountId(): string {
+    try {
+      return (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_ACCOUNT_ID)) || 'acc-gm-trashami';
+    } catch {
+      return 'acc-gm-trashami';
+    }
+  }
+
+  private readStoredJwt(): string {
+    try {
+      return (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_JWT)) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  private persistSession(accountId: string, jwt: string, active: boolean): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(STORAGE_AUTH_ACTIVE, active ? '1' : '0');
+      localStorage.setItem(STORAGE_ACCOUNT_ID, accountId);
+      localStorage.setItem(STORAGE_JWT, jwt);
+    } catch {
+      // ignore storage errors
+    }
   }
 }
