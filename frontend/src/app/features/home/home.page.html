@@ -1,198 +1,107 @@
-<div class="lw-page">
-  <section class="lw-hero">
-    <div class="lw-hero__brand">
-      <img src="/LoomWeaver.png" alt="LoomWeaver Official Crest" class="lw-hero__logo" />
-      <div class="lw-hero__copy">
-        <div class="lw-hero__badges">
-          <lw-badge label="LoomWeaver V2 Core Operating System" tone="gold" icon="Sparkles" />
-          <lw-badge label="MySQL + Neo4j: loomweaver" tone="emerald" icon="Database" />
-          <lw-badge [label]="store.activeCampaign().systemLabel" tone="neutral" />
-          <lw-badge label="11 Logical Modules Active" tone="gold" />
+<div class="lw-dashboard">
+  <!-- Top Tactical Live Session VTT Stage Web Component -->
+  <lw-tactical-stage-card
+    sceneName="Ruined Chapel"
+    modeLabel="Encounter"
+    mapImageUrl="/landing-assets/engines/engine-1-vtt-combat.jpg"
+    [combatants]="combatants()"
+    (tokenSelected)="onTokenSelected($event)"
+    (rollDiceRequested)="store.rollGlobalQuickD20()"
+    (expandRequested)="openFullVtt()" />
+
+  <!-- Middle 3-Column Tactical Campaign Row Using Shared Web Components -->
+  <section class="lw-dashboard__cards-grid" aria-label="Active Quests, Party Members, and Nearby NPCs">
+    <!-- Column 1: Active Quests -->
+    <article class="lw-dash-card">
+      <header class="lw-dash-card__header">
+        <h2 class="lw-dash-card__title">Active Quests</h2>
+        <div class="lw-dash-card__actions">
+          <a routerLink="/campaigns" class="lw-dash-card__icon-btn" title="Add or Manage Quests">
+            <lw-icon name="plus" [size]="14" />
+          </a>
+          <a routerLink="/campaigns" class="lw-dash-card__icon-btn" title="Open Quest Log">
+            <lw-icon name="sparkles" [size]="14" />
+          </a>
         </div>
-        <h1 class="lw-hero__title">{{ store.activeCampaign().name }}</h1>
-        <p class="lw-hero__subtitle">
-          {{ store.activeCampaign().subtitle }} · {{ store.activeCampaign().currentAct }} ·
-          Session {{ store.activeCampaign().currentSessionNumber }} ({{ store.activeCampaign().currentLocationName }})
-        </p>
-        <div class="lw-hero__cta">
-          <a class="lw-hero__primary-link" routerLink="/arcane-screen">
-            <lw-icon name="Shield" [size]="16" />
-            <span>Launch Arcane Screen VTT</span>
-          </a>
-          <a class="lw-hero__secondary-link" routerLink="/maps">
-            <lw-icon name="Map" [size]="16" />
-            <span>Open LoomMaps 2D/3D</span>
-          </a>
-          <a class="lw-hero__secondary-link" routerLink="/characters">
-            <lw-icon name="Users" [size]="16" />
-            <span>Character Studio</span>
-          </a>
-          <lw-button variant="secondary" icon="BookOpen" (pressed)="store.toggleLoomDrawer(true)">
-            Ask The Loom
-          </lw-button>
-          @if (store.weaveEnabled()) {
-            <a class="lw-hero__secondary-link" routerLink="/weave">
-              <lw-icon name="Network" [size]="16" />
-              <span>Explore Neo4j World Graph</span>
-            </a>
-          }
-        </div>
+      </header>
+
+      <div class="lw-dash-card__list">
+        @for (quest of activeQuests(); track quest.id) {
+          <lw-quest-tracker-card
+            [quest]="quest"
+            variant="compact-row"
+            [selected]="selectedQuestId() === quest.id"
+            (questSelected)="onQuestSelected($event)" />
+        }
       </div>
-    </div>
+    </article>
+
+    <!-- Column 2: Party Members (Reusable LwPartyRosterCardComponent) -->
+    <lw-party-roster-card
+      [members]="partyMembers()"
+      [selectedKey]="store.inspectedEntityKey() ?? ''"
+      (memberSelected)="onMemberSelected($event)"
+      (addMemberRequested)="openFullVtt()" />
+
+    <!-- Column 3: Nearby NPCs -->
+    <article class="lw-dash-card">
+      <header class="lw-dash-card__header">
+        <h2 class="lw-dash-card__title">Nearby NPCs</h2>
+        <div class="lw-dash-card__actions">
+          <a routerLink="/campaigns" class="lw-dash-card__icon-btn" title="Add or Inspect NPCs">
+            <lw-icon name="plus" [size]="14" />
+          </a>
+          <button
+            type="button"
+            class="lw-dash-card__icon-btn"
+            (click)="store.toggleLoomDrawer(true)"
+            title="Recall NPC Lore in The Loom">
+            <lw-icon name="book" [size]="14" />
+          </button>
+        </div>
+      </header>
+
+      <div class="lw-dash-card__list">
+        @for (npc of nearbyNpcs(); track npc.compositeKey) {
+          <lw-npc-card
+            [npc]="npc"
+            variant="dashboard-row"
+            [showGmSecret]="store.viewerRole() === 'gm'"
+            [selected]="store.inspectedEntityKey() === npc.compositeKey"
+            (npcSelected)="onNpcSelected($event)" />
+        }
+      </div>
+    </article>
   </section>
 
-  <lw-panel
-    eyebrow="Unified Angular Workspace + Modular .NET 10 Solution"
-    title="All 11 Logical LoomWeaver Modules"
-    subtitle="Every capability runs inside one shared component architecture and one polyglot backend—zero fragmented sites."
-    icon="Layers"
-    [elevated]="true"
-  >
-    <div class="lw-modules-matrix">
-      @for (mod of logicalModules; track mod.number) {
-        <a class="lw-module-tile" [routerLink]="mod.route">
-          <div class="lw-module-tile__head">
-            <div class="lw-module-tile__icon">
-              <lw-icon [name]="mod.icon" [size]="17" />
-            </div>
-            <lw-badge [label]="'Module ' + mod.number" tone="gold" />
-          </div>
-          <strong class="lw-module-tile__name">{{ mod.name }}</strong>
-          <span class="lw-module-tile__stack">{{ mod.stack }}</span>
-          <div class="lw-module-tile__footer">
-            <span class="lw-module-tile__metric">{{ mod.statusMetric }}</span>
-            <lw-icon name="ArrowRight" [size]="14" />
-          </div>
-        </a>
-      }
-    </div>
-  </lw-panel>
+  <!-- Bottom Session Log & Campaign Memory Composer Web Component -->
+  <lw-session-log-composer
+    dateFilterLabel="Today"
+    [entries]="logEntries()"
+    (noteSaved)="onSaveSessionNote($event)"
+    (loomFormatRequested)="onAskLoomWithDraft($event)" />
 
-  <lw-panel
-    eyebrow="SignalR /hubs/table + Multi-Tab BroadcastChannel"
-    title="Real-Time Table Seat Presence & Synchronized Event Stream"
-    subtitle="Broadcasts VTT token moves, cryptographic dice rolls, and audio crossfades across all connected GM and free Player seats."
-    icon="Network"
-  >
-    <lw-live-table-presence
-      [seats]="realtime.seats()"
-      [events]="realtime.recentEvents()"
-      [protocolLabel]="realtime.syncProtocolLabel()"
-      (broadcastPingRequested)="broadcastTablePing()"
-    />
-  </lw-panel>
+  <!-- Optional Expandable Session Recaps & Studio Quick Links -->
+  @if (sessions().length > 0) {
+    <section class="lw-dashboard__chronicle-bar">
+      <button
+        type="button"
+        class="lw-dashboard__chronicle-toggle"
+        (click)="showChronicleDrawer.set(!showChronicleDrawer())">
+        <lw-icon name="book" [size]="14" />
+        <span>Recent Session Recaps ({{ sessions().length }} archived in MySQL & Neo4j)</span>
+        <lw-icon [name]="showChronicleDrawer() ? 'chevron-down' : 'chevron-right'" [size]="14" />
+      </button>
 
-  <div class="lw-two-col">
-    <lw-panel
-      eyebrow="Shared lw-session-recap-card Primitive"
-      title="Living Session Chronicle & Deep-Link Recaps"
-      [subtitle]="sessionBanner()"
-      icon="BookOpen"
-    >
-      <div class="lw-stack">
-        @for (sess of sessions(); track sess.id) {
-          <lw-session-recap-card
-            [session]="sess"
-            (inspectEntityRequested)="store.inspectEntity($event)"
-          />
-        }
-      </div>
-    </lw-panel>
-
-    <lw-panel
-      eyebrow="Automated Session XP Engine"
-      title="Conclude Session & Award Party XP"
-      subtitle="Records a canonical session recap with clickable deep links and distributes automated XP to the party."
-      icon="Sparkles"
-    >
-      <div class="lw-session-composer">
-        <label>
-          <span>Session Title</span>
-          <input
-            type="text"
-            [ngModel]="newSessionTitle()"
-            (ngModelChange)="newSessionTitle.set($event)"
-          />
-        </label>
-
-        <div class="lw-session-composer__row">
-          <label>
-            <span>Primary Location</span>
-            <input
-              type="text"
-              [ngModel]="newSessionLocation()"
-              (ngModelChange)="newSessionLocation.set($event)"
-            />
-          </label>
-          <label>
-            <span>Automated XP Award</span>
-            <input
-              type="number"
-              [ngModel]="newSessionXp()"
-              (ngModelChange)="newSessionXp.set(+$event)"
-            />
-          </label>
+      @if (showChronicleDrawer()) {
+        <div class="lw-dashboard__chronicle-list">
+          @for (sess of sessions(); track sess.id) {
+            <lw-session-recap-card
+              [session]="sess"
+              (inspectEntityRequested)="store.inspectEntity($event)" />
+          }
         </div>
-
-        <label>
-          <span>Session Canon Summary</span>
-          <textarea
-            rows="4"
-            [ngModel]="newSessionSummary()"
-            (ngModelChange)="newSessionSummary.set($event)"
-          ></textarea>
-        </label>
-
-        <lw-button variant="primary" icon="Check" (pressed)="concludeAndLogSession()">
-          Conclude Session & Award +{{ newSessionXp() }} XP
-        </lw-button>
-      </div>
-    </lw-panel>
-  </div>
-
-  <div class="lw-two-col">
-    <lw-panel
-      eyebrow="Canonical Graph Entities"
-      title="Featured Campaign Dossiers"
-      subtitle="Role-filtered entities from the loomweaver database. Click Inspect to view Neo4j edges."
-      icon="Users"
-    >
-      <div panelActions>
-        <a class="lw-inline-link" routerLink="/campaigns">View All in Campaigns</a>
-      </div>
-      <div class="lw-stack">
-        @for (entity of featuredEntities(); track entity.compositeKey) {
-          <lw-entity-card
-            [entity]="entity"
-            [active]="store.inspectedEntityKey() === entity.compositeKey"
-            [canApprove]="store.viewerRole() === 'gm'"
-            (inspectRequested)="store.inspectEntity($event.compositeKey)"
-            (approveRequested)="store.approveDraftEntity($event.compositeKey)"
-          />
-        }
-      </div>
-    </lw-panel>
-
-    <lw-panel
-      eyebrow="Reusable Asset Card System"
-      title="Featured Tabletop & Cosmetic Assets"
-      subtitle="Shared lw-asset-card component configured for standard overview presentation."
-      icon="Layers"
-    >
-      <div panelActions>
-        <a class="lw-inline-link" routerLink="/marketplace">Browse Marketplace</a>
-      </div>
-      <div class="lw-asset-grid">
-        @for (asset of featuredAssets(); track asset.id) {
-          <lw-asset-card
-            [asset]="asset"
-            [config]="{ variant: 'standard', showPrice: true, showUnlockAction: true }"
-            (assetSelected)="store.unlockAsset($event.id)"
-            (unlockRequested)="store.unlockAsset($event.id)"
-            (previewRequested)="store.unlockAsset($event.id)"
-          />
-        }
-      </div>
-    </lw-panel>
-  </div>
+      }
+    </section>
+  }
 </div>

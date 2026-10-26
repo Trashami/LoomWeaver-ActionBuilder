@@ -11,6 +11,8 @@ export interface NpcCardVm {
   readonly faction: string;
   readonly locationName: string;
   readonly disposition: 'Friendly' | 'Guarded' | 'Deceptive' | 'Hostile';
+  readonly attitudeLabel?: string;
+  readonly avatarUrl?: string;
   readonly summary: string;
   readonly gmSecret?: string;
   readonly visibility: AudienceVisibility;
@@ -26,7 +28,7 @@ export interface NpcCardVm {
 })
 export class LwNpcCardComponent {
   readonly npc = input.required<NpcCardVm>();
-  readonly variant = input<'compact' | 'standard' | 'detailed'>('standard');
+  readonly variant = input<'dashboard-row' | 'compact' | 'standard' | 'detailed'>('standard');
   readonly showGmSecret = input<boolean>(false);
   readonly selected = input<boolean>(false);
 
@@ -44,5 +46,12 @@ export class LwNpcCardComponent {
       default:
         return 'neutral';
     }
+  });
+
+  readonly initials = computed(() => {
+    const parts = (this.npc().name || 'N').trim().split(/\s+/);
+    return parts.length >= 2
+      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase();
   });
 }

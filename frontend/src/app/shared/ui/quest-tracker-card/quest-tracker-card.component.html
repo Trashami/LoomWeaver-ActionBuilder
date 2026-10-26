@@ -1,49 +1,66 @@
 @let q = quest();
-<article class="lw-quest-card" [class.lw-quest-card--completed]="q.status === 'completed'">
-  <div class="lw-quest-card__top">
-    <div>
-      <span class="lw-quest-card__giver">Quest Giver: {{ q.questGiver }}</span>
-      <h4 class="lw-quest-card__title">{{ q.title }}</h4>
+@if (variant() === 'compact-row') {
+  <button
+    type="button"
+    class="lw-quest-row"
+    [class.lw-quest-row--selected]="selected()"
+    (click)="questSelected.emit(q)"
+  >
+    <span class="lw-quest-row__emblem" aria-hidden="true">
+      <lw-icon [name]="q.icon || 'Compass'" [size]="16" />
+    </span>
+    <span class="lw-quest-row__body">
+      <strong class="lw-quest-row__title">{{ q.title }}</strong>
+      <small class="lw-quest-row__sub">{{ primarySubtitle() }}</small>
+    </span>
+  </button>
+} @else {
+  <article class="lw-quest-card" [class.lw-quest-card--completed]="q.status === 'completed'">
+    <div class="lw-quest-card__top">
+      <div>
+        <span class="lw-quest-card__giver">Quest Giver: {{ q.questGiver }}</span>
+        <h4 class="lw-quest-card__title">{{ q.title }}</h4>
+      </div>
+      <div class="lw-quest-card__badges">
+        <lw-badge
+          [label]="q.status === 'completed' ? 'Completed' : completedCount() + '/' + q.steps.length + ' Steps'"
+          [tone]="q.status === 'completed' ? 'emerald' : 'gold'"
+        />
+        <lw-badge [label]="'+' + q.xpReward + ' XP'" tone="emerald" icon="Sparkles" />
+      </div>
     </div>
-    <div class="lw-quest-card__badges">
-      <lw-badge
-        [label]="q.status === 'completed' ? 'Completed' : completedCount() + '/' + q.steps.length + ' Steps'"
-        [tone]="q.status === 'completed' ? 'emerald' : 'gold'"
-      />
-      <lw-badge [label]="'+' + q.xpReward + ' XP'" tone="emerald" icon="Sparkles" />
+
+    <div class="lw-quest-card__locations">
+      <span><strong>Origin:</strong> {{ q.originLocation }}</span>
+      <span><strong>Destination:</strong> {{ q.completionLocation }}</span>
+      <span><strong>Prerequisite:</strong> {{ q.prerequisites }}</span>
     </div>
-  </div>
 
-  <div class="lw-quest-card__locations">
-    <span><strong>Origin:</strong> {{ q.originLocation }}</span>
-    <span><strong>Destination:</strong> {{ q.completionLocation }}</span>
-    <span><strong>Prerequisite:</strong> {{ q.prerequisites }}</span>
-  </div>
+    <div class="lw-quest-card__steps">
+      @for (step of q.steps; track step.stepId) {
+        <button
+          type="button"
+          class="lw-quest-card__step"
+          [class.lw-quest-card__step--done]="step.completed"
+          (click)="stepToggled.emit({ questId: q.id, stepId: step.stepId })"
+        >
+          <lw-icon [name]="step.completed ? 'Check' : 'Compass'" [size]="15" />
+          <div class="lw-quest-card__step-text">
+            <span>{{ step.description }}</span>
+            <small>{{ step.locationName }}</small>
+          </div>
+        </button>
+      }
+    </div>
 
-  <div class="lw-quest-card__steps">
-    @for (step of q.steps; track step.stepId) {
-      <button
-        type="button"
-        class="lw-quest-card__step"
-        [class.lw-quest-card__step--done]="step.completed"
-        (click)="stepToggled.emit({ questId: q.id, stepId: step.stepId })"
-      >
-        <lw-icon [name]="step.completed ? 'Check' : 'Compass'" [size]="15" />
-        <div class="lw-quest-card__step-text">
-          <span>{{ step.description }}</span>
-          <small>{{ step.locationName }}</small>
-        </div>
-      </button>
-    }
-  </div>
-
-  <div class="lw-quest-card__clues">
-    <span class="lw-quest-card__clue-label">Linked Canon Clues:</span>
-    @for (clue of q.clueKeys; track clue) {
-      <button type="button" class="lw-quest-card__clue-pill" (click)="clueInspected.emit(clue)">
-        <lw-icon name="Search" [size]="12" />
-        <span>{{ clue }}</span>
-      </button>
-    }
-  </div>
-</article>
+    <div class="lw-quest-card__clues">
+      <span class="lw-quest-card__clue-label">Linked Canon Clues:</span>
+      @for (clue of q.clueKeys; track clue) {
+        <button type="button" class="lw-quest-card__clue-pill" (click)="clueInspected.emit(clue)">
+          <lw-icon name="Search" [size]="12" />
+          <span>{{ clue }}</span>
+        </button>
+      }
+    </div>
+  </article>
+}

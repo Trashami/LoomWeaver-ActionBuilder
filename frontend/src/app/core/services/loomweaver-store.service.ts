@@ -160,6 +160,10 @@ export class LoomWeaverStoreService {
     this.loomDrawerOpen.update((cur) => (open !== undefined ? open : !cur));
   }
 
+  setLoomSearchQuery(query: string): void {
+    this.loomQuery.set(query);
+  }
+
   inspectEntity(keyOrComposite: string | null): void {
     this.inspectedEntityKey.set(keyOrComposite);
   }

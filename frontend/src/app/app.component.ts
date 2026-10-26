@@ -7,12 +7,17 @@ import { LoomWeaverStoreService } from './core/services/loomweaver-store.service
 import { WebAudioAmbienceService } from './features/assets/engine/web-audio-ambience.service';
 import {
   LwAuthModalComponent,
-  LwBadgeComponent,
-  LwButtonComponent,
   LwIconComponent,
   LwInspectorDrawerComponent,
   LwLoomLauncherComponent,
 } from './shared/ui/public-api';
+
+interface StudioPrimaryNavItem {
+  readonly id: string;
+  readonly label: string;
+  readonly route: string;
+  readonly icon: string;
+}
 
 @Component({
   selector: 'lw-root',
@@ -23,8 +28,6 @@ import {
     RouterLink,
     RouterLinkActive,
     LwAuthModalComponent,
-    LwBadgeComponent,
-    LwButtonComponent,
     LwIconComponent,
     LwInspectorDrawerComponent,
     LwLoomLauncherComponent,
@@ -40,6 +43,8 @@ export class AppComponent {
   private readonly router = inject(Router);
 
   readonly currentUrl = signal<string>(this.router.url || '/');
+  readonly globalSearchText = signal<string>('');
+  readonly showAllModules = signal<boolean>(true);
 
   readonly isLandingSurface = computed(() => {
     const clean = this.currentUrl().split('?')[0].split('#')[0];
@@ -48,23 +53,35 @@ export class AppComponent {
       clean === '/' ||
       clean === '/welcome' ||
       clean === '/marketing' ||
+      clean === '/vtt' ||
+      clean === '/campaign-manager' ||
+      clean === '/battlemap-builder' ||
+      clean === '/ai-campaign-assistant' ||
+      clean === '/features' ||
       clean === '/login' ||
       clean === '/register' ||
       clean.startsWith('/features/')
     );
   });
 
-  readonly coreNav = computed(() =>
-    this.store.visibleNavigation().filter((n) => n.group === 'Core'),
-  );
+  readonly primarySidebarNav: readonly StudioPrimaryNavItem[] = [
+    { id: 'dashboard', label: 'Dashboard', route: '/home', icon: 'home' },
+    { id: 'world-lore', label: 'World & Lore', route: '/weave', icon: 'globe' },
+    { id: 'quests-story', label: 'Quests & Story', route: '/campaigns', icon: 'scroll' },
+    { id: 'characters', label: 'Characters', route: '/characters', icon: 'users' },
+    { id: 'maps-scenes', label: 'Maps & Scenes', route: '/maps', icon: 'map' },
+    { id: 'session-log', label: 'Session Log', route: '/loom', icon: 'book' },
+    { id: 'handouts-clues', label: 'Handouts & Clues', route: '/assets', icon: 'sparkles' },
+    { id: 'timelines', label: 'Timelines', route: '/statistics', icon: 'chart' },
+  ];
 
-  readonly playNav = computed(() =>
-    this.store.visibleNavigation().filter((n) => n.group === 'Play & Engines'),
-  );
-
-  readonly platformNav = computed(() =>
-    this.store.visibleNavigation().filter((n) => n.group === 'Platform'),
-  );
+  readonly engineSidebarNav: readonly StudioPrimaryNavItem[] = [
+    { id: 'arcane-vtt', label: 'Arcane Screen VTT', route: '/arcane-screen', icon: 'shield' },
+    { id: 'encounters', label: 'Encounters & Bestiary', route: '/encounters', icon: 'swords' },
+    { id: 'dice-forge', label: '3D Dice Forge', route: '/dice', icon: 'dices' },
+    { id: 'effects-rules', label: 'Actions & FX Studio', route: '/effects', icon: 'wand' },
+    { id: 'marketplace', label: 'Creator Marketplace', route: '/marketplace', icon: 'store' },
+  ];
 
   constructor() {
     this.router.events
@@ -72,5 +89,13 @@ export class AppComponent {
       .subscribe((e) => {
         this.currentUrl.set(e.urlAfterRedirects || e.url);
       });
+  }
+
+  submitGlobalSearch(): void {
+    const q = this.globalSearchText().trim();
+    if (q) {
+      this.store.setLoomSearchQuery(q);
+    }
+    this.store.toggleLoomDrawer(true);
   }
 }

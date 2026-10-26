@@ -4,102 +4,110 @@
 } @else {
   <div class="lw-shell">
     <header class="lw-topbar">
-      <a class="lw-topbar__brand" routerLink="/home">
-        <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-topbar__logo" />
-        <div class="lw-topbar__titles">
-          <span class="lw-topbar__name">LoomWeaver</span>
-          <span class="lw-topbar__tag">V2 · Polyglot TTRPG Operating System</span>
-        </div>
-      </a>
-
-      <div class="lw-topbar__controls">
-        <label class="lw-control-group">
-          <span>Campaign:</span>
-          <select
-            class="lw-select"
-            [ngModel]="store.activeCampaignId()"
-            (ngModelChange)="store.setCampaign($event)"
-          >
-            @for (camp of store.campaigns(); track camp.id) {
-              <option [ngValue]="camp.id">{{ camp.name }} ({{ camp.systemLabel }})</option>
-            }
-          </select>
-        </label>
-
-        <lw-badge
-          [label]="auth.activeProfile().displayName"
-          tone="gold"
-          icon="ShieldCheck"
-        />
-
-        <div class="lw-role-switch" role="group" aria-label="Viewer Role Scope">
-          <button
-            type="button"
-            class="lw-role-btn"
-            [class.lw-role-btn--active]="store.viewerRole() === 'gm'"
-            (click)="store.setViewerRole('gm')"
-          >
-            GM View
-          </button>
-          <button
-            type="button"
-            class="lw-role-btn"
-            [class.lw-role-btn--active]="store.viewerRole() === 'players'"
-            (click)="store.setViewerRole('players')"
-          >
-            Player View
-          </button>
-        </div>
-
-        <lw-button
-          variant="secondary"
-          size="sm"
-          icon="Dices"
-          (pressed)="store.rollGlobalQuickD20()"
-        >
-          {{ store.quickRollBanner() }}
-        </lw-button>
-
-        <lw-button
-          [variant]="audio.isPlaying() ? 'gold' : 'secondary'"
-          size="sm"
-          icon="Music"
-          (pressed)="audio.togglePlayback()"
-        >
-          {{ audio.isPlaying() ? 'Audio: Live' : 'Audio: Synth' }}
-        </lw-button>
-
-        <lw-button
-          [variant]="store.weaveEnabled() ? 'gold' : 'secondary'"
-          size="sm"
-          icon="Network"
-          (pressed)="store.toggleWeave()"
-        >
-          {{ store.weaveEnabled() ? 'Weave: ON' : 'Weave: OFF' }}
-        </lw-button>
-
-        <lw-button
-          [variant]="store.loomDrawerOpen() ? 'primary' : 'secondary'"
-          size="sm"
-          icon="BookOpen"
-          (pressed)="store.toggleLoomDrawer()"
-        >
-          The Loom
-        </lw-button>
-
-        <lw-button
-          variant="secondary"
-          size="sm"
-          icon="X"
-          (pressed)="auth.logout()"
-        >
-          Sign Out
-        </lw-button>
-
-        <a class="lw-market-pill" routerLink="/welcome">
-          <lw-icon name="Globe" [size]="15" />
-          <span>Landing Page</span>
+      <div class="lw-topbar__left">
+        <a class="lw-topbar__brand" routerLink="/home">
+          <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-topbar__logo" />
+          <div class="lw-topbar__titles">
+            <span class="lw-topbar__name">LoomWeaver</span>
+            <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
+          </div>
         </a>
+
+        <div class="lw-topbar__divider"></div>
+
+        <div class="lw-campaign-picker">
+          <div class="lw-campaign-picker__crest">
+            <lw-icon name="crown" [size]="15" />
+          </div>
+          <div class="lw-campaign-picker__body">
+            <div class="lw-campaign-picker__row">
+              <select
+                class="lw-campaign-picker__select"
+                [ngModel]="store.activeCampaignId()"
+                (ngModelChange)="store.setCampaign($event)"
+                aria-label="Active Campaign">
+                @for (camp of store.campaigns(); track camp.id) {
+                  <option [ngValue]="camp.id">{{ camp.name }}</option>
+                }
+              </select>
+            </div>
+            <span class="lw-campaign-picker__sub">
+              Campaign · {{ store.activeCampaign().currentSessionNumber }} sessions · High Fantasy
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <form class="lw-topbar__search" (ngSubmit)="submitGlobalSearch()">
+        <lw-icon name="search" [size]="15" />
+        <input
+          type="search"
+          class="lw-topbar__search-input"
+          placeholder="Search anything..."
+          [ngModel]="globalSearchText()"
+          (ngModelChange)="globalSearchText.set($event)"
+          name="globalLoomSearch" />
+        <button type="submit" class="lw-topbar__kbd" title="Open The Loom Campaign Memory">
+          Ctrl + K
+        </button>
+      </form>
+
+      <div class="lw-topbar__right">
+        <button
+          type="button"
+          class="lw-topbar__icon-btn"
+          [class.lw-topbar__icon-btn--active]="audio.isPlaying()"
+          (click)="audio.togglePlayback()"
+          title="Toggle Ambient Audio Engine">
+          <lw-icon name="music" [size]="16" />
+        </button>
+
+        <button
+          type="button"
+          class="lw-topbar__icon-btn"
+          (click)="store.rollGlobalQuickD20()"
+          [title]="store.quickRollBanner()">
+          <lw-icon name="dices" [size]="16" />
+        </button>
+
+        <button
+          type="button"
+          class="lw-topbar__icon-btn"
+          [class.lw-topbar__icon-btn--active]="store.loomDrawerOpen()"
+          (click)="store.toggleLoomDrawer()"
+          title="Open The Loom Campaign Memory">
+          <lw-icon name="book" [size]="16" />
+        </button>
+
+        <button
+          type="button"
+          class="lw-topbar__role-pill"
+          (click)="store.setViewerRole(store.viewerRole() === 'gm' ? 'players' : 'gm')"
+          title="Click to switch between GM View and Player View">
+          <lw-icon [name]="store.viewerRole() === 'gm' ? 'shield' : 'users'" [size]="13" />
+          <span>{{ store.viewerRole() === 'gm' ? 'GM View' : 'Player View' }}</span>
+        </button>
+
+        <a class="lw-topbar__icon-btn" routerLink="/welcome" title="View Public Marketing Site">
+          <lw-icon name="globe" [size]="16" />
+        </a>
+
+        <div class="lw-profile-pill">
+          <div class="lw-profile-pill__avatar">
+            {{ auth.activeProfile().displayName.slice(0, 2).toUpperCase() }}
+          </div>
+          <div class="lw-profile-pill__info">
+            <strong>{{ auth.activeProfile().displayName }}</strong>
+            <span>{{ store.viewerRole() === 'gm' ? 'Dungeon Master' : 'Adventurer' }}</span>
+          </div>
+          <button
+            type="button"
+            class="lw-profile-pill__logout"
+            (click)="auth.logout()"
+            title="Sign Out">
+            <lw-icon name="x" [size]="13" />
+          </button>
+        </div>
       </div>
     </header>
 
@@ -107,60 +115,50 @@
 
     <div class="lw-workspace">
       <nav class="lw-sidebar" aria-label="Primary LoomWeaver Navigation">
-        <div class="lw-sidebar__section">
-          <span class="lw-sidebar__heading">Core Campaign</span>
-          @for (item of coreNav(); track item.id) {
+        <div class="lw-sidebar__nav-list">
+          @for (item of primarySidebarNav; track item.id) {
             <a
               class="lw-nav-link"
               [routerLink]="item.route"
-              routerLinkActive="lw-nav-link--active"
-            >
+              routerLinkActive="lw-nav-link--active">
               <lw-icon [name]="item.icon" [size]="16" />
-              <div>
-                <strong>{{ item.label }}</strong>
-                <span>{{ item.subtitle }}</span>
-              </div>
+              <span class="lw-nav-link__label">{{ item.label }}</span>
             </a>
           }
         </div>
 
-        <div class="lw-sidebar__section">
-          <span class="lw-sidebar__heading">Play & Engines</span>
-          @for (item of playNav(); track item.id) {
-            <a
-              class="lw-nav-link"
-              [routerLink]="item.route"
-              routerLinkActive="lw-nav-link--active"
-            >
-              <lw-icon [name]="item.icon" [size]="16" />
-              <div>
-                <strong>{{ item.label }}</strong>
-                <span>{{ item.subtitle }}</span>
-              </div>
-            </a>
+        <div class="lw-sidebar__divider"></div>
+
+        <div class="lw-sidebar__engines">
+          <button
+            type="button"
+            class="lw-sidebar__heading-btn"
+            (click)="showAllModules.set(!showAllModules())">
+            <span>Tactical & Studio Tools</span>
+            <lw-icon [name]="showAllModules() ? 'chevron-down' : 'chevron-right'" [size]="13" />
+          </button>
+
+          @if (showAllModules()) {
+            <div class="lw-sidebar__nav-list">
+              @for (item of engineSidebarNav; track item.id) {
+                <a
+                  class="lw-nav-link lw-nav-link--compact"
+                  [routerLink]="item.route"
+                  routerLinkActive="lw-nav-link--active">
+                  <lw-icon [name]="item.icon" [size]="15" />
+                  <span class="lw-nav-link__label">{{ item.label }}</span>
+                </a>
+              }
+            </div>
           }
         </div>
 
-        <div class="lw-sidebar__section">
-          <span class="lw-sidebar__heading">Platform & AI</span>
-          @for (item of platformNav(); track item.id) {
-            <a
-              class="lw-nav-link"
-              [routerLink]="item.route"
-              routerLinkActive="lw-nav-link--active"
-            >
-              <lw-icon [name]="item.icon" [size]="16" />
-              <div>
-                <strong>{{ item.label }}</strong>
-                <span>{{ item.subtitle }}</span>
-              </div>
-            </a>
-          }
-        </div>
-
-        <div class="lw-sidebar__footer">
-          <lw-badge label="MySQL: loomweaver" tone="emerald" icon="Database" />
-          <lw-badge label="Neo4j: loomweaver" tone="gold" icon="Network" />
+        <div class="lw-sidebar__creed-card">
+          <p class="lw-sidebar__creed-title">The Loom remembers.</p>
+          <p class="lw-sidebar__creed-sub">
+            People change. Places endure.<br />
+            Every choice matters.
+          </p>
         </div>
       </nav>
 

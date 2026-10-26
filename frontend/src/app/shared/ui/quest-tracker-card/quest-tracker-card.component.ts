@@ -12,6 +12,8 @@ export interface LwQuestStepItem {
 export interface LwQuestTrackerItem {
   readonly id: string;
   readonly title: string;
+  readonly summary?: string;
+  readonly icon?: string;
   readonly questGiver: string;
   readonly originLocation: string;
   readonly completionLocation: string;
@@ -37,10 +39,21 @@ export interface LwQuestStepToggleEvent {
 })
 export class LwQuestTrackerCardComponent {
   readonly quest = input.required<LwQuestTrackerItem>();
+  readonly variant = input<'compact-row' | 'detailed'>('detailed');
+  readonly selected = input<boolean>(false);
+
+  readonly questSelected = output<LwQuestTrackerItem>();
   readonly stepToggled = output<LwQuestStepToggleEvent>();
   readonly clueInspected = output<string>();
 
   readonly completedCount = computed(
     () => this.quest().steps.filter((s) => s.completed).length,
   );
+
+  readonly primarySubtitle = computed(() => {
+    const q = this.quest();
+    if (q.summary) return q.summary;
+    const nextStep = q.steps.find((s) => !s.completed) ?? q.steps[0];
+    return nextStep ? nextStep.description : `${q.originLocation} to ${q.completionLocation}`;
+  });
 }

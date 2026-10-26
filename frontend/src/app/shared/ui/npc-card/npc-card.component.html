@@ -1,43 +1,78 @@
-<article
-  class="lw-npc-card"
-  [attr.data-variant]="variant()"
-  [class.lw-npc-card--selected]="selected()">
-  <div class="lw-npc-card__header">
-    <div class="lw-npc-card__id" (click)="npcSelected.emit(npc())">
-      <span class="lw-npc-card__avatar">
-        <lw-icon name="user" [size]="16" />
-      </span>
-      <div>
-        <h4 class="lw-npc-card__name">{{ npc().name }}</h4>
-        <span class="lw-npc-card__title">{{ npc().title }} · {{ npc().faction }}</span>
+@let n = npc();
+@if (variant() === 'dashboard-row') {
+  <div
+    class="lw-npc-row"
+    [class.lw-npc-row--selected]="selected()"
+    (click)="npcSelected.emit(n)"
+  >
+    <div class="lw-npc-row__portrait" [class.lw-npc-row__portrait--hostile]="n.disposition === 'Hostile'">
+      @if (n.avatarUrl) {
+        <img [src]="n.avatarUrl" [alt]="n.name" />
+      } @else {
+        <span>{{ initials() }}</span>
+      }
+    </div>
+    <div class="lw-npc-row__info">
+      <strong class="lw-npc-row__name">{{ n.name }}</strong>
+      <span class="lw-npc-row__role">{{ n.title }}</span>
+      <small
+        class="lw-npc-row__attitude"
+        [class.lw-npc-row__attitude--hostile]="n.disposition === 'Hostile'"
+      >
+        {{ n.attitudeLabel || ('Neutral · ' + n.disposition) }}
+      </small>
+    </div>
+    <button
+      type="button"
+      class="lw-npc-row__more"
+      title="Inspect NPC Dossier & Send to VTT"
+      (click)="$event.stopPropagation(); npcSelected.emit(n)"
+    >
+      <lw-icon name="MoreVertical" [size]="15" />
+    </button>
+  </div>
+} @else {
+  <article
+    class="lw-npc-card"
+    [attr.data-variant]="variant()"
+    [class.lw-npc-card--selected]="selected()">
+    <div class="lw-npc-card__header">
+      <div class="lw-npc-card__id" (click)="npcSelected.emit(n)">
+        <span class="lw-npc-card__avatar">
+          <lw-icon name="user" [size]="16" />
+        </span>
+        <div>
+          <h4 class="lw-npc-card__name">{{ n.name }}</h4>
+          <span class="lw-npc-card__title">{{ n.title }} · {{ n.faction }}</span>
+        </div>
+      </div>
+      <div class="lw-npc-card__badges">
+        <lw-badge [label]="n.disposition" [tone]="dispositionTone()" />
+        <lw-badge [label]="n.locationName" tone="neutral" icon="map-pin" />
       </div>
     </div>
-    <div class="lw-npc-card__badges">
-      <lw-badge [label]="npc().disposition" [tone]="dispositionTone()" />
-      <lw-badge [label]="npc().locationName" tone="neutral" icon="map-pin" />
-    </div>
-  </div>
 
-  @if (variant() !== 'compact') {
-    <p class="lw-npc-card__summary">{{ npc().summary }}</p>
-  }
+    @if (variant() !== 'compact') {
+      <p class="lw-npc-card__summary">{{ n.summary }}</p>
+    }
 
-  @if (variant() === 'detailed' && showGmSecret() && npc().gmSecret; as secret) {
-    <div class="lw-npc-card__secret">
-      <lw-badge label="GM Canon Secret" tone="gm" icon="lock" />
-      <span>{{ secret }}</span>
-    </div>
-  }
+    @if (variant() === 'detailed' && showGmSecret() && n.gmSecret; as secret) {
+      <div class="lw-npc-card__secret">
+        <lw-badge label="GM Canon Secret" tone="gm" icon="lock" />
+        <span>{{ secret }}</span>
+      </div>
+    }
 
-  <div class="lw-npc-card__footer">
-    <code>{{ npc().compositeKey }}</code>
-    <div class="lw-npc-card__actions">
-      <lw-button variant="ghost" size="sm" icon="network" (pressed)="npcSelected.emit(npc())">
-        Inspect
-      </lw-button>
-      <lw-button variant="secondary" size="sm" icon="shield" (pressed)="spawnRequested.emit(npc())">
-        Send to VTT
-      </lw-button>
+    <div class="lw-npc-card__footer">
+      <code>{{ n.compositeKey }}</code>
+      <div class="lw-npc-card__actions">
+        <lw-button variant="ghost" size="sm" icon="network" (pressed)="npcSelected.emit(n)">
+          Inspect
+        </lw-button>
+        <lw-button variant="secondary" size="sm" icon="shield" (pressed)="spawnRequested.emit(n)">
+          Send to VTT
+        </lw-button>
+      </div>
     </div>
-  </div>
-</article>
+  </article>
+}

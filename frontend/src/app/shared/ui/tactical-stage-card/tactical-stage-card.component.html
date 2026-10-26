@@ -1,0 +1,207 @@
+<section class="lw-stage" aria-label="Live Tactical Session Stage">
+  <header class="lw-stage__ribbon">
+    <div class="lw-stage__pills">
+      <span class="lw-stage__pill lw-stage__pill--live">
+        <span class="lw-stage__pulse" aria-hidden="true"></span>
+        <span>Live Session</span>
+      </span>
+      <span class="lw-stage__pill">
+        <lw-icon name="Landmark" [size]="13" />
+        <span>{{ sceneName() }}</span>
+      </span>
+      <span class="lw-stage__pill">
+        <lw-icon name="Swords" [size]="13" />
+        <span>{{ modeLabel() }}</span>
+      </span>
+      <button
+        type="button"
+        class="lw-stage__pill lw-stage__pill--btn"
+        title="Click to advance initiative turn"
+        (click)="advanceTurn()"
+      >
+        <lw-icon name="Clock" [size]="13" />
+        <span>Round {{ roundNumber() }}</span>
+      </button>
+      @if (!showInitiativePanel()) {
+        <button
+          type="button"
+          class="lw-stage__pill lw-stage__pill--btn"
+          (click)="showInitiativePanel.set(true)"
+        >
+          <lw-icon name="Swords" [size]="13" />
+          <span>Show Initiative</span>
+        </button>
+      }
+    </div>
+
+    <div class="lw-stage__controls">
+      <button
+        type="button"
+        class="lw-stage__ctrl"
+        [class.lw-stage__ctrl--active]="fogEnabled()"
+        (click)="fogEnabled.set(!fogEnabled())"
+      >
+        <lw-icon name="EyeOff" [size]="13" />
+        <span>Fog</span>
+      </button>
+      <button
+        type="button"
+        class="lw-stage__ctrl"
+        [class.lw-stage__ctrl--active]="gridEnabled()"
+        (click)="gridEnabled.set(!gridEnabled())"
+      >
+        <lw-icon name="Grid" [size]="13" />
+        <span>Grid</span>
+      </button>
+      <button
+        type="button"
+        class="lw-stage__ctrl"
+        [class.lw-stage__ctrl--active]="measureEnabled()"
+        (click)="measureEnabled.set(!measureEnabled())"
+      >
+        <lw-icon name="Compass" [size]="13" />
+        <span>Measure</span>
+      </button>
+      <button
+        type="button"
+        class="lw-stage__ctrl lw-stage__ctrl--icon"
+        title="Expand Full Arcane Screen VTT"
+        (click)="expandRequested.emit()"
+      >
+        <lw-icon name="Maximize2" [size]="13" />
+      </button>
+    </div>
+  </header>
+
+  <div class="lw-stage__viewport">
+    <div
+      class="lw-stage__canvas"
+      [style.transform]="'scale(' + zoomScale() + ')'"
+      [style.background-image]="'url(' + mapImageUrl() + ')'"
+    >
+      @if (gridEnabled()) {
+        <div class="lw-stage__grid-overlay" aria-hidden="true"></div>
+      }
+      @if (fogEnabled()) {
+        <div class="lw-stage__fog-overlay" aria-hidden="true"></div>
+      }
+      @if (measureEnabled()) {
+        <svg class="lw-stage__measure-svg" viewBox="0 0 800 440" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="335" y1="265" x2="480" y2="175" stroke="#58f29c" stroke-width="2.5" stroke-dasharray="6 6" />
+          <circle cx="335" cy="265" r="5" fill="#58f29c" />
+          <circle cx="480" cy="175" r="5" fill="#f3d7a2" />
+          <rect x="382" y="202" width="58" height="22" rx="5" fill="#071912" stroke="#49e892" />
+          <text x="411" y="217" fill="#ecfff4" font-size="11" font-weight="700" text-anchor="middle">25 ft</text>
+        </svg>
+      }
+
+      @for (token of combatants(); track token.id; let idx = $index) {
+        <button
+          type="button"
+          class="lw-stage__token"
+          [class.lw-stage__token--active]="activeCombatantIndex() === idx"
+          [style.left.%]="token.xPercent"
+          [style.top.%]="token.yPercent"
+          [style.border-color]="token.ringColor"
+          [title]="token.name + ' (' + token.hpLabel + ') · Initiative ' + token.initiative"
+          (click)="selectToken(token, idx)"
+        >
+          <span class="lw-stage__token-initials">{{ token.initials }}</span>
+          <span class="lw-stage__token-label">{{ token.name }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- LEFT OVERLAY: INITIATIVE ORDER -->
+    @if (showInitiativePanel()) {
+      <aside class="lw-stage__init" aria-label="Initiative Order">
+        <div class="lw-stage__init-head">
+          <span><lw-icon name="Swords" [size]="14" /> <strong>Initiative Order</strong></span>
+          <button
+            type="button"
+            class="lw-stage__init-close"
+            title="Hide Initiative Overlay"
+            (click)="showInitiativePanel.set(false)"
+          >
+            <lw-icon name="X" [size]="13" />
+          </button>
+        </div>
+        <div class="lw-stage__init-list">
+          @for (c of combatants(); track c.id; let idx = $index) {
+            <button
+              type="button"
+              class="lw-init-row"
+              [class.lw-init-row--active]="activeCombatantIndex() === idx"
+              [class.lw-init-row--hostile]="c.allegiance === 'hostile'"
+              (click)="selectToken(c, idx)"
+            >
+              <span class="lw-init-row__avatar" [style.border-color]="c.ringColor">{{ c.initials }}</span>
+              <span class="lw-init-row__name">{{ c.name }}</span>
+              <strong class="lw-init-row__score">{{ c.initiative }}</strong>
+            </button>
+          }
+        </div>
+      </aside>
+    }
+
+    <!-- RIGHT FLOATING TOOL DOCK -->
+    <div class="lw-stage__tools" role="toolbar" aria-label="Map Tools">
+      <button
+        type="button"
+        class="lw-tool-btn"
+        [class.lw-tool-btn--active]="activeTool() === 'select'"
+        title="Select & Move Token"
+        (click)="activeTool.set('select')"
+      >
+        <lw-icon name="MousePointer" [size]="15" />
+      </button>
+      <button
+        type="button"
+        class="lw-tool-btn"
+        [class.lw-tool-btn--active]="activeTool() === 'draw'"
+        title="Tactical Sketch & Annotations"
+        (click)="activeTool.set('draw')"
+      >
+        <lw-icon name="Edit3" [size]="15" />
+      </button>
+      <button
+        type="button"
+        class="lw-tool-btn"
+        [class.lw-tool-btn--active]="measureEnabled()"
+        title="Area of Effect & Range Cone"
+        (click)="measureEnabled.set(!measureEnabled())"
+      >
+        <lw-icon name="Compass" [size]="15" />
+      </button>
+      <button
+        type="button"
+        class="lw-tool-btn"
+        [class.lw-tool-btn--active]="activeTool() === 'note'"
+        title="Drop Scene Note Pin"
+        (click)="activeTool.set('note')"
+      >
+        <lw-icon name="MapPin" [size]="15" />
+      </button>
+      <button
+        type="button"
+        class="lw-tool-btn"
+        title="Roll 3D Physics Dice"
+        (click)="rollDiceRequested.emit()"
+      >
+        <lw-icon name="Dices" [size]="15" />
+      </button>
+      <div class="lw-stage__tool-sep"></div>
+      <button type="button" class="lw-tool-btn" title="Zoom In" (click)="adjustZoom(0.1)">
+        <lw-icon name="Plus" [size]="15" />
+      </button>
+      <button type="button" class="lw-tool-btn" title="Zoom Out" (click)="adjustZoom(-0.1)">
+        <lw-icon name="Minus" [size]="15" />
+      </button>
+    </div>
+
+    <div class="lw-stage__scale" aria-hidden="true">
+      <span class="lw-stage__scale-bar"></span>
+      <span>5 ft</span>
+    </div>
+  </div>
+</section>

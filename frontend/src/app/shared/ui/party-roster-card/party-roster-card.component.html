@@ -1,0 +1,52 @@
+<section class="lw-party-card" aria-label="Party Members">
+  <header class="lw-party-card__head">
+    <div class="lw-party-card__title">
+      <lw-icon name="Shield" [size]="15" />
+      <h3>Party Members</h3>
+    </div>
+    <button
+      type="button"
+      class="lw-party-card__add"
+      title="Open Character Studio"
+      (click)="addMemberRequested.emit()"
+    >
+      <lw-icon name="Plus" [size]="14" />
+    </button>
+  </header>
+
+  <div class="lw-party-card__list">
+    @for (m of members(); track m.id) {
+      <button
+        type="button"
+        class="lw-party-row"
+        [class.lw-party-row--selected]="selectedKey() === m.compositeKey"
+        (click)="memberSelected.emit(m)"
+      >
+        <span
+          class="lw-party-row__dot"
+          [class.lw-party-row__dot--online]="m.online"
+          aria-hidden="true"
+        ></span>
+        <span
+          class="lw-party-row__avatar"
+          [style.border-color]="m.ringColor || '#49e892'"
+        >
+          {{ m.avatarInitials }}
+        </span>
+        <span class="lw-party-row__meta">
+          <strong>{{ m.name }}</strong>
+          <small>{{ m.classAndAncestry }}</small>
+        </span>
+        <span class="lw-party-row__hp">
+          <span class="lw-party-row__hp-label">HP {{ m.hpCurrent }}/{{ m.hpMax }}</span>
+          <span class="lw-party-row__hp-track">
+            <span
+              class="lw-party-row__hp-fill"
+              [style.width.%]="hpPercent(m)"
+            ></span>
+          </span>
+        </span>
+      </button>
+    }
+  </div>
+</section>
