@@ -4,12 +4,14 @@ using LoomWeaver.Infrastructure.MySql;
 using LoomWeaver.Infrastructure.Neo4j;
 using LoomWeaver.Modules.Actions;
 using LoomWeaver.Modules.Audio;
+using LoomWeaver.Modules.Auth;
 using LoomWeaver.Modules.Characters;
 using LoomWeaver.Modules.Dice;
 using LoomWeaver.Modules.Encounters;
 using LoomWeaver.Modules.Knowledge;
 using LoomWeaver.Modules.Maps;
 using LoomWeaver.Modules.Marketplace;
+using LoomWeaver.Modules.Realtime;
 using LoomWeaver.Modules.Sessions;
 using LoomWeaver.Modules.Statistics;
 using Microsoft.AspNetCore.Builder;
@@ -35,6 +37,9 @@ public static class LoomWeaverEndpoints
             api.MapLoomAndWeaveEndpoints();
             api.MapMarketplaceAndQuestEndpoints();
             api.MapSessionChronicleEndpoints();
+            api.MapTableRealtimeEndpoints();
+            api.MapAuthAndCheckoutEndpoints();
+            api.MapCompendiumAndStudioEndpoints();
             MapCoreEndpoints(api);
         }
 

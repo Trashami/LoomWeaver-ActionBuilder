@@ -102,6 +102,32 @@
   </lw-panel>
 
   <lw-panel
+    eyebrow="Multi-Octave Terrain & Biome Brush Engine"
+    title="Advanced Heightmap & Water-Table Sculptor"
+    [subtitle]="heightmapBanner()"
+    icon="Map"
+  >
+    <div class="lw-top-controls">
+      <div class="lw-scene-tabs">
+        @for (biome of biomePresets; track biome) {
+          <button
+            type="button"
+            class="lw-scene-tab"
+            [class.lw-scene-tab--active]="selectedBiomePreset() === biome"
+            (click)="selectedBiomePreset.set(biome)"
+          >
+            <strong>{{ biome }}</strong>
+            <span>Elevation +{{ elevationDelta() }}m · {{ roughnessOctaves() }} Octaves · Water {{ waterLevelMeters() }}m</span>
+          </button>
+        }
+      </div>
+      <lw-button variant="primary" size="sm" icon="Sparkles" (pressed)="applyHeightmapBiomeSculpt()">
+        Sculpt Heightmap & Sync Biome
+      </lw-button>
+    </div>
+  </lw-panel>
+
+  <lw-panel
     eyebrow="Stamp & Biome Catalog"
     title="Compatible Map & Audio Packs"
     subtitle="Rendered with the shared lw-asset-card component."

@@ -56,6 +56,30 @@
   </lw-panel>
 
   <lw-panel
+    eyebrow="Stripe Connect 85/15 Split Settlement Ledger"
+    title="Verified Creator Royalty Transfers & Checkout Receipts"
+    [subtitle]="'Active Account: ' + auth.activeProfile().displayName + ' · Creator Balance: $' + auth.activeProfile().creatorBalanceUsd.toFixed(2)"
+    icon="Sparkles"
+  >
+    <div class="lw-creator-modules-grid">
+      @for (settlement of auth.settlements(); track settlement.sessionId) {
+        <article class="lw-tier-card">
+          <div class="lw-tier-card__top">
+            <strong>{{ settlement.itemTitle }}</strong>
+            <lw-badge [label]="settlement.receiptNumber" tone="emerald" />
+          </div>
+          <p class="lw-tier-card__summary">
+            Gross: ${{ settlement.grossAmountUsd.toFixed(2) }} ·
+            <strong>85% Creator Transfer: ${{ settlement.creatorTransferUsd.toFixed(2) }}</strong>
+            ({{ settlement.creatorHandle }}) · 15% Platform: ${{ settlement.platformFeeUsd.toFixed(2) }}
+          </p>
+          <code>Stripe Session: {{ settlement.sessionId }} ({{ settlement.paymentStatus }})</code>
+        </article>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
     eyebrow="Table Accessibility & GM Subscriptions"
     title="Subscription Matrix (Players Always Join 100% Free)"
     subtitle="Never lock players behind GM-tier subscriptions simply to participate at the table."

@@ -121,6 +121,78 @@
   </lw-panel>
 
   <lw-panel
+    eyebrow="Babylon.js GPU Particle Emitter Curve Studio"
+    title="Custom Particle Emitter Curves & Blend Profiles ({{ emitterPresets().length }})"
+    subtitle="Configure emission rate, particle lifetime, gravity vector, cone angle, and additive/alpha blending."
+    icon="Sparkles"
+  >
+    <div class="lw-field-row" style="margin-bottom: 0.85rem;">
+      <label class="lw-field">
+        <span>Emitter Curve Name</span>
+        <input
+          type="text"
+          class="lw-input"
+          [ngModel]="customEmitterName()"
+          (ngModelChange)="customEmitterName.set($event)"
+        />
+      </label>
+      <label class="lw-field">
+        <span>Emission Rate (/sec)</span>
+        <input
+          type="number"
+          class="lw-input"
+          [ngModel]="customEmissionRate()"
+          (ngModelChange)="customEmissionRate.set(+$event)"
+        />
+      </label>
+      <label class="lw-field">
+        <span>Lifetime (ms)</span>
+        <input
+          type="number"
+          class="lw-input"
+          [ngModel]="customLifetimeMs()"
+          (ngModelChange)="customLifetimeMs.set(+$event)"
+        />
+      </label>
+      <label class="lw-field">
+        <span>Gravity Y</span>
+        <input
+          type="number"
+          step="0.2"
+          class="lw-input"
+          [ngModel]="customGravityY()"
+          (ngModelChange)="customGravityY.set(+$event)"
+        />
+      </label>
+      <lw-button variant="gold" size="sm" icon="Sparkles" (pressed)="saveEmitterCurvePreset()">
+        Save & Fire Emitter Curve
+      </lw-button>
+    </div>
+
+    <div class="lw-preset-grid">
+      @for (emit of emitterPresets(); track emit.id) {
+        <div class="lw-preset-card">
+          <div class="lw-preset-card__head">
+            <div>
+              <strong>{{ emit.name }}</strong>
+              <span class="lw-preset-meta">
+                {{ emit.emissionRatePerSec }} pts/s · {{ emit.particleLifetimeMs }}ms · Cone {{ emit.coneAngleDegrees }}°
+              </span>
+            </div>
+            <lw-badge [label]="emit.blendMode" tone="gold" />
+          </div>
+          <div class="lw-preset-card__foot">
+            <lw-badge [label]="'Gravity Y: ' + emit.gravityY + ' · Scale ' + emit.startScale + ' -> ' + emit.endScale" tone="emerald" />
+            <lw-button variant="secondary" size="sm" icon="Sparkles" (pressed)="previewEffect(activeEffectPreset())">
+              Preview Curve
+            </lw-button>
+          </div>
+        </div>
+      }
+    </div>
+  </lw-panel>
+
+  <lw-panel
     eyebrow="Registered ActionBuilder Rules"
     title="Active Campaign Actions & Homebrew Abilities ({{ vtt.actionRules().length }})"
     subtitle="Click Test on any rule to preview its bound Babylon.js trajectory."

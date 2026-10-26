@@ -9,6 +9,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
@@ -26,6 +27,62 @@ import {
   ActionRuleVm,
   EffectTimelinePresetVm,
 } from './engine/effect-timeline.contract';
+
+export interface ParticleEmitterCurveVm {
+  readonly id: string;
+  readonly name: string;
+  readonly emissionRatePerSec: number;
+  readonly particleLifetimeMs: number;
+  readonly gravityY: number;
+  readonly coneAngleDegrees: number;
+  readonly startScale: number;
+  readonly endScale: number;
+  readonly blendMode: string;
+  readonly colorStartHex: string;
+  readonly colorEndHex: string;
+}
+
+const DEFAULT_EMITTER_PRESETS: readonly ParticleEmitterCurveVm[] = [
+  {
+    id: 'emit-solar-supernova',
+    name: 'Anelith Luminary Supernova',
+    emissionRatePerSec: 420,
+    particleLifetimeMs: 1150,
+    gravityY: -1.2,
+    coneAngleDegrees: 38.0,
+    startScale: 0.35,
+    endScale: 2.4,
+    blendMode: 'Additive',
+    colorStartHex: '#ffe299',
+    colorEndHex: '#ff6b4a',
+  },
+  {
+    id: 'emit-crimson-mist',
+    name: 'Cinth Vampire Blood-Mist',
+    emissionRatePerSec: 280,
+    particleLifetimeMs: 1600,
+    gravityY: 0.4,
+    coneAngleDegrees: 65.0,
+    startScale: 0.5,
+    endScale: 1.85,
+    blendMode: 'AlphaBlend',
+    colorStartHex: '#ff4d6d',
+    colorEndHex: '#2b0912',
+  },
+  {
+    id: 'emit-artificer-aether',
+    name: 'Artificer Phosphor-Bronze Spark',
+    emissionRatePerSec: 520,
+    particleLifetimeMs: 780,
+    gravityY: -3.8,
+    coneAngleDegrees: 24.0,
+    startScale: 0.22,
+    endScale: 1.15,
+    blendMode: 'Additive',
+    colorStartHex: '#70d6ff',
+    colorEndHex: '#e5b85c',
+  },
+];
 
 @Component({
   selector: 'lw-effects-page',
@@ -46,9 +103,18 @@ import {
 export class EffectsPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('effectCanvas') private effectCanvasRef?: ElementRef<HTMLCanvasElement>;
 
+  private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
   readonly vtt = inject(VttCombatService);
   readonly stage = inject(BabylonEffectStageService);
+
+  readonly emitterPresets = signal<readonly ParticleEmitterCurveVm[]>(DEFAULT_EMITTER_PRESETS);
+  readonly customEmitterName = signal<string>('Aether Condenser Spiral');
+  readonly customEmissionRate = signal<number>(480);
+  readonly customLifetimeMs = signal<number>(1100);
+  readonly customGravityY = signal<number>(-1.5);
+  readonly customConeAngle = signal<number>(35);
+  readonly customBlendMode = signal<string>('Additive');
 
   readonly selectedEffectId = signal<string>('fx-projectile-arc');
   readonly newActionName = signal<string>('Cinth Clockwork Arc Discharge');
@@ -131,5 +197,45 @@ export class EffectsPageComponent implements AfterViewInit, OnDestroy {
       this.store.viewerRole() === 'gm',
     );
     this.previewEffect(this.activeEffectPreset());
+  }
+
+  constructor() {
+    this.http
+      .get<readonly ParticleEmitterCurveVm[]>('/api/v2/campaigns/1/effects/emitter-presets')
+      .subscribe({
+        next: (res) => {
+          if (res?.length) this.emitterPresets.set(res);
+        },
+        error: () => {},
+      });
+  }
+
+  saveEmitterCurvePreset(): void {
+    const payload: ParticleEmitterCurveVm = {
+      id: `emit-${Date.now()}`,
+      name: this.customEmitterName().trim() || 'Custom Emitter Curve',
+      emissionRatePerSec: this.customEmissionRate(),
+      particleLifetimeMs: this.customLifetimeMs(),
+      gravityY: this.customGravityY(),
+      coneAngleDegrees: this.customConeAngle(),
+      startScale: 0.3,
+      endScale: 2.1,
+      blendMode: this.customBlendMode(),
+      colorStartHex: '#ffe299',
+      colorEndHex: '#70d6ff',
+    };
+
+    this.http
+      .post<ParticleEmitterCurveVm>('/api/v2/campaigns/1/effects/emitter-presets', payload)
+      .subscribe({
+        next: (created) => {
+          this.emitterPresets.update((prev) => [created, ...prev]);
+          this.previewEffect(this.activeEffectPreset());
+        },
+        error: () => {
+          this.emitterPresets.update((prev) => [payload, ...prev]);
+          this.previewEffect(this.activeEffectPreset());
+        },
+      });
   }
 }

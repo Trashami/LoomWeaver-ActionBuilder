@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
@@ -6,6 +7,8 @@ import {
   LwAssetPickerComponent,
   LwBadgeComponent,
   LwButtonComponent,
+  LwCompendiumEntryItem,
+  LwCompendiumImporterComponent,
   LwPanelComponent,
   LwRulesOptionSelectorComponent,
   LwStatRadarComponent,
@@ -13,6 +16,75 @@ import {
   RulesOptionItem,
 } from '../../shared/ui/public-api';
 import { CharacterStudioService } from './services/character-studio.service';
+
+const DEFAULT_COMPENDIUM: readonly LwCompendiumEntryItem[] = [
+  {
+    id: 'srd-spell-sunbeam-luminary',
+    name: 'Luminary Sunbeam of the Anelith',
+    category: 'Spell',
+    systemCode: 'dnd5e',
+    levelOrTier: '6th-Level Evocation',
+    actionEconomy: '1 Action · Concentration (1 min)',
+    summary:
+      'Channels remnant Sidhe Ard creation weave into a 60-ft radiant beam; creatures make a CON save or take 6d8 Radiant damage and are blinded.',
+    mechanicalPayload: '6d8 Radiant · CON Save DC 17 · 60 ft Line',
+  },
+  {
+    id: 'srd-item-quiet-maw-pouch',
+    name: 'The Quiet Maw (Extradimensional Stasis Stitch)',
+    category: 'Equipment',
+    systemCode: 'dnd5e',
+    levelOrTier: 'Wondrous Item (Very Rare)',
+    actionEconomy: 'Passive / Reaction',
+    summary:
+      "Sewn by Kycius inside Dolly's mouth along the Cinth road; creatures swallowed enter a harmless pocket plane rather than suffering lethal bite damage.",
+    mechanicalPayload: 'WIS Save DC 16 · Non-Lethal Extradimensional Containment',
+  },
+  {
+    id: 'srd-item-artificer-condenser',
+    name: 'Cinth Phosphor-Bronze Arc Condenser',
+    category: 'Equipment',
+    systemCode: 'dnd5e',
+    levelOrTier: 'Artificer Guild Relic (Rare)',
+    actionEconomy: '1 Bonus Action',
+    summary:
+      'Post-Moonlight Wars non-magical defensive capacitor built by the Cinth Artificers Guild to counter unregistered wizardry and vampire thralls.',
+    mechanicalPayload: '+2 AC vs. Spell Attacks · 3d8 Lightning Counter-Arc',
+  },
+  {
+    id: 'srd-feat-stone-sense-scholar',
+    name: "Kildrid's Deep-Mountain Stone Sense",
+    category: 'Feat',
+    systemCode: 'dnd5e',
+    levelOrTier: 'Dwarven Heritage Feat',
+    actionEconomy: '1 Bonus Action (60 ft Tremorsense)',
+    summary:
+      'Allows the bearer to sense subterranean rune wards, hollow caverns, and ancient bound dragons clawing at bedrock up to half a league away.',
+    mechanicalPayload: 'Advantage on History/Masonry · 60 ft Runic Tremorsense',
+  },
+  {
+    id: 'srd-spell-laksis-ignition',
+    name: 'Laksis Tandem Fire-Drake Volley',
+    category: 'Spell',
+    systemCode: 'dnd5e',
+    levelOrTier: '3rd-Level Conjuration / Evocation',
+    actionEconomy: '1 Bonus Action (Familiar Command)',
+    summary:
+      "Kycius's fire drake familiar Laksis exhales a concentrated cinder arc that ignites targets and illuminates fog-of-war tiles.",
+    mechanicalPayload: '4d6 Fire · DEX Save DC 16 · 15 ft Cone',
+  },
+  {
+    id: 'srd-feat-slingshot-tooth-crit',
+    name: "Fivi's Improvised Fey Slingshot Mastery",
+    category: 'Feat',
+    systemCode: 'dnd5e',
+    levelOrTier: 'Feywild Outcast Trick',
+    actionEconomy: '1 Action (60/120 ft)',
+    summary:
+      'Loads a tooth, pebble, or brass gear into a slingshot; critical hits bypass magical resistance and deal bonus force trauma to targets at 1 HP.',
+    mechanicalPayload: '1d8+4 Force/Bludgeoning · Crit Range 19-20',
+  },
+];
 
 @Component({
   selector: 'lw-characters-page',
@@ -26,14 +98,18 @@ import { CharacterStudioService } from './services/character-studio.service';
     LwRulesOptionSelectorComponent,
     LwAssetPickerComponent,
     LwStatRadarComponent,
+    LwCompendiumImporterComponent,
   ],
   templateUrl: './characters.page.html',
   styleUrl: './characters.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CharactersPageComponent {
+  private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
   readonly studio = inject(CharacterStudioService);
+  readonly compendiumEntries = signal<readonly LwCompendiumEntryItem[]>(DEFAULT_COMPENDIUM);
+  readonly compendiumStatus = signal<string>('5e SRD + Icrandor Canon Compendium ready for one-click sheet import.');
 
   readonly newCharName = signal<string>('');
   readonly newCharAncestry = signal<string>('Cinth Artificer Guildborn');
@@ -116,5 +192,21 @@ export class CharactersPageComponent {
       this.newCharArchetype(),
     );
     this.newCharName.set('');
+  }
+
+  constructor() {
+    this.http.get<readonly LwCompendiumEntryItem[]>('/api/v2/compendium/search').subscribe({
+      next: (res) => {
+        if (res?.length) this.compendiumEntries.set(res);
+      },
+      error: () => {},
+    });
+  }
+
+  importCompendiumEntry(entry: LwCompendiumEntryItem): void {
+    this.studio.executeLevelUp(`${entry.name} (${entry.mechanicalPayload})`, 'INT');
+    this.compendiumStatus.set(
+      `Imported '${entry.name}' (${entry.category}) onto ${this.studio.activeSheet().name}'s sheet.`,
+    );
   }
 }

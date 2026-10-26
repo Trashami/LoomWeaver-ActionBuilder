@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { AuthSessionService } from '../../core/services/auth-session.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import {
   LwAssetCardComponent,
@@ -93,6 +94,7 @@ const DEFAULT_CREATOR_MODULES: readonly LwCreatorModuleItem[] = [
 export class MarketplacePageComponent {
   private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
+  readonly auth = inject(AuthSessionService);
 
   readonly activeTierCode = signal<string>('weaver');
   readonly creatorModules = signal<readonly LwCreatorModuleItem[]>(DEFAULT_CREATOR_MODULES);
@@ -123,6 +125,16 @@ export class MarketplacePageComponent {
   }
 
   importCreatorModule(moduleId: string): void {
+    const found = this.creatorModules().find((m) => m.id === moduleId);
+    if (found) {
+      this.auth.executeStripeCheckout(
+        found.id,
+        found.title,
+        found.creatorHandle,
+        found.priceUsd,
+      );
+    }
+
     this.http
       .post<{ module: LwCreatorModuleItem; message: string }>(
         `/api/v2/marketplace/modules/${moduleId}/import`,

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthSessionService } from './core/services/auth-session.service';
 import { LoomWeaverStoreService } from './core/services/loomweaver-store.service';
 import { WebAudioAmbienceService } from './features/assets/engine/web-audio-ambience.service';
 import {
@@ -31,6 +32,7 @@ import {
 })
 export class AppComponent {
   readonly store = inject(LoomWeaverStoreService);
+  readonly auth = inject(AuthSessionService);
   readonly audio = inject(WebAudioAmbienceService);
 
   readonly coreNav = computed(() =>

@@ -68,6 +68,20 @@
     </div>
   </lw-panel>
 
+  <lw-panel
+    eyebrow="SignalR /hubs/table + Multi-Tab BroadcastChannel"
+    title="Real-Time Table Seat Presence & Synchronized Event Stream"
+    subtitle="Broadcasts VTT token moves, cryptographic dice rolls, and audio crossfades across all connected GM and free Player seats."
+    icon="Network"
+  >
+    <lw-live-table-presence
+      [seats]="realtime.seats()"
+      [events]="realtime.recentEvents()"
+      [protocolLabel]="realtime.syncProtocolLabel()"
+      (broadcastPingRequested)="broadcastTablePing()"
+    />
+  </lw-panel>
+
   <div class="lw-two-col">
     <lw-panel
       eyebrow="Shared lw-session-recap-card Primitive"

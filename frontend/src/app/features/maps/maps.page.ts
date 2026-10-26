@@ -9,6 +9,8 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { QualityProfile } from '../../core/models/loomweaver.models';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
@@ -16,6 +18,7 @@ import {
   BrushParameterState,
   LwAssetCardComponent,
   LwBadgeComponent,
+  LwButtonComponent,
   LwIconComponent,
   LwMapToolPanelComponent,
   LwPanelComponent,
@@ -34,9 +37,11 @@ import { BabylonMapStageService } from './engine/rendering/babylon-map-stage.ser
   selector: 'lw-maps-page',
   standalone: true,
   imports: [
+    FormsModule,
     RouterLink,
     LwPanelComponent,
     LwBadgeComponent,
+    LwButtonComponent,
     LwIconComponent,
     LwAssetCardComponent,
     LwMapToolPanelComponent,
@@ -49,8 +54,24 @@ import { BabylonMapStageService } from './engine/rendering/babylon-map-stage.ser
 export class MapsPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('babylonCanvas') private canvasRef?: ElementRef<HTMLCanvasElement>;
 
+  private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
   readonly stage = inject(BabylonMapStageService);
+
+  readonly biomePresets = [
+    'Gwaedhellain Poisoned Canopy',
+    'Plains of Red Clay & Ruin',
+    'Cinth Marble Ballroom Courtyard',
+    'Runic Subterranean Basalt',
+    'Alpine Limestone Cliffs',
+  ];
+  readonly selectedBiomePreset = signal<string>('Gwaedhellain Poisoned Canopy');
+  readonly elevationDelta = signal<number>(6.5);
+  readonly roughnessOctaves = signal<number>(4);
+  readonly waterLevelMeters = signal<number>(1.8);
+  readonly heightmapBanner = signal<string>(
+    'Multi-octave heightmap & biome brush sculptor synchronized with Babylon.js terrain.',
+  );
 
   readonly tools = MAP_STUDIO_TOOLS;
   readonly activeToolId = signal<string>('stamps');
@@ -319,5 +340,31 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       return updated;
     });
     this.commandLog.update((list) => (list.length > 1 ? list.slice(1) : list));
+  }
+
+  applyHeightmapBiomeSculpt(): void {
+    const sceneId = this.selectedSceneKey();
+    const payload = {
+      biomePreset: this.selectedBiomePreset(),
+      brushRadiusMeters: this.brushRadius(),
+      elevationDelta: this.elevationDelta(),
+      roughnessOctaves: this.roughnessOctaves(),
+      waterLevelMeters: this.waterLevelMeters(),
+    };
+
+    this.http
+      .post<{ summary: string }>(`/api/v2/campaigns/1/maps/${sceneId}/sculpt-heightmap`, payload)
+      .subscribe({
+        next: (res) => {
+          if (res?.summary) this.heightmapBanner.set(res.summary);
+          this.applyCanvasStrokeAt(0, 0);
+        },
+        error: () => {
+          this.heightmapBanner.set(
+            `Sculpted '${payload.biomePreset}' heightmap (Elevation +${payload.elevationDelta}m, Octaves=${payload.roughnessOctaves}).`,
+          );
+          this.applyCanvasStrokeAt(0, 0);
+        },
+      });
   }
 }

@@ -2,13 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AuthSessionService } from '../../core/services/auth-session.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
+import { TableRealtimeSyncService } from '../../core/services/table-realtime-sync.service';
 import {
   LwAssetCardComponent,
   LwBadgeComponent,
   LwButtonComponent,
   LwEntityCardComponent,
   LwIconComponent,
+  LwLiveTablePresenceComponent,
   LwPanelComponent,
   LwSessionRecapCardComponent,
   LwSessionRecapItem,
@@ -81,6 +84,7 @@ const DEFAULT_SESSIONS: readonly LwSessionRecapItem[] = [
     LwEntityCardComponent,
     LwAssetCardComponent,
     LwSessionRecapCardComponent,
+    LwLiveTablePresenceComponent,
   ],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
@@ -89,6 +93,8 @@ const DEFAULT_SESSIONS: readonly LwSessionRecapItem[] = [
 export class HomePageComponent {
   private readonly http = inject(HttpClient);
   readonly store = inject(LoomWeaverStoreService);
+  readonly auth = inject(AuthSessionService);
+  readonly realtime = inject(TableRealtimeSyncService);
 
   readonly sessions = signal<readonly LwSessionRecapItem[]>(DEFAULT_SESSIONS);
   readonly newSessionTitle = signal<string>("Session 19: Skyship Crash Near Munk's Village");
@@ -194,6 +200,15 @@ export class HomePageComponent {
 
   readonly featuredEntities = computed(() => this.store.authorizedEntities().slice(0, 4));
   readonly featuredAssets = computed(() => this.store.assets().slice(0, 3));
+
+  broadcastTablePing(): void {
+    const profile = this.auth.activeProfile();
+    this.realtime.publishTableEvent(
+      'table_sync_ping',
+      profile.displayName,
+      `Verified SignalR + BroadcastChannel sync pulse from ${profile.displayName} (${profile.boundCharacter}).`,
+    );
+  }
 
   constructor() {
     this.http.get<readonly LwSessionRecapItem[]>('/api/v2/campaigns/1/sessions').subscribe({

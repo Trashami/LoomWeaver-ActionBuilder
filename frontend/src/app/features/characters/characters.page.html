@@ -166,6 +166,19 @@
   </div>
 
   <lw-panel
+    eyebrow="Shared lw-compendium-importer Primitive"
+    title="5e SRD & Icrandor Canon Compendium Importer"
+    [subtitle]="compendiumStatus()"
+    icon="BookOpen"
+  >
+    <lw-compendium-importer
+      [entries]="compendiumEntries()"
+      [targetLabel]="studio.activeSheet().name"
+      (entryImported)="importCompendiumEntry($event)"
+    />
+  </lw-panel>
+
+  <lw-panel
     eyebrow="Hexagonal Capability Signatures"
     title="Party Radar Profiles"
     subtitle="Rendered via the shared lw-stat-radar component."
