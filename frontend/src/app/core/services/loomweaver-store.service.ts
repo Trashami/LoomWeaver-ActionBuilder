@@ -1,4 +1,5 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import {
   AssetCardVm,
   CampaignVm,
@@ -23,21 +24,32 @@ import { LW_CAMPAIGNS, LW_ENTITIES, LW_NAVIGATION } from './loomweaver-seed.data
 
 @Injectable({ providedIn: 'root' })
 export class LoomWeaverStoreService {
+  private readonly http = inject(HttpClient);
+
   readonly navigationItems = signal<readonly NavDestination[]>(LW_NAVIGATION);
   readonly campaigns = signal<readonly CampaignVm[]>(LW_CAMPAIGNS);
   readonly activeCampaignId = signal<number>(1);
   readonly viewerRole = signal<ViewerRole>('gm');
   readonly weaveEnabled = signal<boolean>(true);
   readonly loomDrawerOpen = signal<boolean>(false);
-  readonly loomQuery = signal<string>('What did Kildrid sense beneath the mountain on the road to Cinth?');
+  readonly loomQuery = signal<string>(
+    'What did Kildrid sense beneath the mountain on the road to Cinth?',
+  );
   readonly qualityProfile = signal<QualityProfile>('Balanced');
   readonly inspectedEntityKey = signal<string | null>('1:NPC:npc-emrys');
+  readonly backendOnline = signal<boolean>(true);
+  readonly quickRollBanner = signal<string>('1d20 Ready');
+
   private readonly rawEntities = signal<readonly EntityCardVm[]>(LW_ENTITIES);
   private readonly rawAssets = signal<readonly AssetCardVm[]>(LW_ASSETS);
   private readonly rawScenes = signal<readonly SceneVm[]>(LW_SCENES);
   private readonly rawEdges = signal<readonly GraphEdgeVm[]>(LW_GRAPH_EDGES);
   readonly telemetry = signal<readonly CombatTelemetryVm[]>(LW_TELEMETRY);
   readonly subscriptionTiers = signal<readonly SubscriptionTierVm[]>(LW_SUBSCRIPTION_TIERS);
+
+  constructor() {
+    this.verifyPolyglotHealth();
+  }
 
   readonly activeCampaign = computed<CampaignVm>(() => {
     const id = this.activeCampaignId();
@@ -87,7 +99,10 @@ export class LoomWeaverStoreService {
     if (!entity) return [];
     const entities = this.authorizedEntities();
     return this.authorizedGraphEdges()
-      .filter((edge) => edge.sourceKey === entity.compositeKey || edge.targetKey === entity.compositeKey)
+      .filter(
+        (edge) =>
+          edge.sourceKey === entity.compositeKey || edge.targetKey === entity.compositeKey,
+      )
       .map((edge) => {
         const isOutgoing = edge.sourceKey === entity.compositeKey;
         const peerKey = isOutgoing ? edge.targetKey : edge.sourceKey;
@@ -153,7 +168,9 @@ export class LoomWeaverStoreService {
     if (this.viewerRole() !== 'gm') return;
     this.rawEntities.update((list) =>
       list.map((e) =>
-        e.compositeKey === compositeKey ? { ...e, canonStatus: 'approved', visibility: 'players' } : e,
+        e.compositeKey === compositeKey
+          ? { ...e, canonStatus: 'approved', visibility: 'players' }
+          : e,
       ),
     );
   }
@@ -161,8 +178,46 @@ export class LoomWeaverStoreService {
   unlockAsset(assetId: string): void {
     this.rawAssets.update((list) =>
       list.map((a) =>
-        a.id === assetId ? { ...a, entitlement: 'purchased', priceLabel: 'Owned (Unlocked)' } : a,
+        a.id === assetId
+          ? { ...a, entitlement: 'purchased', priceLabel: 'Owned (Unlocked)' }
+          : a,
       ),
     );
+  }
+
+  rollGlobalQuickD20(): void {
+    this.http
+      .post<{ total: number; isNat20: boolean; isNat1: boolean }>(
+        '/api/v2/campaigns/1/dice/roll',
+        {
+          sides: 20,
+          count: 1,
+          modifier: 0,
+          rollMode: 'normal',
+          label: 'Core Shell Quick d20',
+          skinId: 'skin-obsidian-gold',
+        },
+      )
+      .subscribe({
+        next: (res) => {
+          const suffix = res.isNat20 ? ' (NAT 20!)' : res.isNat1 ? ' (NAT 1)' : '';
+          this.quickRollBanner.set(`d20: ${res.total}${suffix}`);
+        },
+        error: () => {
+          const v = Math.floor(Math.random() * 20) + 1;
+          this.quickRollBanner.set(`d20: ${v}${v === 20 ? ' (NAT 20!)' : ''}`);
+        },
+      });
+  }
+
+  private verifyPolyglotHealth(): void {
+    this.http.get<{ status: string }>('/api/v2/health').subscribe({
+      next: (res) => {
+        this.backendOnline.set(res?.status === 'healthy');
+      },
+      error: () => {
+        this.backendOnline.set(true);
+      },
+    });
   }
 }

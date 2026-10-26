@@ -20,4 +20,5 @@ export * from './panel/panel.component';
 export * from './quest-tracker-card/quest-tracker-card.component';
 export * from './rules-option-selector/rules-option-selector.component';
 export * from './scoped-note-card/scoped-note-card.component';
+export * from './session-recap-card/session-recap-card.component';
 export * from './stat-radar/stat-radar.component';

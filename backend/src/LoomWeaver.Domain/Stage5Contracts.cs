@@ -113,3 +113,32 @@ public sealed record MarketplaceCreatorModuleContract(
     IReadOnlyList<string> IncludedItems,
     bool Installed
 );
+
+public sealed record SessionDeepLinkContract(
+    string Label,
+    string Route,
+    string EntityKey
+);
+
+public sealed record SessionRecapContract(
+    string Id,
+    int CampaignId,
+    int SessionNumber,
+    string Title,
+    string LocationName,
+    string DateLabel,
+    int XpAwarded,
+    string Summary,
+    IReadOnlyList<string> Highlights,
+    IReadOnlyList<SessionDeepLinkContract> DeepLinks
+);
+
+public sealed record CreateSessionRecapRequest(
+    int SessionNumber,
+    string Title,
+    string LocationName,
+    int XpAwarded,
+    string Summary,
+    IReadOnlyList<string>? Highlights
+);
+

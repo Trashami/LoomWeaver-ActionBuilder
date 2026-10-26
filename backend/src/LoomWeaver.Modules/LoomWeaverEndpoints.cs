@@ -10,6 +10,7 @@ using LoomWeaver.Modules.Encounters;
 using LoomWeaver.Modules.Knowledge;
 using LoomWeaver.Modules.Maps;
 using LoomWeaver.Modules.Marketplace;
+using LoomWeaver.Modules.Sessions;
 using LoomWeaver.Modules.Statistics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -33,6 +34,7 @@ public static class LoomWeaverEndpoints
             api.MapCampaignAnalyticsEndpoints();
             api.MapLoomAndWeaveEndpoints();
             api.MapMarketplaceAndQuestEndpoints();
+            api.MapSessionChronicleEndpoints();
             MapCoreEndpoints(api);
         }
 

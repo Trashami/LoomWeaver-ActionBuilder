@@ -1,0 +1,39 @@
+@let item = session();
+<article class="lw-session-card">
+  <div class="lw-session-card__header">
+    <div>
+      <span class="lw-session-card__eyebrow">
+        Session {{ item.sessionNumber }} · {{ item.dateLabel }} · {{ item.locationName }}
+      </span>
+      <h4 class="lw-session-card__title">{{ item.title }}</h4>
+    </div>
+    <lw-badge [label]="'+' + item.xpAwarded + ' XP Awarded'" tone="emerald" icon="Sparkles" />
+  </div>
+
+  <p class="lw-session-card__summary">{{ item.summary }}</p>
+
+  <ul class="lw-session-card__highlights">
+    @for (point of item.highlights; track point) {
+      <li>{{ point }}</li>
+    }
+  </ul>
+
+  <div class="lw-session-card__links">
+    @for (link of item.deepLinks; track link.label) {
+      <div class="lw-session-card__link-group">
+        <a class="lw-session-card__deep-link" [routerLink]="link.route">
+          <lw-icon name="Compass" [size]="12" />
+          <span>{{ link.label }}</span>
+        </a>
+        <button
+          type="button"
+          class="lw-session-card__inspect-btn"
+          (click)="inspectEntityRequested.emit(link.entityKey)"
+          title="Inspect Graph Node"
+        >
+          <lw-icon name="Network" [size]="12" />
+        </button>
+      </div>
+    }
+  </div>
+</article>

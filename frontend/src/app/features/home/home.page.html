@@ -4,9 +4,10 @@
       <img src="/LoomWeaver.png" alt="LoomWeaver Official Crest" class="lw-hero__logo" />
       <div class="lw-hero__copy">
         <div class="lw-hero__badges">
-          <lw-badge label="LoomWeaver V2 Architecture" tone="gold" icon="sparkles" />
-          <lw-badge [label]="'MySQL + Neo4j: loomweaver'" tone="emerald" icon="database" />
+          <lw-badge label="LoomWeaver V2 Core Operating System" tone="gold" icon="Sparkles" />
+          <lw-badge label="MySQL + Neo4j: loomweaver" tone="emerald" icon="Database" />
           <lw-badge [label]="store.activeCampaign().systemLabel" tone="neutral" />
+          <lw-badge label="11 Logical Modules Active" tone="gold" />
         </div>
         <h1 class="lw-hero__title">{{ store.activeCampaign().name }}</h1>
         <p class="lw-hero__subtitle">
@@ -15,19 +16,23 @@
         </p>
         <div class="lw-hero__cta">
           <a class="lw-hero__primary-link" routerLink="/arcane-screen">
-            <lw-icon name="shield" [size]="16" />
-            <span>Launch Arcane Screen</span>
+            <lw-icon name="Shield" [size]="16" />
+            <span>Launch Arcane Screen VTT</span>
           </a>
           <a class="lw-hero__secondary-link" routerLink="/maps">
-            <lw-icon name="map" [size]="16" />
-            <span>Open Map Studio</span>
+            <lw-icon name="Map" [size]="16" />
+            <span>Open LoomMaps 2D/3D</span>
           </a>
-          <lw-button variant="secondary" icon="book-open" (pressed)="store.toggleLoomDrawer(true)">
+          <a class="lw-hero__secondary-link" routerLink="/characters">
+            <lw-icon name="Users" [size]="16" />
+            <span>Character Studio</span>
+          </a>
+          <lw-button variant="secondary" icon="BookOpen" (pressed)="store.toggleLoomDrawer(true)">
             Ask The Loom
           </lw-button>
           @if (store.weaveEnabled()) {
             <a class="lw-hero__secondary-link" routerLink="/weave">
-              <lw-icon name="network" [size]="16" />
+              <lw-icon name="Network" [size]="16" />
               <span>Explore Neo4j World Graph</span>
             </a>
           }
@@ -37,24 +42,27 @@
   </section>
 
   <lw-panel
-    eyebrow="Platform Navigation Matrix"
-    title="All 13 LoomWeaver Workspaces"
-    subtitle="Every route below is live and connected to the unified loomweaver MySQL + Neo4j state store."
-    icon="compass">
-    <div class="lw-workspace-grid">
-      @for (dest of store.visibleNavigation(); track dest.id) {
-        <a class="lw-workspace-card" [routerLink]="dest.route">
-          <div class="lw-workspace-card__icon">
-            <lw-icon [name]="dest.icon" [size]="18" />
-          </div>
-          <div class="lw-workspace-card__body">
-            <div class="lw-workspace-card__top">
-              <strong>{{ dest.label }}</strong>
-              <lw-badge [label]="dest.group" tone="neutral" />
+    eyebrow="Unified Angular Workspace + Modular .NET 10 Solution"
+    title="All 11 Logical LoomWeaver Modules"
+    subtitle="Every capability runs inside one shared component architecture and one polyglot backend—zero fragmented sites."
+    icon="Layers"
+    [elevated]="true"
+  >
+    <div class="lw-modules-matrix">
+      @for (mod of logicalModules; track mod.number) {
+        <a class="lw-module-tile" [routerLink]="mod.route">
+          <div class="lw-module-tile__head">
+            <div class="lw-module-tile__icon">
+              <lw-icon [name]="mod.icon" [size]="17" />
             </div>
-            <span>{{ dest.subtitle }}</span>
+            <lw-badge [label]="'Module ' + mod.number" tone="gold" />
           </div>
-          <lw-icon name="arrow-right" [size]="15" />
+          <strong class="lw-module-tile__name">{{ mod.name }}</strong>
+          <span class="lw-module-tile__stack">{{ mod.stack }}</span>
+          <div class="lw-module-tile__footer">
+            <span class="lw-module-tile__metric">{{ mod.statusMetric }}</span>
+            <lw-icon name="ArrowRight" [size]="14" />
+          </div>
         </a>
       }
     </div>
@@ -62,10 +70,79 @@
 
   <div class="lw-two-col">
     <lw-panel
+      eyebrow="Shared lw-session-recap-card Primitive"
+      title="Living Session Chronicle & Deep-Link Recaps"
+      [subtitle]="sessionBanner()"
+      icon="BookOpen"
+    >
+      <div class="lw-stack">
+        @for (sess of sessions(); track sess.id) {
+          <lw-session-recap-card
+            [session]="sess"
+            (inspectEntityRequested)="store.inspectEntity($event)"
+          />
+        }
+      </div>
+    </lw-panel>
+
+    <lw-panel
+      eyebrow="Automated Session XP Engine"
+      title="Conclude Session & Award Party XP"
+      subtitle="Records a canonical session recap with clickable deep links and distributes automated XP to the party."
+      icon="Sparkles"
+    >
+      <div class="lw-session-composer">
+        <label>
+          <span>Session Title</span>
+          <input
+            type="text"
+            [ngModel]="newSessionTitle()"
+            (ngModelChange)="newSessionTitle.set($event)"
+          />
+        </label>
+
+        <div class="lw-session-composer__row">
+          <label>
+            <span>Primary Location</span>
+            <input
+              type="text"
+              [ngModel]="newSessionLocation()"
+              (ngModelChange)="newSessionLocation.set($event)"
+            />
+          </label>
+          <label>
+            <span>Automated XP Award</span>
+            <input
+              type="number"
+              [ngModel]="newSessionXp()"
+              (ngModelChange)="newSessionXp.set(+$event)"
+            />
+          </label>
+        </div>
+
+        <label>
+          <span>Session Canon Summary</span>
+          <textarea
+            rows="4"
+            [ngModel]="newSessionSummary()"
+            (ngModelChange)="newSessionSummary.set($event)"
+          ></textarea>
+        </label>
+
+        <lw-button variant="primary" icon="Check" (pressed)="concludeAndLogSession()">
+          Conclude Session & Award +{{ newSessionXp() }} XP
+        </lw-button>
+      </div>
+    </lw-panel>
+  </div>
+
+  <div class="lw-two-col">
+    <lw-panel
       eyebrow="Canonical Graph Entities"
       title="Featured Campaign Dossiers"
       subtitle="Role-filtered entities from the loomweaver database. Click Inspect to view Neo4j edges."
-      icon="users">
+      icon="Users"
+    >
       <div panelActions>
         <a class="lw-inline-link" routerLink="/campaigns">View All in Campaigns</a>
       </div>
@@ -76,7 +153,8 @@
             [active]="store.inspectedEntityKey() === entity.compositeKey"
             [canApprove]="store.viewerRole() === 'gm'"
             (inspectRequested)="store.inspectEntity($event.compositeKey)"
-            (approveRequested)="store.approveDraftEntity($event.compositeKey)" />
+            (approveRequested)="store.approveDraftEntity($event.compositeKey)"
+          />
         }
       </div>
     </lw-panel>
@@ -85,7 +163,8 @@
       eyebrow="Reusable Asset Card System"
       title="Featured Tabletop & Cosmetic Assets"
       subtitle="Shared lw-asset-card component configured for standard overview presentation."
-      icon="layers">
+      icon="Layers"
+    >
       <div panelActions>
         <a class="lw-inline-link" routerLink="/marketplace">Browse Marketplace</a>
       </div>
@@ -96,7 +175,8 @@
             [config]="{ variant: 'standard', showPrice: true, showUnlockAction: true }"
             (assetSelected)="store.unlockAsset($event.id)"
             (unlockRequested)="store.unlockAsset($event.id)"
-            (previewRequested)="store.unlockAsset($event.id)" />
+            (previewRequested)="store.unlockAsset($event.id)"
+          />
         }
       </div>
     </lw-panel>

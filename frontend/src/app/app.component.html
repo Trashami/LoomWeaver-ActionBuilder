@@ -14,7 +14,8 @@
         <select
           class="lw-select"
           [ngModel]="store.activeCampaignId()"
-          (ngModelChange)="store.setCampaign($event)">
+          (ngModelChange)="store.setCampaign($event)"
+        >
           @for (camp of store.campaigns(); track camp.id) {
             <option [ngValue]="camp.id">{{ camp.name }} ({{ camp.systemLabel }})</option>
           }
@@ -26,36 +27,58 @@
           type="button"
           class="lw-role-btn"
           [class.lw-role-btn--active]="store.viewerRole() === 'gm'"
-          (click)="store.setViewerRole('gm')">
+          (click)="store.setViewerRole('gm')"
+        >
           GM View
         </button>
         <button
           type="button"
           class="lw-role-btn"
           [class.lw-role-btn--active]="store.viewerRole() === 'players'"
-          (click)="store.setViewerRole('players')">
+          (click)="store.setViewerRole('players')"
+        >
           Player View
         </button>
       </div>
 
       <lw-button
+        variant="secondary"
+        size="sm"
+        icon="Dices"
+        (pressed)="store.rollGlobalQuickD20()"
+      >
+        {{ store.quickRollBanner() }}
+      </lw-button>
+
+      <lw-button
+        [variant]="audio.isPlaying() ? 'gold' : 'secondary'"
+        size="sm"
+        icon="Music"
+        (pressed)="audio.togglePlayback()"
+      >
+        {{ audio.isPlaying() ? 'Audio: Live' : 'Audio: Synth' }}
+      </lw-button>
+
+      <lw-button
         [variant]="store.weaveEnabled() ? 'gold' : 'secondary'"
         size="sm"
-        icon="network"
-        (pressed)="store.toggleWeave()">
+        icon="Network"
+        (pressed)="store.toggleWeave()"
+      >
         {{ store.weaveEnabled() ? 'Weave: ON' : 'Weave: OFF' }}
       </lw-button>
 
       <lw-button
         [variant]="store.loomDrawerOpen() ? 'primary' : 'secondary'"
         size="sm"
-        icon="book-open"
-        (pressed)="store.toggleLoomDrawer()">
+        icon="BookOpen"
+        (pressed)="store.toggleLoomDrawer()"
+      >
         The Loom
       </lw-button>
 
       <a class="lw-market-pill" routerLink="/marketplace">
-        <lw-icon name="shopping-bag" [size]="15" />
+        <lw-icon name="ShoppingBag" [size]="15" />
         <span>Marketplace</span>
       </a>
     </div>
@@ -71,7 +94,8 @@
           <a
             class="lw-nav-link"
             [routerLink]="item.route"
-            routerLinkActive="lw-nav-link--active">
+            routerLinkActive="lw-nav-link--active"
+          >
             <lw-icon [name]="item.icon" [size]="16" />
             <div>
               <strong>{{ item.label }}</strong>
@@ -87,7 +111,8 @@
           <a
             class="lw-nav-link"
             [routerLink]="item.route"
-            routerLinkActive="lw-nav-link--active">
+            routerLinkActive="lw-nav-link--active"
+          >
             <lw-icon [name]="item.icon" [size]="16" />
             <div>
               <strong>{{ item.label }}</strong>
@@ -103,7 +128,8 @@
           <a
             class="lw-nav-link"
             [routerLink]="item.route"
-            routerLinkActive="lw-nav-link--active">
+            routerLinkActive="lw-nav-link--active"
+          >
             <lw-icon [name]="item.icon" [size]="16" />
             <div>
               <strong>{{ item.label }}</strong>
@@ -114,8 +140,8 @@
       </div>
 
       <div class="lw-sidebar__footer">
-        <lw-badge label="MySQL: loomweaver" tone="emerald" icon="database" />
-        <lw-badge label="Neo4j: loomweaver" tone="gold" icon="network" />
+        <lw-badge label="MySQL: loomweaver" tone="emerald" icon="Database" />
+        <lw-badge label="Neo4j: loomweaver" tone="gold" icon="Network" />
       </div>
     </nav>
 
