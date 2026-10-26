@@ -1,11 +1,22 @@
 <div class="lw-fx-studio-shell">
-  <!-- 1. Global LoomWeaver Top Navigation Bar -->
+  <!-- 1. Core LoomWeaver Top Header Bar (Links to loom-weaver.com/dashboard + Campaign/Character/Spell Push) -->
   <lw-effect-top-navbar
-    [searchQuery]="studio.globalHeaderSearch()"
-    [userInitials]="auth.isAuthenticated() ? auth.activeProfile().displayName.slice(0, 2).toUpperCase() : 'JD'"
-    (searchChanged)="studio.globalHeaderSearch.set($event)"
-    (accountPressed)="auth.openAuthModal('login')"
-    (settingsPressed)="studio.reducedMotion.set(!studio.reducedMotion())" />
+    [campaigns]="studio.campaigns()"
+    [activeCampaignId]="studio.activeCampaignId()"
+    [viewerRole]="studio.viewerRole()"
+    [characters]="studio.authorizedCharacters()"
+    [selectedCharacterKey]="studio.selectedCharacterKey()"
+    [selectedSpellName]="studio.selectedSpellName()"
+    [activeEffectName]="studio.effectName()"
+    [assignments]="studio.campaignAssignments()"
+    [isPushing]="studio.isPushingToCampaign()"
+    [userDisplayName]="auth.isAuthenticated() ? auth.activeProfile().displayName : 'Jason (GeoJason)'"
+    [userInitials]="auth.isAuthenticated() ? auth.activeProfile().displayName.slice(0, 2).toUpperCase() : 'JA'"
+    (campaignChanged)="studio.setCampaign($event)"
+    (viewerRoleToggled)="studio.setViewerRole($event)"
+    (characterChanged)="studio.selectCharacter($event)"
+    (spellChanged)="studio.selectSpell($event)"
+    (pushToCampaignPressed)="studio.pushToCurrentCampaign()" />
 
   <!-- 2. Effect Sub-Header Bar (Back, Title, Design/Preview/In-Game Test, Undo/Redo, Save, Export) -->
   <lw-effect-sub-header
@@ -19,7 +30,7 @@
     (modeChanged)="onModeChanged($event)"
     (undoRequested)="studio.undo()"
     (redoRequested)="studio.redo()"
-    (saveRequested)="studio.saveEffectDocument(auth.activeProfile().role)"
+    (saveRequested)="studio.saveEffectDocument(studio.viewerRole())"
     (exportRequested)="studio.exportEffectJson()"
     (backRequested)="onNavigateBack()" />
 
@@ -45,7 +56,7 @@
       [categories]="studio.categories()"
       (searchChanged)="studio.librarySearch.set($event)"
       (categoryChanged)="studio.libraryCategory.set($event)"
-      (emitterSelected)="studio.selectEmitter($event)" />
+      (emitterSelected)="onEmitterSelected($event)" />
 
     <!-- Center 3D Dungeon Stage + Bottom Multi-Track Timeline -->
     <div class="lw-fx-center-column">

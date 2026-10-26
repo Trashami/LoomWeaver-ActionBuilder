@@ -4,7 +4,9 @@
 }
 
 .lw-shell {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background:
@@ -276,13 +278,21 @@
 
 .lw-workspace {
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr) auto;
-  min-height: calc(100vh - 62px);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1080px) {
+  .lw-shell {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
   .lw-workspace {
+    overflow: visible;
     grid-template-columns: 205px minmax(0, 1fr);
   }
 }
@@ -294,6 +304,11 @@
 }
 
 .lw-sidebar {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #49e892 rgba(6, 22, 16, 0.78);
   background:
     linear-gradient(180deg, rgba(13, 19, 21, 0.96) 0%, rgba(8, 12, 14, 0.99) 100%);
   border-right: 1px solid rgba(217, 183, 122, 0.22);
@@ -395,6 +410,10 @@
 }
 
 .lw-main {
-  padding: 0.9rem 1rem 1.2rem;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }

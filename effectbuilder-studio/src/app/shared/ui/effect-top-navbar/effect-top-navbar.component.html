@@ -1,67 +1,98 @@
-<header class="lw-fx-topnav" role="banner">
-  <div class="lw-fx-topnav__left">
-    <a class="lw-fx-brand" href="https://loom-weaver.com">
-      <span class="lw-fx-brand__crest" aria-hidden="true">
-        <span class="lw-fx-brand__ring"></span>
-      </span>
-      <span class="lw-fx-brand__wordmark">{{ brandTitle() }}</span>
+<header class="lw-topbar" role="banner">
+  <div class="lw-topbar__left">
+    <a
+      class="lw-topbar__brand"
+      href="https://loom-weaver.com/dashboard"
+      title="Return to LoomWeaver Dashboard">
+      <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-topbar__logo" />
+      <div class="lw-topbar__titles">
+        <span class="lw-topbar__name">LOOMWEAVER</span>
+        <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
+      </div>
     </a>
 
-    <nav class="lw-fx-navlinks" aria-label="LoomWeaver Platform Navigation">
-      @for (item of navItems(); track item.id) {
-        <a
-          class="lw-fx-navlink"
-          [class.lw-fx-navlink--active]="item.active"
-          [href]="item.href">
-          <lw-icon [name]="item.icon" [size]="15" />
-          <span>{{ item.label }}</span>
-        </a>
-      }
-    </nav>
+    <div class="lw-topbar__divider"></div>
+
+    <div class="lw-campaign-picker">
+      <div class="lw-campaign-picker__body">
+        <div class="lw-campaign-picker__row">
+          <select
+            class="lw-campaign-picker__select"
+            [ngModel]="activeCampaignId()"
+            (ngModelChange)="campaignChanged.emit(+$event)"
+            aria-label="Active Campaign">
+            @for (camp of campaigns(); track camp.id) {
+              <option [ngValue]="camp.id">{{ camp.name.toUpperCase() }}</option>
+            }
+          </select>
+        </div>
+        <span class="lw-campaign-picker__sub">
+          Campaign · {{ activeCampaign().currentSessionNumber }} sessions · {{ activeCampaign().tone }}
+        </span>
+      </div>
+    </div>
   </div>
 
-  <div class="lw-fx-topnav__right">
-    <label class="lw-fx-global-search" aria-label="Search assets, spells, or effects">
-      <lw-icon name="search" [size]="15" />
-      <input
-        type="search"
-        [placeholder]="searchPlaceholder()"
-        [ngModel]="searchQuery()"
-        (ngModelChange)="searchChanged.emit($event)" />
-    </label>
+  <div class="lw-topbar__right">
+    <div class="lw-campaign-push-bar" aria-label="Campaign Character & Spell Effect Assignment">
+      <button
+        ngpButton
+        type="button"
+        class="lw-campaign-push-bar__role"
+        [class.lw-campaign-push-bar__role--player]="viewerRole() !== 'gm'"
+        (click)="toggleRole()"
+        title="Switch between Dungeon Master (all campaign characters) and Player (own character) scope">
+        <span class="lw-campaign-push-bar__role-dot"></span>
+        <span>{{ viewerRole() === 'gm' ? 'DM Mode' : 'Player Mode' }}</span>
+      </button>
 
-    <button
-      ngpButton
-      type="button"
-      class="lw-fx-icon-btn"
-      aria-label="Notifications">
-      <lw-icon name="bell" [size]="17" />
-    </button>
+      <label class="lw-campaign-push-bar__field">
+        <span class="lw-campaign-push-bar__label">Character</span>
+        <select
+          class="lw-campaign-push-bar__select"
+          aria-label="Select Character for Effect"
+          [ngModel]="selectedCharacterKey()"
+          (ngModelChange)="characterChanged.emit($event)">
+          @for (ch of characters(); track ch.characterKey) {
+            <option [value]="ch.characterKey">
+              {{ ch.characterName }} ({{ ch.classSummary }})
+            </option>
+          }
+        </select>
+      </label>
 
-    <button
-      ngpButton
-      type="button"
-      class="lw-fx-icon-btn"
-      aria-label="Help Documentation">
-      <lw-icon name="help" [size]="17" />
-    </button>
+      <label class="lw-campaign-push-bar__field">
+        <span class="lw-campaign-push-bar__label">Spell / Action</span>
+        <select
+          class="lw-campaign-push-bar__select"
+          aria-label="Select Spell for Effect"
+          [ngModel]="selectedSpellName()"
+          (ngModelChange)="spellChanged.emit($event)">
+          @for (spell of availableSpells(); track spell) {
+            <option [value]="spell">{{ spell }}</option>
+          }
+        </select>
+      </label>
 
-    <button
-      ngpButton
-      type="button"
-      class="lw-fx-icon-btn"
-      aria-label="Studio Settings"
-      (click)="settingsPressed.emit()">
-      <lw-icon name="settings" [size]="17" />
-    </button>
+      <button
+        ngpButton
+        type="button"
+        class="lw-campaign-push-bar__btn"
+        [disabled]="isPushing()"
+        (click)="pushToCampaignPressed.emit()"
+        title="Save & assign current 3D effect to the selected character and spell in MySQL for this campaign">
+        <span>{{ isPushing() ? 'Pushing...' : 'Push to Campaign' }}</span>
+      </button>
+    </div>
 
-    <button
-      ngpButton
-      type="button"
-      class="lw-fx-avatar-btn"
-      aria-label="Account Profile"
-      (click)="accountPressed.emit()">
-      {{ userInitials() }}
-    </button>
+    <div class="lw-profile-pill">
+      <div class="lw-profile-pill__avatar">
+        <span>{{ userInitials() }}</span>
+      </div>
+      <div class="lw-profile-pill__info">
+        <strong>{{ userDisplayName() }}</strong>
+        <span>{{ viewerRole() === 'gm' ? 'Dungeon Master' : 'Adventurer' }}</span>
+      </div>
+    </div>
   </div>
 </header>

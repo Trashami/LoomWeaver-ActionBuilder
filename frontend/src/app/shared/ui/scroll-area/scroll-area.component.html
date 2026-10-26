@@ -1,0 +1,13 @@
+<div
+  class="lw-scroll-area"
+  [attr.data-orientation]="orientation()"
+  [style.--lw-scroll-size.px]="scrollbarWidth()"
+  [style.--lw-scroll-thumb]="resolvedThumbColor()"
+  [style.--lw-scroll-thumb-hover]="resolvedThumbHoverColor()"
+  [style.--lw-scroll-track]="resolvedTrackColor()"
+  [style.--lw-scroll-border]="resolvedTrackBorderColor()"
+  [style.max-height]="maxHeight()"
+  [style.padding]="padding()"
+>
+  <ng-content />
+</div>

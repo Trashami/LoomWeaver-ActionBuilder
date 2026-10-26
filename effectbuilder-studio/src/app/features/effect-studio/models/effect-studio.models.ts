@@ -94,3 +94,69 @@ export interface EffectInGameTestResultVm {
   readonly combatLogSummary: string;
   readonly timestamp: string;
 }
+
+export interface CampaignSummaryVm {
+  readonly id: number;
+  readonly slug: string;
+  readonly name: string;
+  readonly subtitle: string;
+  readonly systemCode: string;
+  readonly worldName: string;
+  readonly currentAct: string;
+  readonly currentSessionNumber: number;
+  readonly currentLocationName: string;
+  readonly weaveEnabled: boolean;
+}
+
+export interface CampaignCharacterOptionVm {
+  readonly characterKey: string;
+  readonly campaignId: number;
+  readonly name: string;
+  readonly classOrTitle: string;
+  readonly ownerUsername: string;
+  readonly roleScope: 'player' | 'gm' | string;
+  readonly knownSpells: readonly string[];
+}
+
+export interface CampaignEffectAssignmentVm {
+  readonly id: number;
+  readonly campaignId: number;
+  readonly campaignName: string;
+  readonly characterKey: string;
+  readonly characterName: string;
+  readonly spellKey: string;
+  readonly spellName: string;
+  readonly effectId: string;
+  readonly effectName: string;
+  readonly assignedByUsername: string;
+  readonly assignedByRole: string;
+  readonly updatedAt: string;
+  readonly effectDocument?: EffectStudioDocumentVm;
+}
+
+export interface EffectBuilderLayerVm {
+  readonly id: string;
+  readonly kind?: 'beam' | 'projectile' | 'burst' | 'rune' | 'cone' | 'aura' | 'wave' | 'whip' | 'sigil';
+  readonly type?: string;
+  readonly variant?: string;
+  readonly color?: string;
+  readonly primaryColor?: string;
+  readonly secondaryColor?: string;
+  readonly delay?: number;
+  readonly startTimeMs?: number;
+  readonly duration?: number;
+  readonly durationMs?: number;
+  readonly opacity?: number;
+  readonly scale?: number;
+  readonly count?: number;
+  readonly enabled?: boolean;
+  readonly anchor?: 'caster' | 'target' | 'path';
+}
+
+export interface EffectBuilderDefinitionVm {
+  readonly id: string;
+  readonly name: string;
+  readonly spellName?: string;
+  readonly description?: string;
+  readonly layers: readonly EffectBuilderLayerVm[];
+}

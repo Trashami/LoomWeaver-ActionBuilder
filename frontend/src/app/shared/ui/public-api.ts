@@ -32,6 +32,7 @@ export * from './quest-tracker-card/quest-tracker-card.component';
 export * from './recent-activity-feed/recent-activity-feed.component';
 export * from './recent-notes-card/recent-notes-card.component';
 export * from './rules-option-selector/rules-option-selector.component';
+export * from './scroll-area/scroll-area.component';
 export * from './scoped-note-card/scoped-note-card.component';
 export * from './session-log-composer/session-log-composer.component';
 export * from './session-recap-card/session-recap-card.component';

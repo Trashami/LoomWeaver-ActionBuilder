@@ -27,7 +27,14 @@
     }
   </nav>
 
-  <div class="lw-inspector__scroll">
+  <lw-scroll-area
+    tone="emerald"
+    [scrollbarWidth]="4"
+    thumbColor="#49e892"
+    trackColor="rgba(6, 22, 16, 0.78)"
+    padding="0.85rem 0.95rem 1.25rem"
+  >
+    <div class="lw-inspector__scroll">
     <div class="lw-inspector__hero-card">
       <div
         class="lw-inspector__hero-art"
@@ -233,5 +240,6 @@
         </div>
       </section>
     }
-  </div>
+    </div>
+  </lw-scroll-area>
 </aside>

@@ -109,3 +109,48 @@ public sealed record EffectInGameTestResultDto(
     string CombatLogSummary,
     string Timestamp
 );
+
+public sealed record CampaignEffectCharacterOptionDto(
+    string CharacterKey,
+    int CampaignId,
+    string Name,
+    string ClassOrTitle,
+    string OwnerUsername,
+    string RoleScope,
+    IReadOnlyList<string> KnownSpells
+);
+
+public sealed record CampaignEffectSpellAssignmentDto(
+    long Id,
+    int CampaignId,
+    string CampaignName,
+    string CharacterKey,
+    string CharacterName,
+    string SpellKey,
+    string SpellName,
+    string EffectId,
+    string EffectName,
+    string AssignedByUsername,
+    string AssignedByRole,
+    string UpdatedAt,
+    EffectStudioDocumentDto? EffectDocument
+);
+
+public sealed record PushEffectToCampaignRequest(
+    int CampaignId,
+    string CharacterKey,
+    string CharacterName,
+    string SpellName,
+    string AccountId,
+    string Username,
+    string ViewerRole,
+    string BoundCharacter,
+    SaveEffectStudioDocumentRequest Effect
+);
+
+public sealed record PushEffectToCampaignResponse(
+    bool Success,
+    string Message,
+    CampaignEffectSpellAssignmentDto Assignment,
+    EffectStudioDocumentDto SavedEffect
+);

@@ -30,14 +30,124 @@
         ngpButton
         type="button"
         class="lw-emitter-card"
-        [class.lw-emitter-card--active]="activeEmitterId() === item.id"
+        [class.lw-emitter-card--active]="activeEmitterId() === item.id || item.id === 'emit-rune-circle'"
         [style.--emitter-primary]="item.colorPrimaryHex"
         [style.--emitter-secondary]="item.colorSecondaryHex"
         (click)="emitterSelected.emit(item)">
         <div class="lw-emitter-card__art" [attr.data-emitter]="item.id">
-          <span class="lw-emitter-card__glow"></span>
-          <span class="lw-emitter-card__core"></span>
-          <span class="lw-emitter-card__ring"></span>
+          <svg viewBox="0 0 80 60" class="lw-emitter-card__svg" aria-hidden="true">
+            <defs>
+              <radialGradient [attr.id]="'glow-' + item.id" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" [attr.stop-color]="item.colorSecondaryHex" stop-opacity="0.95" />
+                <stop offset="48%" [attr.stop-color]="item.colorPrimaryHex" stop-opacity="0.6" />
+                <stop offset="100%" [attr.stop-color]="item.colorPrimaryHex" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <circle cx="40" cy="30" r="26" [attr.fill]="'url(#glow-' + item.id + ')'" />
+
+            @switch (item.id) {
+              @case ('emit-magic-bolt') {
+                <path d="M12 44 Q32 32 58 16" [attr.stroke]="item.colorPrimaryHex" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.65" />
+                <path d="M18 42 Q36 30 60 15" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.4" stroke-linecap="round" fill="none" />
+                <circle cx="60" cy="15" r="5.5" [attr.fill]="item.colorSecondaryHex" />
+                <circle cx="28" cy="36" r="2" [attr.fill]="item.colorSecondaryHex" />
+                <circle cx="42" cy="24" r="1.8" [attr.fill]="item.colorPrimaryHex" />
+              }
+              @case ('emit-fire-burst') {
+                <path d="M40 8 L45 22 L60 14 L50 28 L66 32 L50 37 L58 50 L43 42 L40 54 L36 42 L22 50 L30 37 L14 32 L30 28 L20 14 L35 22 Z" [attr.fill]="item.colorPrimaryHex" opacity="0.88" />
+                <circle cx="40" cy="31" r="9.5" [attr.fill]="item.colorSecondaryHex" />
+              }
+              @case ('emit-ice-shards') {
+                <polygon points="40,7 46,27 40,52 34,27" [attr.fill]="item.colorSecondaryHex" opacity="0.92" />
+                <polygon points="23,15 35,29 28,46 19,29" [attr.fill]="item.colorPrimaryHex" opacity="0.82" />
+                <polygon points="57,15 61,29 52,46 45,29" [attr.fill]="item.colorPrimaryHex" opacity="0.82" />
+              }
+              @case ('emit-shadow-swirl') {
+                <path d="M40 30 m-18 0 a18 11 0 1 0 36 0 a18 11 0 1 0 -36 0" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2.6" stroke-dasharray="9 4" />
+                <path d="M40 30 m-11 0 a11 7 0 1 1 22 0 a11 7 0 1 1 -22 0" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="2" />
+                <circle cx="40" cy="30" r="5" fill="#12071f" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.5" />
+              }
+              @case ('emit-holy-light') {
+                <ellipse cx="40" cy="46" rx="22" ry="7" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2" />
+                <ellipse cx="40" cy="46" rx="14" ry="4.5" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.4" />
+                <path d="M31 46 Q27 28 36 10" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.2" />
+                <path d="M49 46 Q53 28 44 10" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2.2" />
+                <line x1="40" y1="48" x2="40" y2="7" [attr.stroke]="item.colorSecondaryHex" stroke-width="3.2" />
+              }
+              @case ('emit-poison-cloud') {
+                <circle cx="31" cy="33" r="11" [attr.fill]="item.colorPrimaryHex" opacity="0.65" />
+                <circle cx="47" cy="31" r="12" [attr.fill]="item.colorPrimaryHex" opacity="0.65" />
+                <circle cx="40" cy="23" r="10" [attr.fill]="item.colorSecondaryHex" opacity="0.7" />
+                <circle cx="26" cy="18" r="2.2" [attr.fill]="item.colorSecondaryHex" />
+                <circle cx="54" cy="17" r="2.6" [attr.fill]="item.colorSecondaryHex" />
+              }
+              @case ('emit-rune-circle') {
+                <circle cx="40" cy="30" r="20" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2" />
+                <circle cx="40" cy="30" r="14" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.4" stroke-dasharray="4 3" />
+                <polygon points="40,12 55,39 25,39" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.5" />
+                <polygon points="40,48 55,21 25,21" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="1.5" />
+              }
+              @case ('emit-healing-aura') {
+                <ellipse cx="40" cy="44" rx="20" ry="6.5" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2.2" />
+                <path d="M26 42 C24 26 56 26 54 12" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.2" />
+                <path d="M54 42 C56 26 24 26 26 12" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2" />
+                <path d="M40 16 V28 M34 22 H46" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.6" stroke-linecap="round" />
+              }
+              @case ('emit-lightning-arc') {
+                <polyline points="16,46 31,28 27,24 45,14 41,26 63,11" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.6" stroke-linejoin="round" />
+                <polyline points="22,49 38,34 35,39 56,24" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="1.8" stroke-linejoin="round" />
+              }
+              @case ('emit-smoke') {
+                <circle cx="32" cy="36" r="11" [attr.fill]="item.colorPrimaryHex" opacity="0.55" />
+                <circle cx="46" cy="34" r="12" [attr.fill]="item.colorPrimaryHex" opacity="0.5" />
+                <circle cx="39" cy="24" r="11" [attr.fill]="item.colorSecondaryHex" opacity="0.58" />
+              }
+              @case ('emit-embers') {
+                <circle cx="24" cy="42" r="2.6" [attr.fill]="item.colorPrimaryHex" />
+                <circle cx="35" cy="34" r="3.2" [attr.fill]="item.colorSecondaryHex" />
+                <circle cx="47" cy="40" r="2.4" [attr.fill]="item.colorPrimaryHex" />
+                <circle cx="31" cy="21" r="2.2" [attr.fill]="item.colorSecondaryHex" />
+                <circle cx="44" cy="18" r="3" [attr.fill]="item.colorSecondaryHex" />
+                <circle cx="55" cy="26" r="2.1" [attr.fill]="item.colorPrimaryHex" />
+              }
+              @case ('emit-water-splash') {
+                <path d="M16 42 Q28 20 40 34 Q52 16 64 42 Z" [attr.fill]="item.colorPrimaryHex" opacity="0.82" />
+                <path d="M22 42 Q34 24 42 36 Q50 22 58 42" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.2" />
+                <circle cx="28" cy="17" r="2.5" [attr.fill]="item.colorSecondaryHex" />
+                <circle cx="51" cy="15" r="2.8" [attr.fill]="item.colorSecondaryHex" />
+              }
+              @case ('emit-wind-gust') {
+                <path d="M14 24 Q38 14 62 24" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.4" stroke-linecap="round" />
+                <path d="M12 33 Q40 23 66 33" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2.2" stroke-linecap="round" />
+                <path d="M20 42 Q42 34 58 41" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.8" stroke-linecap="round" />
+              }
+              @case ('emit-leaf-swirl') {
+                <path d="M20 38 Q38 16 58 26" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.8" stroke-dasharray="4 3" />
+                <ellipse cx="28" cy="34" rx="5" ry="2.6" transform="rotate(-28 28 34)" [attr.fill]="item.colorPrimaryHex" />
+                <ellipse cx="42" cy="24" rx="5.5" ry="2.8" transform="rotate(18 42 24)" [attr.fill]="item.colorSecondaryHex" />
+                <ellipse cx="53" cy="33" rx="4.8" ry="2.5" transform="rotate(-36 53 33)" [attr.fill]="item.colorPrimaryHex" />
+              }
+              @case ('emit-blood-mist') {
+                <circle cx="34" cy="32" r="13" [attr.fill]="item.colorPrimaryHex" opacity="0.72" />
+                <circle cx="47" cy="29" r="12" [attr.fill]="item.colorSecondaryHex" opacity="0.65" />
+                <circle cx="40" cy="22" r="9" [attr.fill]="item.colorPrimaryHex" opacity="0.8" />
+              }
+              @case ('emit-arcane-sigil') {
+                <circle cx="40" cy="30" r="19" fill="none" [attr.stroke]="item.colorPrimaryHex" stroke-width="2" />
+                <polygon points="40,12 56,39 24,39" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.6" />
+                <polygon points="40,48 56,21 24,21" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.6" />
+                <circle cx="40" cy="30" r="4.5" [attr.fill]="item.colorSecondaryHex" />
+              }
+              @case ('emit-portal') {
+                <ellipse cx="40" cy="30" rx="13" ry="20" fill="#0d061c" [attr.stroke]="item.colorPrimaryHex" stroke-width="3.2" />
+                <ellipse cx="40" cy="30" rx="9" ry="15" fill="none" [attr.stroke]="item.colorSecondaryHex" stroke-width="1.6" stroke-dasharray="5 3" />
+              }
+              @default {
+                <line x1="12" y1="44" x2="68" y2="16" [attr.stroke]="item.colorPrimaryHex" stroke-width="7" stroke-linecap="round" opacity="0.55" />
+                <line x1="12" y1="44" x2="68" y2="16" [attr.stroke]="item.colorSecondaryHex" stroke-width="2.8" stroke-linecap="round" />
+              }
+            }
+          </svg>
         </div>
         <span class="lw-emitter-card__label">{{ item.name }}</span>
       </button>

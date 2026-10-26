@@ -14,6 +14,7 @@ import {
   LwIconComponent,
   LwInspectorDrawerComponent,
   LwLoomLauncherComponent,
+  LwScrollAreaComponent,
 } from './shared/ui/public-api';
 
 interface StudioPrimaryNavItem {
@@ -40,6 +41,7 @@ interface StudioPrimaryNavItem {
     LwIconComponent,
     LwInspectorDrawerComponent,
     LwLoomLauncherComponent,
+    LwScrollAreaComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

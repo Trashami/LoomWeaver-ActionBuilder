@@ -98,6 +98,9 @@ export class LwEffectViewportStageComponent implements AfterViewInit, OnChanges,
     if (changes['cameraPreset']) {
       this.stageEngine.applyCameraPreset(this.cameraPreset());
     }
+    if (changes['activeGizmo'] && this.activeGizmo() === 'particles') {
+      this.stageEngine.triggerStructuralSpellCast(this.activeProperties());
+    }
   }
 
   ngOnDestroy(): void {

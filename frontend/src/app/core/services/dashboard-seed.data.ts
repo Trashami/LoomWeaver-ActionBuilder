@@ -80,12 +80,12 @@ export function buildSeedDashboardForCampaign(
       lastActivityLabel: 'Today at 6:15 PM',
       narrativeSummary:
         "Beneath the Grand Bazaar of Absalom, ancient brass gears grind awake. The party stands before the Starstone Vault seal as the High Clockmaster's constructs patrol the lower catwalks.",
-      heroArtworkUrl: '/landing-assets/features/feature-3-maps-scenes.jpg',
+      heroArtworkUrl: '/landing-assets/engines/engine-3-loommaps-atlas.jpg',
       upcomingSession: {
         sessionId: 'session-2-6',
         sessionNumber: 6,
         title: 'Session 6 — The Clockwork Vaults',
-        artworkUrl: '/landing-assets/features/feature-3-maps-scenes.jpg',
+        artworkUrl: '/landing-assets/engines/engine-3-loommaps-atlas.jpg',
         scheduledDateLabel: 'Sunday, May 18, 2025',
         scheduledTimeLabel: '6:00 PM – 10:00 PM (4h)',
         locationTitle: 'Subterranean Vaults',
@@ -117,7 +117,7 @@ export function buildSeedDashboardForCampaign(
       ],
       sessionGuide: {
         headerTitle: 'SESSION 6 — THE CLOCKWORK VAULTS',
-        artworkUrl: '/landing-assets/features/feature-3-maps-scenes.jpg',
+        artworkUrl: '/landing-assets/engines/engine-3-loommaps-atlas.jpg',
         epigraph: '"Every gear in Absalom turns toward the Starstone."',
         summary: 'The party descends beneath the Grand Bazaar into the sealed clockwork vaults.',
         beats: [
@@ -149,12 +149,12 @@ export function buildSeedDashboardForCampaign(
     lastActivityLabel: 'Today at 7:42 PM',
     narrativeSummary:
       'The party has followed the trail into the Whispering Woods, where an ancient, half-buried chapel holds secrets older than the kingdom. Strange noises echo within, and Brother Malric awaits their arrival.',
-    heroArtworkUrl: '/landing-assets/features/feature-1-living-memory.jpg',
+    heroArtworkUrl: '/landing-assets/backgrounds/section-atmosphere.jpg',
     upcomingSession: {
       sessionId: 'session-15',
       sessionNumber: 15,
       title: 'Session 15 — The Ruined Chapel',
-      artworkUrl: '/landing-assets/features/feature-1-living-memory.jpg',
+      artworkUrl: '/combat-caves.jpg',
       scheduledDateLabel: 'Saturday, May 17, 2025',
       scheduledTimeLabel: '7:00 PM – 11:00 PM (4h)',
       locationTitle: 'The Ruined Chapel',
@@ -178,7 +178,7 @@ export function buildSeedDashboardForCampaign(
     alerts: CAMPAIGN_1_ALERTS.filter((a) => isGm || !a.gmOnly),
     sessionGuide: {
       headerTitle: 'SESSION 15 — THE RUINED CHAPEL',
-      artworkUrl: '/landing-assets/features/feature-1-living-memory.jpg',
+      artworkUrl: '/combat-caves.jpg',
       epigraph: '"Old stones remember. And something stirs beneath them still."',
       summary:
         'A crumbling chapel stands on the edge of the Whispering Woods. Strange noises and missing travelers have drawn the party here, where an uneasy silence hangs over the ruins.',

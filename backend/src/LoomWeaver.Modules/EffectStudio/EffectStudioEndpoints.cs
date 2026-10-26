@@ -1,6 +1,8 @@
 using LoomWeaver.Domain;
+using LoomWeaver.Infrastructure.MySql;
 using LoomWeaver.Modules.EffectStudio.Domain;
 using LoomWeaver.Modules.EffectStudio.Engine;
+using LoomWeaver.Modules.EffectStudio.Infrastructure;
 using LoomWeaver.Modules.Realtime;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -14,27 +16,113 @@ public static class EffectStudioEndpoints
 
     public static RouteGroupBuilder MapEffectStudioEndpoints(this RouteGroupBuilder api)
     {
-        api.MapGet("/effects/health", () => Results.Ok(new
+        api.MapGet("/effects/health", async (LoomWeaverMySqlRepository mysql, CancellationToken ct) =>
         {
-            status = "healthy",
-            service = "LoomWeaver.EffectStudio",
-            emittersLoaded = EffectEmitterCatalog.GetAllEmitters().Count,
-            timestamp = DateTimeOffset.UtcNow
-        }));
+            var repo = new EffectStudioMySqlRepository(mysql, Engine);
+            await repo.EnsureSchemaAndSeedAsync(ct);
+            return Results.Ok(new
+            {
+                status = "healthy",
+                service = "LoomWeaver.EffectStudio",
+                mysqlBacked = true,
+                emittersLoaded = EffectEmitterCatalog.GetAllEmitters().Count,
+                timestamp = DateTimeOffset.UtcNow
+            });
+        });
 
-        api.MapGet("/effects/studio", (int? campaignId, string? effectId) =>
+        api.MapGet("/effects/studio", async (
+            int? campaignId,
+            string? effectId,
+            string? viewerRole,
+            string? username,
+            string? boundCharacter,
+            LoomWeaverMySqlRepository mysql,
+            CancellationToken ct) =>
         {
+            var repo = new EffectStudioMySqlRepository(mysql, Engine);
             var cid = campaignId.GetValueOrDefault(1);
+            var campaigns = await mysql.GetCampaignsAsync(ct);
+            var activeCampaign = campaigns.FirstOrDefault(c => c.Id == cid) ?? campaigns[0];
             var emitters = EffectEmitterCatalog.GetAllEmitters();
-            var documents = Engine.GetDocumentsForCampaign(cid);
-            var activeDoc = Engine.GetOrDefaultDocument(effectId);
+            var documents = await repo.GetCampaignEffectsAsync(activeCampaign.Id, ct);
+            var activeDoc = documents.FirstOrDefault(d =>
+                !string.IsNullOrWhiteSpace(effectId) &&
+                string.Equals(d.Id, effectId, StringComparison.OrdinalIgnoreCase))
+                ?? Engine.GetOrDefaultDocument(effectId);
+
+            var characters = await repo.GetAuthorizedCharactersAsync(
+                activeCampaign.Id,
+                viewerRole ?? "gm",
+                username ?? "GeoJason",
+                boundCharacter ?? "GM",
+                ct);
+            var assignments = await repo.GetCampaignAssignmentsAsync(activeCampaign.Id, ct);
 
             return Results.Ok(new
             {
+                campaigns,
+                activeCampaign,
+                authorizedCharacters = characters,
+                assignments,
                 emitters,
                 documents,
                 activeDocument = activeDoc
             });
+        });
+
+        api.MapGet("/effects/campaigns/{campaignId:int}/context", async (
+            int campaignId,
+            string? viewerRole,
+            string? username,
+            string? boundCharacter,
+            LoomWeaverMySqlRepository mysql,
+            CancellationToken ct) =>
+        {
+            var repo = new EffectStudioMySqlRepository(mysql, Engine);
+            var campaigns = await mysql.GetCampaignsAsync(ct);
+            var activeCampaign = campaigns.FirstOrDefault(c => c.Id == campaignId) ?? campaigns[0];
+            var characters = await repo.GetAuthorizedCharactersAsync(
+                activeCampaign.Id,
+                viewerRole ?? "gm",
+                username ?? "GeoJason",
+                boundCharacter ?? "GM",
+                ct);
+            var assignments = await repo.GetCampaignAssignmentsAsync(activeCampaign.Id, ct);
+            var documents = await repo.GetCampaignEffectsAsync(activeCampaign.Id, ct);
+
+            return Results.Ok(new
+            {
+                activeCampaign,
+                authorizedCharacters = characters,
+                assignments,
+                documents
+            });
+        });
+
+        api.MapPost("/effects/campaigns/{campaignId:int}/push", async (
+            int campaignId,
+            PushEffectToCampaignRequest req,
+            LoomWeaverMySqlRepository mysql,
+            CancellationToken ct) =>
+        {
+            var repo = new EffectStudioMySqlRepository(mysql, Engine);
+            try
+            {
+                var normalizedReq = req with { CampaignId = campaignId <= 0 ? req.CampaignId : campaignId };
+                var response = await repo.PushEffectToCampaignAsync(normalizedReq, ct);
+                TableRealtimeEndpoints.RecordEvent(
+                    response.Assignment.CampaignId,
+                    "effect_pushed_to_campaign",
+                    "EffectBuilder Studio",
+                    response.Message,
+                    "{}"
+                );
+                return Results.Ok(response);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
         });
 
         api.MapGet("/effects/emitters", (string? category, string? q) =>
@@ -53,9 +141,14 @@ public static class EffectStudioEndpoints
             return Results.Ok(filtered);
         });
 
-        api.MapPost("/effects/save", (SaveEffectStudioDocumentRequest req) =>
+        api.MapPost("/effects/save", async (
+            SaveEffectStudioDocumentRequest req,
+            string? username,
+            LoomWeaverMySqlRepository mysql,
+            CancellationToken ct) =>
         {
-            var saved = Engine.ValidateAndSave(req);
+            var repo = new EffectStudioMySqlRepository(mysql, Engine);
+            var saved = await repo.SaveEffectAsync(req, username, ct);
             TableRealtimeEndpoints.RecordEvent(
                 saved.CampaignId,
                 "effect_saved",

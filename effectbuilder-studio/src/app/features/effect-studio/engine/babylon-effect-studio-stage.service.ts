@@ -5,6 +5,7 @@ import {
   Color4,
   Engine,
   HemisphericLight,
+  ImageProcessingConfiguration,
   Scene,
   Vector3,
 } from '@babylonjs/core';
@@ -16,6 +17,7 @@ import {
 } from '../models/effect-studio.models';
 import { DungeonEnvironmentBuilder } from './dungeon-environment.builder';
 import { RuneVortexShaderBuilder } from './rune-vortex-shader.builder';
+import { StructuralSpellFxEngine } from './structural-spell-fx.engine';
 
 @Injectable({ providedIn: 'root' })
 export class BabylonEffectStudioStageService {
@@ -25,6 +27,7 @@ export class BabylonEffectStudioStageService {
   private camera: ArcRotateCamera | null = null;
   private readonly dungeonBuilder = new DungeonEnvironmentBuilder();
   private readonly vortexBuilder = new RuneVortexShaderBuilder();
+  private readonly structuralFx = new StructuralSpellFxEngine();
   private resizeObserver: ResizeObserver | null = null;
   private lastTickTime = 0;
 
@@ -53,18 +56,24 @@ export class BabylonEffectStudioStageService {
           antialias: true,
         });
         this.scene = new Scene(this.engine);
-        this.scene.clearColor = new Color4(0.04, 0.035, 0.03, 1.0);
+        this.scene.clearColor = new Color4(0.028, 0.024, 0.02, 1.0);
+
+        this.scene.imageProcessingConfiguration.toneMappingEnabled = true;
+        this.scene.imageProcessingConfiguration.toneMappingType =
+          ImageProcessingConfiguration.TONEMAPPING_ACES;
+        this.scene.imageProcessingConfiguration.exposure = 1.08;
+        this.scene.imageProcessingConfiguration.contrast = 1.16;
 
         this.camera = new ArcRotateCamera(
           'lw-fx-studio-cam',
-          -Math.PI / 3.8,
-          0.92,
-          17.5,
-          new Vector3(0, 1.8, 0),
+          -Math.PI * 0.72,
+          1.02,
+          12.4,
+          new Vector3(0, 1.45, 0),
           this.scene,
         );
-        this.camera.lowerRadiusLimit = 7;
-        this.camera.upperRadiusLimit = 34;
+        this.camera.lowerRadiusLimit = 6.5;
+        this.camera.upperRadiusLimit = 28;
         this.camera.lowerBetaLimit = 0.25;
         this.camera.upperBetaLimit = 1.42;
         this.camera.attachControl(canvas, true);
@@ -74,9 +83,9 @@ export class BabylonEffectStudioStageService {
           new Vector3(0.2, 1, -0.2),
           this.scene,
         );
-        hemi.intensity = 0.42;
+        hemi.intensity = 0.36;
         hemi.diffuse = Color3.FromHexString('#e7e5e4');
-        hemi.groundColor = Color3.FromHexString('#14110e');
+        hemi.groundColor = Color3.FromHexString('#120f0c');
 
         this.dungeonBuilder.buildDungeonStage(this.scene);
         this.vortexBuilder.buildOrUpdateEffectMeshes(this.scene, props, forces);
@@ -126,32 +135,44 @@ export class BabylonEffectStudioStageService {
     });
   }
 
+  triggerStructuralSpellCast(emitter: EffectEmitterCardVm): void {
+    if (!this.scene) return;
+    this.zone.runOutsideAngular(() => {
+      if (!this.scene) return;
+      const origin = this.dungeonBuilder.getCasterCastOrigin();
+      const target = this.dungeonBuilder.getPrimaryTargetImpactPoint();
+      this.structuralFx.playStructuralEffectForEmitter(this.scene, emitter, origin, target, () => {
+        this.dungeonBuilder.triggerTargetRecoil(0);
+      });
+    });
+  }
+
   applyCameraPreset(preset: EffectCameraPreset): void {
     if (!this.camera) return;
     switch (preset) {
       case 'Isometric':
-        this.camera.alpha = -Math.PI / 3.8;
-        this.camera.beta = 0.92;
-        this.camera.radius = 17.5;
-        this.camera.setTarget(new Vector3(0, 1.8, 0));
+        this.camera.alpha = -Math.PI * 0.72;
+        this.camera.beta = 1.02;
+        this.camera.radius = 12.4;
+        this.camera.setTarget(new Vector3(0, 1.45, 0));
         break;
       case 'Top-Down':
         this.camera.alpha = -Math.PI / 2;
-        this.camera.beta = 0.26;
-        this.camera.radius = 21.0;
+        this.camera.beta = 0.24;
+        this.camera.radius = 16.5;
         this.camera.setTarget(new Vector3(0, 0.5, 0));
         break;
       case 'Tactical Orbit':
-        this.camera.alpha = -Math.PI / 1.75;
-        this.camera.beta = 1.05;
-        this.camera.radius = 15.5;
-        this.camera.setTarget(new Vector3(0.5, 1.6, 0));
+        this.camera.alpha = -Math.PI * 0.58;
+        this.camera.beta = 1.08;
+        this.camera.radius = 11.2;
+        this.camera.setTarget(new Vector3(0.3, 1.4, 0));
         break;
       case 'Caster POV':
-        this.camera.alpha = -0.18;
-        this.camera.beta = 1.18;
-        this.camera.radius = 12.0;
-        this.camera.setTarget(new Vector3(1.2, 2.0, 0.2));
+        this.camera.alpha = -Math.PI * 0.88;
+        this.camera.beta = 1.16;
+        this.camera.radius = 9.4;
+        this.camera.setTarget(new Vector3(0.8, 1.55, 0.1));
         break;
     }
   }

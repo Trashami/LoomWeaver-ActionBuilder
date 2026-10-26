@@ -8,6 +8,7 @@ import { LoomWeaverStoreService } from '../../../core/services/loomweaver-store.
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
 import { LwIconComponent } from '../icon/icon.component';
+import { LwScrollAreaComponent } from '../scroll-area/scroll-area.component';
 
 export type LwInspectorTab = 'guide' | 'notes' | 'npcs' | 'places' | 'lore';
 
@@ -26,6 +27,7 @@ export type LwInspectorTab = 'guide' | 'notes' | 'npcs' | 'places' | 'lore';
     LwBadgeComponent,
     LwButtonComponent,
     LwIconComponent,
+    LwScrollAreaComponent,
   ],
   templateUrl: './inspector-drawer.component.html',
   styleUrl: './inspector-drawer.component.scss',

@@ -188,7 +188,15 @@
       </nav>
 
       <main class="lw-main">
-        <router-outlet />
+        <lw-scroll-area
+          tone="emerald"
+          [scrollbarWidth]="4"
+          thumbColor="#49e892"
+          trackColor="rgba(6, 22, 16, 0.78)"
+          padding="0.9rem 1rem 1.2rem"
+        >
+          <router-outlet />
+        </lw-scroll-area>
       </main>
 
       <lw-inspector-drawer />

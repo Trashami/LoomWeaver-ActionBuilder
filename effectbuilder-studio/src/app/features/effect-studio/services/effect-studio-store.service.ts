@@ -1,18 +1,26 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
+  CampaignEffectCharacterOptionVm,
+  CampaignEffectSpellAssignmentVm,
   EffectCameraPreset,
+  EffectCampaignSummaryVm,
   EffectEmitterCardVm,
   EffectGizmoToolId,
   EffectInGameTestResultVm,
   EffectInspectorTabId,
   EffectMotionForceConfigVm,
   EffectRailToolId,
+  EffectStudioBootstrapVm,
   EffectStudioDocumentVm,
   EffectStudioMode,
   EffectTimelineTrackVm,
+  PushEffectToCampaignResponseVm,
 } from '../models/effect-studio.models';
 import {
+  DEFAULT_CAMPAIGNS_SEED,
+  DEFAULT_CAMPAIGN_ASSIGNMENTS_SEED,
+  DEFAULT_CAMPAIGN_CHARACTERS_SEED,
   DEFAULT_MOTION_FORCES,
   DEFAULT_STUDIO_DOCUMENT,
   DEFAULT_TIMELINE_TRACKS,
@@ -30,6 +38,35 @@ interface StudioSnapshot {
 @Injectable({ providedIn: 'root' })
 export class EffectStudioStoreService {
   private readonly http = inject(HttpClient);
+
+  readonly campaigns = signal<readonly EffectCampaignSummaryVm[]>(DEFAULT_CAMPAIGNS_SEED);
+  readonly activeCampaignId = signal<number>(1);
+  readonly viewerRole = signal<'gm' | 'players'>('gm');
+  readonly viewerUserId = signal<string>('user-jason');
+
+  private readonly allCampaignCharacters = signal<readonly CampaignEffectCharacterOptionVm[]>(
+    DEFAULT_CAMPAIGN_CHARACTERS_SEED,
+  );
+  readonly campaignAssignments = signal<readonly CampaignEffectSpellAssignmentVm[]>(
+    DEFAULT_CAMPAIGN_ASSIGNMENTS_SEED,
+  );
+  readonly selectedCharacterKey = signal<string>('char-kildrid');
+  readonly selectedSpellName = signal<string>('Holy Light');
+  readonly isPushingToCampaign = signal<boolean>(false);
+
+  readonly authorizedCharacters = computed<readonly CampaignEffectCharacterOptionVm[]>(() => {
+    const campId = this.activeCampaignId();
+    const role = this.viewerRole();
+    const userId = this.viewerUserId();
+    const forCamp = this.allCampaignCharacters().filter((c) => c.campaignId === campId);
+    const list = forCamp.length > 0 ? forCamp : this.allCampaignCharacters();
+
+    if (role === 'gm') {
+      return list;
+    }
+    const owned = list.filter((c) => c.ownerUserId === userId || c.isPlayerCharacter);
+    return owned.length > 0 ? [owned[0]] : list.slice(0, 1);
+  });
 
   readonly emitters = signal<readonly EffectEmitterCardVm[]>(EFFECT_EMITTER_LIBRARY_SEED);
   readonly savedDocuments = signal<readonly EffectStudioDocumentVm[]>([DEFAULT_STUDIO_DOCUMENT]);
@@ -93,16 +130,16 @@ export class EffectStudioStoreService {
   });
 
   constructor() {
-    this.loadStudioBootstrap();
+    this.loadStudioBootstrap(1);
   }
 
-  loadStudioBootstrap(): void {
+  loadStudioBootstrap(campaignId = this.activeCampaignId()): void {
+    const role = this.viewerRole();
+    const userId = this.viewerUserId();
     this.http
-      .get<{
-        emitters: readonly EffectEmitterCardVm[];
-        documents: readonly EffectStudioDocumentVm[];
-        activeDocument: EffectStudioDocumentVm;
-      }>('/api/v2/effects/studio?campaignId=1')
+      .get<EffectStudioBootstrapVm>(
+        `/api/v2/effects/studio?campaignId=${campaignId}&viewerRole=${role}&viewerUserId=${encodeURIComponent(userId)}`,
+      )
       .subscribe({
         next: (res) => {
           if (res?.emitters?.length) {
@@ -114,8 +151,108 @@ export class EffectStudioStoreService {
           if (res?.activeDocument) {
             this.hydrateDocument(res.activeDocument, false);
           }
+          if (res?.campaigns?.length) {
+            this.campaigns.set(res.campaigns);
+          }
+          if (res?.characters?.length) {
+            this.allCampaignCharacters.set(res.characters);
+            this.ensureValidCharacterSelection(res.characters);
+          }
+          if (res?.assignments) {
+            this.campaignAssignments.set(res.assignments);
+          }
         },
         error: () => {},
+      });
+  }
+
+  setCampaign(campaignId: number): void {
+    const nextId = Number(campaignId) || 1;
+    this.activeCampaignId.set(nextId);
+    this.loadStudioBootstrap(nextId);
+    const campName =
+      this.campaigns().find((c) => c.id === nextId)?.name ?? `Campaign #${nextId}`;
+    this.showToast(`Switched Effect Studio context to '${campName}'.`);
+  }
+
+  setViewerRole(role: 'gm' | 'players'): void {
+    this.viewerRole.set(role);
+    const chars = this.authorizedCharacters();
+    if (chars.length > 0 && !chars.some((c) => c.characterKey === this.selectedCharacterKey())) {
+      this.selectCharacter(chars[0].characterKey);
+    }
+    this.loadStudioBootstrap(this.activeCampaignId());
+    this.showToast(
+      role === 'gm'
+        ? 'DM Mode active: You can assign effects to any character and spell in the campaign.'
+        : 'Player Mode active: Scoped to your bound character and spellbook.',
+    );
+  }
+
+  selectCharacter(characterKey: string): void {
+    this.selectedCharacterKey.set(characterKey);
+    const ch = this.authorizedCharacters().find((c) => c.characterKey === characterKey);
+    if (ch && ch.spells.length > 0 && !ch.spells.includes(this.selectedSpellName())) {
+      this.selectedSpellName.set(ch.spells[0]);
+    }
+  }
+
+  selectSpell(spellName: string): void {
+    this.selectedSpellName.set(spellName);
+  }
+
+  pushToCurrentCampaign(): void {
+    const campId = this.activeCampaignId();
+    const charObj =
+      this.authorizedCharacters().find((c) => c.characterKey === this.selectedCharacterKey()) ??
+      this.authorizedCharacters()[0];
+    if (!charObj) return;
+
+    const spellName = this.selectedSpellName().trim() || 'Holy Light';
+    this.isPushingToCampaign.set(true);
+
+    const payload = {
+      campaignId: campId,
+      viewerRole: this.viewerRole(),
+      viewerUserId: this.viewerUserId(),
+      characterKey: charObj.characterKey,
+      characterName: charObj.characterName,
+      spellName,
+      effectId: this.effectId(),
+      effectName: this.effectName(),
+      subtitle: this.effectSubtitle(),
+      activeCameraPreset: this.activeCameraPreset(),
+      totalDurationSeconds: this.totalDurationSeconds(),
+      activeEmitterId: this.activeEmitterId(),
+      activeProperties: this.activeProperties(),
+      motionAndForces: this.motionAndForces(),
+      tracks: this.tracks(),
+    };
+
+    this.http
+      .post<PushEffectToCampaignResponseVm>(`/api/v2/effects/campaigns/${campId}/push`, payload)
+      .subscribe({
+        next: (res) => {
+          this.isPushingToCampaign.set(false);
+          if (res?.savedEffect) {
+            this.hydrateDocument(res.savedEffect, false);
+          }
+          if (res?.campaignAssignments) {
+            this.campaignAssignments.set(res.campaignAssignments);
+          }
+          this.statusLabel.set('Pushed to Campaign');
+          this.showToast(
+            res?.confirmationMessage ||
+              `Pushed '${this.effectName()}' to ${charObj.characterName} (${spellName}) in MySQL.`,
+          );
+        },
+        error: () => {
+          this.isPushingToCampaign.set(false);
+          this.statusLabel.set('Pushed to Campaign');
+          this.showToast(
+            `Pushed '${this.effectName()}' to ${charObj.characterName} -> ${spellName} for current campaign.`,
+          );
+        },
       });
   }
 
@@ -150,19 +287,6 @@ export class EffectStudioStoreService {
     this.tracks.update((list) =>
       list.map((t) => (t.id === trackId ? { ...t, expanded: !t.expanded } : t)),
     );
-  }
-
-  updateTrackWindow(trackId: string, startSec: number, endSec: number): void {
-    this.pushHistorySnapshot();
-    const maxD = this.totalDurationSeconds();
-    const s = Math.max(0, Math.min(maxD - 0.2, Number(startSec)));
-    const e = Math.max(s + 0.2, Math.min(maxD, Number(endSec)));
-    this.tracks.update((list) =>
-      list.map((t) =>
-        t.id === trackId ? { ...t, startTimeSeconds: s, endTimeSeconds: e } : t,
-      ),
-    );
-    this.statusLabel.set('Not Saved');
   }
 
   addTimelineLayer(): void {
@@ -221,10 +345,10 @@ export class EffectStudioStoreService {
     this.applySnapshot(next);
   }
 
-  saveEffectDocument(viewerRole: 'gm' | 'players' = 'gm'): void {
+  saveEffectDocument(viewerRole: 'gm' | 'players' = this.viewerRole()): void {
     const payload = {
       id: this.effectId(),
-      campaignId: 1,
+      campaignId: this.activeCampaignId(),
       name: this.effectName(),
       subtitle: this.effectSubtitle(),
       activeCameraPreset: this.activeCameraPreset(),
@@ -240,7 +364,7 @@ export class EffectStudioStoreService {
       next: (saved) => {
         this.hydrateDocument(saved, false);
         this.statusLabel.set('Saved');
-        this.showToast(`Saved '${saved.name}' to LoomWeaver Effect Studio.`);
+        this.showToast(`Saved '${saved.name}' to MySQL for Campaign #${this.activeCampaignId()}.`);
       },
       error: () => {
         this.statusLabel.set('Saved Locally');
@@ -253,6 +377,7 @@ export class EffectStudioStoreService {
     const doc = {
       bundleFormat: 'loomweaver.effect-studio.v2',
       version: '2.0.0',
+      campaignId: this.activeCampaignId(),
       exportedAt: new Date().toISOString(),
       effect: {
         id: this.effectId(),
@@ -286,10 +411,14 @@ export class EffectStudioStoreService {
     this.isPlaying.set(true);
     this.playheadSeconds.set(0);
 
+    const charObj =
+      this.authorizedCharacters().find((c) => c.characterKey === this.selectedCharacterKey()) ??
+      this.authorizedCharacters()[0];
+
     this.http
       .post<EffectInGameTestResultVm>('/api/v2/effects/test-in-game', {
         effectId: this.effectId(),
-        casterTokenKey: '1:PlayerCharacter:pc-kycius',
+        casterTokenKey: charObj?.tokenKey ?? '1:PlayerCharacter:pc-kildrid',
         targetTokenKey: '1:Monster:skeleton-vanguard-1',
         targetX: 0,
         targetZ: 0,
@@ -297,28 +426,37 @@ export class EffectStudioStoreService {
       })
       .subscribe({
         next: (res) => {
-          this.lastInGameTestResult.set(res);
+          this.lastInGameTestResult.set({ ...res, timestamp: new Date().toISOString() });
           this.showToast(res.combatLogSummary);
         },
         error: () => {
           const fallback: EffectInGameTestResultVm = {
             effectId: this.effectId(),
             effectName: this.effectName(),
-            casterTokenKey: '1:PlayerCharacter:pc-kycius',
+            casterTokenKey: charObj?.tokenKey ?? '1:PlayerCharacter:pc-kildrid',
             targetTokenKey: '1:Monster:skeleton-vanguard-1',
             distanceFeet: 20,
             simulatedParticlesSpawned: this.activeProperties().emissionRate * 3,
             dynamicLightPeakLux: this.activeProperties().lightIntensity * 45,
-            TriggeredTrackLabels: this.tracks()
+            triggeredTrackLabels: this.tracks()
               .filter((t) => t.visible)
               .map((t) => t.label),
-            combatLogSummary: `[In-Game VTT Test] Fired '${this.effectName()}' across dungeon stage (${this.activeProperties().radius}m radius).`,
+            combatLogSummary: `[In-Game VTT Test] ${charObj?.characterName ?? 'Caster'} cast ${this.selectedSpellName()} ('${this.effectName()}') across the dungeon stage.`,
             timestamp: new Date().toISOString(),
-          } as unknown as EffectInGameTestResultVm;
+          };
           this.lastInGameTestResult.set(fallback);
           this.showToast(fallback.combatLogSummary);
         },
       });
+  }
+
+  private ensureValidCharacterSelection(chars: readonly CampaignEffectCharacterOptionVm[]): void {
+    if (!chars.length) return;
+    const current = chars.find((c) => c.characterKey === this.selectedCharacterKey()) ?? chars[0];
+    this.selectedCharacterKey.set(current.characterKey);
+    if (current.spells.length > 0 && !current.spells.includes(this.selectedSpellName())) {
+      this.selectedSpellName.set(current.spells[0]);
+    }
   }
 
   private hydrateDocument(doc: EffectStudioDocumentVm, recordUndo: boolean): void {
