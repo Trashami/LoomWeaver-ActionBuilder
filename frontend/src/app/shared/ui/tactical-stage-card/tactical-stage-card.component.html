@@ -6,69 +6,68 @@
         <span>Live Session</span>
       </span>
       <span class="lw-stage__pill">
-        <lw-icon name="Landmark" [size]="13" />
         <span>{{ sceneName() }}</span>
       </span>
       <span class="lw-stage__pill">
-        <lw-icon name="Swords" [size]="13" />
         <span>{{ modeLabel() }}</span>
       </span>
       <button
+        ngpButton
         type="button"
         class="lw-stage__pill lw-stage__pill--btn"
         title="Click to advance initiative turn"
         (click)="advanceTurn()"
       >
-        <lw-icon name="Clock" [size]="13" />
         <span>Round {{ roundNumber() }}</span>
       </button>
       @if (!showInitiativePanel()) {
         <button
+          ngpButton
           type="button"
           class="lw-stage__pill lw-stage__pill--btn"
           (click)="showInitiativePanel.set(true)"
         >
-          <lw-icon name="Swords" [size]="13" />
-          <span>Show Initiative</span>
+          <span>Initiative</span>
         </button>
       }
     </div>
 
-    <div class="lw-stage__controls">
+    <div ngpToolbar class="lw-stage__controls">
       <button
+        ngpButton
         type="button"
         class="lw-stage__ctrl"
         [class.lw-stage__ctrl--active]="fogEnabled()"
         (click)="fogEnabled.set(!fogEnabled())"
       >
-        <lw-icon name="EyeOff" [size]="13" />
         <span>Fog</span>
       </button>
       <button
+        ngpButton
         type="button"
         class="lw-stage__ctrl"
         [class.lw-stage__ctrl--active]="gridEnabled()"
         (click)="gridEnabled.set(!gridEnabled())"
       >
-        <lw-icon name="Grid" [size]="13" />
         <span>Grid</span>
       </button>
       <button
+        ngpButton
         type="button"
         class="lw-stage__ctrl"
         [class.lw-stage__ctrl--active]="measureEnabled()"
         (click)="measureEnabled.set(!measureEnabled())"
       >
-        <lw-icon name="Compass" [size]="13" />
         <span>Measure</span>
       </button>
       <button
+        ngpButton
         type="button"
-        class="lw-stage__ctrl lw-stage__ctrl--icon"
+        class="lw-stage__ctrl"
         title="Expand Full Arcane Screen VTT"
         (click)="expandRequested.emit()"
       >
-        <lw-icon name="Maximize2" [size]="13" />
+        <span>Expand</span>
       </button>
     </div>
   </header>
@@ -97,6 +96,7 @@
 
       @for (token of combatants(); track token.id; let idx = $index) {
         <button
+          ngpButton
           type="button"
           class="lw-stage__token"
           [class.lw-stage__token--active]="activeCombatantIndex() === idx"
@@ -116,19 +116,21 @@
     @if (showInitiativePanel()) {
       <aside class="lw-stage__init" aria-label="Initiative Order">
         <div class="lw-stage__init-head">
-          <span><lw-icon name="Swords" [size]="14" /> <strong>Initiative Order</strong></span>
+          <strong>Initiative Order</strong>
           <button
+            ngpButton
             type="button"
             class="lw-stage__init-close"
             title="Hide Initiative Overlay"
             (click)="showInitiativePanel.set(false)"
           >
-            <lw-icon name="X" [size]="13" />
+            <lw-icon name="close" [size]="14" />
           </button>
         </div>
         <div class="lw-stage__init-list">
           @for (c of combatants(); track c.id; let idx = $index) {
             <button
+              ngpButton
               type="button"
               class="lw-init-row"
               [class.lw-init-row--active]="activeCombatantIndex() === idx"
@@ -144,58 +146,63 @@
       </aside>
     }
 
-    <!-- RIGHT FLOATING TOOL DOCK -->
-    <div class="lw-stage__tools" role="toolbar" aria-label="Map Tools">
+    <!-- RIGHT FLOATING TOOL DOCK (Icon-Only Essential Controls) -->
+    <div ngpToolbar ngpToolbarOrientation="vertical" class="lw-stage__tools" role="toolbar" aria-label="Map Tools">
       <button
+        ngpButton
         type="button"
         class="lw-tool-btn"
         [class.lw-tool-btn--active]="activeTool() === 'select'"
         title="Select & Move Token"
         (click)="activeTool.set('select')"
       >
-        <lw-icon name="MousePointer" [size]="15" />
+        <lw-icon name="cursor" [size]="16" />
       </button>
       <button
+        ngpButton
         type="button"
         class="lw-tool-btn"
         [class.lw-tool-btn--active]="activeTool() === 'draw'"
         title="Tactical Sketch & Annotations"
         (click)="activeTool.set('draw')"
       >
-        <lw-icon name="Edit3" [size]="15" />
+        <lw-icon name="pen" [size]="16" />
       </button>
       <button
+        ngpButton
         type="button"
         class="lw-tool-btn"
         [class.lw-tool-btn--active]="measureEnabled()"
-        title="Area of Effect & Range Cone"
+        title="Area of Effect & Range"
         (click)="measureEnabled.set(!measureEnabled())"
       >
-        <lw-icon name="Compass" [size]="15" />
+        <lw-icon name="ruler" [size]="16" />
       </button>
       <button
+        ngpButton
         type="button"
         class="lw-tool-btn"
         [class.lw-tool-btn--active]="activeTool() === 'note'"
         title="Drop Scene Note Pin"
         (click)="activeTool.set('note')"
       >
-        <lw-icon name="MapPin" [size]="15" />
+        <lw-icon name="note" [size]="16" />
       </button>
       <button
+        ngpButton
         type="button"
         class="lw-tool-btn"
         title="Roll 3D Physics Dice"
         (click)="rollDiceRequested.emit()"
       >
-        <lw-icon name="Dices" [size]="15" />
+        <lw-icon name="dices" [size]="16" />
       </button>
       <div class="lw-stage__tool-sep"></div>
-      <button type="button" class="lw-tool-btn" title="Zoom In" (click)="adjustZoom(0.1)">
-        <lw-icon name="Plus" [size]="15" />
+      <button ngpButton type="button" class="lw-tool-btn" title="Zoom In" (click)="adjustZoom(0.1)">
+        <lw-icon name="plus" [size]="16" />
       </button>
-      <button type="button" class="lw-tool-btn" title="Zoom Out" (click)="adjustZoom(-0.1)">
-        <lw-icon name="Minus" [size]="15" />
+      <button ngpButton type="button" class="lw-tool-btn" title="Zoom Out" (click)="adjustZoom(-0.1)">
+        <lw-icon name="minus" [size]="16" />
       </button>
     </div>
 

@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpInput } from 'ng-primitives/input';
+import { NgpToolbar } from 'ng-primitives/toolbar';
 import { filter } from 'rxjs';
 import { AuthSessionService } from './core/services/auth-session.service';
 import { LoomWeaverStoreService } from './core/services/loomweaver-store.service';
@@ -16,7 +20,7 @@ interface StudioPrimaryNavItem {
   readonly id: string;
   readonly label: string;
   readonly route: string;
-  readonly icon: string;
+  readonly icon?: string;
 }
 
 @Component({
@@ -27,6 +31,11 @@ interface StudioPrimaryNavItem {
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
+    NgpButton,
+    NgpInput,
+    NgpAvatar,
+    NgpAvatarFallback,
+    NgpToolbar,
     LwAuthModalComponent,
     LwIconComponent,
     LwInspectorDrawerComponent,
@@ -65,22 +74,22 @@ export class AppComponent {
   });
 
   readonly primarySidebarNav: readonly StudioPrimaryNavItem[] = [
-    { id: 'dashboard', label: 'Dashboard', route: '/home', icon: 'home' },
-    { id: 'world-lore', label: 'World & Lore', route: '/weave', icon: 'globe' },
-    { id: 'quests-story', label: 'Quests & Story', route: '/campaigns', icon: 'scroll' },
-    { id: 'characters', label: 'Characters', route: '/characters', icon: 'users' },
-    { id: 'maps-scenes', label: 'Maps & Scenes', route: '/maps', icon: 'map' },
-    { id: 'session-log', label: 'Session Log', route: '/loom', icon: 'book' },
-    { id: 'handouts-clues', label: 'Handouts & Clues', route: '/assets', icon: 'sparkles' },
-    { id: 'timelines', label: 'Timelines', route: '/statistics', icon: 'chart' },
+    { id: 'dashboard', label: 'Dashboard', route: '/home' },
+    { id: 'world-lore', label: 'World & Lore', route: '/weave' },
+    { id: 'quests-story', label: 'Quests & Story', route: '/campaigns' },
+    { id: 'characters', label: 'Characters', route: '/characters' },
+    { id: 'maps-scenes', label: 'Maps & Scenes', route: '/maps' },
+    { id: 'session-log', label: 'Session Log', route: '/loom' },
+    { id: 'handouts-clues', label: 'Handouts & Clues', route: '/assets' },
+    { id: 'timelines', label: 'Timelines', route: '/statistics' },
   ];
 
   readonly engineSidebarNav: readonly StudioPrimaryNavItem[] = [
-    { id: 'arcane-vtt', label: 'Arcane Screen VTT', route: '/arcane-screen', icon: 'shield' },
-    { id: 'encounters', label: 'Encounters & Bestiary', route: '/encounters', icon: 'swords' },
-    { id: 'dice-forge', label: '3D Dice Forge', route: '/dice', icon: 'dices' },
-    { id: 'effects-rules', label: 'Actions & FX Studio', route: '/effects', icon: 'wand' },
-    { id: 'marketplace', label: 'Creator Marketplace', route: '/marketplace', icon: 'store' },
+    { id: 'arcane-vtt', label: 'Arcane Screen VTT', route: '/arcane-screen' },
+    { id: 'encounters', label: 'Encounters & Bestiary', route: '/encounters' },
+    { id: 'dice-forge', label: '3D Dice Forge', route: '/dice' },
+    { id: 'effects-rules', label: 'Actions & FX Studio', route: '/effects' },
+    { id: 'marketplace', label: 'Creator Marketplace', route: '/marketplace' },
   ];
 
   constructor() {

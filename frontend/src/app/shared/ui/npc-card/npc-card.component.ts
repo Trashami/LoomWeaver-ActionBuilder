@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { NgpAvatar, NgpAvatarFallback, NgpAvatarImage } from 'ng-primitives/avatar';
+import { NgpButton } from 'ng-primitives/button';
 import { AudienceVisibility } from '../../../core/models/loomweaver.models';
 import { LwBadgeComponent, LwBadgeTone } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
-import { LwIconComponent } from '../icon/icon.component';
 
 export interface NpcCardVm {
   readonly compositeKey: string;
@@ -21,7 +22,7 @@ export interface NpcCardVm {
 @Component({
   selector: 'lw-npc-card',
   standalone: true,
-  imports: [LwBadgeComponent, LwButtonComponent, LwIconComponent],
+  imports: [NgpButton, NgpAvatar, NgpAvatarFallback, NgpAvatarImage, LwBadgeComponent, LwButtonComponent],
   templateUrl: './npc-card.component.html',
   styleUrl: './npc-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

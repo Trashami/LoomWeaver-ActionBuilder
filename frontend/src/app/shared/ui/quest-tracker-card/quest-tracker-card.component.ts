@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpCheckbox } from 'ng-primitives/checkbox';
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwIconComponent } from '../icon/icon.component';
 
@@ -32,7 +34,7 @@ export interface LwQuestStepToggleEvent {
 @Component({
   selector: 'lw-quest-tracker-card',
   standalone: true,
-  imports: [LwBadgeComponent, LwIconComponent],
+  imports: [NgpButton, NgpCheckbox, LwBadgeComponent, LwIconComponent],
   templateUrl: './quest-tracker-card.component.html',
   styleUrl: './quest-tracker-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

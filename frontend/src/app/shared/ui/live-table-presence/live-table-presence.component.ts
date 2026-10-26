@@ -6,12 +6,11 @@ import {
 } from '../../../core/services/table-realtime-sync.service';
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
-import { LwIconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'lw-live-table-presence',
   standalone: true,
-  imports: [RouterLink, LwBadgeComponent, LwButtonComponent, LwIconComponent],
+  imports: [RouterLink, LwBadgeComponent, LwButtonComponent],
   templateUrl: './live-table-presence.component.html',
   styleUrl: './live-table-presence.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -10,9 +10,6 @@
         }
         @if (title()) {
           <h3 class="lw-panel__title">
-            @if (icon(); as iconName) {
-              <lw-icon [name]="iconName" [size]="18" />
-            }
             <span>{{ title() }}</span>
           </h3>
         }

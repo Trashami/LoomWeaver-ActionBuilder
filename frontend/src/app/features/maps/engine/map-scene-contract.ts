@@ -134,7 +134,7 @@ export const MAP_STUDIO_TOOLS: readonly MapToolDefinition[] = [
   { id: 'walls', label: 'Cutaway Walls & Portals', icon: 'shield', description: 'Draw chambers, cutaway walls, fitted doors, and line-of-sight blockers' },
   { id: 'paths', label: 'Curved Paths & Cliffs', icon: 'compass', description: 'Trace curved cobblestone roads, limestone cliff ridges, and stairs' },
   { id: 'stamps', label: '2D/3D Linked Stamps', icon: 'map-pin', description: 'Click canvas to place linked 2D symbols & 3D tabletop meshes' },
-  { id: 'scatter', label: 'Procedural Scatter', icon: 'sparkles', description: 'Regenerate deterministic instanced foliage, rubble, and runes' },
+  { id: 'scatter', label: 'Procedural Scatter', icon: 'book', description: 'Regenerate deterministic instanced foliage, rubble, and runes' },
   { id: 'water', label: 'Water & Lava Splines', icon: 'flame', description: 'Extend directional canal/river splines across the terrain' },
   { id: 'lighting', label: '2.5D Lighting & Fog', icon: 'eye', description: 'Click canvas to spawn dynamic point lights & shadow emitters' },
 ];

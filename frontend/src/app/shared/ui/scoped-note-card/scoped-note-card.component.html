@@ -20,14 +20,12 @@
           class="lw-scoped-note__entity-pill"
           (click)="inspectEntityRequested.emit(key)"
         >
-          <lw-icon name="Network" [size]="12" />
           <span>{{ key }}</span>
         </button>
       }
     </div>
     <a class="lw-scoped-note__deep-link" [routerLink]="item.deepLinkRoute">
       <span>Open {{ item.deepLinkRoute }}</span>
-      <lw-icon name="ArrowRight" [size]="13" />
     </a>
   </div>
 </article>

@@ -23,18 +23,18 @@
 
       <div class="header-actions">
         @if (auth.isAuthenticated()) {
-          <button type="button" class="btn green" (click)="enterStudioOrSignIn('/home')">
-            <span>Enter Studio</span><lw-icon name="arrow-right" [size]="14" />
+          <button ngpButton type="button" class="btn green" (click)="enterStudioOrSignIn('/home')">
+            <span>Enter Studio</span>
           </button>
         } @else {
-          <a class="btn ghost signin" href="/login" (click)="openAuth('login', undefined, $event)">
-            <lw-icon name="key-round" [size]="14" /><span>Sign In</span>
+          <a ngpButton class="btn ghost signin" href="/login" (click)="openAuth('login', undefined, $event)">
+            <span>Sign In</span>
           </a>
-          <a class="btn primary" href="/register" (click)="openAuth('register', undefined, $event)">
-            <span>Start Free</span><lw-icon name="external-link" [size]="13" />
+          <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', undefined, $event)">
+            <span>Start Free</span>
           </a>
         }
-        <button type="button" class="mobile-menu" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Toggle navigation menu">
+        <button ngpButton type="button" class="mobile-menu" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Toggle navigation menu">
           <lw-icon [name]="mobileMenuOpen() ? 'x' : 'menu'" [size]="18" />
         </button>
       </div>
@@ -50,21 +50,21 @@
           <h1 id="hero-heading">{{ activeSeoPage().h1Line1 }}<br /><em>{{ activeSeoPage().h1Highlight }}</em></h1>
           <p [innerHTML]="activeSeoPage().leadHtml"></p>
           <div class="hero-ctas">
-            <a class="btn primary" href="/register" (click)="openAuth('register', activeSeoPage().studioRoute, $event)">
-              <span>{{ activeSeoPage().primaryCtaLabel }}</span><lw-icon name="arrow-right" [size]="15" />
+            <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', activeSeoPage().studioRoute, $event)">
+              <span>{{ activeSeoPage().primaryCtaLabel }}</span>
             </a>
-            <a class="btn green" href="/login" (click)="openAuth('login', activeSeoPage().studioRoute, $event)">
-              <lw-icon name="key-round" [size]="15" /><span>Sign In to Studio</span>
+            <a ngpButton class="btn green" href="/login" (click)="openAuth('login', activeSeoPage().studioRoute, $event)">
+              <span>Sign In to Studio</span>
             </a>
-            <a class="btn ghost" routerLink="/vtt" href="/vtt">
-              <span>Explore LoomWeaver VTT</span><lw-icon name="swords" [size]="15" />
+            <a ngpButton class="btn ghost" routerLink="/vtt" href="/vtt">
+              <span>Explore LoomWeaver VTT</span>
             </a>
           </div>
           <div class="trust" role="list" aria-label="Core Platform Guarantees">
-            <span role="listitem"><lw-icon name="check" [size]="13" /> <b>Players join 100% free</b></span>
-            <span role="listitem"><lw-icon name="sparkles" [size]="13" /> <b>The Loom is always near</b></span>
-            <span role="listitem"><lw-icon name="swords" [size]="13" /> <b>2D &amp; 3D VTT + 3D Dice</b></span>
-            <span role="listitem"><lw-icon name="shield-check" [size]="13" /> <b>Your world, your rules</b></span>
+            <span role="listitem"><b>Players join 100% free</b></span>
+            <span role="listitem"><b>The Loom is always near</b></span>
+            <span role="listitem"><b>2D &amp; 3D VTT + 3D Dice</b></span>
+            <span role="listitem"><b>Your world, your rules</b></span>
           </div>
         </div>
 
@@ -109,7 +109,7 @@
             </svg>
 
             <a class="node n1" routerLink="/campaign-manager" href="/campaign-manager" title="LoomWeaver Campaign Manager & Lore Graph"><lw-icon name="network" [size]="18" /></a>
-            <a class="node n2" routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant" title="The Loom Campaign Memory"><lw-icon name="sparkles" [size]="18" /></a>
+            <a class="node n2" routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant" title="The Loom Campaign Memory"><lw-icon name="book-open" [size]="18" /></a>
             <a class="node n3" routerLink="/vtt" href="/vtt" title="LoomWeaver VTT Virtual Tabletop"><lw-icon name="landmark" [size]="18" /></a>
 
             <div class="art-bottom">
@@ -127,7 +127,7 @@
             <small>People · Places · Secrets · VTT Scenes</small>
           </div>
           <div class="floating-tag float-bottom">
-            <strong><lw-icon name="sparkles" [size]="14" /> <span>The Ruined Chapel</span></strong>
+            <strong><span>The Ruined Chapel</span></strong>
             <span>Connected to 3 quests, 5 NPCs, 2.5D VTT lighting, and a secret yet to unfold.</span>
           </div>
         </div>
@@ -153,18 +153,18 @@
 
             <div class="capability-columns">
               <div class="cap-col">
-                <h4><lw-icon name="check" [size]="14" /> Available Today in LoomWeaver</h4>
+                <h4>Available Today in LoomWeaver</h4>
                 <ul>
                   @for (item of activeSeoPage().availableToday; track item) {
-                    <li><lw-icon name="check" [size]="12" /><span>{{ item }}</span></li>
+                    <li><span>{{ item }}</span></li>
                   }
                 </ul>
               </div>
               <div class="cap-col cap-planned">
-                <h4><lw-icon name="sparkles" [size]="14" /> Planned on the Roadmap</h4>
+                <h4>Planned on the Roadmap</h4>
                 <ul>
                   @for (item of activeSeoPage().plannedNext; track item) {
-                    <li><lw-icon name="arrow-right" [size]="12" /><span>{{ item }}</span></li>
+                    <li><span>{{ item }}</span></li>
                   }
                 </ul>
               </div>
@@ -216,7 +216,7 @@
             </div>
           </article>
           <article class="why-card">
-            <span class="why-icon" aria-hidden="true"><lw-icon name="sparkles" [size]="19" /></span>
+            <span class="why-icon" aria-hidden="true"><lw-icon name="book-open" [size]="19" /></span>
             <div>
               <h3>One Loom, wherever you play—zero forced AI</h3>
               <p>A free, zero-hallucination campaign memory assistant on every page for GMs and players. The Weave’s creative drafting studio remains 100% optional and requires explicit GM review.</p>
@@ -246,12 +246,12 @@
             <p>{{ pillar.description }}</p>
             <ul class="feature-bullets">
               @for (b of pillar.bullets; track b) {
-                <li><lw-icon name="check" [size]="12" /><span>{{ b }}</span></li>
+                <li><span>{{ b }}</span></li>
               }
             </ul>
             <div class="feature-footer">
-              <button type="button" class="btn ghost btn-sm" (click)="openAuth('login', pillar.route)">
-                <span>Launch {{ pillar.title }}</span><lw-icon name="arrow-right" [size]="13" />
+              <button ngpButton type="button" class="btn ghost btn-sm" (click)="openAuth('login', pillar.route)">
+                <span>Launch {{ pillar.title }}</span>
               </button>
               <a class="seo-deep-link" [routerLink]="pillar.seoPath" [href]="pillar.seoPath">Explore page</a>
             </div>
@@ -269,17 +269,17 @@
             players and Game Masters.
           </p>
           <div class="exp-links" role="tablist" aria-label="Experience Mode Highlights">
-            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'memory'" (click)="activeExperienceMode.set('memory'); activeIntelId.set('ask-the-loom')">
-              <lw-icon name="sparkles" [size]="12" /><span>Living memory</span>
+            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'memory'" (click)="activeExperienceMode.set('memory'); activeIntelId.set('ask-the-loom')">
+              <span>Living memory</span>
             </button>
-            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'vtt'" (click)="activeExperienceMode.set('vtt'); activeIntelId.set('cult-presence')">
-              <lw-icon name="swords" [size]="12" /><span>2D + 3D VTT</span>
+            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'vtt'" (click)="activeExperienceMode.set('vtt'); activeIntelId.set('cult-presence')">
+              <span>2D + 3D VTT</span>
             </button>
-            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'guides'" (click)="activeExperienceMode.set('guides'); activeIntelId.set('brother-malric')">
-              <lw-icon name="book-open" [size]="12" /><span>Adventure guides</span>
+            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'guides'" (click)="activeExperienceMode.set('guides'); activeIntelId.set('brother-malric')">
+              <span>Adventure guides</span>
             </button>
-            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'dice'" (click)="activeExperienceMode.set('dice'); activeIntelId.set('hidden-crypt')">
-              <lw-icon name="dices" [size]="12" /><span>Dice &amp; effects</span>
+            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'dice'" (click)="activeExperienceMode.set('dice'); activeIntelId.set('hidden-crypt')">
+              <span>Dice &amp; effects</span>
             </button>
           </div>
           <div class="exp-cta-row">
@@ -366,11 +366,11 @@
                 <p>{{ engine.description }}</p>
                 <div class="engine-metrics">
                   @for (m of engine.metrics; track m) {
-                    <span><lw-icon name="check" [size]="12" /> {{ m }}</span>
+                    <span>{{ m }}</span>
                   }
                 </div>
-                <button type="button" class="btn green btn-sm" (click)="openAuth('login', engine.route)">
-                  <span>Sign In to Open {{ engine.tag }}</span><lw-icon name="arrow-right" [size]="13" />
+                <button ngpButton type="button" class="btn green btn-sm" (click)="openAuth('login', engine.route)">
+                  <span>Sign In to Open {{ engine.tag }}</span>
                 </button>
               </div>
             </article>
@@ -412,12 +412,12 @@
                   Billed monthly · or ${{ plan.yearlyTotal }}/yr
                 }
               </div>
-              <a class="btn" [class.primary]="plan.popular" [class.ghost]="!plan.popular" href="/register" (click)="openAuth('register', '/home', $event)">
-                <span>{{ plan.ctaLabel }}</span><lw-icon name="arrow-right" [size]="13" />
+              <a ngpButton class="btn" [class.primary]="plan.popular" [class.ghost]="!plan.popular" href="/register" (click)="openAuth('register', '/home', $event)">
+                <span>{{ plan.ctaLabel }}</span>
               </a>
               <ul>
                 @for (feat of plan.features; track feat) {
-                  <li><lw-icon name="check" [size]="13" /><span>{{ feat }}</span></li>
+                  <li><span>{{ feat }}</span></li>
                 }
               </ul>
             </article>
@@ -436,11 +436,11 @@
         miniatures in the LoomWeaver Marketplace—or publish your own creations and keep <strong>85% of every sale</strong>.
       </p>
       <div class="closing-actions">
-        <a class="btn primary" href="/register" (click)="openAuth('register', '/home', $event)">
-          <span>Create Your Free Campaign</span><lw-icon name="arrow-right" [size]="15" />
+        <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', '/home', $event)">
+          <span>Create Your Free Campaign</span>
         </a>
-        <a class="btn ghost" href="/login" (click)="openAuth('login', '/marketplace', $event)">
-          <lw-icon name="shopping-bag" [size]="15" /><span>Explore Creator Marketplace</span>
+        <a ngpButton class="btn ghost" href="/login" (click)="openAuth('login', '/marketplace', $event)">
+          <span>Explore Creator Marketplace</span>
         </a>
       </div>
     </section>

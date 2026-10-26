@@ -214,7 +214,7 @@ const DEFAULT_ANALYTICS: CampaignAnalyticsPayload = {
         'Land the final killing blow on an ancient bound dragon using a slingshot loaded with a tooth.',
       category: 'Mythic Feat',
       rarity: 'Mythic',
-      icon: 'Sparkles',
+      icon: 'book',
       currentValue: 1,
       targetValue: 1,
       unlocked: true,

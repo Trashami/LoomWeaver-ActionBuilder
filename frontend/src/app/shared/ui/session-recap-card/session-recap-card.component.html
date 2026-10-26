@@ -7,7 +7,7 @@
       </span>
       <h4 class="lw-session-card__title">{{ item.title }}</h4>
     </div>
-    <lw-badge [label]="'+' + item.xpAwarded + ' XP Awarded'" tone="emerald" icon="Sparkles" />
+    <lw-badge [label]="'+' + item.xpAwarded + ' XP Awarded'" tone="emerald" />
   </div>
 
   <p class="lw-session-card__summary">{{ item.summary }}</p>
@@ -22,7 +22,6 @@
     @for (link of item.deepLinks; track link.label) {
       <div class="lw-session-card__link-group">
         <a class="lw-session-card__deep-link" [routerLink]="link.route">
-          <lw-icon name="Compass" [size]="12" />
           <span>{{ link.label }}</span>
         </a>
         <button
@@ -31,7 +30,7 @@
           (click)="inspectEntityRequested.emit(link.entityKey)"
           title="Inspect Graph Node"
         >
-          <lw-icon name="Network" [size]="12" />
+          <span>Inspect</span>
         </button>
       </div>
     }

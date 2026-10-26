@@ -44,7 +44,7 @@ export class MapStudioStoreService {
   readonly layers = signal<readonly MapStudioLayer[]>([
     { id: 'layer-base', name: 'Base Floor & Marble', type: 'floors', icon: 'Grid', visible: true, locked: false, opacityPercent: 100, blendMode: 'normal', zIndex: 10 },
     { id: 'layer-terrain', name: 'Biome & Elevation Relief', type: 'terrain', icon: 'Map', visible: true, locked: false, opacityPercent: 100, blendMode: 'normal', zIndex: 20 },
-    { id: 'layer-water', name: 'Reflective Canals & Splines', type: 'water', icon: 'Sparkles', visible: true, locked: false, opacityPercent: 95, blendMode: 'screen', zIndex: 30 },
+    { id: 'layer-water', name: 'Reflective Canals & Splines', type: 'water', icon: 'book', visible: true, locked: false, opacityPercent: 95, blendMode: 'screen', zIndex: 30 },
     { id: 'layer-walls', name: 'Cutaway Walls & Portals', type: 'walls', icon: 'Shield', visible: true, locked: false, opacityPercent: 100, blendMode: 'normal', zIndex: 40 },
     { id: 'layer-objects', name: '2D/3D Linked Stamps & Props', type: 'objects', icon: 'Layers', visible: true, locked: false, opacityPercent: 100, blendMode: 'normal', zIndex: 50 },
     { id: 'layer-lights', name: '2.5D Dynamic Lights & Shadows', type: 'lights', icon: 'Flame', visible: true, locked: false, opacityPercent: 100, blendMode: 'screen', zIndex: 60 },

@@ -25,15 +25,22 @@
 }
 
 .lw-quest-row__emblem {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   flex-shrink: 0;
   display: grid;
   place-items: center;
   background: radial-gradient(circle, rgba(217, 183, 122, 0.24), rgba(10, 28, 21, 0.95));
   border: 1px solid rgba(217, 183, 122, 0.55);
-  color: #f0d49b;
+}
+
+.lw-quest-row__marker {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, #f3d7a2, #49e892);
+  box-shadow: 0 0 8px rgba(73, 232, 146, 0.45);
 }
 
 .lw-quest-row__body {

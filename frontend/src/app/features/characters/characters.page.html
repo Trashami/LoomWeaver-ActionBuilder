@@ -70,8 +70,7 @@
       <lw-panel
         eyebrow="Interactive Server-Calculated Sheet"
         [title]="sheet.name + ' · Level ' + sheet.level + ' (' + sheet.systemCode.toUpperCase() + ')'"
-        [subtitle]="sheet.ancestryOrClan + ' · ' + sheet.classOrArchetype + ' · ' + sheet.actionEconomySummary"
-        icon="sparkles">
+        [subtitle]="sheet.ancestryOrClan + ' · ' + sheet.classOrArchetype + ' · ' + sheet.actionEconomySummary">
         <div panelActions>
           <lw-button
             variant="ghost"
@@ -143,7 +142,6 @@
             <lw-button
               variant="gold"
               size="sm"
-              icon="sparkles"
               (pressed)="studio.executeLevelUp(selectedPerk(), 'DEX')">
               Promote to Level {{ sheet.level + 1 }}
             </lw-button>

@@ -1,4 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpProgress, NgpProgressIndicator, NgpProgressTrack } from 'ng-primitives/progress';
 import { LwIconComponent } from '../icon/icon.component';
 
 export interface LwPartyMemberStatusVm {
@@ -17,7 +20,15 @@ export interface LwPartyMemberStatusVm {
 @Component({
   selector: 'lw-party-roster-card',
   standalone: true,
-  imports: [LwIconComponent],
+  imports: [
+    NgpButton,
+    NgpAvatar,
+    NgpAvatarFallback,
+    NgpProgress,
+    NgpProgressTrack,
+    NgpProgressIndicator,
+    LwIconComponent,
+  ],
   templateUrl: './party-roster-card.component.html',
   styleUrl: './party-roster-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LwIconComponent } from '../icon/icon.component';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpInput } from 'ng-primitives/input';
+import { NgpTabButton, NgpTabList, NgpTabset } from 'ng-primitives/tabs';
+import { NgpToolbar } from 'ng-primitives/toolbar';
 
 export type SessionLogTab = 'session-log' | 'quick-notes' | 'consequences' | 'loom-remembers';
 
@@ -17,10 +20,19 @@ export interface SessionLogEntry {
 @Component({
   selector: 'lw-session-log-composer',
   standalone: true,
-  imports: [CommonModule, FormsModule, LwIconComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    NgpButton,
+    NgpInput,
+    NgpTabset,
+    NgpTabList,
+    NgpTabButton,
+    NgpToolbar,
+  ],
   templateUrl: './session-log-composer.component.html',
   styleUrl: './session-log-composer.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwSessionLogComposerComponent {
   readonly activeTab = signal<SessionLogTab>('session-log');
@@ -37,7 +49,7 @@ export class LwSessionLogComposerComponent {
     { id: 'session-log', label: 'Session Log' },
     { id: 'quick-notes', label: 'Quick Notes' },
     { id: 'consequences', label: 'Consequences' },
-    { id: 'loom-remembers', label: 'The Loom Remembers' }
+    { id: 'loom-remembers', label: 'The Loom Remembers' },
   ];
 
   selectTab(tab: SessionLogTab): void {
@@ -70,7 +82,7 @@ export class LwSessionLogComposerComponent {
     this.noteSaved.emit({
       tab: this.activeTab(),
       text,
-      scope: this.noteScope()
+      scope: this.noteScope(),
     });
     this.draftText.set('');
   }

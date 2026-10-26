@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpInput } from 'ng-primitives/input';
+import { NgpTabButton, NgpTabList, NgpTabset } from 'ng-primitives/tabs';
 import { AuthSessionService } from '../../../core/services/auth-session.service';
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
@@ -8,7 +11,17 @@ import { LwIconComponent } from '../icon/icon.component';
 @Component({
   selector: 'lw-auth-modal',
   standalone: true,
-  imports: [FormsModule, LwBadgeComponent, LwButtonComponent, LwIconComponent],
+  imports: [
+    FormsModule,
+    NgpButton,
+    NgpInput,
+    NgpTabset,
+    NgpTabList,
+    NgpTabButton,
+    LwBadgeComponent,
+    LwButtonComponent,
+    LwIconComponent,
+  ],
   templateUrl: './auth-modal.component.html',
   styleUrl: './auth-modal.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -6,7 +6,7 @@
     [elevated]="true"
   >
     <div panelActions class="lw-dice-page__actions">
-      <lw-button variant="ghost" icon="Sparkles" (pressed)="toggleReducedMotion()">
+      <lw-button variant="ghost" (pressed)="toggleReducedMotion()">
         {{ reducedMotion() ? 'Motion: Reduced' : 'Motion: Full 3D Tumble' }}
       </lw-button>
       <a routerLink="/arcane-screen" class="lw-link-reset">
@@ -22,7 +22,7 @@
         <div class="lw-dice-page__viewport-wrap">
           <canvas #diceCanvas class="lw-dice-page__canvas" aria-label="Babylon.js 3D Dice Forge Viewport"></canvas>
           <div class="lw-dice-page__viewport-hud">
-            <lw-badge [label]="activeSkin().name" tone="gold" icon="Sparkles" />
+            <lw-badge [label]="activeSkin().name" tone="gold" />
             <lw-badge [label]="'Nat 20 FX: ' + activeSkin().nat20ShaderName" tone="emerald" />
             <lw-badge [label]="'Nat 1 FX: ' + activeSkin().nat1ShaderName" tone="crimson" />
           </div>
@@ -50,7 +50,6 @@
           </lw-button>
           <lw-button
             variant="secondary"
-            icon="Sparkles"
             (pressed)="triggerSignaturePreset(8, 3, 6, 'Kildrid Luminary Ward Pulse')"
           >
             Roll 3d8+6 (Kildrid Ward)

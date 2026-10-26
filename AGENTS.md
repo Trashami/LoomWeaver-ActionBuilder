@@ -19,6 +19,11 @@
 - **Visual Identity**:
   - Never alter the Raven & Emerald-Green (`#05100c`, `#49e892`, `#2ee66b`) + Gold (`#d9b77a`) dark-fantasy visual design.
 
-## 2. File Length & Icon Rules
+## 2. File Length, Angular Primitives & Icon Rules
 - Every hand-written source file must stay under 500 lines (`python scripts/check_source_limits.py`).
-- Zero raw unicode emojis anywhere in templates, TypeScript, CSS, or backend responses. Always use `<lw-icon name="...">`.
+- **Angular Primitives (`ng-primitives` + Signal Primitives)**: All shared web components (`src/app/shared/ui`) and feature pages must use `ng-primitives` headless directives (`ngpButton`, `ngpTabset`, `ngpAccordion`, `ngpProgress`, `ngpSwitch`, etc.) and modern Angular signal primitives (`input()`, `output()`, `model()`, `signal()`, `computed()`, `effect()`, `@if`, `@for`, `@switch`, `inject()`).
+- **Angular Material Icons & Minimal Icon Policy**:
+  - Render icons exclusively via `<lw-icon name="...">` backed by Angular Material Icons (`@angular/material/icon` / Google Material Icons).
+  - Limit icon usage as much as possible across the application—omit decorative icons from badges, panel headers, text buttons, and list items unless functionally essential.
+  - **NEVER use the star / sparkles AI symbol icon** (`sparkles`, `Sparkles`, `auto_awesome`, `stars`, `star`) anywhere in the codebase.
+- Zero raw unicode emojis anywhere in templates, TypeScript, CSS, or backend responses.

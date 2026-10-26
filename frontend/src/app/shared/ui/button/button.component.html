@@ -1,5 +1,6 @@
 @if (routerLink(); as route) {
   <a
+    ngpButton
     class="lw-btn"
     [class.lw-btn--emerald]="variant() === 'emerald' || variant() === 'primary'"
     [class.lw-btn--gold]="variant() === 'gold'"
@@ -9,8 +10,8 @@
     [class.lw-btn--sm]="size() === 'sm'"
     [class.lw-btn--lg]="size() === 'lg'"
     [routerLink]="route">
-    @if (icon(); as iconName) {
-      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 13 : 15" />
+    @if (iconOnly() && icon(); as iconName) {
+      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 14 : 16" />
     }
     @if (label()) {
       <span>{{ label() }}</span>
@@ -19,6 +20,7 @@
   </a>
 } @else {
   <button
+    ngpButton
     type="button"
     class="lw-btn"
     [class.lw-btn--emerald]="variant() === 'emerald' || variant() === 'primary'"
@@ -30,8 +32,8 @@
     [class.lw-btn--lg]="size() === 'lg'"
     [disabled]="disabled()"
     (click)="pressed.emit()">
-    @if (icon(); as iconName) {
-      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 13 : 15" />
+    @if (iconOnly() && icon(); as iconName) {
+      <lw-icon [name]="iconName" [size]="size() === 'sm' ? 14 : 16" />
     }
     @if (label()) {
       <span>{{ label() }}</span>

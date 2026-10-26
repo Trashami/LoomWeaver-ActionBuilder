@@ -7,7 +7,7 @@
     [elevated]="true"
   >
     <div panelActions class="lw-market-actions">
-      <lw-badge label="85 / 15 Creator Royalty Split" tone="emerald" icon="Sparkles" />
+      <lw-badge label="85 / 15 Creator Royalty Split" tone="emerald" />
       <lw-button variant="secondary" size="sm" icon="Download" (pressed)="exportCampaignPackage()">
         Export Campaign Package (.json)
       </lw-button>
@@ -59,7 +59,6 @@
     eyebrow="Stripe Connect 85/15 Split Settlement Ledger"
     title="Verified Creator Royalty Transfers & Checkout Receipts"
     [subtitle]="'Active Account: ' + auth.activeProfile().displayName + ' · Creator Balance: $' + auth.activeProfile().creatorBalanceUsd.toFixed(2)"
-    icon="Sparkles"
   >
     <div class="lw-creator-modules-grid">
       @for (settlement of auth.settlements(); track settlement.sessionId) {
@@ -124,7 +123,6 @@
     eyebrow="One-Click Cosmetic & Asset Storefront"
     title="Featured Creator Releases"
     subtitle="Rendered with the shared lw-asset-card component."
-    icon="Sparkles"
   >
     <div class="lw-store-grid">
       @for (asset of store.assets(); track asset.id) {

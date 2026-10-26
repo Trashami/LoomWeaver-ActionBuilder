@@ -23,7 +23,6 @@
           <lw-button
             variant="gold"
             size="sm"
-            icon="sparkles"
             (pressed)="previewEffect(activeEffectPreset())">
             Replay 3D Trajectory
           </lw-button>
@@ -124,7 +123,6 @@
     eyebrow="Babylon.js GPU Particle Emitter Curve Studio"
     title="Custom Particle Emitter Curves & Blend Profiles ({{ emitterPresets().length }})"
     subtitle="Configure emission rate, particle lifetime, gravity vector, cone angle, and additive/alpha blending."
-    icon="Sparkles"
   >
     <div class="lw-field-row" style="margin-bottom: 0.85rem;">
       <label class="lw-field">
@@ -164,7 +162,7 @@
           (ngModelChange)="customGravityY.set(+$event)"
         />
       </label>
-      <lw-button variant="gold" size="sm" icon="Sparkles" (pressed)="saveEmitterCurvePreset()">
+      <lw-button variant="gold" size="sm" (pressed)="saveEmitterCurvePreset()">
         Save & Fire Emitter Curve
       </lw-button>
     </div>
@@ -183,7 +181,7 @@
           </div>
           <div class="lw-preset-card__foot">
             <lw-badge [label]="'Gravity Y: ' + emit.gravityY + ' · Scale ' + emit.startScale + ' -> ' + emit.endScale" tone="emerald" />
-            <lw-button variant="secondary" size="sm" icon="Sparkles" (pressed)="previewEffect(activeEffectPreset())">
+            <lw-button variant="secondary" size="sm" (pressed)="previewEffect(activeEffectPreset())">
               Preview Curve
             </lw-button>
           </div>
@@ -216,7 +214,7 @@
           </div>
           <div class="lw-preset-card__foot">
             <lw-badge [label]="rule.damageFormula" tone="gold" />
-            <lw-button variant="secondary" size="sm" icon="sparkles" (pressed)="previewRule(rule)">
+            <lw-button variant="secondary" size="sm" (pressed)="previewRule(rule)">
               Test 3D Effect
             </lw-button>
           </div>
@@ -228,8 +226,7 @@
   <lw-panel
     eyebrow="Spell & Shader Library"
     title="Cosmetic Spell Effect Packs"
-    subtitle="Rendered via the shared lw-asset-card component."
-    icon="sparkles">
+    subtitle="Rendered via the shared lw-asset-card component.">
     <div class="lw-fx-assets">
       @for (asset of spellAssets(); track asset.id) {
         <lw-asset-card

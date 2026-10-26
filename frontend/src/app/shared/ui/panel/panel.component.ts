@@ -1,10 +1,8 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { LwIconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'lw-panel',
   standalone: true,
-  imports: [LwIconComponent],
   templateUrl: './panel.component.html',
   styleUrl: './panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

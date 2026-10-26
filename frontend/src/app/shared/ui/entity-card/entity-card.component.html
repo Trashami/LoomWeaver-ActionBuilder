@@ -4,9 +4,6 @@
   [class.lw-entity-card--active]="active()">
   <div class="lw-entity-card__top">
     <div class="lw-entity-card__identity" (click)="inspectRequested.emit(entity())">
-      <span class="lw-entity-card__icon">
-        <lw-icon [name]="entityIcon()" [size]="16" />
-      </span>
       <div>
         <h4 class="lw-entity-card__name">{{ entity().name }}</h4>
         <span class="lw-entity-card__subtitle">{{ entity().subtitle }}</span>
@@ -19,7 +16,7 @@
         <lw-badge label="Draft" tone="draft" />
       }
       @if (entity().levelUpEligible) {
-        <lw-badge label="Level Up Ready" tone="gold" icon="sparkles" />
+        <lw-badge label="Level Up Ready" tone="gold" />
       }
     </div>
   </div>

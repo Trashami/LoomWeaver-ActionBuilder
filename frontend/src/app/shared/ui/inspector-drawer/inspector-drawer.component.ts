@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpCheckbox } from 'ng-primitives/checkbox';
+import { NgpTabButton, NgpTabList, NgpTabset } from 'ng-primitives/tabs';
 import { LoomWeaverStoreService } from '../../../core/services/loomweaver-store.service';
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
@@ -24,7 +28,19 @@ export interface LwKeyNpcQuickRef {
 @Component({
   selector: 'lw-inspector-drawer',
   standalone: true,
-  imports: [RouterLink, LwBadgeComponent, LwButtonComponent, LwIconComponent],
+  imports: [
+    RouterLink,
+    NgpButton,
+    NgpCheckbox,
+    NgpAvatar,
+    NgpAvatarFallback,
+    NgpTabset,
+    NgpTabList,
+    NgpTabButton,
+    LwBadgeComponent,
+    LwButtonComponent,
+    LwIconComponent,
+  ],
   templateUrl: './inspector-drawer.component.html',
   styleUrl: './inspector-drawer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

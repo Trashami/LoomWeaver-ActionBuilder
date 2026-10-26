@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
+import { NgpButton } from 'ng-primitives/button';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import {
@@ -142,7 +143,7 @@ const DASHBOARD_QUESTS: readonly LwQuestTrackerItem[] = [
     id: 'quest-whispers-woods',
     title: 'Whispers in the Woods',
     summary: 'Speak to the hermit of Elderwood',
-    icon: 'sparkles',
+    icon: 'book',
     questGiver: 'Sister Elowen',
     originLocation: 'Ruined Chapel',
     completionLocation: 'Elderwood Hollow',
@@ -276,6 +277,7 @@ const DASHBOARD_NPCS: readonly NpcCardVm[] = [
   standalone: true,
   imports: [
     RouterLink,
+    NgpButton,
     LwIconComponent,
     LwTacticalStageCardComponent,
     LwQuestTrackerCardComponent,

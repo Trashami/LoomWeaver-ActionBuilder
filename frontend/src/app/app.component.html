@@ -16,16 +16,14 @@
         <div class="lw-topbar__divider"></div>
 
         <div class="lw-campaign-picker">
-          <div class="lw-campaign-picker__crest">
-            <lw-icon name="crown" [size]="15" />
-          </div>
           <div class="lw-campaign-picker__body">
             <div class="lw-campaign-picker__row">
               <select
                 class="lw-campaign-picker__select"
                 [ngModel]="store.activeCampaignId()"
                 (ngModelChange)="store.setCampaign($event)"
-                aria-label="Active Campaign">
+                aria-label="Active Campaign"
+              >
                 @for (camp of store.campaigns(); track camp.id) {
                   <option [ngValue]="camp.id">{{ camp.name }}</option>
                 }
@@ -39,73 +37,96 @@
       </div>
 
       <form class="lw-topbar__search" (ngSubmit)="submitGlobalSearch()">
-        <lw-icon name="search" [size]="15" />
+        <lw-icon name="search" [size]="16" />
         <input
+          ngpInput
           type="search"
           class="lw-topbar__search-input"
           placeholder="Search anything..."
           [ngModel]="globalSearchText()"
           (ngModelChange)="globalSearchText.set($event)"
-          name="globalLoomSearch" />
-        <button type="submit" class="lw-topbar__kbd" title="Open The Loom Campaign Memory">
+          name="globalLoomSearch"
+        />
+        <button
+          ngpButton
+          type="submit"
+          class="lw-topbar__kbd"
+          title="Open The Loom Campaign Memory"
+        >
           Ctrl + K
         </button>
       </form>
 
-      <div class="lw-topbar__right">
+      <div ngpToolbar class="lw-topbar__right">
         <button
+          ngpButton
           type="button"
           class="lw-topbar__icon-btn"
           [class.lw-topbar__icon-btn--active]="audio.isPlaying()"
           (click)="audio.togglePlayback()"
-          title="Toggle Ambient Audio Engine">
-          <lw-icon name="music" [size]="16" />
+          title="Toggle Ambient Audio Engine"
+        >
+          <lw-icon name="music" [size]="17" />
         </button>
 
         <button
+          ngpButton
           type="button"
           class="lw-topbar__icon-btn"
           (click)="store.rollGlobalQuickD20()"
-          [title]="store.quickRollBanner()">
-          <lw-icon name="dices" [size]="16" />
+          [title]="store.quickRollBanner()"
+        >
+          <lw-icon name="dices" [size]="17" />
         </button>
 
         <button
-          type="button"
-          class="lw-topbar__icon-btn"
-          [class.lw-topbar__icon-btn--active]="store.loomDrawerOpen()"
-          (click)="store.toggleLoomDrawer()"
-          title="Open The Loom Campaign Memory">
-          <lw-icon name="book" [size]="16" />
-        </button>
-
-        <button
+          ngpButton
           type="button"
           class="lw-topbar__role-pill"
           (click)="store.setViewerRole(store.viewerRole() === 'gm' ? 'players' : 'gm')"
-          title="Click to switch between GM View and Player View">
-          <lw-icon [name]="store.viewerRole() === 'gm' ? 'shield' : 'users'" [size]="13" />
+          title="Click to switch between GM View and Player View"
+        >
           <span>{{ store.viewerRole() === 'gm' ? 'GM View' : 'Player View' }}</span>
         </button>
 
-        <a class="lw-topbar__icon-btn" routerLink="/welcome" title="View Public Marketing Site">
-          <lw-icon name="globe" [size]="16" />
+        <button
+          ngpButton
+          type="button"
+          class="lw-topbar__role-pill"
+          [class.lw-topbar__icon-btn--active]="store.loomDrawerOpen()"
+          (click)="store.toggleLoomDrawer()"
+          title="Open The Loom Campaign Memory"
+        >
+          <span>The Loom</span>
+        </button>
+
+        <a
+          ngpButton
+          class="lw-topbar__role-pill"
+          routerLink="/welcome"
+          title="View Public Marketing Site"
+        >
+          <span>Site</span>
         </a>
 
         <div class="lw-profile-pill">
-          <div class="lw-profile-pill__avatar">
-            {{ auth.activeProfile().displayName.slice(0, 2).toUpperCase() }}
+          <div ngpAvatar class="lw-profile-pill__avatar">
+            <span ngpAvatarFallback>
+              {{ auth.activeProfile().displayName.slice(0, 2).toUpperCase() }}
+            </span>
           </div>
           <div class="lw-profile-pill__info">
             <strong>{{ auth.activeProfile().displayName }}</strong>
             <span>{{ store.viewerRole() === 'gm' ? 'Dungeon Master' : 'Adventurer' }}</span>
           </div>
           <button
+            ngpButton
             type="button"
             class="lw-profile-pill__logout"
             (click)="auth.logout()"
-            title="Sign Out">
-            <lw-icon name="x" [size]="13" />
+            title="Sign Out"
+          >
+            <lw-icon name="close" [size]="13" />
           </button>
         </div>
       </div>
@@ -118,10 +139,11 @@
         <div class="lw-sidebar__nav-list">
           @for (item of primarySidebarNav; track item.id) {
             <a
+              ngpButton
               class="lw-nav-link"
               [routerLink]="item.route"
-              routerLinkActive="lw-nav-link--active">
-              <lw-icon [name]="item.icon" [size]="16" />
+              routerLinkActive="lw-nav-link--active"
+            >
               <span class="lw-nav-link__label">{{ item.label }}</span>
             </a>
           }
@@ -131,21 +153,24 @@
 
         <div class="lw-sidebar__engines">
           <button
+            ngpButton
             type="button"
             class="lw-sidebar__heading-btn"
-            (click)="showAllModules.set(!showAllModules())">
+            (click)="showAllModules.set(!showAllModules())"
+          >
             <span>Tactical & Studio Tools</span>
-            <lw-icon [name]="showAllModules() ? 'chevron-down' : 'chevron-right'" [size]="13" />
+            <lw-icon [name]="showAllModules() ? 'chevron-down' : 'chevron-right'" [size]="14" />
           </button>
 
           @if (showAllModules()) {
             <div class="lw-sidebar__nav-list">
               @for (item of engineSidebarNav; track item.id) {
                 <a
+                  ngpButton
                   class="lw-nav-link lw-nav-link--compact"
                   [routerLink]="item.route"
-                  routerLinkActive="lw-nav-link--active">
-                  <lw-icon [name]="item.icon" [size]="15" />
+                  routerLinkActive="lw-nav-link--active"
+                >
                   <span class="lw-nav-link__label">{{ item.label }}</span>
                 </a>
               }

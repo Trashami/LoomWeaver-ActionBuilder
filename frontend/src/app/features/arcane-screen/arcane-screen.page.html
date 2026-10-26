@@ -13,7 +13,6 @@
         <lw-button
           variant="primary"
           size="sm"
-          icon="sparkles"
           (pressed)="vtt.concludeEncounterAndAwardXp(vtt.activeEncounterId())">
           Conclude Combat & Award XP
         </lw-button>
@@ -24,7 +23,7 @@
 
     @if (vtt.xpAwardBanner(); as banner) {
       <div class="lw-xp-banner">
-        <lw-badge label="Automated XP Engine" tone="gold" icon="sparkles" />
+        <lw-badge label="Automated XP Engine" tone="gold" />
         <span>{{ banner }}</span>
         <a class="lw-link-pill" routerLink="/characters">Promote Heroes in Character Studio</a>
       </div>

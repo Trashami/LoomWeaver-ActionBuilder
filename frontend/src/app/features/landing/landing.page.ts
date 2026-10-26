@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { NgpButton } from 'ng-primitives/button';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import {
   isSubdomainHost,
@@ -29,7 +30,7 @@ import { SEO_LANDING_PAGES, SeoLandingPageConfig } from './landing-seo-pages.dat
 @Component({
   selector: 'lw-landing-page',
   standalone: true,
-  imports: [RouterLink, LwIconComponent],
+  imports: [RouterLink, NgpButton, LwIconComponent],
   templateUrl: './landing.page.html',
   styleUrl: './landing.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

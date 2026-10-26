@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
-import { LwIconComponent } from '../icon/icon.component';
 
 export interface LwCreatorModuleItem {
   readonly id: string;
@@ -22,7 +21,7 @@ export interface LwCreatorModuleItem {
 @Component({
   selector: 'lw-creator-module-card',
   standalone: true,
-  imports: [LwBadgeComponent, LwButtonComponent, LwIconComponent],
+  imports: [LwBadgeComponent, LwButtonComponent],
   templateUrl: './creator-module-card.component.html',
   styleUrl: './creator-module-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

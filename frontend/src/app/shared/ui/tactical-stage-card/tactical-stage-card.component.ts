@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { NgpButton } from 'ng-primitives/button';
+import { NgpToolbar } from 'ng-primitives/toolbar';
 import { LwIconComponent } from '../icon/icon.component';
 
 export interface LwInitiativeTokenVm {
@@ -17,7 +19,7 @@ export interface LwInitiativeTokenVm {
 @Component({
   selector: 'lw-tactical-stage-card',
   standalone: true,
-  imports: [LwIconComponent],
+  imports: [NgpButton, NgpToolbar, LwIconComponent],
   templateUrl: './tactical-stage-card.component.html',
   styleUrl: './tactical-stage-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

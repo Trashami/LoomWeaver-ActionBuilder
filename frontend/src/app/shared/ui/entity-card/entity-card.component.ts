@@ -49,7 +49,7 @@ export class LwEntityCardComponent {
       case 'Clue':
         return 'search';
       default:
-        return 'sparkles';
+        return 'book-open';
     }
   });
 }

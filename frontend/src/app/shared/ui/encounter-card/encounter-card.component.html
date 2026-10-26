@@ -6,9 +6,9 @@
     </div>
     <div class="lw-encounter-card__badges">
       <lw-badge [label]="encounter().difficulty" [tone]="difficultyTone()" />
-      <lw-badge [label]="encounter().totalXp + ' XP'" tone="gold" icon="sparkles" />
+      <lw-badge [label]="encounter().totalXp + ' XP'" tone="gold" />
       @if (encounter().completed) {
-        <lw-badge label="XP Awarded" tone="emerald" icon="check" />
+        <lw-badge label="XP Awarded" tone="emerald" />
       }
     </div>
   </div>
@@ -16,8 +16,8 @@
   <p class="lw-encounter-card__summary">{{ encounter().summary }}</p>
 
   <div class="lw-encounter-card__meta">
-    <span><lw-icon name="map" [size]="13" /> Scene: {{ encounter().sceneName }}</span>
-    <span><lw-icon name="swords" [size]="13" /> Hostiles: {{ encounter().enemyCount }}</span>
+    <span>Scene: {{ encounter().sceneName }}</span>
+    <span>Hostiles: {{ encounter().enemyCount }}</span>
   </div>
 
   <div class="lw-encounter-card__footer">

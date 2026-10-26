@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { LwIconComponent } from '../icon/icon.component';
 
 export type LwBadgeTone =
   | 'neutral'
@@ -20,7 +19,6 @@ export type LwBadgeTone =
 @Component({
   selector: 'lw-badge',
   standalone: true,
-  imports: [LwIconComponent],
   templateUrl: './badge.component.html',
   styleUrl: './badge.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

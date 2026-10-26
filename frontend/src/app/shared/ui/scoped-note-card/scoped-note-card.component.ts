@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LwBadgeComponent, LwBadgeTone } from '../badge/badge.component';
-import { LwIconComponent } from '../icon/icon.component';
 
 export interface LwScopedNoteItem {
   readonly id: string;
@@ -19,7 +18,7 @@ export interface LwScopedNoteItem {
 @Component({
   selector: 'lw-scoped-note-card',
   standalone: true,
-  imports: [RouterLink, LwBadgeComponent, LwIconComponent],
+  imports: [RouterLink, LwBadgeComponent],
   templateUrl: './scoped-note-card.component.html',
   styleUrl: './scoped-note-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

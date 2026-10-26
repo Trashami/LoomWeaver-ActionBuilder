@@ -177,13 +177,14 @@
   }
 
   &__tool-btn {
-    width: 28px;
+    min-width: 28px;
     height: 26px;
+    padding: 0 0.45rem;
     border-radius: 6px;
     border: 1px solid transparent;
     background: rgba(255, 255, 255, 0.03);
     color: #b8c4be;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -198,6 +199,7 @@
 
     &--accent {
       color: #49e892;
+      border-color: rgba(73, 232, 146, 0.22);
     }
   }
 

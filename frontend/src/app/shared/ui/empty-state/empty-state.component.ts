@@ -11,7 +11,7 @@ import { LwIconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwEmptyStateComponent {
-  readonly icon = input<string>('sparkles');
+  readonly icon = input<string>('book-open');
   readonly title = input.required<string>();
   readonly description = input.required<string>();
   readonly actionLabel = input<string | null>(null);

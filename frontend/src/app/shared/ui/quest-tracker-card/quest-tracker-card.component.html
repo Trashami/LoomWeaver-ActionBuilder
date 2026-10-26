@@ -1,13 +1,14 @@
 @let q = quest();
 @if (variant() === 'compact-row') {
   <button
+    ngpButton
     type="button"
     class="lw-quest-row"
     [class.lw-quest-row--selected]="selected()"
     (click)="questSelected.emit(q)"
   >
     <span class="lw-quest-row__emblem" aria-hidden="true">
-      <lw-icon [name]="q.icon || 'Compass'" [size]="16" />
+      <span class="lw-quest-row__marker"></span>
     </span>
     <span class="lw-quest-row__body">
       <strong class="lw-quest-row__title">{{ q.title }}</strong>
@@ -26,7 +27,7 @@
           [label]="q.status === 'completed' ? 'Completed' : completedCount() + '/' + q.steps.length + ' Steps'"
           [tone]="q.status === 'completed' ? 'emerald' : 'gold'"
         />
-        <lw-badge [label]="'+' + q.xpReward + ' XP'" tone="emerald" icon="Sparkles" />
+        <lw-badge [label]="'+' + q.xpReward + ' XP'" tone="emerald" />
       </div>
     </div>
 
@@ -39,12 +40,17 @@
     <div class="lw-quest-card__steps">
       @for (step of q.steps; track step.stepId) {
         <button
+          ngpButton
+          ngpCheckbox
+          [ngpCheckboxChecked]="step.completed"
           type="button"
           class="lw-quest-card__step"
           [class.lw-quest-card__step--done]="step.completed"
           (click)="stepToggled.emit({ questId: q.id, stepId: step.stepId })"
         >
-          <lw-icon [name]="step.completed ? 'Check' : 'Compass'" [size]="15" />
+          @if (step.completed) {
+            <lw-icon name="check" [size]="14" />
+          }
           <div class="lw-quest-card__step-text">
             <span>{{ step.description }}</span>
             <small>{{ step.locationName }}</small>
@@ -56,8 +62,12 @@
     <div class="lw-quest-card__clues">
       <span class="lw-quest-card__clue-label">Linked Canon Clues:</span>
       @for (clue of q.clueKeys; track clue) {
-        <button type="button" class="lw-quest-card__clue-pill" (click)="clueInspected.emit(clue)">
-          <lw-icon name="Search" [size]="12" />
+        <button
+          ngpButton
+          type="button"
+          class="lw-quest-card__clue-pill"
+          (click)="clueInspected.emit(clue)"
+        >
           <span>{{ clue }}</span>
         </button>
       }

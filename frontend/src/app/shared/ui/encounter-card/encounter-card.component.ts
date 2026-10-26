@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { RouterLink } from '@angular/router';
 import { LwBadgeComponent, LwBadgeTone } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
-import { LwIconComponent } from '../icon/icon.component';
 
 export interface EncounterCardVm {
   readonly id: string;
@@ -21,7 +20,7 @@ export interface EncounterCardVm {
 @Component({
   selector: 'lw-encounter-card',
   standalone: true,
-  imports: [RouterLink, LwBadgeComponent, LwButtonComponent, LwIconComponent],
+  imports: [RouterLink, LwBadgeComponent, LwButtonComponent],
   templateUrl: './encounter-card.component.html',
   styleUrl: './encounter-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -6,7 +6,12 @@
     aria-labelledby="lw-auth-modal-title"
     (click)="auth.closeAuthModal()"
   >
-    <div class="lw-auth-dialog" (click)="$event.stopPropagation()">
+    <div
+      ngpTabset
+      [ngpTabsetValue]="auth.authModalTab()"
+      class="lw-auth-dialog"
+      (click)="$event.stopPropagation()"
+    >
       <header class="lw-auth-header">
         <div class="lw-auth-brand">
           <img src="/LoomWeaverCrow.png" alt="LoomWeaver Raven Crest" class="lw-auth-logo" />
@@ -22,58 +27,63 @@
           </div>
         </div>
         <button
+          ngpButton
           type="button"
           class="lw-auth-close"
           aria-label="Close authentication dialog"
           (click)="auth.closeAuthModal()"
         >
-          <lw-icon name="X" [size]="18" />
+          <lw-icon name="close" [size]="18" />
         </button>
       </header>
 
-      <div class="lw-auth-tabs" role="tablist">
+      <div ngpTabList class="lw-auth-tabs" role="tablist">
         <button
+          ngpButton
+          ngpTabButton
+          ngpTabButtonValue="login"
           type="button"
           role="tab"
           class="lw-auth-tab"
           [class.lw-auth-tab--active]="auth.authModalTab() === 'login'"
           (click)="selectTab('login')"
         >
-          <lw-icon name="KeyRound" [size]="15" />
           <span>Sign In</span>
         </button>
         <button
+          ngpButton
+          ngpTabButton
+          ngpTabButtonValue="register"
           type="button"
           role="tab"
           class="lw-auth-tab"
           [class.lw-auth-tab--active]="auth.authModalTab() === 'register'"
           (click)="selectTab('register')"
         >
-          <lw-icon name="UserPlus" [size]="15" />
           <span>Create Account</span>
         </button>
         <button
+          ngpButton
+          ngpTabButton
+          ngpTabButtonValue="request"
           type="button"
           role="tab"
           class="lw-auth-tab"
           [class.lw-auth-tab--active]="auth.authModalTab() === 'request'"
           (click)="selectTab('request')"
         >
-          <lw-icon name="Shield" [size]="15" />
           <span>Request Access</span>
         </button>
       </div>
 
       @if (auth.authError()) {
         <div class="lw-auth-alert" role="alert">
-          <lw-icon name="AlertTriangle" [size]="16" />
           <span>{{ auth.authError() }}</span>
         </div>
       }
 
       @if (auth.authNotice()) {
         <div class="lw-auth-notice" role="status">
-          <lw-icon name="ShieldCheck" [size]="16" />
           <span>{{ auth.authNotice() }}</span>
         </div>
       }
@@ -91,6 +101,7 @@
           <label class="lw-auth-field">
             <span>Email Address or Username</span>
             <input
+              ngpInput
               type="text"
               name="loginIdentifier"
               autocomplete="username"
@@ -104,6 +115,7 @@
           <label class="lw-auth-field">
             <span>Password</span>
             <input
+              ngpInput
               type="password"
               name="loginPassword"
               autocomplete="current-password"
@@ -118,7 +130,6 @@
             <lw-button
               variant="gold"
               size="md"
-              icon="KeyRound"
               [disabled]="auth.authLoading()"
               (pressed)="submitLogin()"
             >
@@ -131,6 +142,7 @@
           <label class="lw-auth-field">
             <span>Email Address</span>
             <input
+              ngpInput
               type="email"
               name="registerEmail"
               autocomplete="email"
@@ -145,6 +157,7 @@
             <label class="lw-auth-field">
               <span>Username</span>
               <input
+                ngpInput
                 type="text"
                 name="registerUsername"
                 autocomplete="username"
@@ -158,6 +171,7 @@
             <label class="lw-auth-field">
               <span>Display Name</span>
               <input
+                ngpInput
                 type="text"
                 name="registerDisplayName"
                 autocomplete="name"
@@ -171,6 +185,7 @@
           <label class="lw-auth-field">
             <span>Password (minimum 6 characters)</span>
             <input
+              ngpInput
               type="password"
               name="registerPassword"
               autocomplete="new-password"
@@ -185,22 +200,22 @@
             <span class="lw-auth-role-label">Account Role</span>
             <div class="lw-auth-role-grid">
               <button
+                ngpButton
                 type="button"
                 class="lw-auth-role-card"
                 [class.lw-auth-role-card--active]="registerRole() === 'gm'"
                 (click)="registerRole.set('gm')"
               >
-                <lw-icon name="Crown" [size]="16" />
                 <strong>Game Master &amp; Creator</strong>
                 <span>Campaign Studio, LoomMaps, Weave AI &amp; 85/15 Marketplace</span>
               </button>
               <button
+                ngpButton
                 type="button"
                 class="lw-auth-role-card"
                 [class.lw-auth-role-card--active]="registerRole() === 'players'"
                 (click)="registerRole.set('players')"
               >
-                <lw-icon name="Shield" [size]="16" />
                 <strong>Free Player Seat</strong>
                 <span>100% free forever — character sheets, 2.5D VTT &amp; witness-scoped Loom</span>
               </button>
@@ -211,7 +226,6 @@
             <lw-button
               variant="gold"
               size="md"
-              icon="UserPlus"
               [disabled]="auth.authLoading()"
               (pressed)="submitRegister()"
             >
@@ -224,6 +238,7 @@
           <label class="lw-auth-field">
             <span>Email Address</span>
             <input
+              ngpInput
               type="email"
               name="reqEmail"
               placeholder="adventurer@example.com"
@@ -237,6 +252,7 @@
             <label class="lw-auth-field">
               <span>Desired Username</span>
               <input
+                ngpInput
                 type="text"
                 name="reqUsername"
                 placeholder="Unique handle"
@@ -248,6 +264,7 @@
             <label class="lw-auth-field">
               <span>Display Name</span>
               <input
+                ngpInput
                 type="text"
                 name="reqDisplayName"
                 placeholder="DM or Player Name"
@@ -260,6 +277,7 @@
           <label class="lw-auth-field">
             <span>Campaign or Invitation Note (Optional)</span>
             <input
+              ngpInput
               type="text"
               name="reqNotes"
               placeholder="e.g. Invited to Icrandor Campaign"
@@ -272,7 +290,6 @@
             <lw-button
               variant="gold"
               size="md"
-              icon="ShieldCheck"
               [disabled]="auth.authLoading()"
               (pressed)="submitAccessRequest()"
             >
@@ -283,7 +300,7 @@
       }
 
       <footer class="lw-auth-footer">
-        <lw-badge label="Unified .loom-weaver.com SSO" tone="emerald" icon="ShieldCheck" />
+        <lw-badge label="Unified .loom-weaver.com SSO" tone="emerald" />
         <span>Single sign-on across LoomWeaver, LoomMaps, VTT, ActionBuilder &amp; EffectBuilder.</span>
       </footer>
     </div>

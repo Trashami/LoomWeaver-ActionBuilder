@@ -2,7 +2,6 @@
   <section class="lw-loom-drawer" aria-label="The Loom Campaign Memory Assistant">
     <header class="lw-loom-drawer__header">
       <div class="lw-loom-drawer__brand">
-        <lw-icon name="book-open" [size]="18" />
         <div>
           <h3 class="lw-loom-drawer__title">The Loom · Campaign Memory</h3>
           <span class="lw-loom-drawer__subtitle">
@@ -22,22 +21,23 @@
 
     <div class="lw-loom-drawer__search">
       <input
+        ngpInput
         type="text"
         class="lw-loom-drawer__input"
         [ngModel]="store.loomQuery()"
         (ngModelChange)="store.loomQuery.set($event)"
         placeholder="Ask The Loom about sessions, NPCs, locations, clues, or quests..." />
       <div class="lw-loom-drawer__chips">
-        <button type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Kildrid')">
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Kildrid')">
           Kildrid Stone Sense
         </button>
-        <button type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Emrys')">
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Emrys')">
           Lord Emrys in Cinth
         </button>
-        <button type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Chokrah')">
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Chokrah')">
           Chokrah Cargo Manifest
         </button>
-        <button type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Artificers')">
+        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Artificers')">
           Artificers Guild
         </button>
       </div>

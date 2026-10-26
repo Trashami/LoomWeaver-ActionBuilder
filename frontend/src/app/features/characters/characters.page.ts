@@ -139,7 +139,7 @@ export class CharactersPageComponent {
       subtitle: 'Attribute + Skill Dice Pools (1-5 Dots) · Hunger & Rouse Checks',
       badge: 'Supported',
       badgeTone: 'neutral',
-      icon: 'sparkles',
+      icon: 'book',
     },
   ];
 

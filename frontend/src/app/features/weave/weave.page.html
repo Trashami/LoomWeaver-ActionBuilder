@@ -79,7 +79,6 @@
         eyebrow="Context-Grounded Creative AI Companion"
         title="Weave New Campaign Draft"
         subtitle="Generates characters, monsters, factions, quests, items, spells, loot tables, sessions, and battle maps grounded in campaign canon."
-        icon="Sparkles"
       >
         <div class="lw-weave-composer">
           <div class="lw-weave-composer__cats">
@@ -113,7 +112,7 @@
             ></textarea>
           </label>
 
-          <lw-button variant="primary" icon="Sparkles" (pressed)="generateDraft()">
+          <lw-button variant="primary" (pressed)="generateDraft()">
             Weave {{ selectedGenerateCategory() }} Draft (Non-Canonical Until Approved)
           </lw-button>
         </div>
@@ -159,7 +158,6 @@
                 <lw-button
                   variant="secondary"
                   size="sm"
-                  icon="Sparkles"
                   (pressed)="reviewDraft(draft, 'reweave')"
                 >
                   Re-Weave Draft

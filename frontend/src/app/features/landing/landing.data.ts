@@ -66,7 +66,7 @@ export interface LandingFaqItemVm {
 export const LANDING_PRIMARY_PILLARS: readonly PillarFeatureCardVm[] = [
   {
     id: 'loom',
-    icon: 'sparkles',
+    icon: 'book-open',
     title: 'The Loom',
     accent: 'emerald',
     description:
@@ -208,7 +208,7 @@ export const LANDING_SESSION_INTEL_ITEMS: readonly SessionIntelItemVm[] = [
   },
   {
     id: 'ask-the-loom',
-    icon: 'sparkles',
+    icon: 'book-open',
     label: 'Ask The Loom: "What was promised at the Chapel?"',
     scope: 'Instant Canon Synthesis · Zero Generation',
     detail:

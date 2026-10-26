@@ -7,7 +7,8 @@
     [combatants]="combatants()"
     (tokenSelected)="onTokenSelected($event)"
     (rollDiceRequested)="store.rollGlobalQuickD20()"
-    (expandRequested)="openFullVtt()" />
+    (expandRequested)="openFullVtt()"
+  />
 
   <!-- Middle 3-Column Tactical Campaign Row Using Shared Web Components -->
   <section class="lw-dashboard__cards-grid" aria-label="Active Quests, Party Members, and Nearby NPCs">
@@ -16,11 +17,13 @@
       <header class="lw-dash-card__header">
         <h2 class="lw-dash-card__title">Active Quests</h2>
         <div class="lw-dash-card__actions">
-          <a routerLink="/campaigns" class="lw-dash-card__icon-btn" title="Add or Manage Quests">
-            <lw-icon name="plus" [size]="14" />
-          </a>
-          <a routerLink="/campaigns" class="lw-dash-card__icon-btn" title="Open Quest Log">
-            <lw-icon name="sparkles" [size]="14" />
+          <a
+            ngpButton
+            routerLink="/campaigns"
+            class="lw-dash-card__icon-btn"
+            title="Add or Manage Quests"
+          >
+            <lw-icon name="plus" [size]="15" />
           </a>
         </div>
       </header>
@@ -31,7 +34,8 @@
             [quest]="quest"
             variant="compact-row"
             [selected]="selectedQuestId() === quest.id"
-            (questSelected)="onQuestSelected($event)" />
+            (questSelected)="onQuestSelected($event)"
+          />
         }
       </div>
     </article>
@@ -41,23 +45,22 @@
       [members]="partyMembers()"
       [selectedKey]="store.inspectedEntityKey() ?? ''"
       (memberSelected)="onMemberSelected($event)"
-      (addMemberRequested)="openFullVtt()" />
+      (addMemberRequested)="openFullVtt()"
+    />
 
     <!-- Column 3: Nearby NPCs -->
     <article class="lw-dash-card">
       <header class="lw-dash-card__header">
         <h2 class="lw-dash-card__title">Nearby NPCs</h2>
         <div class="lw-dash-card__actions">
-          <a routerLink="/campaigns" class="lw-dash-card__icon-btn" title="Add or Inspect NPCs">
-            <lw-icon name="plus" [size]="14" />
-          </a>
-          <button
-            type="button"
+          <a
+            ngpButton
+            routerLink="/campaigns"
             class="lw-dash-card__icon-btn"
-            (click)="store.toggleLoomDrawer(true)"
-            title="Recall NPC Lore in The Loom">
-            <lw-icon name="book" [size]="14" />
-          </button>
+            title="Add or Inspect NPCs"
+          >
+            <lw-icon name="plus" [size]="15" />
+          </a>
         </div>
       </header>
 
@@ -68,7 +71,8 @@
             variant="dashboard-row"
             [showGmSecret]="store.viewerRole() === 'gm'"
             [selected]="store.inspectedEntityKey() === npc.compositeKey"
-            (npcSelected)="onNpcSelected($event)" />
+            (npcSelected)="onNpcSelected($event)"
+          />
         }
       </div>
     </article>
@@ -79,18 +83,20 @@
     dateFilterLabel="Today"
     [entries]="logEntries()"
     (noteSaved)="onSaveSessionNote($event)"
-    (loomFormatRequested)="onAskLoomWithDraft($event)" />
+    (loomFormatRequested)="onAskLoomWithDraft($event)"
+  />
 
   <!-- Optional Expandable Session Recaps & Studio Quick Links -->
   @if (sessions().length > 0) {
     <section class="lw-dashboard__chronicle-bar">
       <button
+        ngpButton
         type="button"
         class="lw-dashboard__chronicle-toggle"
-        (click)="showChronicleDrawer.set(!showChronicleDrawer())">
-        <lw-icon name="book" [size]="14" />
+        (click)="showChronicleDrawer.set(!showChronicleDrawer())"
+      >
         <span>Recent Session Recaps ({{ sessions().length }} archived in MySQL & Neo4j)</span>
-        <lw-icon [name]="showChronicleDrawer() ? 'chevron-down' : 'chevron-right'" [size]="14" />
+        <lw-icon [name]="showChronicleDrawer() ? 'chevron-down' : 'chevron-right'" [size]="15" />
       </button>
 
       @if (showChronicleDrawer()) {
@@ -98,7 +104,8 @@
           @for (sess of sessions(); track sess.id) {
             <lw-session-recap-card
               [session]="sess"
-              (inspectEntityRequested)="store.inspectEntity($event)" />
+              (inspectEntityRequested)="store.inspectEntity($event)"
+            />
           }
         </div>
       }
