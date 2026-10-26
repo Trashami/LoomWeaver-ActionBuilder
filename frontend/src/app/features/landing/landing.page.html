@@ -1,48 +1,50 @@
 <div id="lw-app" class="lw-raven-landing">
-  <header class="topnav wrap" role="banner">
-    <a class="brand" href="#top" (click)="scrollToSection('top', $event)" aria-label="LoomWeaver (Loom-Weaver) VTT Home">
-      <span class="raven-emblem" aria-hidden="true">
-        <img src="/LoomWeaverCrow.png" alt="" class="raven-emblem-img" />
-      </span>
-      <span class="brand-identity">
-        <img src="/LoomWeaver.png" alt="LoomWeaver" class="brand-wordmark-img" />
-        <small class="brandsub">Your Campaign. One Living World. · 2.5D VTT &amp; Lore OS</small>
-      </span>
-    </a>
+  <header class="topnav" [class.scrolled]="headerScrolled()" role="banner">
+    <div class="topnav-inner">
+      <a class="brand" href="#top" (click)="scrollToSection('top', $event)" aria-label="LoomWeaver (Loom-Weaver) VTT Home">
+        <span class="raven-emblem" aria-hidden="true">
+          <img [src]="assets.brandRavenEmblem" alt="" class="raven-emblem-img" />
+        </span>
+        <span class="brand-identity">
+          <img [src]="assets.brandLogoWordmark" alt="LoomWeaver" class="brand-wordmark-img" />
+          <small class="brandsub">Your Campaign. One Living World. · 2.5D VTT &amp; Lore OS</small>
+        </span>
+      </a>
 
-    <nav class="navlinks" [class.open]="mobileMenuOpen()" aria-label="Primary Navigation">
-      <a href="#why-loomweaver" (click)="scrollToSection('why-loomweaver', $event)">Why LoomWeaver</a>
-      <a href="#features" (click)="scrollToSection('features', $event)">Features</a>
-      <a href="#engines" (click)="scrollToSection('engines', $event)">2.5D VTT &amp; Engines</a>
-      <a href="#experience" (click)="scrollToSection('experience', $event)">How It Works</a>
-      <a href="#pricing" (click)="scrollToSection('pricing', $event)">Plans &amp; Pricing</a>
-      <a href="#marketplace" (click)="scrollToSection('marketplace', $event)">Creator Marketplace</a>
-      <a href="#faq" (click)="scrollToSection('faq', $event)">FAQ</a>
-    </nav>
+      <nav class="navlinks" [class.open]="mobileMenuOpen()" aria-label="Primary Navigation">
+        <a href="#why-loomweaver" (click)="scrollToSection('why-loomweaver', $event)">Why LoomWeaver</a>
+        <a href="#features" (click)="scrollToSection('features', $event)">Features</a>
+        <a href="#engines" (click)="scrollToSection('engines', $event)">2.5D VTT &amp; Engines</a>
+        <a href="#experience" (click)="scrollToSection('experience', $event)">How It Works</a>
+        <a href="#pricing" (click)="scrollToSection('pricing', $event)">Plans &amp; Pricing</a>
+        <a href="#marketplace" (click)="scrollToSection('marketplace', $event)">Creator Marketplace</a>
+        <a href="#faq" (click)="scrollToSection('faq', $event)">FAQ</a>
+      </nav>
 
-    <div class="header-actions">
-      @if (auth.isAuthenticated()) {
-        <button type="button" class="btn green" (click)="enterStudioOrSignIn('/home')">
-          <span>Enter Studio</span>
-          <lw-icon name="arrow-right" [size]="14" />
+      <div class="header-actions">
+        @if (auth.isAuthenticated()) {
+          <button type="button" class="btn green" (click)="enterStudioOrSignIn('/home')">
+            <span>Enter Studio</span>
+            <lw-icon name="arrow-right" [size]="14" />
+          </button>
+        } @else {
+          <button type="button" class="btn ghost signin" (click)="openAuth('login')">
+            <lw-icon name="key-round" [size]="14" />
+            <span>Sign In</span>
+          </button>
+          <button type="button" class="btn primary" (click)="openAuth('register')">
+            <span>Start Free</span>
+            <lw-icon name="external-link" [size]="13" />
+          </button>
+        }
+        <button type="button" class="mobile-menu" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Toggle navigation menu">
+          <lw-icon [name]="mobileMenuOpen() ? 'x' : 'menu'" [size]="18" />
         </button>
-      } @else {
-        <button type="button" class="btn ghost signin" (click)="openAuth('login')">
-          <lw-icon name="key-round" [size]="14" />
-          <span>Sign In</span>
-        </button>
-        <button type="button" class="btn primary" (click)="openAuth('register')">
-          <span>Start Free</span>
-          <lw-icon name="external-link" [size]="13" />
-        </button>
-      }
-      <button type="button" class="mobile-menu" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Toggle navigation menu">
-        <lw-icon [name]="mobileMenuOpen() ? 'x' : 'menu'" [size]="18" />
-      </button>
+      </div>
     </div>
   </header>
 
-  <main id="top">
+  <main id="top" class="landing-main">
     <!-- HERO SECTION -->
     <section class="hero" aria-labelledby="hero-heading">
       <div class="wrap hero-inner">
@@ -81,7 +83,7 @@
 
         <div class="hero-art" aria-label="Illustrated preview of a LoomWeaver fantasy campaign scene, soaring raven, and interconnected story nodes">
           <div class="artframe">
-            <svg class="scenery" viewBox="0 0 780 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <svg class="scenery" [style.transform]="heroSceneryTransform()" viewBox="0 0 780 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
               <defs>
                 <linearGradient id="sbg" x1="0" y1="0" x2=".2" y2="1">
                   <stop offset="0" stop-color="#051611" />
@@ -116,7 +118,7 @@
               <path d="M500 481Q511 416 440 388T297 338" stroke="#66e1b3" stroke-width="5" opacity=".28" fill="none" stroke-dasharray="6 9" />
             </svg>
 
-            <img src="/LoomWeaverCrow.png" alt="LoomWeaver Emerald Raven" class="hero-raven-overlay" />
+            <img [src]="assets.brandRavenEmblem" [style.transform]="heroRavenTransform()" alt="LoomWeaver Emerald Raven" class="hero-raven-overlay" />
             <div class="worldglow"></div>
 
             <svg class="mapline" viewBox="0 0 780 480" preserveAspectRatio="none" aria-hidden="true">
@@ -434,18 +436,20 @@
     </section>
   </main>
 
-  <footer class="footer wrap" role="contentinfo">
-    <div class="footer-brand">
-      <img src="/LoomWeaverCrow.png" alt="" class="footer-raven" />
-      <span>© 2026 LoomWeaver (loom-weaver.com) · 2.5D Virtual Tabletop (VTT) &amp; Living Campaign OS.</span>
-    </div>
-    <div class="footer-links">
-      <a href="#why-loomweaver" (click)="scrollToSection('why-loomweaver', $event)">Why LoomWeaver</a>
-      <a href="#features" (click)="scrollToSection('features', $event)">Features</a>
-      <a href="#engines" (click)="scrollToSection('engines', $event)">2.5D VTT</a>
-      <a href="#pricing" (click)="scrollToSection('pricing', $event)">Pricing</a>
-      <button type="button" class="switchauth" (click)="openAuth('login')">Sign In</button>
-      <button type="button" class="switchauth" (click)="openAuth('register')">Create Free Account</button>
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner wrap">
+      <div class="footer-brand">
+        <img [src]="assets.brandRavenEmblem" alt="" class="footer-raven" />
+        <span>© 2026 LoomWeaver (loom-weaver.com) · 2.5D Virtual Tabletop (VTT) &amp; Living Campaign OS.</span>
+      </div>
+      <div class="footer-links">
+        <a href="#why-loomweaver" (click)="scrollToSection('why-loomweaver', $event)">Why LoomWeaver</a>
+        <a href="#features" (click)="scrollToSection('features', $event)">Features</a>
+        <a href="#engines" (click)="scrollToSection('engines', $event)">2.5D VTT</a>
+        <a href="#pricing" (click)="scrollToSection('pricing', $event)">Pricing</a>
+        <button type="button" class="switchauth" (click)="openAuth('login')">Sign In</button>
+        <button type="button" class="switchauth" (click)="openAuth('register')">Create Free Account</button>
+      </div>
     </div>
   </footer>
 </div>

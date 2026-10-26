@@ -27,21 +27,38 @@
 #lw-app a { color: inherit; text-decoration: none; }
 #lw-app button { font: inherit; cursor: pointer; }
 #lw-app h1, #lw-app h2, #lw-app h3, #lw-app p { margin-top: 0; }
-#lw-app .wrap { max-width: 1320px; margin: 0 auto; padding-left: 34px; padding-right: 34px; }
+#lw-app .wrap { max-width: 1380px; margin: 0 auto; padding-left: 34px; padding-right: 34px; }
+#lw-app .landing-main { padding-top: 78px; }
 
-/* TOPBAR */
+/* FULL-SCREEN 100VW FIXED TOPBAR */
 #lw-app .topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   height: 78px;
+  z-index: 1000;
   border-bottom: 1px solid rgba(57, 130, 94, 0.42);
+  background: rgba(4, 15, 11, 0.9);
+  backdrop-filter: blur(16px);
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+#lw-app .topnav.scrolled {
+  background: rgba(3, 12, 9, 0.97);
+  border-bottom-color: rgba(73, 232, 146, 0.48);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.68);
+}
+#lw-app .topnav-inner {
+  width: 100%;
+  max-width: 1760px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 36px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: rgba(5, 17, 13, 0.94);
-  backdrop-filter: blur(12px);
-  position: sticky;
-  top: 0;
-  z-index: 40;
 }
 
 #lw-app .brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
@@ -59,12 +76,12 @@
 #lw-app .raven-emblem-img { width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 0 6px #2ee66b); }
 #lw-app .brand-identity { display: flex; flex-direction: column; }
 #lw-app .brand-wordmark-img { height: 28px; width: auto; object-fit: contain; object-position: left center; }
-#lw-app .brandsub { font-size: 10px; letter-spacing: 0.35px; color: #9ec2b0; display: block; margin-top: 2px; }
+#lw-app .brandsub { font-size: 10px; letter-spacing: 0.35px; color: #9ec2b0; display: block; margin-top: 2px; white-space: nowrap; }
 
-#lw-app .navlinks { display: flex; gap: 24px; align-items: center; color: #c0d4c9; font-size: 13px; font-weight: 500; }
-#lw-app .navlinks a { transition: color 0.16s ease; }
+#lw-app .navlinks { display: flex; gap: 22px; align-items: center; color: #c0d4c9; font-size: 13px; font-weight: 500; }
+#lw-app .navlinks a { transition: color 0.16s ease; white-space: nowrap; }
 #lw-app .navlinks a:hover { color: #58f29c; }
-#lw-app .header-actions { display: flex; gap: 10px; align-items: center; }
+#lw-app .header-actions { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
 
 /* BUTTONS */
 #lw-app .btn {
@@ -81,6 +98,7 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
+  white-space: nowrap;
   transition: all 0.18s ease;
 }
 #lw-app .btn:hover { transform: translateY(-1px); border-color: #54e896; background: #163b2d; }
@@ -109,8 +127,8 @@
   border-bottom: 1px solid #214536;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(5, 17, 13, 0.78), rgba(5, 16, 12, 0.94)),
-    url('/LoomWeaverWallpaper.png') center/cover no-repeat;
+    linear-gradient(180deg, rgba(5, 17, 13, 0.76), rgba(5, 16, 12, 0.94)),
+    url('/landing-assets/hero/hero-wallpaper.png') center/cover no-repeat;
 }
 #lw-app .hero::before {
   content: '';
@@ -126,7 +144,7 @@
   display: grid;
   grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
   align-items: center;
-  gap: 34px;
+  gap: 38px;
   min-height: 625px;
   padding-top: 52px;
   padding-bottom: 62px;
@@ -145,13 +163,7 @@
   text-transform: uppercase;
   font-weight: 700;
 }
-#lw-app .light-dot {
-  width: 7px;
-  height: 7px;
-  background: #3bf28c;
-  border-radius: 50%;
-  box-shadow: 0 0 12px #2ee66b;
-}
+#lw-app .light-dot { width: 7px; height: 7px; background: #3bf28c; border-radius: 50%; box-shadow: 0 0 12px #2ee66b; }
 #lw-app h1 {
   font-family: 'Cinzel', Georgia, serif;
   font-weight: 500;
@@ -161,53 +173,37 @@
   margin: 22px 0 22px;
   color: #f5efe2;
 }
-#lw-app h1 em {
-  font-weight: 500;
-  font-style: normal;
-  color: #5bf09d;
-  text-shadow: 0 0 34px rgba(46, 230, 107, 0.28);
-}
-#lw-app .hero-copy > p {
-  font-size: 15.5px;
-  line-height: 1.75;
-  color: #bdd1c5;
-  max-width: 540px;
-  margin-bottom: 28px;
-}
+#lw-app h1 em { font-weight: 500; font-style: normal; color: #5bf09d; text-shadow: 0 0 34px rgba(46, 230, 107, 0.28); }
+#lw-app .hero-copy > p { font-size: 15.5px; line-height: 1.75; color: #bdd1c5; max-width: 540px; margin-bottom: 28px; }
 #lw-app .hero-ctas { display: flex; gap: 11px; flex-wrap: wrap; }
 #lw-app .hero-ctas .btn { padding: 13px 18px; font-size: 13px; }
-#lw-app .trust {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 28px;
-  color: #a6c4b5;
-  font-size: 11.5px;
-}
+#lw-app .trust { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 28px; color: #a6c4b5; font-size: 11.5px; }
 #lw-app .trust span { display: inline-flex; align-items: center; gap: 6px; }
 #lw-app .trust lw-icon { color: #49e892; }
 #lw-app .trust b { color: #d8ece1; font-weight: 500; }
 
-/* HERO ART FRAME */
+/* HERO ART FRAME & SUBTLE GPU MICRO-PARALLAX */
 #lw-app .hero-art { height: 486px; position: relative; isolation: isolate; }
 #lw-app .artframe {
   position: absolute;
-  inset: 16px -12px 30px 10px;
+  inset: 16px -8px 24px 8px;
   border: 1px solid #3c6e56;
   border-radius: 13px;
   overflow: hidden;
   background: #071712;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.72), 0 0 0 7px rgba(26, 84, 56, 0.18);
 }
-#lw-app .scenery { width: 100%; height: 100%; position: absolute; inset: 0; }
+#lw-app .scenery { width: 100%; height: 100%; position: absolute; inset: 0; will-change: transform; transition: transform 0.08s linear; }
 #lw-app .hero-raven-overlay {
   position: absolute;
-  width: 68%;
-  max-width: 440px;
+  width: 64%;
+  max-width: 420px;
   right: 4%;
-  top: 7%;
+  top: 9%;
   z-index: 2;
   pointer-events: none;
+  will-change: transform;
+  transition: transform 0.08s linear;
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 24px rgba(46, 230, 107, 0.35));
 }
 #lw-app .worldglow {
@@ -215,24 +211,24 @@
   inset: 0;
   background:
     linear-gradient(90deg, rgba(6, 20, 15, 0.08) 10%, rgba(5, 18, 13, 0.25) 65%, rgba(4, 16, 11, 0.72)),
-    linear-gradient(0deg, rgba(5, 17, 12, 0.88), transparent 48%);
+    linear-gradient(0deg, rgba(5, 17, 12, 0.92), transparent 52%);
   pointer-events: none;
   z-index: 2;
 }
 #lw-app .floating-tag {
   position: absolute;
-  background: rgba(7, 25, 19, 0.92);
+  background: rgba(7, 25, 19, 0.94);
   border: 1px solid #3b6e56;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.65);
   border-radius: 9px;
   backdrop-filter: blur(10px);
   z-index: 4;
 }
-#lw-app .float-top { right: -18px; top: 0; padding: 12px 16px; min-width: 210px; }
+#lw-app .float-top { right: -12px; top: 0; padding: 12px 16px; min-width: 210px; }
 #lw-app .float-label { font-size: 10px; color: #58f29c; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 #lw-app .float-top strong { display: block; color: #f6dca8; font: 18px Georgia, serif; margin: 4px 0; }
 #lw-app .float-top small { color: #a9c4b6; font-size: 11px; }
-#lw-app .float-bottom { left: -16px; bottom: 4px; padding: 14px 18px; width: 270px; }
+#lw-app .float-bottom { left: -6px; top: 28px; padding: 13px 16px; width: 265px; }
 #lw-app .float-bottom strong { display: flex; align-items: center; gap: 6px; color: #ecd7ad; font: 15px Georgia, serif; margin-bottom: 5px; }
 #lw-app .float-bottom strong lw-icon { color: #49e892; }
 #lw-app .float-bottom span { font-size: 11px; color: #b2cabd; display: block; line-height: 1.45; }
@@ -251,13 +247,13 @@
   transition: transform 0.18s ease;
 }
 #lw-app .node:hover { transform: scale(1.1); }
-#lw-app .node.n1 { top: 112px; left: 30%; }
-#lw-app .node.n2 { top: 235px; left: 58%; }
-#lw-app .node.n3 { top: 140px; right: 14%; }
+#lw-app .node.n1 { top: 152px; left: 26%; }
+#lw-app .node.n2 { top: 245px; left: 56%; }
+#lw-app .node.n3 { top: 155px; right: 14%; }
 #lw-app .mapline { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0.85; }
 #lw-app .art-bottom {
   position: absolute;
-  bottom: 42px;
+  bottom: 38px;
   left: 28px;
   right: 22px;
   z-index: 3;
@@ -269,7 +265,7 @@
 #lw-app .art-bottom .region { font: 22px Georgia, serif; color: #fff1d6; text-shadow: 0 2px 10px #000; }
 #lw-app .art-bottom .region small { display: block; color: #b5cfc0; font: 11px 'Inter', sans-serif; margin-top: 4px; }
 #lw-app .art-bottom .pill {
-  background: rgba(10, 58, 40, 0.82);
+  background: rgba(10, 58, 40, 0.86);
   border: 1px solid #36a36d;
   border-radius: 99px;
   padding: 6px 12px;
@@ -278,6 +274,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 #lw-app .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #49e892; }
 
@@ -476,11 +473,13 @@
 #lw-app .footer-links a:hover, #lw-app .switchauth:hover { color: #58f29c; }
 #lw-app .switchauth { color: #7df5b2; border: 0; background: transparent; padding: 0; font-size: 12px; font-weight: 600; }
 
-@media (max-width: 1120px) {
+@media (max-width: 1180px) {
+  #lw-app .topnav-inner { padding: 0 22px; gap: 14px; }
+  #lw-app .navlinks { gap: 14px; font-size: 12px; }
   #lw-app .features, #lw-app .plans { grid-template-columns: repeat(2, 1fr); }
   #lw-app .hero-inner { grid-template-columns: 1fr; }
 }
-@media (max-width: 780px) {
+@media (max-width: 920px) {
   #lw-app .wrap { padding-left: 18px; padding-right: 18px; }
   #lw-app .topnav .navlinks { display: none; position: absolute; left: 0; right: 0; top: 78px; padding: 16px 22px; background: #071a13; border-bottom: 1px solid #2f5945; flex-direction: column; align-items: flex-start; gap: 14px; }
   #lw-app .topnav .navlinks.open { display: flex; }
