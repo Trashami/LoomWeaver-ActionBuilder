@@ -1,9 +1,10 @@
 .lw-quest-row {
   width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.75rem;
+  gap: 0.65rem;
+  padding: 0.52rem 0.65rem;
   border-radius: 9px;
   border: 1px solid rgba(55, 110, 84, 0.32);
   background: rgba(8, 24, 18, 0.72);
@@ -33,6 +34,11 @@
   place-items: center;
   background: radial-gradient(circle, rgba(217, 183, 122, 0.24), rgba(10, 28, 21, 0.95));
   border: 1px solid rgba(217, 183, 122, 0.55);
+
+  &[data-tone='emerald'] {
+    background: radial-gradient(circle, rgba(73, 232, 146, 0.22), rgba(10, 28, 21, 0.95));
+    border-color: rgba(73, 232, 146, 0.52);
+  }
 }
 
 .lw-quest-row__marker {
@@ -46,13 +52,13 @@
 .lw-quest-row__body {
   display: flex;
   flex-direction: column;
-  gap: 0.14rem;
+  gap: 0.1rem;
   min-width: 0;
 }
 
 .lw-quest-row__title {
   font-family: Georgia, serif;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   color: #f5e6c8;
   white-space: nowrap;
   overflow: hidden;
@@ -60,11 +66,28 @@
 }
 
 .lw-quest-row__sub {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: #9eb9ab;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.lw-quest-row__pill {
+  padding: 0.18rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid rgba(73, 232, 146, 0.38);
+  background: rgba(14, 52, 36, 0.78);
+  color: #79f2b1;
+
+  &[data-tone='gold'] {
+    border-color: rgba(217, 183, 122, 0.48);
+    background: rgba(46, 36, 18, 0.8);
+    color: #f2d59b;
+  }
 }
 
 .lw-quest-card {

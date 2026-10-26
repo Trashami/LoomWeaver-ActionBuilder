@@ -7,13 +7,25 @@
     [class.lw-quest-row--selected]="selected()"
     (click)="questSelected.emit(q)"
   >
-    <span class="lw-quest-row__emblem" aria-hidden="true">
+    <span
+      class="lw-quest-row__emblem"
+      [attr.data-tone]="q.badgeTone || 'gold'"
+      aria-hidden="true"
+    >
       <span class="lw-quest-row__marker"></span>
     </span>
     <span class="lw-quest-row__body">
       <strong class="lw-quest-row__title">{{ q.title }}</strong>
       <small class="lw-quest-row__sub">{{ primarySubtitle() }}</small>
     </span>
+    @if (q.categoryBadge) {
+      <span
+        class="lw-quest-row__pill"
+        [attr.data-tone]="q.badgeTone || 'emerald'"
+      >
+        {{ q.categoryBadge }}
+      </span>
+    }
   </button>
 } @else {
   <article class="lw-quest-card" [class.lw-quest-card--completed]="q.status === 'completed'">

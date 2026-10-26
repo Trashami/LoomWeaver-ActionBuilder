@@ -16,6 +16,8 @@ export interface LwQuestTrackerItem {
   readonly title: string;
   readonly summary?: string;
   readonly icon?: string;
+  readonly categoryBadge?: string;
+  readonly badgeTone?: 'gold' | 'emerald' | 'gm' | 'crimson';
   readonly questGiver: string;
   readonly originLocation: string;
   readonly completionLocation: string;

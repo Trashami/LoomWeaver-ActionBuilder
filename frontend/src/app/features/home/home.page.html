@@ -1,114 +1,102 @@
-<div class="lw-dashboard">
-  <!-- Top Tactical Live Session VTT Stage Web Component -->
-  <lw-tactical-stage-card
-    sceneName="Ruined Chapel"
-    modeLabel="Encounter"
-    mapImageUrl="/landing-assets/engines/engine-1-vtt-combat.jpg"
-    [combatants]="combatants()"
-    (tokenSelected)="onTokenSelected($event)"
-    (rollDiceRequested)="store.rollGlobalQuickD20()"
-    (expandRequested)="openFullVtt()"
-  />
+@if (store.campaigns().length === 0) {
+  <section class="lw-dashboard-empty" aria-label="No Active Campaigns">
+    <h2>Welcome to LoomWeaver</h2>
+    <p>You do not have an active campaign yet. Create a new world or join an existing table with an invite link.</p>
+    <div class="lw-dashboard-empty__actions">
+      <a ngpButton routerLink="/campaigns" class="lw-dashboard-empty__btn lw-dashboard-empty__btn--primary">
+        <span>Create Campaign</span>
+      </a>
+      <a ngpButton routerLink="/campaigns" class="lw-dashboard-empty__btn">
+        <span>Join Campaign</span>
+      </a>
+    </div>
+  </section>
+} @else {
+  @let dash = dashboard();
+  <div class="lw-dashboard">
+    <!-- Section A: Resume Campaign Hero Banner -->
+    <lw-campaign-resume-card
+      [campaignName]="dash.campaignName"
+      [narrativeSummary]="dash.narrativeSummary"
+      [actTitle]="dash.actTitle"
+      [actSubtitle]="dash.actSubtitle"
+      [sessionBadgeLabel]="dash.sessionBadgeLabel"
+      [sessionBadgeSubtitle]="dash.sessionBadgeSubtitle"
+      [lastActivityLabel]="dash.lastActivityLabel"
+      [artworkUrl]="dash.heroArtworkUrl"
+      [sessionState]="dash.sessionState"
+      [viewerRole]="store.viewerRole()"
+    />
 
-  <!-- Middle 3-Column Tactical Campaign Row Using Shared Web Components -->
-  <section class="lw-dashboard__cards-grid" aria-label="Active Quests, Party Members, and Nearby NPCs">
-    <!-- Column 1: Active Quests -->
-    <article class="lw-dash-card">
-      <header class="lw-dash-card__header">
-        <h2 class="lw-dash-card__title">Active Quests</h2>
-        <div class="lw-dash-card__actions">
+    <!-- Middle 3-Column Row: Next Session Planning | Recent Activity | Recent Notes -->
+    <section
+      class="lw-dashboard__cards-grid"
+      aria-label="Session Planning, Recent Activity, and Recent Notes"
+    >
+      <lw-upcoming-session-card
+        [session]="dash.upcomingSession"
+        [viewerRole]="store.viewerRole()"
+        (prepItemToggled)="store.togglePrepChecklistItem($event)"
+      />
+
+      <lw-recent-activity-feed
+        [items]="dash.recentActivity"
+        (activitySelected)="onActivitySelected($event)"
+      />
+
+      <lw-recent-notes-card
+        [notes]="dash.recentNotes"
+        (noteSelected)="onNoteSelected($event)"
+      />
+    </section>
+
+    <!-- Bottom 3-Column Row: Open Threads / Active Quests | Party Snapshot | Alerts -->
+    <section
+      class="lw-dashboard__cards-grid"
+      aria-label="Open Threads, Party Snapshot, and Alerts"
+    >
+      <article class="lw-dash-card" aria-label="Open Threads and Active Quests">
+        <header class="lw-dash-card__header">
+          <div class="lw-dash-card__heading">
+            <lw-icon name="scroll" [size]="15" />
+            <h2 class="lw-dash-card__title">OPEN THREADS / ACTIVE QUESTS</h2>
+          </div>
           <a
             ngpButton
             routerLink="/campaigns"
             class="lw-dash-card__icon-btn"
             title="Add or Manage Quests"
           >
-            <lw-icon name="plus" [size]="15" />
+            <lw-icon name="plus" [size]="14" />
           </a>
-        </div>
-      </header>
+        </header>
 
-      <div class="lw-dash-card__list">
-        @for (quest of activeQuests(); track quest.id) {
-          <lw-quest-tracker-card
-            [quest]="quest"
-            variant="compact-row"
-            [selected]="selectedQuestId() === quest.id"
-            (questSelected)="onQuestSelected($event)"
-          />
-        }
-      </div>
-    </article>
-
-    <!-- Column 2: Party Members (Reusable LwPartyRosterCardComponent) -->
-    <lw-party-roster-card
-      [members]="partyMembers()"
-      [selectedKey]="store.inspectedEntityKey() ?? ''"
-      (memberSelected)="onMemberSelected($event)"
-      (addMemberRequested)="openFullVtt()"
-    />
-
-    <!-- Column 3: Nearby NPCs -->
-    <article class="lw-dash-card">
-      <header class="lw-dash-card__header">
-        <h2 class="lw-dash-card__title">Nearby NPCs</h2>
-        <div class="lw-dash-card__actions">
-          <a
-            ngpButton
-            routerLink="/campaigns"
-            class="lw-dash-card__icon-btn"
-            title="Add or Inspect NPCs"
-          >
-            <lw-icon name="plus" [size]="15" />
-          </a>
-        </div>
-      </header>
-
-      <div class="lw-dash-card__list">
-        @for (npc of nearbyNpcs(); track npc.compositeKey) {
-          <lw-npc-card
-            [npc]="npc"
-            variant="dashboard-row"
-            [showGmSecret]="store.viewerRole() === 'gm'"
-            [selected]="store.inspectedEntityKey() === npc.compositeKey"
-            (npcSelected)="onNpcSelected($event)"
-          />
-        }
-      </div>
-    </article>
-  </section>
-
-  <!-- Bottom Session Log & Campaign Memory Composer Web Component -->
-  <lw-session-log-composer
-    dateFilterLabel="Today"
-    [entries]="logEntries()"
-    (noteSaved)="onSaveSessionNote($event)"
-    (loomFormatRequested)="onAskLoomWithDraft($event)"
-  />
-
-  <!-- Optional Expandable Session Recaps & Studio Quick Links -->
-  @if (sessions().length > 0) {
-    <section class="lw-dashboard__chronicle-bar">
-      <button
-        ngpButton
-        type="button"
-        class="lw-dashboard__chronicle-toggle"
-        (click)="showChronicleDrawer.set(!showChronicleDrawer())"
-      >
-        <span>Recent Session Recaps ({{ sessions().length }} archived in MySQL & Neo4j)</span>
-        <lw-icon [name]="showChronicleDrawer() ? 'chevron-down' : 'chevron-right'" [size]="15" />
-      </button>
-
-      @if (showChronicleDrawer()) {
-        <div class="lw-dashboard__chronicle-list">
-          @for (sess of sessions(); track sess.id) {
-            <lw-session-recap-card
-              [session]="sess"
-              (inspectEntityRequested)="store.inspectEntity($event)"
+        <div class="lw-dash-card__list">
+          @for (quest of questTrackerItems(); track quest.id) {
+            <lw-quest-tracker-card
+              [quest]="quest"
+              variant="compact-row"
+              [selected]="selectedQuestId() === quest.id"
+              (questSelected)="onQuestSelected($event)"
             />
           }
         </div>
-      }
+      </article>
+
+      <lw-party-roster-card
+        title="PARTY SNAPSHOT"
+        [members]="dash.partyMembers"
+        [selectedKey]="store.inspectedEntityKey() ?? ''"
+        [healthTitle]="dash.partyHealthTitle"
+        [healthSubtitle]="dash.partyHealthSubtitle"
+        (memberSelected)="onMemberSelected($event)"
+        (addMemberRequested)="openCharacterStudio()"
+      />
+
+      <lw-dashboard-alerts-card
+        [alerts]="dash.alerts"
+        (alertSelected)="onAlertSelected($event)"
+      />
     </section>
-  }
-</div>
+  </div>
+}

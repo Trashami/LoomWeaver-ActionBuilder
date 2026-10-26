@@ -1,7 +1,8 @@
-<section class="lw-party-card" aria-label="Party Members">
+<section class="lw-party-card" aria-label="Party Snapshot">
   <header class="lw-party-card__head">
     <div class="lw-party-card__title">
-      <h3>Party Members</h3>
+      <lw-icon name="users" [size]="15" />
+      <h3>{{ title() }}</h3>
     </div>
     <button
       ngpButton
@@ -10,7 +11,7 @@
       title="Open Character Studio"
       (click)="addMemberRequested.emit()"
     >
-      <lw-icon name="plus" [size]="15" />
+      <lw-icon name="plus" [size]="14" />
     </button>
   </header>
 
@@ -45,7 +46,9 @@
           [ngpProgressMax]="m.hpMax"
           class="lw-party-row__hp"
         >
-          <span class="lw-party-row__hp-label">HP {{ m.hpCurrent }}/{{ m.hpMax }}</span>
+          <span class="lw-party-row__hp-label">
+            {{ m.resourceLabel || ('HP ' + m.hpCurrent + '/' + m.hpMax) }}
+          </span>
           <span ngpProgressTrack class="lw-party-row__hp-track">
             <span
               ngpProgressIndicator
@@ -57,4 +60,16 @@
       </button>
     }
   </div>
+
+  @if (healthTitle()) {
+    <footer class="lw-party-card__status-banner">
+      <span class="lw-party-card__status-icon" aria-hidden="true">
+        <lw-icon name="shield" [size]="15" />
+      </span>
+      <div class="lw-party-card__status-copy">
+        <strong>{{ healthTitle() }}</strong>
+        <span>{{ healthSubtitle() }}</span>
+      </div>
+    </footer>
+  }
 </section>

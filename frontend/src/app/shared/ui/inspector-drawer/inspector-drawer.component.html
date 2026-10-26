@@ -1,11 +1,12 @@
+@let g = guide();
 <aside
   ngpTabset
   [ngpTabsetValue]="activeTab()"
   class="lw-inspector"
-  aria-label="Act Guide and Contextual Inspector"
+  aria-label="Session Adventure Guide and Contextual Inspector"
 >
   <header class="lw-inspector__act-header">
-    <h2 class="lw-inspector__act-title">Act I — Shadows in the Stone</h2>
+    <h2 class="lw-inspector__act-title">{{ g.headerTitle }}</h2>
   </header>
 
   <nav ngpTabList class="lw-inspector__tabs" role="tablist">
@@ -28,11 +29,14 @@
 
   <div class="lw-inspector__scroll">
     <div class="lw-inspector__hero-card">
-      <div class="lw-inspector__hero-art">
+      <div
+        class="lw-inspector__hero-art"
+        [style.background-image]="'linear-gradient(180deg, rgba(6, 10, 12, 0.15) 0%, rgba(8, 12, 14, 0.92) 100%), url(' + g.artworkUrl + ')'"
+      >
         <div class="lw-inspector__hero-glow"></div>
       </div>
       <blockquote class="lw-inspector__epigraph">
-        "Old stones remember. And something stirs beneath them still."
+        {{ g.epigraph }}
       </blockquote>
     </div>
 
@@ -104,12 +108,12 @@
           class="lw-inspector__section-header"
           (click)="summaryExpanded.set(!summaryExpanded())"
         >
-          <span>Summary</span>
+          <span>SUMMARY</span>
           <lw-icon [name]="summaryExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
         </button>
         @if (summaryExpanded()) {
           <p class="lw-inspector__summary-text">
-            A crumbling chapel stands on the edge of the Whispering Woods. Strange noises and missing travelers have drawn the party here, where an uneasy silence hangs over the ruins.
+            {{ g.summary }}
           </p>
         }
       </section>
@@ -121,12 +125,12 @@
           class="lw-inspector__section-header"
           (click)="beatsExpanded.set(!beatsExpanded())"
         >
-          <span>Scene Beats</span>
+          <span>SESSION BEATS</span>
           <lw-icon [name]="beatsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
         </button>
         @if (beatsExpanded()) {
           <div class="lw-inspector__checklist">
-            @for (beat of sceneBeats(); track beat.id) {
+            @for (beat of g.beats; track beat.id) {
               <button
                 ngpButton
                 ngpCheckbox
@@ -155,12 +159,12 @@
           class="lw-inspector__section-header"
           (click)="keyNpcsExpanded.set(!keyNpcsExpanded())"
         >
-          <span>Key NPCs</span>
+          <span>KEY NPCS</span>
           <lw-icon [name]="keyNpcsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
         </button>
         @if (keyNpcsExpanded()) {
           <div class="lw-inspector__npc-list">
-            @for (npc of keyNpcs; track npc.compositeKey) {
+            @for (npc of g.keyNpcs; track npc.compositeKey) {
               <button
                 ngpButton
                 type="button"
@@ -176,7 +180,7 @@
                 </span>
                 <span class="lw-inspector__npc-copy">
                   <strong>{{ npc.name }}</strong>
-                  <small>{{ npc.role }}</small>
+                  <small [attr.data-tone]="npc.dispositionTone">{{ npc.role }}</small>
                 </span>
               </button>
             }
@@ -184,7 +188,7 @@
         }
       </section>
 
-      @if (store.viewerRole() === 'gm') {
+      @if (store.viewerRole() === 'gm' && g.secrets.length > 0) {
         <section class="lw-inspector__section">
           <button
             ngpButton
@@ -192,55 +196,25 @@
             class="lw-inspector__section-header"
             (click)="secretsExpanded.set(!secretsExpanded())"
           >
-            <span class="lw-inspector__secret-heading">Secrets</span>
+            <span class="lw-inspector__secret-heading">SECRETS</span>
             <lw-icon [name]="secretsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
           </button>
           @if (secretsExpanded()) {
-            <div class="lw-inspector__secret-box">
-              <span class="lw-inspector__secret-dot"></span>
-              <p>A sealed crypt lies beneath the altar. Brother Malric knows more than he admits.</p>
-            </div>
+            <ul class="lw-inspector__secret-list">
+              @for (secret of g.secrets; track secret) {
+                <li class="lw-inspector__secret-item">
+                  <span class="lw-inspector__secret-dot" aria-hidden="true"></span>
+                  <span>{{ secret }}</span>
+                </li>
+              }
+            </ul>
           }
         </section>
       }
-
-      <section class="lw-inspector__section">
-        <button
-          ngpButton
-          type="button"
-          class="lw-inspector__section-header"
-          (click)="goalsExpanded.set(!goalsExpanded())"
-        >
-          <span>Goals</span>
-          <lw-icon [name]="goalsExpanded() ? 'chevron-down' : 'chevron-right'" [size]="15" />
-        </button>
-        @if (goalsExpanded()) {
-          <div class="lw-inspector__checklist">
-            @for (goal of sceneGoals(); track goal.id) {
-              <button
-                ngpButton
-                ngpCheckbox
-                [ngpCheckboxChecked]="goal.done"
-                type="button"
-                class="lw-inspector__check-row"
-                [class.lw-inspector__check-row--done]="goal.done"
-                (click)="toggleGoal(goal.id)"
-              >
-                <span class="lw-inspector__checkbox" [class.lw-inspector__checkbox--checked]="goal.done">
-                  @if (goal.done) {
-                    <lw-icon name="check" [size]="12" />
-                  }
-                </span>
-                <span class="lw-inspector__check-label">{{ goal.label }}</span>
-              </button>
-            }
-          </div>
-        }
-      </section>
     } @else {
       <section class="lw-inspector__section">
         <div class="lw-inspector__tab-list">
-          @for (entity of store.authorizedEntities().slice(0, 8); track entity.compositeKey) {
+          @for (entity of tabEntities(); track entity.compositeKey) {
             <button
               ngpButton
               type="button"

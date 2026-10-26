@@ -11,10 +11,13 @@ export interface LwPartyMemberStatusVm {
   readonly classAndAncestry: string;
   readonly hpCurrent: number;
   readonly hpMax: number;
+  readonly resourceLabel?: string;
   readonly ac: number;
   readonly online: boolean;
   readonly avatarInitials: string;
   readonly ringColor?: string;
+  readonly levelUpEligible?: boolean;
+  readonly routeLink?: string;
 }
 
 @Component({
@@ -36,6 +39,9 @@ export interface LwPartyMemberStatusVm {
 export class LwPartyRosterCardComponent {
   readonly members = input.required<readonly LwPartyMemberStatusVm[]>();
   readonly selectedKey = input<string>('');
+  readonly title = input<string>('PARTY SNAPSHOT');
+  readonly healthTitle = input<string>('All party members are healthy');
+  readonly healthSubtitle = input<string>('No critical conditions or exhaustion.');
 
   readonly memberSelected = output<LwPartyMemberStatusVm>();
   readonly addMemberRequested = output<void>();

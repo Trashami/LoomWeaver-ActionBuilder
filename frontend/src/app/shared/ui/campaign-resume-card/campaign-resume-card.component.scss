@@ -1,0 +1,177 @@
+:host {
+  display: block;
+}
+
+.lw-resume-hero {
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid rgba(55, 118, 88, 0.5);
+  background: #06130f;
+  overflow: hidden;
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(126, 244, 182, 0.14);
+}
+
+.lw-resume-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 16, 12, 0.96) 0%, rgba(6, 19, 15, 0.88) 44%, rgba(7, 20, 16, 0.38) 74%, rgba(6, 17, 13, 0.78) 100%),
+    linear-gradient(180deg, rgba(5, 14, 11, 0.18) 0%, rgba(5, 15, 11, 0.92) 100%),
+    var(--lw-resume-art, url('/landing-assets/features/feature-1-living-memory.jpg')) right center / 62% auto no-repeat;
+  pointer-events: none;
+}
+
+.lw-resume-hero__main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 1.4rem 1rem;
+}
+
+@media (max-width: 960px) {
+  .lw-resume-hero__main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.lw-resume-hero__copy {
+  max-width: 580px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lw-resume-hero__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d9b77a;
+}
+
+.lw-resume-hero__title {
+  margin: 0;
+  font-family: var(--lw-font-display, Georgia, serif);
+  font-size: clamp(1.55rem, 2.3vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #f6ead0;
+  line-height: 1.1;
+}
+
+.lw-resume-hero__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #c7d8cf;
+}
+
+.lw-resume-hero__cta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 248px;
+  flex-shrink: 0;
+}
+
+.lw-resume-hero__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.68rem 0.95rem;
+  border-radius: 9px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+
+  &--primary {
+    border: 1px solid #49e892;
+    background: linear-gradient(180deg, rgba(22, 96, 62, 0.92), rgba(12, 62, 40, 0.96));
+    color: #ecfff5;
+    box-shadow:
+      0 0 18px rgba(46, 230, 107, 0.28),
+      inset 0 1px 0 rgba(164, 255, 206, 0.28);
+
+    &:hover {
+      background: linear-gradient(180deg, rgba(28, 118, 76, 0.96), rgba(15, 76, 49, 0.98));
+      box-shadow: 0 0 24px rgba(73, 232, 146, 0.42);
+    }
+  }
+
+  &--secondary {
+    border: 1px solid rgba(217, 183, 122, 0.52);
+    background: linear-gradient(180deg, rgba(28, 24, 16, 0.88), rgba(16, 15, 11, 0.94));
+    color: #f2dfb8;
+
+    &:hover {
+      border-color: #d9b77a;
+      background: linear-gradient(180deg, rgba(42, 35, 22, 0.92), rgba(22, 19, 13, 0.96));
+    }
+  }
+}
+
+.lw-resume-hero__btn-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.lw-resume-hero__footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding: 0.65rem 1.4rem;
+  border-top: 1px solid rgba(55, 110, 84, 0.36);
+  background: rgba(5, 14, 11, 0.76);
+}
+
+.lw-resume-hero__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.lw-resume-hero__meta-emblem {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(217, 183, 122, 0.45);
+  background: rgba(20, 32, 26, 0.85);
+  color: #d9b77a;
+  display: grid;
+  place-items: center;
+}
+
+.lw-resume-hero__meta-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.22;
+
+  strong {
+    font-size: 0.75rem;
+    color: #f3e4c6;
+  }
+
+  span {
+    font-size: 0.73rem;
+    color: #9cb5a8;
+  }
+}
+
+.lw-resume-hero__meta-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(217, 183, 122, 0.22);
+}

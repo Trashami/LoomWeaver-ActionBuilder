@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { CampaignDashboardVm } from '../models/dashboard.models';
 import {
   AssetCardVm,
   CampaignVm,
@@ -13,6 +14,7 @@ import {
   SubscriptionTierVm,
   ViewerRole,
 } from '../models/loomweaver.models';
+import { buildSeedDashboardForCampaign } from './dashboard-seed.data';
 import {
   LW_ASSETS,
   LW_GRAPH_EDGES,
@@ -21,6 +23,8 @@ import {
   LW_TELEMETRY,
 } from './loomweaver-catalog.data';
 import { LW_CAMPAIGNS, LW_ENTITIES, LW_NAVIGATION } from './loomweaver-seed.data';
+
+const ACTIVE_CAMPAIGN_STORAGE_KEY = 'lw_active_campaign_id_v2';
 
 @Injectable({ providedIn: 'root' })
 export class LoomWeaverStoreService {
@@ -36,9 +40,13 @@ export class LoomWeaverStoreService {
     'What did Kildrid sense beneath the mountain on the road to Cinth?',
   );
   readonly qualityProfile = signal<QualityProfile>('Balanced');
-  readonly inspectedEntityKey = signal<string | null>('1:NPC:npc-emrys');
+  readonly inspectedEntityKey = signal<string | null>(null);
   readonly backendOnline = signal<boolean>(true);
   readonly quickRollBanner = signal<string>('1d20 Ready');
+
+  readonly campaignDashboard = signal<CampaignDashboardVm>(
+    buildSeedDashboardForCampaign(1, 'gm'),
+  );
 
   private readonly rawEntities = signal<readonly EntityCardVm[]>(LW_ENTITIES);
   private readonly rawAssets = signal<readonly AssetCardVm[]>(LW_ASSETS);
@@ -48,7 +56,9 @@ export class LoomWeaverStoreService {
   readonly subscriptionTiers = signal<readonly SubscriptionTierVm[]>(LW_SUBSCRIPTION_TIERS);
 
   constructor() {
+    this.restoreSavedCampaignSelection();
     this.verifyPolyglotHealth();
+    this.refreshCampaignDashboard();
   }
 
   readonly activeCampaign = computed<CampaignVm>(() => {
@@ -141,15 +151,144 @@ export class LoomWeaverStoreService {
   });
 
   setCampaign(id: number): void {
-    this.activeCampaignId.set(Number(id));
-    const found = this.campaigns().find((c) => c.id === Number(id));
-    if (found) {
-      this.weaveEnabled.set(found.weaveEnabled);
-    }
+    const numericId = Number(id);
+    const available = this.campaigns();
+    const validated = available.find((c) => c.id === numericId) ?? available[0];
+    if (!validated) return;
+
+    this.activeCampaignId.set(validated.id);
+    this.weaveEnabled.set(validated.weaveEnabled);
+    this.inspectedEntityKey.set(null);
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(ACTIVE_CAMPAIGN_STORAGE_KEY, String(validated.id));
+      }
+    } catch {}
+
+    this.refreshCampaignDashboard();
   }
 
   setViewerRole(role: ViewerRole): void {
     this.viewerRole.set(role);
+    this.refreshCampaignDashboard();
+  }
+
+  refreshCampaignDashboard(): void {
+    const campaignId = this.activeCampaignId();
+    const role = this.viewerRole();
+
+    // Immediately set role-filtered seed state so no previous campaign or GM secret ever leaks
+    this.campaignDashboard.set(buildSeedDashboardForCampaign(campaignId, role));
+
+    this.http
+      .get<CampaignDashboardVm>(`/api/v2/campaigns/${campaignId}/dashboard?role=${role}`)
+      .subscribe({
+        next: (res) => {
+          if (res && res.campaignId === this.activeCampaignId()) {
+            this.campaignDashboard.set(res);
+          }
+        },
+        error: () => {},
+      });
+  }
+
+  togglePrepChecklistItem(itemId: string): void {
+    if (this.viewerRole() !== 'gm') return;
+    const campaignId = this.activeCampaignId();
+    const role = this.viewerRole();
+
+    this.campaignDashboard.update((cur) => {
+      const updatedList = cur.upcomingSession.checklist.map((item) =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item,
+      );
+      const completedCount = updatedList.filter((i) => i.completed).length;
+      const totalCount = updatedList.length;
+      const statusLabel =
+        completedCount === 0
+          ? 'Not Started'
+          : completedCount >= totalCount
+            ? 'Ready'
+            : 'Prep In Progress';
+
+      return {
+        ...cur,
+        upcomingSession: {
+          ...cur.upcomingSession,
+          completedPrepCount: completedCount,
+          totalPrepCount: totalCount,
+          prepStatusLabel: statusLabel,
+          checklist: updatedList,
+        },
+      };
+    });
+
+    this.http
+      .post<CampaignDashboardVm>(
+        `/api/v2/campaigns/${campaignId}/dashboard/prep/${itemId}/toggle?role=${role}`,
+        {},
+      )
+      .subscribe({
+        next: (res) => {
+          if (res && res.campaignId === this.activeCampaignId()) {
+            this.campaignDashboard.set(res);
+          }
+        },
+        error: () => {},
+      });
+  }
+
+  toggleSessionBeat(beatId: string): void {
+    const campaignId = this.activeCampaignId();
+    const role = this.viewerRole();
+
+    this.campaignDashboard.update((cur) => ({
+      ...cur,
+      sessionGuide: {
+        ...cur.sessionGuide,
+        beats: cur.sessionGuide.beats.map((b) =>
+          b.id === beatId ? { ...b, done: !b.done } : b,
+        ),
+      },
+    }));
+
+    this.http
+      .post<CampaignDashboardVm>(
+        `/api/v2/campaigns/${campaignId}/dashboard/beats/${beatId}/toggle?role=${role}`,
+        {},
+      )
+      .subscribe({
+        next: (res) => {
+          if (res && res.campaignId === this.activeCampaignId()) {
+            this.campaignDashboard.set(res);
+          }
+        },
+        error: () => {},
+      });
+  }
+
+  acknowledgeDashboardAlert(alertId: string): void {
+    const campaignId = this.activeCampaignId();
+    const role = this.viewerRole();
+
+    this.campaignDashboard.update((cur) => ({
+      ...cur,
+      alerts: cur.alerts.map((a) => (a.id === alertId ? { ...a, read: true } : a)),
+    }));
+
+    this.http
+      .post<CampaignDashboardVm>(
+        `/api/v2/campaigns/${campaignId}/dashboard/alerts/${alertId}/acknowledge?role=${role}`,
+        {},
+      )
+      .subscribe({
+        next: (res) => {
+          if (res && res.campaignId === this.activeCampaignId()) {
+            this.campaignDashboard.set(res);
+          }
+        },
+        error: () => {},
+      });
   }
 
   toggleWeave(): void {
@@ -192,7 +331,7 @@ export class LoomWeaverStoreService {
   rollGlobalQuickD20(): void {
     this.http
       .post<{ total: number; isNat20: boolean; isNat1: boolean }>(
-        '/api/v2/campaigns/1/dice/roll',
+        `/api/v2/campaigns/${this.activeCampaignId()}/dice/roll`,
         {
           sides: 20,
           count: 1,
@@ -212,6 +351,19 @@ export class LoomWeaverStoreService {
           this.quickRollBanner.set(`d20: ${v}${v === 20 ? ' (NAT 20!)' : ''}`);
         },
       });
+  }
+
+  private restoreSavedCampaignSelection(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const saved = Number(localStorage.getItem(ACTIVE_CAMPAIGN_STORAGE_KEY));
+      const available = this.campaigns();
+      const found = available.find((c) => c.id === saved) ?? available[0];
+      if (found) {
+        this.activeCampaignId.set(found.id);
+        this.weaveEnabled.set(found.weaveEnabled);
+      }
+    } catch {}
   }
 
   private verifyPolyglotHealth(): void {

@@ -1,0 +1,43 @@
+<section class="lw-notes-card" aria-label="Recent Notes and Discoveries">
+  <header class="lw-notes-card__head">
+    <div class="lw-notes-card__heading">
+      <lw-icon name="file-text" [size]="15" />
+      <h2>RECENT NOTES & DISCOVERIES</h2>
+    </div>
+    <a
+      ngpButton
+      [routerLink]="addNoteRoute()"
+      class="lw-notes-card__add-btn"
+      title="Create Note or Discovery"
+    >
+      <lw-icon name="plus" [size]="14" />
+    </a>
+  </header>
+
+  <div class="lw-notes-card__list">
+    @for (note of notes(); track note.id; let idx = $index) {
+      <a
+        ngpButton
+        [routerLink]="note.routeLink"
+        class="lw-note-row"
+        (click)="noteSelected.emit(note)"
+      >
+        <span
+          class="lw-note-row__icon"
+          [attr.data-tone]="idx % 2 === 0 ? 'emerald' : 'gold'"
+          aria-hidden="true"
+        >
+          <lw-icon name="file-text" [size]="15" />
+        </span>
+
+        <span class="lw-note-row__body">
+          <span class="lw-note-row__top">
+            <strong>{{ note.title }}</strong>
+            <time>{{ note.relativeTime }}</time>
+          </span>
+          <small>{{ note.excerpt }}</small>
+        </span>
+      </a>
+    }
+  </div>
+</section>

@@ -1,0 +1,44 @@
+<section class="lw-alerts-card" aria-label="Campaign Alerts">
+  <header class="lw-alerts-card__head">
+    <div class="lw-alerts-card__heading">
+      <lw-icon name="bell" [size]="15" />
+      <h2>ALERTS</h2>
+    </div>
+    <a
+      ngpButton
+      [routerLink]="addAlertRoute()"
+      class="lw-alerts-card__add-btn"
+      title="Manage Campaign Reminders and Invites"
+    >
+      <lw-icon name="plus" [size]="14" />
+    </a>
+  </header>
+
+  <div class="lw-alerts-card__list">
+    @for (alert of alerts(); track alert.id) {
+      <a
+        ngpButton
+        [routerLink]="alert.routeLink"
+        class="lw-alert-row"
+        [attr.data-tone]="alert.tone"
+        [class.lw-alert-row--read]="alert.read"
+        (click)="alertSelected.emit(alert)"
+      >
+        <span
+          class="lw-alert-row__icon"
+          [attr.data-tone]="alert.tone"
+          aria-hidden="true"
+        >
+          <lw-icon [name]="iconForCategory(alert.category)" [size]="15" />
+        </span>
+
+        <span class="lw-alert-row__body">
+          <strong>{{ alert.title }}</strong>
+          <small>{{ alert.description }}</small>
+        </span>
+
+        <lw-icon name="chevron-right" [size]="15" />
+      </a>
+    }
+  </div>
+</section>

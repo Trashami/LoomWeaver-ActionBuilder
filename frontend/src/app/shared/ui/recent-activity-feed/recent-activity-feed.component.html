@@ -1,0 +1,38 @@
+<section class="lw-activity-card" aria-label="Recent Campaign Activity">
+  <header class="lw-activity-card__head">
+    <div class="lw-activity-card__heading">
+      <lw-icon name="clock" [size]="15" />
+      <h2>RECENT CAMPAIGN ACTIVITY</h2>
+    </div>
+    <a ngpButton [routerLink]="viewAllRoute()" class="lw-activity-card__view-all">
+      <span>View All</span>
+      <lw-icon name="chevron-right" [size]="13" />
+    </a>
+  </header>
+
+  <div class="lw-activity-card__list">
+    @for (item of items(); track item.id) {
+      <a
+        ngpButton
+        [routerLink]="item.routeLink"
+        class="lw-activity-row"
+        (click)="activitySelected.emit(item)"
+      >
+        <span
+          class="lw-activity-row__badge"
+          [attr.data-tone]="toneForType(item.entityType)"
+          aria-hidden="true"
+        >
+          <lw-icon [name]="iconForType(item.entityType)" [size]="15" />
+        </span>
+
+        <span class="lw-activity-row__body">
+          <strong>{{ item.title }}</strong>
+          <small>{{ item.description }}</small>
+        </span>
+
+        <time class="lw-activity-row__time">{{ item.relativeTime }}</time>
+      </a>
+    }
+  </div>
+</section>

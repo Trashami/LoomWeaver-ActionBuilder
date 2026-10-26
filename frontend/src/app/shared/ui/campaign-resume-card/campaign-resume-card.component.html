@@ -1,0 +1,79 @@
+<section
+  class="lw-resume-hero"
+  [style.--lw-resume-art]="'url(' + artworkUrl() + ')'"
+  aria-label="Resume Campaign"
+>
+  <div class="lw-resume-hero__backdrop" aria-hidden="true"></div>
+
+  <div class="lw-resume-hero__main">
+    <div class="lw-resume-hero__copy">
+      <span class="lw-resume-hero__eyebrow">{{ campaignName() }}</span>
+      <h1 class="lw-resume-hero__title">RESUME CAMPAIGN</h1>
+      <p class="lw-resume-hero__summary">{{ narrativeSummary() }}</p>
+    </div>
+
+    <div class="lw-resume-hero__cta-stack">
+      <a
+        ngpButton
+        [routerLink]="primaryAction().route"
+        class="lw-resume-hero__btn lw-resume-hero__btn--primary"
+        (click)="primaryActionTriggered.emit(primaryAction().route)"
+      >
+        <span class="lw-resume-hero__btn-left">
+          <lw-icon [name]="primaryAction().icon" [size]="16" />
+          <span>{{ primaryAction().label }}</span>
+        </span>
+        <lw-icon name="chevron-right" [size]="16" />
+      </a>
+
+      <a
+        ngpButton
+        [routerLink]="secondaryAction().route"
+        class="lw-resume-hero__btn lw-resume-hero__btn--secondary"
+        (click)="secondaryActionTriggered.emit(secondaryAction().route)"
+      >
+        <span class="lw-resume-hero__btn-left">
+          <lw-icon [name]="secondaryAction().icon" [size]="16" />
+          <span>{{ secondaryAction().label }}</span>
+        </span>
+        <lw-icon name="chevron-right" [size]="16" />
+      </a>
+    </div>
+  </div>
+
+  <footer class="lw-resume-hero__footer" aria-label="Campaign Progress Metadata">
+    <div class="lw-resume-hero__meta-item">
+      <span class="lw-resume-hero__meta-emblem" aria-hidden="true">
+        <lw-icon name="compass" [size]="15" />
+      </span>
+      <div class="lw-resume-hero__meta-text">
+        <strong>{{ actTitle() }}</strong>
+        <span>{{ actSubtitle() }}</span>
+      </div>
+    </div>
+
+    <div class="lw-resume-hero__meta-divider" aria-hidden="true"></div>
+
+    <div class="lw-resume-hero__meta-item">
+      <span class="lw-resume-hero__meta-emblem" aria-hidden="true">
+        <lw-icon name="compass" [size]="15" />
+      </span>
+      <div class="lw-resume-hero__meta-text">
+        <strong>{{ sessionBadgeLabel() }}</strong>
+        <span>{{ sessionBadgeSubtitle() }}</span>
+      </div>
+    </div>
+
+    <div class="lw-resume-hero__meta-divider" aria-hidden="true"></div>
+
+    <div class="lw-resume-hero__meta-item">
+      <span class="lw-resume-hero__meta-emblem" aria-hidden="true">
+        <lw-icon name="clock" [size]="15" />
+      </span>
+      <div class="lw-resume-hero__meta-text">
+        <strong>Last Activity</strong>
+        <span>{{ lastActivityLabel() }}</span>
+      </div>
+    </div>
+  </footer>
+</section>

@@ -1,0 +1,104 @@
+@let s = session();
+<section class="lw-session-card" aria-label="Next Session Planning">
+  <header class="lw-session-card__head">
+    <div class="lw-session-card__heading">
+      <lw-icon name="calendar" [size]="15" />
+      <h2>{{ viewerRole() === 'gm' ? 'NEXT SESSION PLANNING' : 'UPCOMING SESSION' }}</h2>
+    </div>
+    <a
+      ngpButton
+      routerLink="/campaigns"
+      class="lw-session-card__action-btn"
+      title="Open Session Planner"
+      (click)="addSessionRequested.emit()"
+    >
+      <lw-icon name="plus" [size]="14" />
+    </a>
+  </header>
+
+  <div class="lw-session-card__hero">
+    <img [src]="s.artworkUrl" [alt]="s.title" class="lw-session-card__thumb" />
+    <div class="lw-session-card__meta">
+      <h3 class="lw-session-card__title">{{ s.title }}</h3>
+
+      <div class="lw-session-card__detail">
+        <lw-icon name="calendar" [size]="14" />
+        <div>
+          <strong>{{ s.scheduledDateLabel }}</strong>
+          <span>{{ s.scheduledTimeLabel }}</span>
+        </div>
+      </div>
+
+      <div class="lw-session-card__detail">
+        <lw-icon name="map-pin" [size]="14" />
+        <div>
+          <strong>{{ s.locationTitle }}</strong>
+          <span>{{ s.locationRegion }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (viewerRole() === 'gm') {
+    <div
+      ngpProgress
+      [ngpProgressValue]="s.completedPrepCount"
+      [ngpProgressMax]="s.totalPrepCount"
+      class="lw-session-card__prep-bar"
+    >
+      <span class="lw-session-card__prep-pill">{{ s.prepStatusLabel }}</span>
+      <span ngpProgressTrack class="lw-session-card__track">
+        <span
+          ngpProgressIndicator
+          class="lw-session-card__fill"
+          [style.width.%]="progressPercent()"
+        ></span>
+      </span>
+      <span class="lw-session-card__ratio">{{ s.completedPrepCount }}/{{ s.totalPrepCount }}</span>
+    </div>
+
+    <div class="lw-session-card__checklist">
+      @for (item of s.checklist; track item.id) {
+        <div class="lw-session-card__check-row" [class.lw-session-card__check-row--done]="item.completed">
+          <button
+            ngpButton
+            ngpCheckbox
+            [ngpCheckboxChecked]="item.completed"
+            type="button"
+            class="lw-session-card__check-btn"
+            (click)="onToggleItem(item)"
+          >
+            <span
+              class="lw-session-card__box"
+              [class.lw-session-card__box--checked]="item.completed"
+            >
+              @if (item.completed) {
+                <lw-icon name="check" [size]="12" />
+              }
+            </span>
+            <span class="lw-session-card__check-label">{{ item.label }}</span>
+          </button>
+          <a
+            ngpButton
+            [routerLink]="item.routeLink"
+            class="lw-session-card__jump"
+            title="Open preparation tool"
+          >
+            <lw-icon name="chevron-right" [size]="13" />
+          </a>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="lw-session-card__player-box">
+      <strong>Player Session Briefing Ready</strong>
+      <p>
+        Review shared party handouts, update your character sheet, and check the Adventure Guide before table start.
+      </p>
+      <a ngpButton routerLink="/characters" class="lw-session-card__player-cta">
+        <span>Open Character Sheet</span>
+        <lw-icon name="chevron-right" [size]="14" />
+      </a>
+    </div>
+  }
+</section>
