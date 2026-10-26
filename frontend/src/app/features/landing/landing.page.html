@@ -1,384 +1,432 @@
-<div class="lw-landing">
-  <!-- Sticky Public Navigation Header with Sign In & Create Account -->
-  <header class="lw-landing-nav">
-    <div class="lw-landing-nav__inner">
-      <a class="lw-landing-brand" routerLink="/welcome">
-        <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-landing-brand__logo" />
-        <div class="lw-landing-brand__text">
-          <span class="lw-landing-brand__name">LoomWeaver</span>
-          <span class="lw-landing-brand__tag">One Living World · Tabletop RPG OS</span>
-        </div>
-      </a>
+<div id="lw-app" class="lw-raven-landing">
+  <header class="topnav wrap" role="banner">
+    <a class="brand" href="#top" (click)="scrollToSection('top', $event)" aria-label="LoomWeaver (Loom-Weaver) VTT Home">
+      <span class="raven-emblem" aria-hidden="true">
+        <img src="/LoomWeaverCrow.png" alt="" class="raven-emblem-img" />
+      </span>
+      <span class="brand-identity">
+        <img src="/LoomWeaver.png" alt="LoomWeaver" class="brand-wordmark-img" />
+        <small class="brandsub">Your Campaign. One Living World. · 2.5D VTT &amp; Lore OS</small>
+      </span>
+    </a>
 
-      <nav class="lw-landing-links" aria-label="Landing Page Sections">
-        <a href="#the-loom">The Loom</a>
-        <a href="#the-weave">The Weave</a>
-        <a href="#arcane-vtt">2.5D VTT &amp; LoomMaps</a>
-        <a href="#creator-market">85/15 Marketplace</a>
-        <a href="#faq">FAQ</a>
-      </nav>
+    <nav class="navlinks" [class.open]="mobileMenuOpen()" aria-label="Primary Navigation">
+      <a href="#why-loomweaver" (click)="scrollToSection('why-loomweaver', $event)">Why LoomWeaver</a>
+      <a href="#features" (click)="scrollToSection('features', $event)">Features</a>
+      <a href="#engines" (click)="scrollToSection('engines', $event)">2.5D VTT &amp; Engines</a>
+      <a href="#experience" (click)="scrollToSection('experience', $event)">How It Works</a>
+      <a href="#pricing" (click)="scrollToSection('pricing', $event)">Plans &amp; Pricing</a>
+      <a href="#marketplace" (click)="scrollToSection('marketplace', $event)">Creator Marketplace</a>
+      <a href="#faq" (click)="scrollToSection('faq', $event)">FAQ</a>
+    </nav>
 
-      <div class="lw-landing-cta">
-        @if (auth.isAuthenticated()) {
-          <lw-button
-            variant="gold"
-            size="sm"
-            icon="Compass"
-            (pressed)="enterStudioOrSignIn()"
-          >
-            Enter Studio ({{ auth.activeProfile().username }})
-          </lw-button>
-          <lw-button
-            variant="secondary"
-            size="sm"
-            icon="X"
-            (pressed)="auth.logout()"
-          >
-            Sign Out
-          </lw-button>
-        } @else {
-          <lw-button
-            variant="secondary"
-            size="sm"
-            icon="KeyRound"
-            (pressed)="auth.openAuthModal('login')"
-          >
-            Sign In
-          </lw-button>
-          <lw-button
-            variant="gold"
-            size="sm"
-            icon="UserPlus"
-            (pressed)="auth.openAuthModal('register')"
-          >
-            Create Account
-          </lw-button>
-          <lw-button
-            variant="primary"
-            size="sm"
-            icon="Shield"
-            (pressed)="auth.openAuthModal('request')"
-          >
-            Request Access
-          </lw-button>
-        }
-      </div>
+    <div class="header-actions">
+      @if (auth.isAuthenticated()) {
+        <button type="button" class="btn green" (click)="enterStudioOrSignIn('/home')">
+          <span>Enter Studio</span>
+          <lw-icon name="arrow-right" [size]="14" />
+        </button>
+      } @else {
+        <button type="button" class="btn ghost signin" (click)="openAuth('login')">
+          <lw-icon name="key-round" [size]="14" />
+          <span>Sign In</span>
+        </button>
+        <button type="button" class="btn primary" (click)="openAuth('register')">
+          <span>Start Free</span>
+          <lw-icon name="external-link" [size]="13" />
+        </button>
+      }
+      <button type="button" class="mobile-menu" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Toggle navigation menu">
+        <lw-icon [name]="mobileMenuOpen() ? 'x' : 'menu'" [size]="18" />
+      </button>
     </div>
   </header>
 
-  <main>
-    <!-- Hero Section -->
-    <section class="lw-hero" aria-labelledby="hero-heading">
-      <div class="lw-hero__copy">
-        <div class="lw-hero__badges">
-          <lw-badge label="100% Free for Players Forever" tone="emerald" icon="ShieldCheck" />
-          <lw-badge label="Zero Hallucination Canon Memory" tone="gold" icon="BookOpen" />
-          <lw-badge label="85/15 Creator Split" tone="violet" icon="Sparkles" />
+  <main id="top">
+    <!-- HERO SECTION -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="wrap hero-inner">
+        <div class="hero-copy">
+          <span class="eyebrow">
+            <span class="light-dot" aria-hidden="true"></span>
+            <span>A new chapter in tabletop storytelling · Next-Gen VTT</span>
+          </span>
+          <h1 id="hero-heading">Your Campaign.<br /><em>One Living World.</em></h1>
+          <p>
+            Build worlds. Run unforgettable sessions on an integrated <strong>2.5D Virtual Tabletop (VTT)</strong>.
+            Let every character, secret, battlemap, and decision stay connected in <strong>LoomWeaver</strong>
+            (<em>Loom-Weaver</em>)—without juggling a dozen disconnected tools when the story gets good.
+          </p>
+          <div class="hero-ctas">
+            <button type="button" class="btn primary" (click)="openAuth('register')">
+              <span>Begin Your Story — Free</span>
+              <lw-icon name="arrow-right" [size]="15" />
+            </button>
+            <button type="button" class="btn green" (click)="openAuth('login')">
+              <lw-icon name="key-round" [size]="15" />
+              <span>Sign In to Studio</span>
+            </button>
+            <a class="btn ghost" href="#features" (click)="scrollToSection('features', $event)">
+              <span>Explore LoomWeaver</span>
+              <lw-icon name="chevron-down" [size]="15" />
+            </a>
+          </div>
+          <div class="trust" role="list" aria-label="Core Platform Guarantees">
+            <span role="listitem"><lw-icon name="check" [size]="13" /> <b>Players join 100% free</b></span>
+            <span role="listitem"><lw-icon name="sparkles" [size]="13" /> <b>The Loom is always near</b></span>
+            <span role="listitem"><lw-icon name="swords" [size]="13" /> <b>2.5D VTT &amp; 3D Dice</b></span>
+            <span role="listitem"><lw-icon name="shield-check" [size]="13" /> <b>Your world, your rules</b></span>
+          </div>
         </div>
 
-        <h1 id="hero-heading" class="lw-hero__title">
-          Your Campaign. <span>One Living World.</span>
-        </h1>
+        <div class="hero-art" aria-label="Illustrated preview of a LoomWeaver fantasy campaign scene, soaring raven, and interconnected story nodes">
+          <div class="artframe">
+            <svg class="scenery" viewBox="0 0 780 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs>
+                <linearGradient id="sbg" x1="0" y1="0" x2=".2" y2="1">
+                  <stop offset="0" stop-color="#051611" />
+                  <stop offset=".48" stop-color="#113c2a" />
+                  <stop offset="1" stop-color="#04100c" />
+                </linearGradient>
+                <radialGradient id="moon">
+                  <stop offset="0" stop-color="#58f29c" stop-opacity=".42" />
+                  <stop offset=".55" stop-color="#d9b77a" stop-opacity=".22" />
+                  <stop offset="1" stop-color="#082419" stop-opacity="0" />
+                </radialGradient>
+                <linearGradient id="valley" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#143a2b" />
+                  <stop offset="1" stop-color="#040f0b" />
+                </linearGradient>
+              </defs>
+              <rect width="780" height="480" fill="url(#sbg)" />
+              <circle cx="572" cy="97" r="155" fill="url(#moon)" />
+              <circle cx="572" cy="97" r="46" fill="#d8c395" opacity=".72" />
+              <path d="M0 245L68 158 104 196 158 104 209 180 276 113 326 174 389 89 464 189 522 121 604 194 667 115 780 214V480H0Z" fill="#133328" />
+              <path d="M0 294L110 195 185 271 251 167 304 222 398 147 453 227 559 186 623 245 711 171 780 218V480H0Z" fill="#0d281f" />
+              <path d="M0 320L86 255 137 312 224 236 307 292 401 211 474 290 576 219 658 300 726 254 780 278V480H0Z" fill="#091f17" />
+              <path d="M0 395Q140 311 232 350T418 352Q546 286 640 347T780 317V480H0Z" fill="url(#valley)" />
+              <g fill="#06140f">
+                <path d="M70 354h157v-79l24-13v-23h-15v-32h-18v32h-14v-82h-16v82h-9v-22h-18v22h-17v-70h-15v70h-11v-26H97v26H82v-20H67v37H56v99z" />
+                <path d="M463 345h190v-70h-10v-74h-17v35h-12v-67h-13v-25h-12v25h-11v67h-17v-99h-12v-26h-13v26h-13v99h-16v-32h-19v32h-25z" />
+              </g>
+              <g stroke="#39d98a" stroke-width="1" opacity=".28">
+                <path d="M-30 390Q185 325 320 375T800 348" fill="none" />
+                <path d="M-30 405Q185 340 320 390T800 363" fill="none" />
+              </g>
+              <path d="M500 481Q511 416 440 388T297 338" stroke="#66e1b3" stroke-width="5" opacity=".28" fill="none" stroke-dasharray="6 9" />
+            </svg>
 
-        <p class="lw-hero__lead">
-          LoomWeaver unifies natural-language campaign memory (<strong>The Loom</strong>),
-          optional GM-authored worldbuilding (<strong>The Weave</strong>), and a tactical
-          <strong>2.5D Virtual Tabletop &amp; LoomMaps Studio</strong> into a single dark-fantasy
-          operating system for D&amp;D 5e and custom tabletop worlds.
-        </p>
+            <img src="/LoomWeaverCrow.png" alt="LoomWeaver Emerald Raven" class="hero-raven-overlay" />
+            <div class="worldglow"></div>
 
-        <div class="lw-hero__actions">
-          <lw-button
-            variant="gold"
-            size="md"
-            icon="KeyRound"
-            (pressed)="enterStudioOrSignIn()"
-          >
-            {{ auth.isAuthenticated() ? 'Enter Studio Workspace' : 'Sign In to Enter Studio' }}
-          </lw-button>
-          <lw-button
-            variant="secondary"
-            size="md"
-            icon="UserPlus"
-            (pressed)="auth.openAuthModal('register')"
-          >
-            Create Free Account
-          </lw-button>
-          <lw-button
-            variant="primary"
-            size="md"
-            icon="Shield"
-            (pressed)="auth.openAuthModal('request')"
-          >
-            Request Guild Access
-          </lw-button>
-        </div>
+            <svg class="mapline" viewBox="0 0 780 480" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M250 173Q340 148 465 267T661 189" fill="none" stroke="#39e58c" stroke-width="2" stroke-dasharray="7 7" opacity=".78" />
+              <path d="M250 173Q266 267 465 267" fill="none" stroke="#d9b77a" stroke-width="1.6" opacity=".68" />
+            </svg>
 
-        <div class="lw-hero__trust">
-          <div class="lw-trust-metric">
-            <strong>Zero Generation</strong>
-            <span>The Loom cites only established session canon</span>
+            <button type="button" class="node n1" (click)="scrollToSection('experience')" title="Inspect Lore Graph Node"><lw-icon name="network" [size]="18" /></button>
+            <button type="button" class="node n2" (click)="scrollToSection('experience')" title="Inspect The Loom Memory"><lw-icon name="sparkles" [size]="18" /></button>
+            <button type="button" class="node n3" (click)="scrollToSection('engines')" title="Inspect Tactical VTT Bastion"><lw-icon name="landmark" [size]="18" /></button>
+
+            <div class="art-bottom">
+              <div class="region">
+                The Ashen Vale &amp; Icrandor
+                <small>14 sessions · 5 heroes · 2.5D VTT &amp; Neo4j Lore Graph</small>
+              </div>
+              <span class="pill"><span class="pill-dot" aria-hidden="true"></span> Living Campaign</span>
+            </div>
           </div>
-          <div class="lw-trust-metric">
-            <strong>100% GM Review</strong>
-            <span>Edit, re-weave, or reject every Weave draft</span>
+
+          <div class="floating-tag float-top">
+            <span class="float-label">The Loom remembers</span>
+            <strong>Every choice matters.</strong>
+            <small>People · Places · Secrets · VTT Scenes</small>
           </div>
-          <div class="lw-trust-metric">
-            <strong>Free Player Seats</strong>
-            <span>Frictionless invite links with witness isolation</span>
+          <div class="floating-tag float-bottom">
+            <strong><lw-icon name="sparkles" [size]="14" /> <span>The Ruined Chapel</span></strong>
+            <span>Connected to 3 quests, 5 NPCs, 2.5D VTT lighting, and a secret yet to unfold.</span>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="lw-hero__visual">
-        <div class="lw-hero-frame">
-          <img
-            src="/tactical-combat-live-ui.jpg"
-            alt="LoomWeaver 2.5D Virtual Tabletop with gradual lighting, line-of-sight fog of war, and 3D physics dice"
-            class="lw-hero-frame__main"
-          />
-          <div class="lw-hero-frame__floating">
-            <img
-              src="/icrandor_world_dashboard.jpg"
-              alt="Icrandor Campaign Knowledge Graph and World Atlas"
-              class="lw-hero-frame__sub"
-            />
-            <div class="lw-hero-frame__caption">
-              <lw-icon name="Network" [size]="15" />
-              <span>Neo4j Campaign Graph + MySQL 8 Canonical Ledger</span>
+    <!-- WHY LOOMWEAVER -->
+    <section class="why-section" id="why-loomweaver" aria-labelledby="why-heading">
+      <div class="wrap why-grid">
+        <div>
+          <div class="section-kicker">One connected world. Thoughtful access by design.</div>
+          <h2 id="why-heading">New tools appear every day.<br /><em>Your campaign deserves more.</em></h2>
+          <p class="why-intro">
+            Virtual tabletops (VTT), campaign managers, and mapmakers are everywhere. AI can help launch another
+            polished app in a weekend. But a standalone demo does not solve scattered session notes, a dozen open browser
+            tabs, or the critical question of who can see your campaign’s secrets.
+          </p>
+          <p class="why-quote">A great story needs connected tools. A trusted table needs clear permission boundaries.</p>
+          <p class="why-footer">LoomWeaver (Loom-Weaver) unites your 2.5D VTT, World Atlas, Character Studio, and Witness-Scoped Memory in one secure engine.</p>
+        </div>
+        <div class="why-list">
+          <article class="why-card">
+            <span class="why-icon" aria-hidden="true"><lw-icon name="layers" [size]="19" /></span>
+            <div>
+              <h3>One place for the whole campaign &amp; VTT</h3>
+              <p>2.5D Virtual Tabletop maps, cutaway scenes, tactical encounters, character sheets, session notes, and multi-step story arcs work together instead of competing for your attention.</p>
+            </div>
+          </article>
+          <article class="why-card">
+            <span class="why-icon" aria-hidden="true"><lw-icon name="lock" [size]="19" /></span>
+            <div>
+              <h3>Secrets need real permission boundaries</h3>
+              <p>The Loom is engineered around strict GM and per-player witness permissions—access is enforced when campaign context is retrieved from the graph, not merely hidden on screen.</p>
+            </div>
+          </article>
+          <article class="why-card">
+            <span class="why-icon" aria-hidden="true"><lw-icon name="sparkles" [size]="19" /></span>
+            <div>
+              <h3>One Loom, wherever you play—zero forced AI</h3>
+              <p>A free, zero-hallucination campaign memory assistant on every page for GMs and players. The Weave’s creative drafting studio remains 100% optional and requires explicit GM review.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOUR CORE PILLARS + INTERACTIVE EXPERIENCE -->
+    <section class="sections wrap" id="features" aria-labelledby="features-heading">
+      <div class="section-kicker">Everything connected</div>
+      <h2 id="features-heading">Run the story, not the software.</h2>
+      <p class="section-intro">
+        From the first spark of a worldbuilding idea to the last roll of 3D physics dice on the Virtual Tabletop,
+        LoomWeaver brings your entire tabletop RPG campaign into one place—so your focus stays at the table.
+      </p>
+
+      <div class="features">
+        @for (pillar of primaryPillars; track pillar.id) {
+          <article class="feature" [class.feature-gold]="pillar.accent === 'gold'">
+            @if (pillar.flag) {
+              <span class="flag">{{ pillar.flag }}</span>
+            }
+            <span class="ficon"><lw-icon [name]="pillar.icon" [size]="20" /></span>
+            <h3>{{ pillar.title }}</h3>
+            <p>{{ pillar.description }}</p>
+            <ul class="feature-bullets">
+              @for (b of pillar.bullets; track b) {
+                <li><lw-icon name="check" [size]="12" /><span>{{ b }}</span></li>
+              }
+            </ul>
+            <div class="feature-footer">
+              <button type="button" class="btn ghost btn-sm" (click)="openAuth('login', pillar.route)">
+                <span>Launch {{ pillar.title }}</span>
+                <lw-icon name="arrow-right" [size]="13" />
+              </button>
+              <a class="seo-deep-link" [routerLink]="['/features', pillar.seoSlug]">Learn more</a>
+            </div>
+          </article>
+        }
+      </div>
+
+      <div class="experience" id="experience" aria-labelledby="exp-heading">
+        <div class="exp-text">
+          <div class="section-kicker">Less searching. More storytelling.</div>
+          <h2 id="exp-heading">The threads remember<br />what the stone forgets.</h2>
+          <p>
+            That NPC from three sessions ago. The clue buried in a private player note. The promise a hero made before
+            entering the dungeon. Everything stays within reach—and The Loom is available from every page for both
+            players and Game Masters.
+          </p>
+          <div class="exp-links" role="tablist" aria-label="Experience Mode Highlights">
+            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'memory'" (click)="activeExperienceMode.set('memory'); activeIntelId.set('ask-the-loom')">
+              <lw-icon name="sparkles" [size]="12" /><span>Living memory</span>
+            </button>
+            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'vtt'" (click)="activeExperienceMode.set('vtt'); activeIntelId.set('cult-presence')">
+              <lw-icon name="swords" [size]="12" /><span>2D + 3D VTT</span>
+            </button>
+            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'guides'" (click)="activeExperienceMode.set('guides'); activeIntelId.set('brother-malric')">
+              <lw-icon name="book-open" [size]="12" /><span>Adventure guides</span>
+            </button>
+            <button type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'dice'" (click)="activeExperienceMode.set('dice'); activeIntelId.set('hidden-crypt')">
+              <lw-icon name="dices" [size]="12" /><span>Dice &amp; effects</span>
+            </button>
+          </div>
+          <div class="exp-cta-row">
+            <button type="button" class="btn green" (click)="openAuth('login', '/arcane-screen')">
+              <span>Open Live VTT &amp; Arcane Screen</span>
+              <lw-icon name="arrow-right" [size]="14" />
+            </button>
+          </div>
+        </div>
+
+        <div class="exp-screen">
+          <div class="miniapp">
+            <div class="minihead">
+              <span class="minihead-title"><lw-icon name="compass" [size]="14" /><span>Ruined Chapel · Act I · 2.5D Tactical VTT</span></span>
+              <small>GM VIEW · WITNESS ISOLATION ACTIVE</small>
+            </div>
+            <div class="minicontent">
+              <div class="mini-map">
+                <svg viewBox="0 0 400 220" aria-hidden="true">
+                  <defs>
+                    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                      <path d="M24 0H0V24" stroke="#66e1b3" stroke-opacity=".18" fill="none" />
+                    </pattern>
+                  </defs>
+                  <rect width="400" height="220" fill="url(#grid)" />
+                  <path d="M34 32H364V176H34z" fill="#183d2c" fill-opacity=".32" stroke="#9ab8a4" stroke-width="10" />
+                  <rect x="157" y="64" width="90" height="45" rx="3" fill="#4b3e2e" stroke="#d9b77a" stroke-width="2" />
+                  <circle cx="202" cy="86" r="52" fill="#39e58c" fill-opacity=".12" stroke="#39e58c" stroke-dasharray="4 4" />
+                  <g fill="#0c3b29" stroke="#48f09b" stroke-width="3">
+                    <circle cx="88" cy="132" r="16" /><circle cx="194" cy="153" r="16" /><circle cx="310" cy="140" r="16" />
+                  </g>
+                  <g fill="#4f1f1d" stroke="#f57665" stroke-width="3">
+                    <circle cx="114" cy="73" r="15" /><circle cx="291" cy="66" r="15" />
+                  </g>
+                  <g fill="#f5e6c8" font-size="10" font-weight="700" text-anchor="middle" font-family="Inter, sans-serif">
+                    <text x="88" y="136">DAL</text><text x="194" y="157">FIVI</text><text x="310" y="144">MUNK</text>
+                    <text x="114" y="77">FOE</text><text x="291" y="70">FOE</text>
+                  </g>
+                </svg>
+              </div>
+              <div class="mini-list">
+                <b>Session Intelligence (Click to Inspect)</b>
+                @for (item of sessionIntelItems; track item.id) {
+                  <button type="button" class="intel-row" [class.active]="activeIntelId() === item.id" (click)="activeIntelId.set(item.id)">
+                    <lw-icon [name]="item.icon" [size]="12" /><span>{{ item.label }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="mini-detail">
+              <div class="mini-detail-head">
+                <strong>{{ currentIntel().scope }}</strong>
+                <div class="mini-citations">
+                  @for (cite of currentIntel().citations; track cite) {
+                    <span class="cite-pill">{{ cite }}</span>
+                  }
+                </div>
+              </div>
+              <p>{{ currentIntel().detail }}</p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Interactive Story Showcase -->
-    <section class="lw-section" aria-labelledby="showcase-heading">
-      <div class="lw-section__header">
-        <span class="lw-eyebrow">Unified Campaign Architecture</span>
-        <h2 id="showcase-heading">From World Atlas to Cutaway Battlemaps in One Click</h2>
-        <p>
-          Explore how LoomWeaver connects regional cartography, tactical LoomMaps architecture,
-          Neo4j lore graphs, and witness-isolated player dossiers.
+    <!-- STUDIO ENGINES -->
+    <section class="engines-section" id="engines" aria-labelledby="engines-heading">
+      <div class="wrap">
+        <div class="section-kicker">Built for D&amp;D 5e &amp; Custom Tabletop Worlds</div>
+        <h2 id="engines-heading">Inside the LoomWeaver Virtual Tabletop &amp; World Studio.</h2>
+        <p class="section-intro">
+          Every LoomWeaver account unlocks a unified suite of specialized tabletop engines sharing the same authentication,
+          character roster, and campaign graph across every subdomain.
         </p>
-      </div>
-
-      <div class="lw-showcase">
-        <div class="lw-showcase__tabs" role="tablist">
-          @for (slide of storySlides; track slide.id) {
-            <button
-              type="button"
-              role="tab"
-              class="lw-showcase-tab"
-              [class.lw-showcase-tab--active]="activeStorySlide() === slide.id"
-              (click)="activeStorySlide.set(slide.id)"
-            >
-              <span class="lw-showcase-tab__badge">{{ slide.badge }}</span>
-              <strong>{{ slide.title }}</strong>
-              <p>{{ slide.description }}</p>
-            </button>
+        <div class="engine-grid">
+          @for (engine of studioEngines; track engine.id) {
+            <article class="engine-card">
+              <div class="engine-img-wrap">
+                <img [src]="engine.image" [alt]="engine.title" loading="lazy" />
+                <span class="engine-tag">{{ engine.tag }}</span>
+              </div>
+              <div class="engine-body">
+                <h3>{{ engine.title }}</h3>
+                <div class="engine-sub">{{ engine.subtitle }}</div>
+                <p>{{ engine.description }}</p>
+                <div class="engine-metrics">
+                  @for (m of engine.metrics; track m) {
+                    <span><lw-icon name="check" [size]="12" /> {{ m }}</span>
+                  }
+                </div>
+                <button type="button" class="btn green btn-sm" (click)="openAuth('login', engine.route)">
+                  <span>Sign In to Open {{ engine.tag }}</span>
+                  <lw-icon name="arrow-right" [size]="13" />
+                </button>
+              </div>
+            </article>
           }
         </div>
-
-        <div class="lw-showcase__stage">
-          <img
-            [src]="currentStorySlide().image"
-            [alt]="currentStorySlide().title"
-            class="lw-showcase__img"
-          />
-          <div class="lw-showcase__overlay">
-            <div class="lw-showcase__prompt">
-              <lw-icon name="Compass" [size]="15" />
-              <span>{{ currentStorySlide().prompt }}</span>
-            </div>
-            <div class="lw-showcase__tags">
-              @for (tag of currentStorySlide().tags; track tag) {
-                <lw-badge [label]="tag" tone="gold" />
-              }
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
-    <!-- Pillar 1: The Loom (Interactive Campaign Memory Demo) -->
-    <section id="the-loom" class="lw-section lw-section--alt" aria-labelledby="loom-heading">
-      <div class="lw-pillar-grid">
-        <div class="lw-pillar-copy">
-          <span class="lw-eyebrow">Pillar I · The Loom (100% Free)</span>
-          <h2 id="loom-heading">Living Campaign Memory That Never Hallucinates</h2>
-          <p>
-            Ask natural-language questions across months of session recaps, NPC dossiers, quests,
-            and regional lore. <strong>The Loom never generates new fiction</strong>—it synthesizes
-            established canon with clickable deep-link citations and enforces strict per-player
-            witness isolation so GM secrets stay safe.
-          </p>
-
-          <ul class="lw-feature-list">
-            <li>
-              <lw-icon name="ShieldCheck" [size]="16" />
-              <span><strong>Per-Player Knowledge Isolation:</strong> Players only see answers grounded in scenes their character witnessed.</span>
-            </li>
-            <li>
-              <lw-icon name="Lock" [size]="16" />
-              <span><strong>Three-Tier Note Scoping:</strong> Private to Player, Shared with GM Only, or Shared with Party.</span>
-            </li>
-            <li>
-              <lw-icon name="BookOpen" [size]="16" />
-              <span><strong>Clickable Deep Links:</strong> Jump straight to the exact Session Recap, NPC Dossier, or Atlas POI.</span>
-            </li>
-          </ul>
-
-          <div class="lw-pillar-prompts">
-            <span class="lw-pillar-prompts__label">Try a Live Canon Query from Shadow of the Mountain:</span>
-            @for (p of loomPrompts; track p.id) {
-              <button
-                type="button"
-                class="lw-prompt-btn"
-                [class.lw-prompt-btn--active]="activeLoomPromptId() === p.id"
-                (click)="activeLoomPromptId.set(p.id)"
-              >
-                <lw-icon name="Search" [size]="14" />
-                <span>{{ p.question }}</span>
+    <!-- PLANS & PRICING -->
+    <section class="pricing-section" id="pricing" aria-labelledby="pricing-heading">
+      <div class="wrap">
+        <div class="pricing-top">
+          <div>
+            <div class="section-kicker">Choose your path</div>
+            <h2 id="pricing-heading">A world for every storyteller.</h2>
+            <p class="section-intro">Start with the spark of an idea. Grow your tools as your campaign grows. Players always join your Virtual Tabletop for 100% free.</p>
+          </div>
+          <div class="billing" role="group" aria-label="Billing period">
+            <button type="button" [class.on]="!billingAnnual()" [attr.aria-pressed]="!billingAnnual()" (click)="setBilling(false)">Monthly</button>
+            <button type="button" [class.on]="billingAnnual()" [attr.aria-pressed]="billingAnnual()" (click)="setBilling(true)">Yearly</button>
+            <span>2 months free</span>
+          </div>
+        </div>
+        <div class="plans">
+          @for (plan of pricingPlans; track plan.id) {
+            <article class="plan" [class.popular]="plan.popular">
+              @if (plan.popular && plan.popularLabel) {
+                <span class="popular-label">{{ plan.popularLabel }}</span>
+              }
+              <div class="tier">{{ plan.tier }}</div>
+              <div class="tier-sub">{{ plan.subtitle }}</div>
+              <div class="cost">
+                <sup>$</sup><span>{{ billingAnnual() ? plan.yearlyMonthlyEquivalent : plan.monthlyPrice }}</span><small>/mo</small>
+              </div>
+              <div class="billed">
+                @if (plan.monthlyPrice === 0) {
+                  {{ plan.billedDefault }}
+                } @else if (billingAnnual()) {
+                  ${{ plan.yearlyTotal }} billed annually (2 months free)
+                } @else {
+                  Billed monthly · or ${{ plan.yearlyTotal }}/yr
+                }
+              </div>
+              <button type="button" class="btn" [class.primary]="plan.popular" [class.ghost]="!plan.popular" (click)="openAuth('register', '/home')">
+                <span>{{ plan.ctaLabel }}</span><lw-icon name="arrow-right" [size]="13" />
               </button>
-            }
-          </div>
+              <ul>
+                @for (feat of plan.features; track feat) {
+                  <li><lw-icon name="check" [size]="13" /><span>{{ feat }}</span></li>
+                }
+              </ul>
+            </article>
+          }
         </div>
-
-        <div class="lw-loom-card">
-          <div class="lw-loom-card__header">
-            <div class="lw-loom-card__title">
-              <lw-icon name="BookOpen" [size]="18" />
-              <strong>The Loom · Canonical Synthesis</strong>
-            </div>
-            <lw-badge [label]="currentLoomPrompt().roleScope" tone="emerald" icon="Shield" />
-          </div>
-
-          <div class="lw-loom-card__question">
-            <span>Query:</span>
-            <strong>"{{ currentLoomPrompt().question }}"</strong>
-          </div>
-
-          <p class="lw-loom-card__answer">{{ currentLoomPrompt().answer }}</p>
-
-          <div class="lw-loom-card__citations">
-            <span class="lw-loom-card__cite-title">Verified Canon Citations (Zero Generation):</span>
-            <div class="lw-loom-card__cite-list">
-              @for (cite of currentLoomPrompt().citations; track cite.label) {
-                <button
-                  type="button"
-                  class="lw-cite-pill"
-                  (click)="enterStudioOrSignIn(cite.route)"
-                >
-                  <lw-icon name="ExternalLink" [size]="13" />
-                  <span>[{{ cite.kind }}] {{ cite.label }}</span>
-                </button>
-              }
-            </div>
-          </div>
-        </div>
+        <p class="pricing-note">Every tier includes 100% free player seats via invite links and free access to The Loom campaign memory search.</p>
       </div>
     </section>
 
-    <!-- Pillar 2 & 3: The Weave, 2.5D VTT, LoomMaps & 85/15 Marketplace -->
-    <section id="the-weave" class="lw-section" aria-labelledby="pillars-grid-heading">
-      <div class="lw-section__header">
-        <span class="lw-eyebrow">Built for Game Masters, Mapmakers &amp; Players</span>
-        <h2 id="pillars-grid-heading">Every Engine Required to Run a Legendary Table</h2>
-      </div>
-
-      <div class="lw-cards-grid">
-        <article class="lw-feature-card">
-          <div class="lw-feature-card__top">
-            <lw-icon name="Network" [size]="20" />
-            <lw-badge label="100% GM Authorship" tone="gold" />
-          </div>
-          <h3>The Weave Creative Companion</h3>
-          <p>
-            Optionally draft characters, monsters, factions, quests, items, spells, loot tables,
-            and battlemaps grounded in your campaign graph. Nothing touches canon until you review,
-            edit, re-weave, or approve it.
-          </p>
-          <a routerLink="/features/worldbuilding-ai" class="lw-card-link">
-            <span>Explore The Weave</span>
-            <lw-icon name="ArrowRight" [size]="14" />
-          </a>
-        </article>
-
-        <article id="arcane-vtt" class="lw-feature-card">
-          <div class="lw-feature-card__top">
-            <lw-icon name="Swords" [size]="20" />
-            <lw-badge label="2.5D Lighting &amp; 3D Dice" tone="emerald" />
-          </div>
-          <h3>Arcane Screen VTT &amp; Combat Engine</h3>
-          <p>
-            Integrated 2.5D gradual lighting, line-of-sight fog of war, 3D physics dice, per-turn
-            action economy tracking (Action, Bonus Action, Reaction, Movement), automated AC/DC hit
-            rolls, spell shader FX, and automated XP awards.
-          </p>
-          <a routerLink="/features/virtual-tabletop" class="lw-card-link">
-            <span>Explore 2.5D Virtual Tabletop</span>
-            <lw-icon name="ArrowRight" [size]="14" />
-          </a>
-        </article>
-
-        <article class="lw-feature-card">
-          <div class="lw-feature-card__top">
-            <lw-icon name="Map" [size]="20" />
-            <lw-badge label="LoomMaps Studio" tone="gold" />
-          </div>
-          <h3>LoomMaps Cutaway Walls &amp; World Atlas</h3>
-          <p>
-            Author pro battlemaps with cutaway wall sightlines, smart portal openings, spline path
-            ribbons, and curated multi-layer stamps, or chart continental travel paths with party
-            markers and POI secrets.
-          </p>
-          <a routerLink="/features/world-atlas-quests" class="lw-card-link">
-            <span>Explore LoomMaps &amp; Atlas</span>
-            <lw-icon name="ArrowRight" [size]="14" />
-          </a>
-        </article>
-
-        <article id="creator-market" class="lw-feature-card">
-          <div class="lw-feature-card__top">
-            <lw-icon name="ShoppingBag" [size]="20" />
-            <lw-badge label="85% Creator Royalty" tone="violet" />
-          </div>
-          <h3>Creator Marketplace &amp; One-Click Import</h3>
-          <p>
-            Publish custom campaigns, adventure modules, map packs, and ready-to-run encounters with
-            an industry-leading 85/15 creator-first revenue split, popularity telemetry, and instant
-            module importing.
-          </p>
-          <a routerLink="/features/creator-marketplace" class="lw-card-link">
-            <span>Explore Creator Marketplace</span>
-            <lw-icon name="ArrowRight" [size]="14" />
-          </a>
-        </article>
+    <!-- CREATOR MARKETPLACE CALLOUT -->
+    <section class="closing wrap" id="marketplace" aria-labelledby="marketplace-heading">
+      <div class="section-kicker">Creator-First 85/15 Revenue Split</div>
+      <h2 id="marketplace-heading">Your next legend begins here.</h2>
+      <p>
+        Discover community-authored campaigns, adventure modules, 3D dice, LoomMaps battlemaps, spell shaders, and
+        miniatures in the LoomWeaver Marketplace—or publish your own creations and keep <strong>85% of every sale</strong>.
+      </p>
+      <div class="closing-actions">
+        <button type="button" class="btn primary" (click)="openAuth('register', '/home')">
+          <span>Create Your Free Campaign</span><lw-icon name="arrow-right" [size]="15" />
+        </button>
+        <button type="button" class="btn ghost" (click)="openAuth('login', '/marketplace')">
+          <lw-icon name="shopping-bag" [size]="15" /><span>Explore Creator Marketplace</span>
+        </button>
       </div>
     </section>
 
-    <!-- SEO FAQ Accordion -->
-    <section id="faq" class="lw-section lw-section--alt" aria-labelledby="faq-heading">
-      <div class="lw-section__header">
-        <span class="lw-eyebrow">Frequently Asked Questions</span>
-        <h2 id="faq-heading">Transparent AI Ethics, Table Accessibility &amp; Creator Ownership</h2>
-      </div>
-
-      <div class="lw-faq-list">
+    <!-- SEO & PRODUCT FAQ -->
+    <section class="faq-section wrap" id="faq" aria-labelledby="faq-heading">
+      <div class="section-kicker">Frequently Asked Questions</div>
+      <h2 id="faq-heading">Everything about LoomWeaver (Loom-Weaver) &amp; our 2.5D VTT.</h2>
+      <div class="faq-list">
         @for (item of faqs; track item.id) {
-          <article class="lw-faq-item" [class.lw-faq-item--open]="openFaqId() === item.id">
-            <button
-              type="button"
-              class="lw-faq-question"
-              [attr.aria-expanded]="openFaqId() === item.id"
-              (click)="toggleFaq(item.id)"
-            >
-              <h3>{{ item.question }}</h3>
-              <lw-icon [name]="openFaqId() === item.id ? 'ChevronUp' : 'ChevronDown'" [size]="18" />
+          <article class="faq-item" [class.open]="openFaqId() === item.id">
+            <button type="button" class="faq-question" [attr.aria-expanded]="openFaqId() === item.id" (click)="toggleFaq(item.id)">
+              <span>{{ item.question }}</span>
+              <lw-icon [name]="openFaqId() === item.id ? 'chevron-up' : 'chevron-down'" [size]="16" />
             </button>
             @if (openFaqId() === item.id) {
-              <p class="lw-faq-answer">{{ item.answer }}</p>
+              <div class="faq-answer"><p>{{ item.answer }}</p></div>
             }
           </article>
         }
@@ -386,26 +434,18 @@
     </section>
   </main>
 
-  <!-- Semantic SEO Footer -->
-  <footer class="lw-landing-footer">
-    <div class="lw-landing-footer__inner">
-      <div class="lw-landing-footer__brand">
-        <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-landing-brand__logo" />
-        <div>
-          <strong>LoomWeaver — Your Campaign. One Living World.</strong>
-          <p>Polyglot TTRPG Operating System · MySQL 8 + Neo4j 5 · 100% Free for Players Forever.</p>
-        </div>
-      </div>
-
-      <nav class="lw-landing-footer__links" aria-label="SEO Feature Directory">
-        <a routerLink="/features/campaign-memory">The Loom Memory</a>
-        <a routerLink="/features/worldbuilding-ai">The Weave AI</a>
-        <a routerLink="/features/virtual-tabletop">2.5D Virtual Tabletop</a>
-        <a routerLink="/features/world-atlas-quests">LoomMaps &amp; Atlas</a>
-        <a routerLink="/features/creator-marketplace">85/15 Marketplace</a>
-        <button type="button" class="lw-footer-btn" (click)="auth.openAuthModal('login')">Sign In</button>
-        <button type="button" class="lw-footer-btn" (click)="auth.openAuthModal('register')">Create Account</button>
-      </nav>
+  <footer class="footer wrap" role="contentinfo">
+    <div class="footer-brand">
+      <img src="/LoomWeaverCrow.png" alt="" class="footer-raven" />
+      <span>© 2026 LoomWeaver (loom-weaver.com) · 2.5D Virtual Tabletop (VTT) &amp; Living Campaign OS.</span>
+    </div>
+    <div class="footer-links">
+      <a href="#why-loomweaver" (click)="scrollToSection('why-loomweaver', $event)">Why LoomWeaver</a>
+      <a href="#features" (click)="scrollToSection('features', $event)">Features</a>
+      <a href="#engines" (click)="scrollToSection('engines', $event)">2.5D VTT</a>
+      <a href="#pricing" (click)="scrollToSection('pricing', $event)">Pricing</a>
+      <button type="button" class="switchauth" (click)="openAuth('login')">Sign In</button>
+      <button type="button" class="switchauth" (click)="openAuth('register')">Create Free Account</button>
     </div>
   </footer>
 </div>
