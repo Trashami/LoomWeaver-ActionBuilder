@@ -2,6 +2,7 @@ import { GridOption } from '../shared/components/option-grid/option-grid.compone
 import { makeAmbientPresets } from './ambient-presets';
 import { makeGasCone, makeSpellTemplates } from './spell-templates';
 import { EXTRACTED_CORE_PRESET_SPECS } from './core-effect-extensions';
+import { getSpellIconUrl, resolveCatalogEntryIconSlug } from './effect-icon-catalog';
 import {
   CINEMATIC_DEFAULTS,
   createEffect,
@@ -36,7 +37,16 @@ export function makeLayerCatalog(): LayerCatalogEntry[] {
     category: string,
     effect: EffectDefinition,
     icon: GridOption['icon'] = 'layers'
-  ) => entries.push({ id, title, description, category, effect, icon });
+  ) =>
+    entries.push({
+      id,
+      title,
+      description,
+      category,
+      effect,
+      icon,
+      imageUrl: getSpellIconUrl(resolveCatalogEntryIconSlug(id, title, description, effect)),
+    });
 
   for (const spec of EXTRACTED_CORE_PRESET_SPECS) {
     const effect = createEffect(spec.title, spec.kind as EffectKind);

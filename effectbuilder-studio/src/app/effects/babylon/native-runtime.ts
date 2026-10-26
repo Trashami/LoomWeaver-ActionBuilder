@@ -1,38 +1,48 @@
-import { Color3, Color4, Effect, Mesh, MeshBuilder, PointLight, Quaternion, Scene, ShaderMaterial, StandardMaterial, TransformNode, Vector2, Vector3, VertexData, RenderTargetTexture } from '@babylonjs/core';
+import { Color3, Color4, Effect, Mesh, MeshBuilder, PointLight, Quaternion, Scene, ShaderMaterial, StandardMaterial, Texture, TransformNode, Vector2, Vector3, VertexData, RenderTargetTexture } from '@babylonjs/core';
 import { CustomMaterial } from '@babylonjs/materials/custom/customMaterial.js';
 import { EffectDefinition, EffectLayer, effectDuration, parseEffect, createLayer, defaultScene } from '../effect-definition';
+import { getSpellIconAtlasIndex, resolveLayerIconSlug } from '../effect-icon-catalog';
 import { EffectWorld, FxPoint } from '../fireball-motion';
 import { spellLights } from '../spell-lights';
 import { evaluateNativeEffect, NativeLayerFrame, NativePoint } from './native-frame';
 import { createBlendBackdrop, createNativeMaterial, nativeBlendModes, NATIVE_BLEND_FUNCTIONS } from './native-materials';
 
-interface LayerResources { root:TransformNode; particles:Mesh; ribbons:Mesh; fields:Mesh[]; materials:Map<string,ShaderMaterial>; backdrop?:RenderTargetTexture; blend:string; hand?:TransformNode; handMaterial?:StandardMaterial; vine?:Mesh; thorns?:Mesh[]; vineMaterial?:StandardMaterial; thornMaterial?:StandardMaterial; }
+interface LayerResources { root:TransformNode; particles:Mesh; ribbons:Mesh; sprite:Mesh; fields:Mesh[]; materials:Map<string,ShaderMaterial>; backdrop?:RenderTargetTexture; blend:string; hand?:TransformNode; handMaterial?:StandardMaterial; vine?:Mesh; thorns?:Mesh[]; vineMaterial?:StandardMaterial; thornMaterial?:StandardMaterial; }
 export interface NativeWorldOptions { pixelsPerUnit?:number; elevationAt?:(x:number,z:number)=>number; lightGain?:number; }
 const color=(hex:string)=>Color3.FromHexString(hex);
 const ownerId=()=> 'eb-native-'+Math.random().toString(36).slice(2);
+const GROUND_SPRITE_KINDS=new Set(['aura','ring','sigil','ground','shield','eruption']);
 /** Host-scene runtime. Owns only its meshes, materials, targets and bounded point lights.
  * Does not create an engine, render loop, camera, postprocess, physics, or combat mutations. */
 export class BabylonEffectRuntime {
- readonly owner=ownerId(); private layers=new Map<string,LayerResources>();private lights:PointLight[]=[];private disposed=false;
+ readonly owner=ownerId(); private layers=new Map<string,LayerResources>();private lights:PointLight[]=[];private atlasTexture?:Texture;private disposed=false;
  constructor(readonly scene:Scene,readonly options:NativeWorldOptions={}){}
+ private getAtlas():Texture|undefined{
+  if(this.atlasTexture)return this.atlasTexture;
+  if(typeof window==='undefined')return undefined;
+  this.atlasTexture=new Texture('/effect-icons/spell-fx-atlas.webp',this.scene,false,true,Texture.TRILINEAR_SAMPLINGMODE);
+  this.atlasTexture.hasAlpha=true;
+  return this.atlasTexture;
+ }
  private toWorld(p:NativePoint,from:FxPoint,to:FxPoint,sourceY=0,targetY=0):Vector3{
   const unit=this.options.pixelsPerUnit??66,dx=to.x-from.x,dy=to.y-from.y,t=Math.max(0,Math.min(1,((p.x-from.x)*dx+(p.y-from.y)*dy)/Math.max(1,dx*dx+dy*dy))),x=p.x/unit,z=p.y/unit;
   return new Vector3(x,(this.options.elevationAt?.(x,z)??sourceY+(targetY-sourceY)*t)+p.height/unit,z);
  }
  private mesh(name:string,root:TransformNode,order:number):Mesh{const m=new Mesh(this.owner+'-'+name,this.scene);m.parent=root;m.isPickable=false;m.alwaysSelectAsActiveMesh=true;m.metadata={lwNativeOwner:this.owner,lwNativeOrder:order};m.alphaIndex=order*10;m.hasVertexAlpha=true;return m;}
  private resource(l:EffectLayer,order:number):LayerResources{
-  let r=this.layers.get(l.id);if(!r){const root=new TransformNode(this.owner+'-'+l.id,this.scene);r={root,particles:this.mesh('particles',root,order),ribbons:this.mesh('ribbons',root,order),fields:[],materials:new Map(),blend:''};this.layers.set(l.id,r);}
+  let r=this.layers.get(l.id);if(!r){const root=new TransformNode(this.owner+'-'+l.id,this.scene);r={root,particles:this.mesh('particles',root,order),ribbons:this.mesh('ribbons',root,order),sprite:this.mesh('sprite',root,order),fields:[],materials:new Map(),blend:''};this.layers.set(l.id,r);}
   for(const m of r.root.getChildMeshes()){m.metadata.lwNativeOrder=order;m.alphaIndex=order*10;}
   if(r.blend!==l.blendMode){r.backdrop?.dispose();r.backdrop=undefined;r.blend=l.blendMode;}
   if(l.blendMode!=='normal'&&!r.backdrop)r.backdrop=createBlendBackdrop(this.scene,l.id,order,this.owner);
   if(r.backdrop)r.backdrop.renderListPredicate=m=>m.metadata?.lwNativeOwner!==this.owner||m.metadata.lwNativeOrder<order;
   return r;
  }
- private material(r:LayerResources,family:'particle'|'ribbon'|'fire'|'arcane'|'cinematic'|'barrier',f:NativeLayerFrame,provided?:ShaderMaterial):ShaderMaterial{
+ private material(r:LayerResources,family:'particle'|'ribbon'|'fire'|'arcane'|'cinematic'|'barrier'|'sprite',f:NativeLayerFrame,provided?:ShaderMaterial):ShaderMaterial{
   let m=provided??r.materials.get(family);if(!m){m=createNativeMaterial(this.scene,family,this.owner+'-'+family);r.materials.set(family,m);}
   const l=f.layer,fire=l.fireMaterial??l.fireHit;
   m.setFloat('uLayerAlpha',f.alpha);m.setFloat('uBlend',nativeBlendModes.indexOf(l.blendMode));m.setVector2('uViewport',new Vector2(this.scene.getEngine().getRenderWidth(),this.scene.getEngine().getRenderHeight()));
   if(r.backdrop)m.setTexture('uBackdrop',r.backdrop);
+  if(family==='sprite'){const atlas=this.getAtlas();if(atlas)m.setTexture('uAtlas',atlas);m.setFloat('uTileIndex',getSpellIconAtlasIndex(resolveLayerIconSlug(l)));}
   m.setColor3('uMain',color(l.color));m.setColor3('uFlame',color(l.color));m.setColor3('uCore',color(l.secondaryColor));m.setFloat('uClock',f.clock*l.motion.speed);m.setFloat('uTime',f.clock*l.motion.speed);m.setFloat('uProgress',f.progress);m.setFloat('uVariant',Math.max(0,['straight','wave','ribbon','pulse','helix'].indexOf(l.variant)));
   m.setFloat('uStrength',1);m.setFloat('uAlpha',1);m.setFloat('uTurbulence',fire?.turbulence??l.motion.turbulence/30+.2);m.setFloat('uStyle',0);m.setFloat('uElement',l.cinematic?['force','fire','ice','gas','radiant','lightning','acid','shadow'].indexOf(l.cinematic.element):0);
   m.setColor4('uColor',new Color4(1,1,1,1));m.setFloat('uBloom',l.fireMaterial?.bloom??l.cinematic?.bloom??.65);m.setFloat('uDistortion',l.fireMaterial?.distortion??.45);m.setFloat('uScorch',l.fireMaterial?.scorch??.7);m.setFloat('uSeed',l.motion.seed);m.setFloat('uSmoke',fire?.smoke??.7);m.setFloat('uLight',fire?.light??1);m.setFloat('uShadow',fire?.shadows??.65);m.setFloat('uEmbers',fire?.embers??1);m.setColor3('uSmokeColor',color(fire?.smokeColor??'#4a4149'));return m;
@@ -74,6 +84,28 @@ export class BabylonEffectRuntime {
   for(let i=0;i<count;i++){let m=r.thorns[i];if(!m){m=MeshBuilder.CreateCylinder(this.owner+'-thorn',{height:1,diameterBottom:1,diameterTop:0,tessellation:7},this.scene);m.parent=r.root;m.material=r.thornMaterial!;m.isPickable=false;m.metadata=r.vine.metadata;r.thorns.push(m);}const u=(i+1)/(count+1),index=Math.min(path.length-2,Math.max(1,Math.round(u*(path.length-1)))),tangent=path[index+1].subtract(path[index-1]).normalize(),side=Vector3.Cross(tangent,Vector3.Up()).normalize();if(side.lengthSquared()<.01)side.copyFrom(Vector3.Right());const normal=Vector3.Cross(side,tangent).normalize(),theta=i*2.399,dir=side.scale(Math.cos(theta)).add(normal.scale(Math.sin(theta))).add(tangent.scale(-.35)).normalize(),height=l.whip.thornSize/unit*(.6+.4*(1-u));m.position=path[index].add(dir.scale(height*.43));m.scaling.set(height*.55,height,height*.55);m.rotationQuaternion=Quaternion.FromUnitVectorsToRef(Vector3.Up(),dir,new Quaternion());m.setEnabled(height>.0001);}
   for(let i=count;i<r.thorns.length;i++)r.thorns[i].setEnabled(false);
  }
+ private drawSpellSprite(r:LayerResources,f:NativeLayerFrame,from:FxPoint,to:FxPoint,worldPoint:(p:NativePoint)=>Vector3,right:Vector3,up:Vector3,unit:number):void{
+  if(!this.getAtlas()){r.sprite.setEnabled(false);return;}
+  const l=f.layer;
+  let focus:NativePoint;
+  if(f.fields.length>0){focus=f.fields[0].point;}
+  else if(f.ribbons.length>0&&f.ribbons[0].points.length>0){const pts=f.ribbons[0].points;focus=pts[pts.length-1];}
+  else if(f.particles.length>0){focus=f.particles[0];}
+  else{
+   const t=l.anchor==='caster'?0:l.anchor==='target'?1:(l.kind==='projectile'||l.kind==='trail'?f.progress:0.5);
+   focus={x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t,height:GROUND_SPRITE_KINDS.has(l.kind)?2:18};
+  }
+  const center=worldPoint(focus),ground=GROUND_SPRITE_KINDS.has(l.kind),radius=Math.max(0.45,Math.min(2.1,(l.size/unit)*1.25));
+  const ang=Math.atan2(to.y-from.y,to.x-from.x),ca=Math.cos(ang),sa=Math.sin(ang);
+  const axisX=ground?new Vector3(ca,0,sa):right,axisY=ground?new Vector3(-sa,0,ca):up;
+  const sp:number[]=[],su:number[]=[],sc:number[]=[];
+  for(const [x,y] of [[-1,-1],[1,-1],[1,1],[-1,1]]){
+   const v=center.add(axisX.scale(x*radius)).add(axisY.scale(y*radius));
+   sp.push(v.x,v.y+(ground?0.03:0),v.z);su.push((x+1)/2,(y+1)/2);sc.push(1,1,1,f.alpha*0.78);
+  }
+  this.geometry(r.sprite,sp,su,sc,[0,1,2,0,2,3]);
+  r.sprite.material=this.material(r,'sprite',f);
+ }
  draw(def:EffectDefinition,time:number,from:FxPoint,to:FxPoint,scale=1,targets:FxPoint[]=[to],world:EffectWorld={},sourceY=0,targetY=0):void{
   if(this.disposed)return;
   const active=new Set(def.layers.map(l=>l.id));for(const [id,r] of this.layers)if(!active.has(id)){this.release(r);this.layers.delete(id);}
@@ -83,6 +115,7 @@ export class BabylonEffectRuntime {
    const r=this.resource(f.layer,order);r.root.setEnabled(f.alpha>.00001);if(f.alpha<=.00001)return;
    const worldPoint=(p:NativePoint)=>this.toWorld(p,from,to,sourceY,targetY),unit=this.options.pixelsPerUnit??66;
    this.drawVine(r,f,worldPoint,unit);
+   this.drawSpellSprite(r,f,from,to,worldPoint,right,up,unit);
    const positions:number[]=[],uvs:number[]=[],colors:number[]=[],indices:number[]=[];
    for(const q of f.particles){if(q.alpha<.0001)continue;const center=worldPoint(q),c=Math.cos(q.rotation),s=Math.sin(q.rotation),xAxis=right.scale(c).add(up.scale(s)),yAxis=up.scale(c).subtract(right.scale(s)),base=positions.length/3,tint=color(q.color);
     for(const [x,y] of [[-1,-1],[1,-1],[1,1],[-1,1]]){const v=center.add(xAxis.scale(x*q.size/unit)).add(yAxis.scale(y*q.size*q.stretch/unit));positions.push(v.x,v.y,v.z);uvs.push(q.tile*2+(x+1)*.9999,(y+1)/2);colors.push(tint.r,tint.g,tint.b,q.alpha);}
@@ -107,7 +140,7 @@ export class BabylonEffectRuntime {
   sources.forEach((s,i)=>{let light=this.lights[i];if(!light){light=new PointLight('eb-native-light-'+this.owner+'-'+i,Vector3.Zero(),this.scene);light.metadata={lwNativeOwner:this.owner};this.lights.push(light);}light.position=this.toWorld({...s,height:s.elevationZ??20},from,to,sourceY,targetY);light.diffuse=color(s.color);light.intensity=s.intensity*(this.options.lightGain??2.4);light.range=s.radius/(this.options.pixelsPerUnit??66);light.setEnabled(true);});for(let i=sources.length;i<this.lights.length;i++)this.lights[i].setEnabled(false);
  }
  private release(r:LayerResources){r.backdrop?.dispose();r.root.dispose(false);for(const m of r.materials.values())m.dispose();r.handMaterial?.dispose(true);r.vineMaterial?.dispose(true);r.thornMaterial?.dispose(true);}
- dispose():void{if(this.disposed)return;this.disposed=true;for(const r of this.layers.values())this.release(r);this.layers.clear();for(const light of this.lights)light.dispose();this.lights=[];}
+ dispose():void{if(this.disposed)return;this.disposed=true;for(const r of this.layers.values())this.release(r);this.layers.clear();for(const light of this.lights)light.dispose();this.lights=[];this.atlasTexture?.dispose();this.atlasTexture=undefined;}
 }
 
 /** Normalize the older VTT demo shape at the boundary; saved schema-v1 designs stay unchanged. */

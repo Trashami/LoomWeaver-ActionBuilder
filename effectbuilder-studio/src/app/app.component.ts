@@ -1,6 +1,7 @@
 import { TELEPORT_DEFAULTS } from './effects/effect-definition';
 import { OptionGridComponent } from './shared/components/option-grid/option-grid.component';
 import { makeLayerCatalog } from './effects/layer-catalog';
+import { getSpellIconUrl, resolveEffectIconUrl, resolveLayerIconSlug } from './effects/effect-icon-catalog';
 import { LightSettings, parseLight } from './effects/spell-light-settings';
 import { makeSpellTemplates, makeGasCone } from './effects/spell-templates';
 import { HttpClient } from '@angular/common/http';
@@ -64,7 +65,11 @@ export class AppComponent {
   readonly premium=makeSpellTemplates();readonly premiumIds=new Set(this.premium.map(e=>e.id));
   readonly presets = [...this.premium,createMageHandEffect(),createFireballComposition(),...makePresets(), ...this.ambient.map(p=>p.effect)];
   readonly presetGroup = signal<'all'|'premium'|'starter'|'caster'|'target'>('all');
-  presetRole(e: EffectDefinition): string { return this.presetRoles.get(e.id) ?? 'starter'; } readonly kinds = EFFECT_KINDS; readonly blendModes = BLEND_MODES; readonly whipControls = WHIP_CONTROLS; readonly missileControls = MISSILE_CONTROLS; readonly activeBolt=signal(0);
+  presetRole(e: EffectDefinition): string { return this.presetRoles.get(e.id) ?? 'starter'; }
+  effectIconUrl(e: EffectDefinition): string { return resolveEffectIconUrl(e); }
+  layerIconUrl(l: EffectLayer): string { return getSpellIconUrl(resolveLayerIconSlug(l, this.definition().name)); }
+  variantIconUrl(kind: EffectKind, variantId: string, name: string, desc: string): string { return getSpellIconUrl(resolveLayerIconSlug({ kind, variant: variantId, color: '#ffffff' }, `${name} ${desc}`)); }
+  readonly kinds = EFFECT_KINDS; readonly blendModes = BLEND_MODES; readonly whipControls = WHIP_CONTROLS; readonly missileControls = MISSILE_CONTROLS; readonly activeBolt=signal(0);
   readonly viewportWidth=signal(window.innerWidth);readonly viewportHeight=signal(window.innerHeight);
   @HostListener('window:resize') viewportChanged():void{this.viewportWidth.set(window.innerWidth);this.viewportHeight.set(window.innerHeight);}
   readonly previewMin=computed(()=>Math.min(45,Math.max(20,190/Math.max(1,this.viewportHeight()-180)*100)));
