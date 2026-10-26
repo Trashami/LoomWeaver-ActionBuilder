@@ -1,0 +1,66 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-loomweaver-backend",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/backend/src/LoomWeaver.Api/LoomWeaver.Api.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run-loomweaver-backend",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/backend/src/LoomWeaver.Api/LoomWeaver.Api.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "start-loomweaver-frontend",
+      "type": "npm",
+      "script": "start",
+      "path": "frontend",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "typescript",
+        "fileLocation": ["relative", "${workspaceFolder}/frontend"],
+        "pattern": "$tsc",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(Building|Generating).*",
+          "endsPattern": ".*(Application bundle generation complete|Watch mode enabled|Local:).*"
+        }
+      }
+    },
+    {
+      "label": "LoomWeaver V2: All Database Tunnels (MySQL 'loomweaver' + Neo4j 'loomweaver')",
+      "type": "process",
+      "command": "C:\\Program Files\\Git\\usr\\bin\\ssh.exe",
+      "args": [
+        "-N",
+        "-L",
+        "3307:127.0.0.1:3306",
+        "-L",
+        "7687:127.0.0.1:7687",
+        "-L",
+        "7474:127.0.0.1:7474",
+        "-o",
+        "ExitOnForwardFailure=yes",
+        "-o",
+        "ServerAliveInterval=30",
+        "iamtrash@209.46.127.226"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

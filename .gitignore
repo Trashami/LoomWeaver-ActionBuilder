@@ -15,7 +15,6 @@ backend/publish/
 
 # OS / IDE
 .vs/
-.vscode/
 .DS_Store
 Thumbs.db
 *.zip

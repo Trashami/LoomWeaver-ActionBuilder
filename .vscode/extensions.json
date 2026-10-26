@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    "angular.ng-template",
+    "ms-vscode-remote.remote-ssh",
+    "cweijan.vscode-mysql-client2"
+  ]
+}
