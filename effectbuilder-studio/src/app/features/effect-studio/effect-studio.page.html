@@ -10,8 +10,10 @@
     [activeEffectName]="studio.effectName()"
     [assignments]="studio.campaignAssignments()"
     [isPushing]="studio.isPushingToCampaign()"
+    [navCollapsed]="studio.navCollapsed()"
     [userDisplayName]="auth.isAuthenticated() ? auth.activeProfile().displayName : 'Jason (GeoJason)'"
     [userInitials]="auth.isAuthenticated() ? auth.activeProfile().displayName.slice(0, 2).toUpperCase() : 'JA'"
+    (navToggled)="studio.navCollapsed.set(!studio.navCollapsed())"
     (campaignChanged)="studio.setCampaign($event)"
     (viewerRoleToggled)="studio.setViewerRole($event)"
     (characterChanged)="studio.selectCharacter($event)"
@@ -42,37 +44,40 @@
 
   <!-- 3. Main 4-Column Studio Workspace -->
   <main class="lw-fx-workspace">
-    <!-- Far-Left Vertical Icon Rail -->
-    <lw-effect-tool-rail
-      [activeTool]="studio.activeRailTool()"
-      (toolSelected)="studio.selectRailTool($event)" />
+    @if (!studio.navCollapsed()) {
+      <!-- Far-Left Vertical Icon Rail -->
+      <lw-effect-tool-rail
+        [activeTool]="studio.activeRailTool()"
+        (toolSelected)="studio.selectRailTool($event)" />
 
-    <!-- Left 3-Tab Library Drawer (Effects | Appearances | Presets) -->
-    <lw-emitter-library-panel
-      [activeSection]="studio.activeLibrarySection()"
-      [emitters]="studio.filteredEmitters()"
-      [appearances]="studio.appearances()"
-      [presets]="studio.presets()"
-      [activeEmitterId]="studio.activeEmitterId()"
-      [activeAppearanceId]="studio.activeAppearanceId()"
-      [activePresetId]="studio.activePresetId()"
-      [searchQuery]="studio.librarySearch()"
-      [selectedCategory]="studio.libraryCategory()"
-      [categories]="studio.categories()"
-      (sectionChanged)="studio.activeLibrarySection.set($event)"
-      (searchChanged)="studio.librarySearch.set($event)"
-      (categoryChanged)="studio.libraryCategory.set($event)"
-      (emitterSelected)="onEmitterSelected($event)"
-      (appearanceSelected)="onAppearanceSelected($event)"
-      (presetSelected)="onPresetSelected($event)" />
+      <!-- Left 3-Tab Library Drawer (Effects | Appearances | Presets) -->
+      <lw-emitter-library-panel
+        [activeSection]="studio.activeLibrarySection()"
+        [emitters]="studio.filteredEmitters()"
+        [appearances]="studio.appearances()"
+        [presets]="studio.presets()"
+        [activeEmitterId]="studio.activeEmitterId()"
+        [activeAppearanceId]="studio.activeAppearanceId()"
+        [activePresetId]="studio.activePresetId()"
+        [searchQuery]="studio.librarySearch()"
+        [selectedCategory]="studio.libraryCategory()"
+        [categories]="studio.categories()"
+        (sectionChanged)="studio.activeLibrarySection.set($event)"
+        (searchChanged)="studio.librarySearch.set($event)"
+        (categoryChanged)="studio.libraryCategory.set($event)"
+        (emitterSelected)="onEmitterSelected($event)"
+        (appearanceSelected)="onAppearanceSelected($event)"
+        (presetSelected)="onPresetSelected($event)" />
+    }
 
-    <!-- Center 3D Dungeon Stage + Bottom Multi-Track Timeline -->
+    <!-- Center 2D/3D Stage + Bottom Full After-Effects Multi-Track Timeline & Opacity Keyframe Editor -->
     <div class="lw-fx-center-column">
       <lw-effect-viewport-stage
         [activeProperties]="studio.activeProperties()"
         [motionAndForces]="studio.motionAndForces()"
         [tracks]="studio.tracks()"
         [cameraPreset]="studio.activeCameraPreset()"
+        [viewDimensionMode]="studio.viewDimensionMode()"
         [activeGizmo]="studio.activeGizmoTool()"
         [isPlaying]="studio.isPlaying()"
         [playheadSeconds]="studio.playheadSeconds()"
@@ -80,6 +85,7 @@
         [reducedMotion]="studio.reducedMotion()"
         [testResult]="studio.lastInGameTestResult()"
         (cameraPresetChanged)="studio.activeCameraPreset.set($event)"
+        (viewDimensionModeChanged)="studio.viewDimensionMode.set($event)"
         (gizmoSelected)="studio.activeGizmoTool.set($event)"
         (playheadUpdated)="studio.playheadSeconds.set($event)"
         (addLayerRequested)="studio.addTimelineLayer()"
@@ -93,12 +99,20 @@
         [totalDurationSeconds]="studio.totalDurationSeconds()"
         (playToggled)="studio.isPlaying.set(!studio.isPlaying())"
         (playheadScrubbed)="studio.playheadSeconds.set($event)"
-        (trackSelected)="studio.selectedTrackId.set($event)"
+        (durationChanged)="studio.totalDurationSeconds.set($event)"
+        (trackSelected)="studio.selectTrack($event)"
         (trackVisibilityToggled)="studio.toggleTrackVisibility($event)"
-        (trackExpandedToggled)="studio.toggleTrackExpanded($event)" />
+        (trackExpandedToggled)="studio.toggleTrackExpanded($event)"
+        (trackTimingUpdated)="studio.updateTrackTiming($event)"
+        (trackEasingUpdated)="studio.updateTrackEasing($event)"
+        (trackOpacityKeyframesUpdated)="studio.updateTrackOpacityKeyframes($event)"
+        (trackReordered)="studio.reorderTrack($event)"
+        (addLayerRequested)="studio.addTimelineLayer()"
+        (duplicateLayerRequested)="studio.duplicateSelectedLayer()"
+        (removeLayerRequested)="studio.removeTimelineLayer($event)" />
     </div>
 
-    <!-- Right Properties, Layers & Modifiers Inspector -->
+    <!-- Right Context-Sensitive Selected Effect Layer Properties Panel -->
     <lw-effect-properties-inspector
       [activeTab]="studio.activeInspectorTab()"
       [properties]="studio.activeProperties()"

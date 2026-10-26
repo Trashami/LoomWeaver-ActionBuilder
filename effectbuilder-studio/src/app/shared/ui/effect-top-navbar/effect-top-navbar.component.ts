@@ -1,16 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgpAvatar, NgpAvatarFallback } from 'ng-primitives/avatar';
 import { NgpButton } from 'ng-primitives/button';
+import { NgpToolbar } from 'ng-primitives/toolbar';
 import {
   CampaignCharacterOptionVm,
   CampaignEffectAssignmentVm,
   CampaignSummaryVm,
 } from '../../../features/effect-studio/models/effect-studio.models';
+import { LwIconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'lw-effect-top-navbar',
   standalone: true,
-  imports: [FormsModule, NgpButton],
+  imports: [FormsModule, NgpButton, NgpAvatar, NgpAvatarFallback, NgpToolbar, LwIconComponent],
   templateUrl: './effect-top-navbar.component.html',
   styleUrl: './effect-top-navbar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,9 +28,11 @@ export class LwEffectTopNavbarComponent {
   readonly activeEffectName = input<string>('Rune Vortex');
   readonly assignments = input<readonly CampaignEffectAssignmentVm[]>([]);
   readonly isPushing = input<boolean>(false);
+  readonly navCollapsed = input<boolean>(false);
   readonly userDisplayName = input<string>('Jason (GeoJason)');
   readonly userInitials = input<string>('JA');
 
+  readonly navToggleRequested = output<void>();
   readonly campaignChanged = output<number>();
   readonly viewerRoleToggled = output<'gm' | 'players'>();
   readonly characterChanged = output<string>();

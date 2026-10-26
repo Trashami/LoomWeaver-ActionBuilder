@@ -37,6 +37,7 @@ public static class LoomWeaverEndpoints
             api.MapAudioAmbienceEndpoints();
             api.MapCampaignAnalyticsEndpoints();
             api.MapLoomAndWeaveEndpoints();
+            api.MapWorldLoreEndpoints();
             api.MapMarketplaceAndQuestEndpoints();
             api.MapSessionChronicleEndpoints();
             api.MapCampaignDashboardEndpoints();

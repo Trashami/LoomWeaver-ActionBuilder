@@ -1,98 +1,129 @@
 <header class="lw-topbar" role="banner">
   <div class="lw-topbar__left">
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__square-btn lw-topbar__nav-toggle"
+      [class.lw-topbar__square-btn--active]="!navCollapsed()"
+      [attr.aria-expanded]="!navCollapsed()"
+      aria-label="Toggle Left Effect Library"
+      title="Collapse or Expand Effect Library"
+      (click)="navToggleRequested.emit()"
+    >
+      <lw-icon name="apps" [size]="20" />
+    </button>
+
     <a
-      class="lw-topbar__brand"
+      class="lw-topbar__brand-tile"
       href="https://loom-weaver.com/dashboard"
-      title="Return to LoomWeaver Dashboard">
-      <img src="/LoomWeaver.png" alt="LoomWeaver Crest" class="lw-topbar__logo" />
+      title="Return to LoomWeaver Dashboard"
+    >
+      <img
+        src="/LoomWeaver.png"
+        alt="LoomWeaver Crest"
+        class="lw-topbar__logo lw-topbar__logo--bordered"
+      />
       <div class="lw-topbar__titles">
         <span class="lw-topbar__name">LOOMWEAVER</span>
         <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
       </div>
     </a>
 
-    <div class="lw-topbar__divider"></div>
-
-    <div class="lw-campaign-picker">
-      <div class="lw-campaign-picker__body">
-        <div class="lw-campaign-picker__row">
-          <select
-            class="lw-campaign-picker__select"
-            [ngModel]="activeCampaignId()"
-            (ngModelChange)="campaignChanged.emit(+$event)"
-            aria-label="Active Campaign">
-            @for (camp of campaigns(); track camp.id) {
-              <option [ngValue]="camp.id">{{ camp.name.toUpperCase() }}</option>
-            }
-          </select>
-        </div>
-        <span class="lw-campaign-picker__sub">
+    <div class="lw-campaign-tile">
+      <div class="lw-campaign-tile__body">
+        <select
+          class="lw-campaign-tile__select"
+          [ngModel]="activeCampaignId()"
+          (ngModelChange)="campaignChanged.emit(+$event)"
+          aria-label="Active Campaign"
+        >
+          @for (camp of campaigns(); track camp.id) {
+            <option [ngValue]="camp.id">{{ camp.name.toUpperCase() }}</option>
+          }
+        </select>
+        <span class="lw-campaign-tile__sub">
           Campaign · {{ activeCampaign().currentSessionNumber }} sessions · High Fantasy
         </span>
       </div>
     </div>
   </div>
 
-  <div class="lw-topbar__right">
-    <div class="lw-campaign-push-bar" aria-label="Campaign Character & Spell Effect Assignment">
-      <button
-        ngpButton
-        type="button"
-        class="lw-campaign-push-bar__role"
-        [class.lw-campaign-push-bar__role--player]="viewerRole() !== 'gm'"
-        (click)="toggleRole()"
-        title="Switch between Dungeon Master (all campaign characters) and Player (own character) scope">
-        <span class="lw-campaign-push-bar__role-dot"></span>
-        <span>{{ viewerRole() === 'gm' ? 'DM Mode' : 'Player Mode' }}</span>
-      </button>
+  <div ngpToolbar class="lw-topbar__right">
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__rect-btn lw-topbar__rect-btn--gold"
+      (click)="toggleRole()"
+      title="Switch between GM View (assign to any character) and Player View (assign to your character)"
+    >
+      <span>{{ viewerRole() === 'gm' ? 'GM View' : 'Player View' }}</span>
+    </button>
 
-      <label class="lw-campaign-push-bar__field">
-        <span class="lw-campaign-push-bar__label">Character</span>
+    <div class="lw-campaign-tile lw-campaign-tile--assign">
+      <div class="lw-campaign-tile__body">
+        <span class="lw-campaign-tile__sub">CHARACTER</span>
         <select
-          class="lw-campaign-push-bar__select"
-          aria-label="Select Character for Effect"
+          class="lw-campaign-tile__select lw-campaign-tile__select--sans"
           [ngModel]="selectedCharacterKey()"
-          (ngModelChange)="characterChanged.emit($event)">
+          (ngModelChange)="characterChanged.emit($event)"
+          aria-label="Character to assign effect"
+        >
           @for (ch of characters(); track ch.characterKey) {
-            <option [value]="ch.characterKey">
-              {{ ch.name }} ({{ ch.classOrTitle }})
-            </option>
+            <option [value]="ch.characterKey">{{ ch.name }} ({{ ch.classOrTitle }})</option>
           }
         </select>
-      </label>
-
-      <label class="lw-campaign-push-bar__field">
-        <span class="lw-campaign-push-bar__label">Spell / Action</span>
-        <select
-          class="lw-campaign-push-bar__select"
-          aria-label="Select Spell for Effect"
-          [ngModel]="selectedSpellName()"
-          (ngModelChange)="spellChanged.emit($event)">
-          @for (spell of availableSpells(); track spell) {
-            <option [value]="spell">{{ spell }}</option>
-          }
-        </select>
-      </label>
-
-      <button
-        ngpButton
-        type="button"
-        class="lw-campaign-push-bar__btn"
-        [disabled]="isPushing()"
-        (click)="pushToCampaignPressed.emit()"
-        title="Save & assign current 3D effect to the selected character and spell in MySQL for this campaign">
-        <span>{{ isPushing() ? 'Pushing...' : 'Push to Campaign' }}</span>
-      </button>
+      </div>
     </div>
 
-    <div class="lw-profile-pill">
-      <div class="lw-profile-pill__avatar">
-        <span>{{ userInitials() }}</span>
+    <div class="lw-campaign-tile lw-campaign-tile--assign">
+      <div class="lw-campaign-tile__body">
+        <span class="lw-campaign-tile__sub">SPELL / ACTION</span>
+        <select
+          class="lw-campaign-tile__select lw-campaign-tile__select--sans"
+          [ngModel]="selectedSpellName()"
+          (ngModelChange)="spellChanged.emit($event)"
+          aria-label="Spell to assign effect"
+        >
+          @for (sp of availableSpells(); track sp) {
+            <option [value]="sp">{{ sp }}</option>
+          }
+        </select>
       </div>
-      <div class="lw-profile-pill__info">
+      @if (currentSpellAssignment(); as assigned) {
+        <span class="lw-assign-badge" [title]="'Assigned: ' + assigned.effectName">
+          Bound
+        </span>
+      }
+    </div>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__rect-btn lw-topbar__rect-btn--push"
+      [disabled]="isPushing()"
+      (click)="pushToCampaignPressed.emit()"
+      title="Save and bind this effect to the selected Character & Spell in MySQL for the current campaign"
+    >
+      <span>{{ isPushing() ? 'Pushing...' : 'Push to Campaign' }}</span>
+    </button>
+
+    <div class="lw-profile-tile">
+      <div ngpAvatar class="lw-profile-tile__avatar">
+        <span ngpAvatarFallback>{{ userInitials() }}</span>
+      </div>
+      <div class="lw-profile-tile__info">
         <strong>{{ userDisplayName() }}</strong>
         <span>{{ viewerRole() === 'gm' ? 'Dungeon Master' : 'Adventurer' }}</span>
       </div>
     </div>
+
+    <a
+      ngpButton
+      class="lw-topbar__square-btn lw-topbar__logout-tile"
+      href="https://loom-weaver.com/dashboard"
+      title="Return to LoomWeaver Dashboard"
+    >
+      <lw-icon name="close" [size]="15" />
+    </a>
   </div>
 </header>

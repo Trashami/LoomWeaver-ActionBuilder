@@ -2,6 +2,85 @@ export type EffectStudioMode = 'design' | 'preview' | 'ingame';
 
 export type EffectLibrarySectionId = 'effects' | 'appearances' | 'presets';
 
+export type EffectViewDimensionMode = '2d' | '3d';
+
+export const EFFECT_EASINGS = ['linear', 'ease-in', 'ease-out', 'ease-in-out'] as const;
+export type EffectEasingCurve = (typeof EFFECT_EASINGS)[number];
+export type EffectEasingKind = EffectEasingCurve;
+
+export interface EffectOpacityKeyframeVm {
+  readonly id?: string;
+  readonly time: number; // 0.0 to 1.0 relative to layer duration
+  readonly value: number; // 0.0 to 1.0 opacity multiplier
+  readonly easing: EffectEasingCurve;
+}
+
+export type EffectClipEditMode = 'move' | 'start' | 'end';
+
+export function clamp01(v: number, min = 0, max = 1): number {
+  return Math.max(min, Math.min(max, v));
+}
+
+export function evaluateEasing(progress: number, curve: EffectEasingCurve = 'linear'): number {
+  const t = clamp01(progress);
+  switch (curve) {
+    case 'ease-in':
+      return t * t * t;
+    case 'ease-out':
+      return 1 - (1 - t) ** 3;
+    case 'ease-in-out':
+      return t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
+    default:
+      return t;
+  }
+}
+
+export function evaluateOpacityAt(
+  frames: readonly EffectOpacityKeyframeVm[] | undefined,
+  progress: number,
+): number {
+  if (!frames || frames.length === 0) return 1;
+  if (progress <= frames[0].time) return frames[0].value;
+  for (let i = 1; i < frames.length; i++) {
+    const a = frames[i - 1];
+    const b = frames[i];
+    if (progress <= b.time) {
+      const t = evaluateEasing((progress - a.time) / Math.max(0.000001, b.time - a.time), a.easing);
+      return clamp01(a.value + (b.value - a.value) * t);
+    }
+  }
+  return frames[frames.length - 1].value;
+}
+
+export function editTimelineClipMs(
+  startMs: number,
+  durationMs: number,
+  deltaMs: number,
+  mode: EffectClipEditMode,
+  snap50ms = true,
+  maxExtentMs = 10000,
+): { startMs: number; durationMs: number } {
+  const rounded = snap50ms ? Math.round(deltaMs / 50) * 50 : Math.round(deltaMs);
+  const endMs = startMs + durationMs;
+  if (mode === 'move') {
+    return {
+      startMs: Math.max(0, Math.min(maxExtentMs - 100, startMs + rounded)),
+      durationMs,
+    };
+  }
+  if (mode === 'start') {
+    const nextStart = Math.max(0, Math.min(maxExtentMs, endMs - 100, startMs + rounded));
+    return {
+      startMs: nextStart,
+      durationMs: Math.max(100, endMs - nextStart),
+    };
+  }
+  return {
+    startMs,
+    durationMs: Math.max(100, Math.min(maxExtentMs - startMs, durationMs + rounded)),
+  };
+}
+
 export type EffectRailToolId =
   | 'emitters'
   | 'forces'
@@ -112,6 +191,12 @@ export interface EffectEmitterCardVm {
   readonly circlePattern?: string;
   readonly debrisMaterial?: string;
   readonly animationModifier?: EffectAnimationModifierId;
+  readonly coneReachFeet?: number;
+  readonly coneWidthFeet?: number;
+  readonly flightArc?: number;
+  readonly launchGapMs?: number;
+  readonly boltTargets?: readonly number[];
+  readonly soundCueId?: string;
 }
 
 export interface EffectTimelineTrackVm {
@@ -133,6 +218,8 @@ export interface EffectTimelineTrackVm {
   readonly opacityPercent?: number;
   readonly variant?: string;
   readonly animationModifier?: EffectAnimationModifierId;
+  readonly easing?: EffectEasingCurve;
+  readonly opacityKeyframes?: readonly EffectOpacityKeyframeVm[];
 }
 
 export interface EffectCompositePresetVm {

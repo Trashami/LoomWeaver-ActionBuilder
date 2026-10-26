@@ -226,11 +226,19 @@ export const EFFECT_COMPOSITE_PRESETS_SEED: readonly EffectCompositePresetVm[] =
     totalDurationSeconds: 5.0,
     baseEmitterId: 'emit-energy-column',
     tracks: [
-      { id: 'trk-light-beam', label: 'Energy Column', trackType: 'Energy Column', visible: true, expanded: false, startTimeSeconds: 0.0, endTimeSeconds: 3.5, colorHex: '#d97706', accentHex: '#fde047', emitterId: 'emit-energy-column', appearanceId: 'Radiant', anchor: 'area', scale: 1.0 },
-      { id: 'trk-rising-particles', label: 'Sparks / Embers', trackType: 'Sparks / Embers', visible: true, expanded: false, startTimeSeconds: 0.35, endTimeSeconds: 3.2, colorHex: '#b45309', accentHex: '#fcd34d', emitterId: 'emit-sparks-embers', appearanceId: 'Radiant', anchor: 'area', count: 36 },
-      { id: 'trk-rune-circle', label: 'Magic Circle', trackType: 'Magic Circle', visible: true, expanded: false, startTimeSeconds: 0.05, endTimeSeconds: 3.8, colorHex: '#1e3a5f', accentHex: '#60a5fa', emitterId: 'emit-magic-circle', appearanceId: 'Radiant', anchor: 'area', variant: 'Anelith Hexagon' },
-      { id: 'trk-dust', label: 'Smoke / Mist', trackType: 'Smoke / Mist', visible: true, expanded: false, startTimeSeconds: 0.3, endTimeSeconds: 4.1, colorHex: '#4c3b71', accentHex: '#a78bfa', emitterId: 'emit-smoke-mist', appearanceId: 'Radiant', anchor: 'area', count: 14 },
-      { id: 'trk-sound', label: 'Sound', trackType: 'Audio', visible: true, expanded: false, startTimeSeconds: 0.0, endTimeSeconds: 4.2, colorHex: '#7e22ce', accentHex: '#c084fc', emitterId: 'emit-sound', variant: 'Celestial Choir' },
+      {
+        id: 'trk-light-beam', label: 'Energy Column', trackType: 'Energy Column', visible: true, expanded: false, startTimeSeconds: 0.0, endTimeSeconds: 3.5, colorHex: '#d97706', accentHex: '#fde047', emitterId: 'emit-energy-column', appearanceId: 'Radiant', anchor: 'target', scale: 1.0, easing: 'ease-in-out',
+        opacityKeyframes: [
+          { id: 'kf-1', time: 0.0, value: 0.0, easing: 'ease-out' },
+          { id: 'kf-2', time: 0.18, value: 1.0, easing: 'linear' },
+          { id: 'kf-3', time: 0.78, value: 1.0, easing: 'ease-in' },
+          { id: 'kf-4', time: 1.0, value: 0.0, easing: 'linear' },
+        ],
+      },
+      { id: 'trk-rising-particles', label: 'Sparks / Embers', trackType: 'Sparks / Embers', visible: true, expanded: false, startTimeSeconds: 0.35, endTimeSeconds: 3.2, colorHex: '#b45309', accentHex: '#fcd34d', emitterId: 'emit-sparks-embers', appearanceId: 'Radiant', anchor: 'target', count: 36, easing: 'ease-out' },
+      { id: 'trk-rune-circle', label: 'Magic Circle', trackType: 'Magic Circle', visible: true, expanded: false, startTimeSeconds: 0.05, endTimeSeconds: 3.8, colorHex: '#1e3a5f', accentHex: '#60a5fa', emitterId: 'emit-magic-circle', appearanceId: 'Radiant', anchor: 'target', variant: 'Anelith Hexagon', easing: 'ease-in-out' },
+      { id: 'trk-dust', label: 'Smoke / Mist', trackType: 'Smoke / Mist', visible: true, expanded: false, startTimeSeconds: 0.3, endTimeSeconds: 4.1, colorHex: '#4c3b71', accentHex: '#a78bfa', emitterId: 'emit-smoke-mist', appearanceId: 'Radiant', anchor: 'target', count: 14, easing: 'ease-out' },
+      { id: 'trk-sound', label: 'Sound', trackType: 'Sound', visible: true, expanded: false, startTimeSeconds: 0.0, endTimeSeconds: 4.2, colorHex: '#7e22ce', accentHex: '#c084fc', emitterId: 'emit-sound', variant: 'Celestial Choir', easing: 'linear' },
     ],
   },
   {

@@ -227,3 +227,83 @@ INSERT INTO `lw_combat_telemetry` (`campaign_id`, `character_key`, `character_na
 (1, 'pc-kycius', 'Kycius', 'Tabaxi Arcane Investigator', 342, 94, 138, 110, 6, 6, 2, 45, 19, 79, 68, 74, 92, 98, 90),
 (1, 'pc-munk', 'Munk', 'Half-Orc Vanguard Fighter', 512, 164, 218, 130, 15, 9, 3, 12, 6, 96, 94, 52, 74, 60, 82)
 ON DUPLICATE KEY UPDATE `total_damage_dealt`=VALUES(`total_damage_dealt`), `last_hits`=VALUES(`last_hits`);
+
+
+-- 9. World Atlas Maps (World -> Continent -> Region -> Settlement -> District -> Building)
+CREATE TABLE IF NOT EXISTS `lw_world_maps` (
+  `map_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `name` VARCHAR(160) NOT NULL,
+  `scope_level` ENUM('World','Continent','Region','Settlement','District','Building') NOT NULL DEFAULT 'World',
+  `parent_map_id` VARCHAR(64) NULL,
+  `parent_location_key` VARCHAR(64) NULL,
+  `image_url` VARCHAR(500) NOT NULL,
+  `linked_scene_key` VARCHAR(64) NULL,
+  `scale_label` VARCHAR(64) NOT NULL DEFAULT '0 — 100 — 200 Miles',
+  `compass_orientation` VARCHAR(64) NOT NULL DEFAULT 'Top-Right North',
+  `width_units` INT NOT NULL DEFAULT 1000,
+  `height_units` INT NOT NULL DEFAULT 600,
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  CONSTRAINT `fk_lw_world_maps_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 10. World Locations & Hierarchy
+CREATE TABLE IF NOT EXISTS `lw_world_locations` (
+  `location_key` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `composite_key` VARCHAR(160) NOT NULL,
+  `name` VARCHAR(160) NOT NULL,
+  `location_type` VARCHAR(64) NOT NULL,
+  `hierarchy_level` ENUM('World','Continent','Region','Settlement','District','Building') NOT NULL DEFAULT 'Settlement',
+  `parent_location_key` VARCHAR(64) NULL,
+  `map_id` VARCHAR(64) NULL,
+  `child_map_id` VARCHAR(64) NULL,
+  `linked_scene_key` VARCHAR(64) NULL,
+  `x_percent` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
+  `y_percent` DECIMAL(6,2) NOT NULL DEFAULT 50.00,
+  `discovery_status` ENUM('visited','known','rumor','undiscovered') NOT NULL DEFAULT 'known',
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  `artwork_url` VARCHAR(500) NOT NULL,
+  `description` TEXT NOT NULL,
+  `historical_background` TEXT NOT NULL,
+  `culture_and_traditions` TEXT NOT NULL,
+  `local_myths` TEXT NOT NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_lw_world_locations_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 11. Lore Library Articles (System-Agnostic Extensible Taxonomy)
+CREATE TABLE IF NOT EXISTS `lw_lore_entries` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `composite_key` VARCHAR(160) NOT NULL,
+  `title` VARCHAR(160) NOT NULL,
+  `subtitle` VARCHAR(200) NOT NULL DEFAULT '',
+  `category` VARCHAR(64) NOT NULL,
+  `excerpt` VARCHAR(500) NOT NULL,
+  `content` TEXT NOT NULL,
+  `artwork_url` VARCHAR(500) NOT NULL,
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  `archived` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_lw_lore_entries_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 12. World History Events (Fictional Era Dates vs Real Session Dates)
+CREATE TABLE IF NOT EXISTS `lw_world_history_events` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `campaign_id` BIGINT UNSIGNED NOT NULL,
+  `title` VARCHAR(160) NOT NULL,
+  `era_name` VARCHAR(128) NOT NULL,
+  `world_date_label` VARCHAR(128) NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 100,
+  `session_number` INT NULL,
+  `real_session_date_label` VARCHAR(64) NOT NULL DEFAULT '',
+  `category` VARCHAR(64) NOT NULL,
+  `summary` TEXT NOT NULL,
+  `location_key` VARCHAR(64) NULL,
+  `map_id` VARCHAR(64) NULL,
+  `visibility` ENUM('public','players','gm') NOT NULL DEFAULT 'players',
+  CONSTRAINT `fk_lw_world_history_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `lw_campaigns` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

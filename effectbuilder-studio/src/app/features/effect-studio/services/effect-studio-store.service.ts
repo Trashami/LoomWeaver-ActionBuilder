@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import {
   CampaignCharacterOptionVm, CampaignEffectAssignmentVm, CampaignSummaryVm,
   EffectAppearanceId, EffectAppearancePresetVm, EffectCameraPreset, EffectCompositePresetVm,
-  EffectEmitterCardVm, EffectGizmoToolId, EffectInGameTestResultVm,
-  EffectInspectorTabId, EffectLibrarySectionId, EffectMotionForceConfigVm, EffectRailToolId,
-  EffectStudioDocumentVm, EffectStudioMode, EffectTimelineTrackVm,
+  EffectEasingKind, EffectEmitterCardVm, EffectGizmoToolId, EffectInGameTestResultVm,
+  EffectInspectorTabId, EffectLibrarySectionId, EffectMotionForceConfigVm, EffectOpacityKeyframeVm,
+  EffectRailToolId, EffectStudioDocumentVm, EffectStudioMode, EffectTimelineTrackVm,
+  EffectViewDimensionMode,
 } from '../models/effect-studio.models';
 import {
   DEFAULT_MOTION_FORCES, DEFAULT_STUDIO_DOCUMENT, DEFAULT_TIMELINE_TRACKS,
@@ -36,10 +37,9 @@ export class EffectStudioStoreService {
 
   readonly authorizedCharacters = computed<readonly CampaignCharacterOptionVm[]>(() => {
     const campId = this.activeCampaignId();
-    const role = this.viewerRole();
     const forCamp = this.allCampaignCharacters().filter((c) => c.campaignId === campId);
     const list = forCamp.length > 0 ? forCamp : this.allCampaignCharacters();
-    if (role === 'gm') return list;
+    if (this.viewerRole() === 'gm') return list;
     const owned = list.filter((c) => c.roleScope === 'player');
     return owned.length > 0 ? [owned[0]] : list.slice(0, 1);
   });
@@ -55,6 +55,8 @@ export class EffectStudioStoreService {
   readonly statusLabel = signal<string>(DEFAULT_STUDIO_DOCUMENT.statusLabel);
 
   readonly activeMode = signal<EffectStudioMode>('design');
+  readonly navCollapsed = signal<boolean>(false);
+  readonly viewDimensionMode = signal<EffectViewDimensionMode>('3d');
   readonly activeRailTool = signal<EffectRailToolId>('emitters');
   readonly activeLibrarySection = signal<EffectLibrarySectionId>('effects');
   readonly activeInspectorTab = signal<EffectInspectorTabId>('properties');
@@ -71,7 +73,7 @@ export class EffectStudioStoreService {
   readonly activeProperties = signal<EffectEmitterCardVm>(DEFAULT_STUDIO_DOCUMENT.activeProperties);
   readonly motionAndForces = signal<EffectMotionForceConfigVm>(DEFAULT_MOTION_FORCES);
   readonly tracks = signal<readonly EffectTimelineTrackVm[]>(DEFAULT_TIMELINE_TRACKS);
-  readonly selectedTrackId = signal<string>('trk-light-beam');
+  readonly selectedTrackId = signal<string>('trk-cast-charge');
 
   readonly playheadSeconds = signal<number>(0.0);
   readonly totalDurationSeconds = signal<number>(5.0);
@@ -96,48 +98,38 @@ export class EffectStudioStoreService {
     const cat = this.libraryCategory();
     return this.emitters().filter((e) => {
       const catMatch = !cat || cat === 'All Categories' || e.category === cat;
-      const qMatch = !q || e.name.toLowerCase().includes(q) || e.category.toLowerCase().includes(q) || e.materialName.toLowerCase().includes(q) || e.emitterType.toLowerCase().includes(q);
+      const qMatch = !q || e.name.toLowerCase().includes(q) || e.category.toLowerCase().includes(q)
+        || e.materialName.toLowerCase().includes(q) || e.emitterType.toLowerCase().includes(q);
       return catMatch && qMatch;
     });
   });
 
-  constructor() {
-    this.loadStudioBootstrap(1);
-  }
+  constructor() { this.loadStudioBootstrap(1); }
 
   loadStudioBootstrap(campaignId = this.activeCampaignId()): void {
-    const role = this.viewerRole();
-    const user = this.viewerUsername();
-    this.http
-      .get<{
-        emitters?: readonly EffectEmitterCardVm[];
-        documents?: readonly EffectStudioDocumentVm[];
-        activeDocument?: EffectStudioDocumentVm;
-        campaigns?: readonly CampaignSummaryVm[];
-        characters?: readonly CampaignCharacterOptionVm[];
-        assignments?: readonly CampaignEffectAssignmentVm[];
-      }>(`/api/v2/effects/studio?campaignId=${campaignId}&viewerRole=${role}&username=${encodeURIComponent(user)}`)
-      .subscribe({
-        next: (res) => {
-          if (res?.emitters?.length && res.emitters.length >= 20) this.emitters.set(res.emitters);
-          if (res?.documents?.length) this.savedDocuments.set(res.documents);
-          if (res?.activeDocument) this.hydrateDocument(res.activeDocument, false);
-          if (res?.campaigns?.length) this.campaigns.set(res.campaigns);
-          if (res?.characters?.length) {
-            this.allCampaignCharacters.set(res.characters);
-            this.ensureValidCharacterSelection(res.characters);
-          }
-          if (res?.assignments) this.campaignAssignments.set(res.assignments);
-        },
-        error: () => {},
-      });
+    const url = `/api/v2/effects/studio?campaignId=${campaignId}&viewerRole=${this.viewerRole()}&username=${encodeURIComponent(this.viewerUsername())}`;
+    this.http.get<Record<string, unknown>>(url).subscribe({
+      next: (res: any) => {
+        if (res?.emitters?.length >= 20) this.emitters.set(res.emitters);
+        if (res?.documents?.length) this.savedDocuments.set(res.documents);
+        if (res?.activeDocument) this.hydrateDocument(res.activeDocument, false);
+        if (res?.campaigns?.length) this.campaigns.set(res.campaigns);
+        if (res?.characters?.length) { this.allCampaignCharacters.set(res.characters); this.ensureValidCharacterSelection(res.characters); }
+        if (res?.assignments) this.campaignAssignments.set(res.assignments);
+      },
+      error: () => {},
+    });
   }
 
   selectRailTool(tool: EffectRailToolId): void {
     this.activeRailTool.set(tool);
-    if (tool === 'emitters') this.activeLibrarySection.set('effects');
+    if (tool === 'emitters') { this.activeLibrarySection.set('effects'); this.libraryCategory.set('All Categories'); }
     else if (tool === 'materials') this.activeLibrarySection.set('appearances');
     else if (tool === 'presets') this.activeLibrarySection.set('presets');
+    else if (tool === 'forces') { this.activeLibrarySection.set('effects'); this.libraryCategory.set('Area & Zones'); }
+    else if (tool === 'lights') { this.activeLibrarySection.set('effects'); this.libraryCategory.set('Illumination & Marks'); }
+    else if (tool === 'models') { this.activeLibrarySection.set('effects'); this.libraryCategory.set('Projectiles & Flight'); }
+    else if (tool === 'sounds') { this.activeLibrarySection.set('effects'); this.libraryCategory.set('Audio & Atmosphere'); }
   }
 
   setCampaign(campaignId: number): void {
@@ -166,34 +158,43 @@ export class EffectStudioStoreService {
     }
   }
 
-  selectSpell(spellName: string): void {
-    this.selectedSpellName.set(spellName);
-  }
+  selectSpell(spellName: string): void { this.selectedSpellName.set(spellName); }
 
   selectEmitter(emitter: EffectEmitterCardVm): void {
     this.pushHistorySnapshot();
     this.activeEmitterId.set(emitter.id);
     this.activeProperties.set({ ...emitter });
     if (emitter.appearanceId) this.activeAppearanceId.set(emitter.appearanceId);
+    const selId = this.selectedTrackId();
+    this.tracks.update((list) =>
+      list.map((t) => (t.id === selId ? { ...t, trackType: emitter.emitterType, emitterId: emitter.id, colorHex: emitter.colorPrimaryHex, accentHex: emitter.colorSecondaryHex, appearanceId: emitter.appearanceId ?? t.appearanceId } : t)),
+    );
     this.statusLabel.set('Not Saved');
+  }
+
+  selectTrack(trackId: string): void {
+    this.selectedTrackId.set(trackId);
+    const trk = this.tracks().find((t) => t.id === trackId);
+    if (!trk) return;
+    const base = this.emitters().find((e) => e.id === trk.emitterId || e.emitterType === trk.trackType) ?? this.activeProperties();
+    this.activeEmitterId.set(base.id);
+    this.activeProperties.set({
+      ...base, emitterType: trk.trackType, appearanceId: trk.appearanceId ?? base.appearanceId,
+      colorPrimaryHex: trk.colorHex || base.colorPrimaryHex, colorSecondaryHex: trk.accentHex || base.colorSecondaryHex,
+      scale: trk.scale ?? base.scale ?? 1.0, count: trk.count ?? base.count ?? 3,
+      opacityPercent: trk.opacityPercent ?? base.opacityPercent, animationModifier: trk.animationModifier ?? base.animationModifier,
+    });
   }
 
   selectAppearance(app: EffectAppearancePresetVm): void {
     this.pushHistorySnapshot();
     this.activeAppearanceId.set(app.id);
     this.activeProperties.update((cur) => ({
-      ...cur,
-      appearanceId: app.id,
-      colorPrimaryHex: app.colorPrimaryHex,
-      colorSecondaryHex: app.colorSecondaryHex,
-      previewAccentHex: app.colorPrimaryHex,
-      materialName: app.materialName,
-      blendMode: app.blendMode,
+      ...cur, appearanceId: app.id, colorPrimaryHex: app.colorPrimaryHex, colorSecondaryHex: app.colorSecondaryHex,
+      previewAccentHex: app.colorPrimaryHex, materialName: app.materialName, blendMode: app.blendMode,
     }));
     const selId = this.selectedTrackId();
-    this.tracks.update((list) =>
-      list.map((t) => (t.id === selId ? { ...t, appearanceId: app.id, colorHex: app.colorPrimaryHex, accentHex: app.colorSecondaryHex } : t)),
-    );
+    this.tracks.update((list) => list.map((t) => (t.id === selId ? { ...t, appearanceId: app.id, colorHex: app.colorPrimaryHex, accentHex: app.colorSecondaryHex } : t)));
     this.statusLabel.set('Not Saved');
     this.showToast(`Applied '${app.name}' appearance palette.`);
   }
@@ -205,8 +206,7 @@ export class EffectStudioStoreService {
     this.effectSubtitle.set(`Expanded Preset · ${preset.tracks.length} Timeline Layers`);
     this.totalDurationSeconds.set(preset.totalDurationSeconds);
     this.tracks.set(preset.tracks.map((t) => ({ ...t })));
-    if (preset.tracks.length > 0) this.selectedTrackId.set(preset.tracks[0].id);
-
+    if (preset.tracks.length > 0) this.selectTrack(preset.tracks[0].id);
     const matchingBlock = this.emitters().find((e) => e.id === preset.baseEmitterId) ?? this.emitters()[0];
     const app = this.appearances().find((a) => a.id === preset.appearanceId);
     if (matchingBlock) {
@@ -239,6 +239,45 @@ export class EffectStudioStoreService {
     this.statusLabel.set('Not Saved');
   }
 
+  updateTrackTiming(event: { trackId: string; startTimeSeconds: number; endTimeSeconds: number }): void {
+    this.tracks.update((list) => list.map((t) => (t.id === event.trackId ? { ...t, startTimeSeconds: event.startTimeSeconds, endTimeSeconds: event.endTimeSeconds } : t)));
+    this.statusLabel.set('Not Saved');
+  }
+
+  updateTrackEasing(event: { trackId: string; easing: EffectEasingKind }): void {
+    this.pushHistorySnapshot();
+    this.tracks.update((list) => list.map((t) => (t.id === event.trackId ? { ...t, easing: event.easing } : t)));
+    this.statusLabel.set('Not Saved');
+  }
+
+  updateTrackOpacityKeyframes(event: { trackId: string; keyframes: readonly EffectOpacityKeyframeVm[] }): void {
+    this.tracks.update((list) => list.map((t) => (t.id === event.trackId ? { ...t, opacityKeyframes: [...event.keyframes] } : t)));
+    this.statusLabel.set('Not Saved');
+  }
+
+  reorderTrack(event: { trackId: string; direction: -1 | 1 }): void {
+    this.pushHistorySnapshot();
+    this.tracks.update((list) => {
+      const idx = list.findIndex((t) => t.id === event.trackId);
+      const nextIdx = idx + event.direction;
+      if (idx < 0 || nextIdx < 0 || nextIdx >= list.length) return list;
+      const copy = [...list];
+      const [moved] = copy.splice(idx, 1);
+      copy.splice(nextIdx, 0, moved);
+      return copy;
+    });
+    this.statusLabel.set('Not Saved');
+  }
+
+  removeTimelineLayer(trackId: string): void {
+    if (this.tracks().length <= 1) return;
+    this.pushHistorySnapshot();
+    this.tracks.update((list) => list.filter((t) => t.id !== trackId));
+    const remaining = this.tracks();
+    if (remaining.length > 0 && !remaining.some((t) => t.id === this.selectedTrackId())) this.selectTrack(remaining[0].id);
+    this.statusLabel.set('Not Saved');
+  }
+
   patchMotionForces(patch: Partial<EffectMotionForceConfigVm>): void {
     this.pushHistorySnapshot();
     this.motionAndForces.update((cur) => ({ ...cur, ...patch }));
@@ -257,35 +296,40 @@ export class EffectStudioStoreService {
 
   addTimelineLayer(): void {
     this.pushHistorySnapshot();
-    const current = this.activeProperties();
-    const idx = this.tracks().length + 1;
+    const cur = this.activeProperties();
     const newTrack: EffectTimelineTrackVm = {
       id: `trk-layer-${Date.now()}`,
-      label: `${current.name} Layer ${idx}`,
-      trackType: current.emitterType,
+      label: `${cur.name} Layer ${this.tracks().length + 1}`,
+      trackType: cur.emitterType,
       visible: true,
       expanded: false,
       startTimeSeconds: 0.2,
-      endTimeSeconds: Math.min(this.totalDurationSeconds(), 3.4),
-      colorHex: current.colorPrimaryHex,
-      accentHex: current.colorSecondaryHex,
-      emitterId: current.id,
+      endTimeSeconds: Math.min(this.totalDurationSeconds(), 3.0),
+      colorHex: cur.colorPrimaryHex,
+      accentHex: cur.colorSecondaryHex,
+      emitterId: cur.id,
       anchor: 'target',
-      appearanceId: current.appearanceId ?? this.activeAppearanceId(),
-      scale: current.scale ?? 1.0,
-      count: current.count ?? 1,
-      opacityPercent: current.opacityPercent,
+      appearanceId: cur.appearanceId ?? this.activeAppearanceId(),
+      scale: cur.scale ?? 1.0,
+      count: cur.count ?? 1,
+      opacityPercent: cur.opacityPercent,
       animationModifier: 'Fade / Pulse',
+      easing: 'ease-in-out',
+      opacityKeyframes: [
+        { time: 0, value: 0, easing: 'ease-out' },
+        { time: 0.2, value: 1, easing: 'ease-in-out' },
+        { time: 0.8, value: 1, easing: 'ease-in' },
+        { time: 1, value: 0, easing: 'linear' },
+      ],
     };
     this.tracks.update((list) => [...list, newTrack]);
-    this.selectedTrackId.set(newTrack.id);
+    this.selectTrack(newTrack.id);
     this.statusLabel.set('Not Saved');
   }
 
   duplicateSelectedLayer(): void {
     this.pushHistorySnapshot();
-    const selId = this.selectedTrackId();
-    const base = this.tracks().find((t) => t.id === selId) ?? this.tracks()[0];
+    const base = this.tracks().find((t) => t.id === this.selectedTrackId()) ?? this.tracks()[0];
     if (!base) return;
     const copy: EffectTimelineTrackVm = {
       ...base,
@@ -295,7 +339,7 @@ export class EffectStudioStoreService {
       endTimeSeconds: Math.min(this.totalDurationSeconds(), base.endTimeSeconds + 0.25),
     };
     this.tracks.update((list) => [...list, copy]);
-    this.selectedTrackId.set(copy.id);
+    this.selectTrack(copy.id);
     this.statusLabel.set('Not Saved');
   }
 
@@ -305,7 +349,6 @@ export class EffectStudioStoreService {
     if (!charObj) return;
     const spellName = this.selectedSpellName().trim() || 'Rune Vortex';
     this.isPushingToCampaign.set(true);
-
     const payload = {
       campaignId: campId,
       characterKey: charObj.characterKey,
@@ -317,7 +360,6 @@ export class EffectStudioStoreService {
       boundCharacter: this.viewerRole() === 'gm' ? 'GM' : charObj.name,
       effect: this.buildSavePayload(this.viewerRole()),
     };
-
     this.http
       .post<{ success?: boolean; message?: string; assignment?: CampaignEffectAssignmentVm; savedEffect?: EffectStudioDocumentVm }>(
         `/api/v2/effects/campaigns/${campId}/push`,
@@ -346,20 +388,18 @@ export class EffectStudioStoreService {
 
   undo(): void {
     const stack = this.undoStack();
-    if (stack.length === 0) return;
-    const prev = stack[0];
+    if (!stack.length) return;
     this.redoStack.update((r) => [this.captureCurrentSnapshot(), ...r.slice(0, 19)]);
     this.undoStack.set(stack.slice(1));
-    this.applySnapshot(prev);
+    this.applySnapshot(stack[0]);
   }
 
   redo(): void {
     const stack = this.redoStack();
-    if (stack.length === 0) return;
-    const next = stack[0];
+    if (!stack.length) return;
     this.undoStack.update((u) => [this.captureCurrentSnapshot(), ...u.slice(0, 19)]);
     this.redoStack.set(stack.slice(1));
-    this.applySnapshot(next);
+    this.applySnapshot(stack[0]);
   }
 
   saveEffectDocument(viewerRole: 'gm' | 'players' = this.viewerRole()): void {
@@ -377,13 +417,7 @@ export class EffectStudioStoreService {
   }
 
   exportEffectJson(): void {
-    const doc = {
-      bundleFormat: 'loomweaver.effect-studio.v2',
-      version: '2.0.0',
-      campaignId: this.activeCampaignId(),
-      exportedAt: new Date().toISOString(),
-      effect: this.buildSavePayload(this.viewerRole()),
-    };
+    const doc = { bundleFormat: 'loomweaver.effect-studio.v2', version: '2.0.0', campaignId: this.activeCampaignId(), exportedAt: new Date().toISOString(), effect: this.buildSavePayload(this.viewerRole()) };
     try {
       const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -394,9 +428,7 @@ export class EffectStudioStoreService {
       a.click();
       URL.revokeObjectURL(url);
       this.showToast(`Exported ${slug}.lwfx.json`);
-    } catch {
-      this.showToast('Prepared effect JSON bundle for export.');
-    }
+    } catch { this.showToast('Prepared effect JSON bundle for export.'); }
   }
 
   runInGameTest(): void {
@@ -424,17 +456,9 @@ export class EffectStudioStoreService {
 
   private buildSavePayload(viewerRole: 'gm' | 'players') {
     return {
-      id: this.effectId(),
-      campaignId: this.activeCampaignId(),
-      name: this.effectName(),
-      subtitle: this.effectSubtitle(),
-      activeCameraPreset: this.activeCameraPreset(),
-      totalDurationSeconds: this.totalDurationSeconds(),
-      activeEmitterId: this.activeEmitterId(),
-      activeProperties: this.activeProperties(),
-      motionAndForces: this.motionAndForces(),
-      tracks: this.tracks(),
-      viewerRole,
+      id: this.effectId(), campaignId: this.activeCampaignId(), name: this.effectName(), subtitle: this.effectSubtitle(),
+      activeCameraPreset: this.activeCameraPreset(), totalDurationSeconds: this.totalDurationSeconds(), activeEmitterId: this.activeEmitterId(),
+      activeProperties: this.activeProperties(), motionAndForces: this.motionAndForces(), tracks: this.tracks(), viewerRole,
     };
   }
 
@@ -442,48 +466,21 @@ export class EffectStudioStoreService {
     if (!chars.length) return;
     const current = chars.find((c) => c.characterKey === this.selectedCharacterKey()) ?? chars[0];
     this.selectedCharacterKey.set(current.characterKey);
-    if (current.knownSpells.length > 0 && !current.knownSpells.includes(this.selectedSpellName())) {
-      this.selectedSpellName.set(current.knownSpells[0]);
-    }
+    if (current.knownSpells.length > 0 && !current.knownSpells.includes(this.selectedSpellName())) this.selectedSpellName.set(current.knownSpells[0]);
   }
 
   private hydrateDocument(doc: EffectStudioDocumentVm, recordUndo: boolean): void {
     if (recordUndo) this.pushHistorySnapshot();
-    this.effectId.set(doc.id);
-    this.effectName.set(doc.name);
-    this.effectSubtitle.set(doc.subtitle);
-    this.statusLabel.set(doc.statusLabel);
-    this.activeCameraPreset.set(doc.activeCameraPreset);
-    this.totalDurationSeconds.set(doc.totalDurationSeconds);
-    this.activeEmitterId.set(doc.activeEmitterId);
-    this.activeProperties.set(doc.activeProperties);
-    this.motionAndForces.set(doc.motionAndForces);
-    this.tracks.set(doc.tracks);
+    this.effectId.set(doc.id); this.effectName.set(doc.name); this.effectSubtitle.set(doc.subtitle); this.statusLabel.set(doc.statusLabel);
+    this.activeCameraPreset.set(doc.activeCameraPreset); this.totalDurationSeconds.set(doc.totalDurationSeconds);
+    this.activeEmitterId.set(doc.activeEmitterId); this.activeProperties.set(doc.activeProperties);
+    this.motionAndForces.set(doc.motionAndForces); this.tracks.set(doc.tracks);
   }
 
   private captureCurrentSnapshot(): StudioSnapshot {
-    return {
-      name: this.effectName(),
-      activeEmitterId: this.activeEmitterId(),
-      activeProperties: { ...this.activeProperties() },
-      motionAndForces: { ...this.motionAndForces() },
-      tracks: this.tracks().map((t) => ({ ...t })),
-    };
+    return { name: this.effectName(), activeEmitterId: this.activeEmitterId(), activeProperties: { ...this.activeProperties() }, motionAndForces: { ...this.motionAndForces() }, tracks: this.tracks().map((t) => ({ ...t })) };
   }
-  private pushHistorySnapshot(): void {
-    const snap = this.captureCurrentSnapshot();
-    this.undoStack.update((u) => [snap, ...u.slice(0, 19)]);
-    this.redoStack.set([]);
-  }
-  private applySnapshot(snap: StudioSnapshot): void {
-    this.effectName.set(snap.name);
-    this.activeEmitterId.set(snap.activeEmitterId);
-    this.activeProperties.set(snap.activeProperties);
-    this.motionAndForces.set(snap.motionAndForces);
-    this.tracks.set(snap.tracks);
-  }
-  private showToast(msg: string): void {
-    this.toastBanner.set(msg);
-    setTimeout(() => { if (this.toastBanner() === msg) this.toastBanner.set(''); }, 4500);
-  }
+  private pushHistorySnapshot(): void { this.undoStack.update((u) => [this.captureCurrentSnapshot(), ...u.slice(0, 19)]); this.redoStack.set([]); }
+  private applySnapshot(snap: StudioSnapshot): void { this.effectName.set(snap.name); this.activeEmitterId.set(snap.activeEmitterId); this.activeProperties.set(snap.activeProperties); this.motionAndForces.set(snap.motionAndForces); this.tracks.set(snap.tracks); }
+  private showToast(msg: string): void { this.toastBanner.set(msg); setTimeout(() => { if (this.toastBanner() === msg) this.toastBanner.set(''); }, 4500); }
 }

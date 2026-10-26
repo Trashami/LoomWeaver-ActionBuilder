@@ -22,8 +22,11 @@ import {
 
 export interface DungeonEnvironmentNodes {
   readonly root: TransformNode;
+  readonly hemiLight: HemisphericLight;
   readonly floorMesh: Mesh;
+  readonly floorMaterial: StandardMaterial;
   readonly gridOverlayMesh: Mesh;
+  readonly wallMeshes: readonly Mesh[];
   readonly torchLights: readonly PointLight[];
   readonly shadowGenerators: readonly ShadowGenerator[];
   readonly casterToken: StudioTokenMiniatureInstance;
@@ -152,6 +155,7 @@ export class DungeonEnvironmentBuilder {
     capstoneMat.maxSimultaneousLights = 10;
 
     // North-West & North-East Isometric Back Walls
+    const wallMeshes: Mesh[] = [];
     const backWallLeft = MeshBuilder.CreateBox(
       'wall-back-left',
       { width: 0.9, height: 4.8, depth: BOARD_CELLS + 0.6 },
@@ -161,6 +165,7 @@ export class DungeonEnvironmentBuilder {
     backWallLeft.material = wallMat;
     backWallLeft.receiveShadows = true;
     backWallLeft.parent = root;
+    wallMeshes.push(backWallLeft);
 
     const backWallRight = MeshBuilder.CreateBox(
       'wall-back-right',
@@ -171,6 +176,7 @@ export class DungeonEnvironmentBuilder {
     backWallRight.material = wallMat;
     backWallRight.receiveShadows = true;
     backWallRight.parent = root;
+    wallMeshes.push(backWallRight);
 
     // Heavy Stone Buttress Pillars along both back walls
     const pillarCoords: [number, number][] = [
@@ -193,6 +199,7 @@ export class DungeonEnvironmentBuilder {
       col.material = capstoneMat;
       col.receiveShadows = true;
       col.parent = root;
+      wallMeshes.push(col);
     });
 
     // Bottom-Left Foreground Cutaway Stone Parapet Wall (matches bottom-left corner of Image 2!)
@@ -207,6 +214,7 @@ export class DungeonEnvironmentBuilder {
       block.material = wallMat;
       block.receiveShadows = true;
       block.parent = root;
+      wallMeshes.push(block);
     }
 
     // 5. Flickering Wall Torches / Braziers with ParticleSystem Flames & ShadowGenerators
@@ -232,6 +240,7 @@ export class DungeonEnvironmentBuilder {
       sconce.position.set(spec.pos.x, spec.pos.y - 0.32, spec.pos.z);
       sconce.material = ironMat;
       sconce.parent = root;
+      wallMeshes.push(sconce);
 
       const firePs = new ParticleSystem(`torch-fire-ps-${idx}`, 90, scene);
       firePs.particleTexture = atlas.glowTex;
@@ -279,8 +288,11 @@ export class DungeonEnvironmentBuilder {
 
     return {
       root,
+      hemiLight: hemi,
       floorMesh,
+      floorMaterial: floorMat,
       gridOverlayMesh,
+      wallMeshes,
       torchLights,
       shadowGenerators,
       casterToken: caster,
