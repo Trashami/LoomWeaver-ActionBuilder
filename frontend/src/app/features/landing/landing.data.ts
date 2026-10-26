@@ -20,6 +20,7 @@ export interface PillarFeatureCardVm {
   readonly bullets: readonly string[];
   readonly route: string;
   readonly seoSlug: string;
+  readonly seoPath: string;
 }
 
 export interface StudioEngineShowcaseVm {
@@ -77,6 +78,7 @@ export const LANDING_PRIMARY_PILLARS: readonly PillarFeatureCardVm[] = [
     ],
     route: '/loom',
     seoSlug: 'campaign-memory',
+    seoPath: '/ai-campaign-assistant',
   },
   {
     id: 'weave',
@@ -93,6 +95,7 @@ export const LANDING_PRIMARY_PILLARS: readonly PillarFeatureCardVm[] = [
     ],
     route: '/weave',
     seoSlug: 'worldbuilding-ai',
+    seoPath: '/campaign-manager',
   },
   {
     id: 'arcane-screen',
@@ -108,6 +111,7 @@ export const LANDING_PRIMARY_PILLARS: readonly PillarFeatureCardVm[] = [
     ],
     route: '/arcane-screen',
     seoSlug: 'virtual-tabletop',
+    seoPath: '/vtt',
   },
   {
     id: 'maps-scenes',
@@ -123,6 +127,7 @@ export const LANDING_PRIMARY_PILLARS: readonly PillarFeatureCardVm[] = [
     ],
     route: '/maps',
     seoSlug: 'world-atlas-quests',
+    seoPath: '/battlemap-builder',
   },
 ];
 

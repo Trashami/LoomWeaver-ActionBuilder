@@ -5,26 +5,61 @@ export const APP_ROUTES: Routes = [
   {
     path: '',
     pathMatch: 'full',
+    data: { seoPage: 'home' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'vtt',
+    data: { seoPage: 'vtt' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'campaign-manager',
+    data: { seoPage: 'campaign-manager' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'battlemap-builder',
+    data: { seoPage: 'battlemap-builder' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'ai-campaign-assistant',
+    data: { seoPage: 'ai-campaign-assistant' },
+    loadComponent: () =>
+      import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
+  },
+  {
+    path: 'features',
+    data: { seoPage: 'features' },
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
   {
     path: 'welcome',
+    data: { seoPage: 'home' },
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
   {
     path: 'marketing',
+    data: { seoPage: 'home' },
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
   {
     path: 'login',
+    data: { seoPage: 'home' },
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
   {
     path: 'register',
+    data: { seoPage: 'home' },
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },

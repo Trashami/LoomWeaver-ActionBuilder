@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,6 +24,7 @@ import {
   LANDING_SESSION_INTEL_ITEMS,
   LANDING_STUDIO_ENGINES,
 } from './landing.data';
+import { SEO_LANDING_PAGES, SeoLandingPageConfig } from './landing-seo-pages.data';
 
 @Component({
   selector: 'lw-landing-page',
@@ -38,6 +40,7 @@ export class LandingPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly titleSvc = inject(Title);
   private readonly metaSvc = inject(Meta);
+  private readonly doc = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly assets = LANDING_ASSET_PATHS;
@@ -46,6 +49,20 @@ export class LandingPageComponent implements OnInit {
   readonly activeIntelId = signal<string>('cult-presence');
   readonly activeExperienceMode = signal<'memory' | 'vtt' | 'guides' | 'dice'>('vtt');
   readonly openFaqId = signal<string>('faq-what-is-loomweaver-vtt');
+  readonly activeSeoPageSlug = signal<string>('home');
+
+  readonly seoPageTabs: readonly SeoLandingPageConfig[] = [
+    SEO_LANDING_PAGES['home'],
+    SEO_LANDING_PAGES['vtt'],
+    SEO_LANDING_PAGES['campaign-manager'],
+    SEO_LANDING_PAGES['battlemap-builder'],
+    SEO_LANDING_PAGES['ai-campaign-assistant'],
+    SEO_LANDING_PAGES['features'],
+  ];
+
+  readonly activeSeoPage = computed<SeoLandingPageConfig>(
+    () => SEO_LANDING_PAGES[this.activeSeoPageSlug()] ?? SEO_LANDING_PAGES['home'],
+  );
 
   readonly scrollY = signal<number>(0);
   readonly parallaxEnabled = signal<boolean>(true);
@@ -77,17 +94,16 @@ export class LandingPageComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.titleSvc.setTitle(
-      'LoomWeaver (Loom-Weaver) — 2.5D Virtual Tabletop (VTT), Living Campaign Memory & TTRPG Studio',
-    );
-    this.metaSvc.updateTag({
-      name: 'description',
-      content:
-        'LoomWeaver (loom-weaver.com) is the unified 2.5D Virtual Tabletop (VTT) and TTRPG campaign manager for D&D 5e and custom worlds. Free living campaign memory (The Loom), optional GM-authored worldbuilding (The Weave), LoomMaps cartography, and 100% free player seats.',
-    });
-
     this.initScrollAndParallaxListener();
 
+    const sub = this.route.url.subscribe(() => {
+      this.syncRouteAndSeoState();
+    });
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
+    this.syncRouteAndSeoState();
+  }
+
+  private syncRouteAndSeoState(): void {
     const currentPath = this.router.url.split('?')[0];
     const queryAuth = this.route.snapshot.queryParamMap.get('auth');
     const returnUrl =
@@ -105,10 +121,57 @@ export class LandingPageComponent implements OnInit {
       this.auth.openAuthModal('register', returnUrl);
     }
 
-    const slug = this.route.snapshot.paramMap.get('slug');
-    if (slug) {
-      this.applyFeatureSeo(slug);
+    const routeDataSeo = this.route.snapshot.data['seoPage'] as string | undefined;
+    const legacySlug = this.route.snapshot.paramMap.get('slug');
+    const resolvedKey = this.resolveSeoKey(routeDataSeo, legacySlug, currentPath);
+    this.activeSeoPageSlug.set(resolvedKey);
+
+    const cfg = SEO_LANDING_PAGES[resolvedKey] ?? SEO_LANDING_PAGES['home'];
+    this.titleSvc.setTitle(cfg.title);
+    this.metaSvc.updateTag({ name: 'description', content: cfg.description });
+    this.metaSvc.updateTag({ property: 'og:title', content: cfg.title });
+    this.metaSvc.updateTag({ property: 'og:description', content: cfg.description });
+    this.metaSvc.updateTag({ property: 'og:url', content: cfg.canonical });
+    this.metaSvc.updateTag({ name: 'twitter:title', content: cfg.title });
+    this.metaSvc.updateTag({ name: 'twitter:description', content: cfg.description });
+    this.updateCanonicalLink(cfg.canonical);
+  }
+
+  private resolveSeoKey(
+    routeDataSeo: string | undefined,
+    legacySlug: string | null,
+    currentPath: string,
+  ): string {
+    if (routeDataSeo && SEO_LANDING_PAGES[routeDataSeo]) {
+      return routeDataSeo;
     }
+    const cleanPath = currentPath.replace(/^\/+/, '');
+    if (SEO_LANDING_PAGES[cleanPath]) {
+      return cleanPath;
+    }
+    const slugMap: Record<string, string> = {
+      'virtual-tabletop': 'vtt',
+      'campaign-memory': 'ai-campaign-assistant',
+      'worldbuilding-ai': 'campaign-manager',
+      'world-atlas-quests': 'battlemap-builder',
+      'creator-marketplace': 'features',
+    };
+    if (legacySlug && slugMap[legacySlug]) {
+      return slugMap[legacySlug];
+    }
+    return 'home';
+  }
+
+  private updateCanonicalLink(url: string): void {
+    try {
+      let link = this.doc.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (!link) {
+        link = this.doc.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        this.doc.head.appendChild(link);
+      }
+      link.setAttribute('href', url);
+    } catch {}
   }
 
   private initScrollAndParallaxListener(): void {
@@ -130,7 +193,10 @@ export class LandingPageComponent implements OnInit {
     this.destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
   }
 
-  openAuth(mode: 'login' | 'register', targetRoute?: string): void {
+  openAuth(mode: 'login' | 'register', targetRoute?: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
     this.mobileMenuOpen.set(false);
     const dest = targetRoute || resolveDefaultStudioRouteForHost();
     if (this.auth.isAuthenticated()) {
@@ -167,35 +233,5 @@ export class LandingPageComponent implements OnInit {
 
   toggleFaq(id: string): void {
     this.openFaqId.update((curr) => (curr === id ? '' : id));
-  }
-
-  private applyFeatureSeo(slug: string): void {
-    const seoMap: Record<string, { title: string; desc: string }> = {
-      'campaign-memory': {
-        title: 'The Loom — Free TTRPG Campaign Memory & Lore Search | LoomWeaver VTT',
-        desc: 'Search your D&D 5e campaign notes, session recaps, and NPC dossiers in natural language with zero hallucination and per-player secret isolation on LoomWeaver.',
-      },
-      'worldbuilding-ai': {
-        title: 'The Weave — GM-Authored Worldbuilding & Lore Graph | LoomWeaver',
-        desc: 'Draft context-aware NPCs, monsters, quests, and battlemaps grounded in your Neo4j campaign graph with 100% Game Master review control.',
-      },
-      'virtual-tabletop': {
-        title: 'LoomWeaver VTT — 2.5D Virtual Tabletop, Lighting, Action Economy & 3D Dice',
-        desc: 'Run tactical tabletop RPG combat on the LoomWeaver 2.5D Virtual Tabletop (VTT) with gradual lighting, line-of-sight fog of war, 3D physics dice, and automated XP.',
-      },
-      'world-atlas-quests': {
-        title: 'LoomMaps — VTT Battlemap Maker, Cutaway Walls & World Atlas | LoomWeaver',
-        desc: 'Build interactive regional maps and multi-layer tactical VTT battlemaps with cutaway walls, spline ribbons, party travel markers, and POI secrets.',
-      },
-      'creator-marketplace': {
-        title: 'TTRPG & VTT Creator Marketplace — 85/15 Revenue Split | LoomWeaver',
-        desc: 'Publish and monetize custom campaigns, adventure modules, and VTT battlemaps with a creator-first 85/15 revenue split and one-click GM imports.',
-      },
-    };
-    const found = seoMap[slug];
-    if (found) {
-      this.titleSvc.setTitle(found.title);
-      this.metaSvc.updateTag({ name: 'description', content: found.desc });
-    }
   }
 }

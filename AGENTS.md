@@ -1,26 +1,24 @@
-# LoomWeaver V2 — Canonical AI Implementation Rules
+# LoomWeaver V2 — Agent Architecture, SEO & Brand Authority Rules
 
-## 1. Core Architectural Boundaries
-- **Polyglot Persistence under `loomweaver` (never `jane`)**:
-  - **MySQL 8.0 (`loomweaver` schema)**: Authoritative system of record for normalized relational data (`lw_users`, `lw_subscription_tiers`, `lw_campaigns`, `lw_campaign_members`, `lw_acts`, `lw_sessions`, `lw_characters`, `lw_npcs`, `lw_creatures`, `lw_locations`, `lw_factions`, `lw_quests`, `lw_encounters`, `lw_scenes`, `lw_assets`, `lw_marketplace_listings`, `lw_domain_events`, `lw_outbox_messages`).
-  - **Neo4j 5.x (`loomweaver` graph)**: Semantic knowledge graph and story memory (`:Entity:Campaign`, `:World`, `:Location`, `:PlayerCharacter`, `:NPC`, `:Monster`, `:Faction`, `:Quest`, `:Artifact`, `:Encounter`, `:Session`, `:Event`, `:Secret`, `:Clue`, `:Party`, `:Claim`, `:SourceRecord`). Bridged via composite key `{campaignId}:{entityType}:{entityId}`.
-- **Client vs. Server Ownership**:
-  - **Angular + Babylon.js (`frontend/`)**: Owns presentation, reusable standalone components (`lw-*`), editor state/commands, and 2D/3D rendering.
-  - **.NET 10 (`backend/`)**: Owns authorization, role filtering (`gm` vs. `players` vs. `public`), rule evaluation, dice outcomes, transactional outbox, and GraphRAG retrieval.
-  - **Zero Secret Leakage**: Never send `visibility = 'gm'` secrets, unrevealed clues, or locked asset binaries to player-scoped DTOs, graph queries, or The Loom citations.
+## 1. SEO & Brand Authority Strategy (Outranking `loomweaver.app`)
+- **Preferred Brand Name**: `LoomWeaver`
+- **Brand Tagline**: `LoomWeaver — Your Campaign. One Living World.`
+- **Alternate Search Names**: `LoomWeaver TTRPG`, `LoomWeaver VTT`, `Loom-Weaver`, `Loom Weaver`
+- **Homepage Metadata (`/`)**:
+  - `<title>LoomWeaver | VTT & TTRPG Campaign Manager</title>`
+  - `<meta name="description" content="Build living tabletop RPG worlds with LoomWeaver. Create maps, run encounters, manage characters and campaigns, and play with an integrated virtual tabletop.">`
+- **Dedicated Public Pre-Rendered Landing Routes**:
+  - `/` -> Target: `LoomWeaver` (`H1: Your Campaign. One Living World.`)
+  - `/vtt` -> Target: `LoomWeaver VTT` (`Title: LoomWeaver VTT | 2D & 3D Virtual Tabletop`, `H1: Your World. Your Table. One Living Adventure.`, `Description: Explore LoomWeaver VTT, an integrated virtual tabletop for tabletop RPGs. Run encounters, roll 3D dice, manage combat, and connect gameplay to your living campaign.`)
+  - `/campaign-manager` -> Target: `LoomWeaver campaign manager` (`Title: LoomWeaver Campaign Manager | TTRPG Worldbuilding & Lore Graph`, `H1: Your Campaign. Connected in One Living World.`)
+  - `/battlemap-builder` -> Target: `LoomWeaver battlemap builder` (`Title: LoomWeaver Battlemap Builder | 2D & 3D RPG Map Maker`, `H1: Craft Tactical Battlemaps & Living World Atlases.`)
+  - `/ai-campaign-assistant` -> Target: `The Loom AI assistant` (`Title: The Loom | Free TTRPG Campaign Memory & Lore Assistant | LoomWeaver`, `H1: The Loom — Campaign Memory That Never Invents Canon.`)
+  - `/features` -> Target: `LoomWeaver features` (`Title: LoomWeaver Features | Integrated VTT, Maps, Lore Graph & 3D Dice`, `H1: Every Tool Your Tabletop Campaign Needs in One Studio.`)
+- **Pre-Rendering Requirement**:
+  - Always run `python scripts/prerender_ssr_routes.py` after `npm run build` so every public route (`/`, `/vtt`, `/campaign-manager`, `/battlemap-builder`, `/ai-campaign-assistant`, `/features`, `/login`, `/register`) has its own static `index.html` with unique `<title>`, `<meta name="description">`, `<link rel="canonical">`, and route-specific `<h1>` and spotlight HTML before JavaScript executes.
+- **Visual Identity**:
+  - Never alter the Raven & Emerald-Green (`#05100c`, `#49e892`, `#2ee66b`) + Gold (`#d9b77a`) dark-fantasy visual design.
 
-## 2. Reusable Component Contract ("Configure, Never Fork")
-- Read `docs/architecture/component-system.md`, `docs/architecture/component-catalog-and-instances.md`, and `docs/standards/reusable-angular-components.md`.
-- Every repeatable UI widget (`lw-button`, `lw-badge`, `lw-panel`, `lw-empty-state`, `lw-asset-card`, `lw-entity-card`, `lw-stat-radar`, `lw-inspector-drawer`, `lw-loom-launcher`) is implemented once as a standalone Angular component with separate `.ts`, `.html`, and `.scss` files.
-- Route pages only compose and bind typed `input()` / `output()` contracts. Route pages must never duplicate child markup or override child internals via `::ng-deep` or descendant selectors.
-- **Strict Zero-Emoji Policy**: Never use unicode emoji characters anywhere in templates, UI labels, or logs. Render all icons exclusively through `<lw-icon [name]="..." />`.
-- **Official Brand Logo**: Always use `/LoomWeaver.png` for the LoomWeaver brand mark in the global shell and landing headers.
-
-## 3. Product Promises
-- **The Loom (Living Campaign Memory)**: Globally available from the persistent header on every route, even when The Weave is toggled off. Searches and synthesizes established canon with clickable deep-link citations; never invents lore.
-- **The Weave (Optional Creative AI & Graph Companion)**: Independently toggleable per campaign/user. Every generation is a draft (`canonStatus: 'draft'`) requiring explicit GM approval before entering canon.
-- **Subscription Tiers & Marketplace**: Spark Free ($0), Threadkeeper ($6/mo), Weaver ($12/mo), Archweaver ($24/mo), plus 85/15 creator revenue split. Players always join a GM's table for free.
-
-## 4. Source File Size & Verification Rules
-- Target **100–300 lines** per hand-written file; **500 lines** is the maximum ceiling.
-- Always run `python scripts/check_source_limits.py`, `dotnet build`, and `npm run build` before completing a slice.
+## 2. File Length & Icon Rules
+- Every hand-written source file must stay under 500 lines (`python scripts/check_source_limits.py`).
+- Zero raw unicode emojis anywhere in templates, TypeScript, CSS, or backend responses. Always use `<lw-icon name="...">`.
