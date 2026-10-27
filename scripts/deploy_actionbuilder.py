@@ -119,11 +119,13 @@ echo "4. Updating nginx for actionbuilder.loom-weaver.com..."
 cat << 'EOF' > /etc/nginx/sites-available/actionbuilder-loom-weaver
 server {
     listen 80;
+    listen [::]:80;
     server_name actionbuilder.loom-weaver.com;
     return 301 https://$host$request_uri;
 }
 server {
-    listen 443 ssl;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
     server_name actionbuilder.loom-weaver.com;
     ssl_certificate /etc/ssl/certs/loom-weaver.pem;
     ssl_certificate_key /etc/ssl/private/loom-weaver.key;
@@ -148,8 +150,21 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-    location / { try_files $uri $uri/ /index.html; }
-    location = /index.html { add_header Cache-Control "no-cache, no-store, must-revalidate" always; }
+    location = / {
+        add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0" always;
+        try_files /index.html =404;
+    }
+    location = /home {
+        add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0" always;
+        try_files /index.html =404;
+    }
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0" always;
+    }
+    location / {
+        add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0" always;
+        try_files $uri $uri/ /index.html;
+    }
 }
 EOF
 

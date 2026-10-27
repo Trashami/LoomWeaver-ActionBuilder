@@ -75,7 +75,7 @@ ln -sfn /var/www/shared-uploads /var/www/loomweaver/assets/uploads
 ln -sfn /var/www/jane-assets/5etools /var/www/loomweaver/assets/5etools
 
 echo "3. Cleaning previous LoomWeaver app files..."
-rm -rf /var/www/actionbuilder /var/www/vtt3d /var/www/generator /var/www/loommaps /var/www/loom-weaver /var/www/mythweaver
+rm -rf /var/www/vtt3d /var/www/generator /var/www/loommaps /var/www/loom-weaver /var/www/mythweaver
 rm -rf /var/www/loomweaver/client/* /var/www/loomweaver/server/*
 
 echo "4. Extracting new LoomWeaver V2 client and server..."
@@ -87,10 +87,10 @@ ln -sfn /var/www/loomweaver/assets /var/www/loomweaver/map-assets
 echo "5. Linking domain roots to /var/www/loomweaver..."
 ln -sfn /var/www/loomweaver /var/www/loom-weaver
 ln -sfn /var/www/loomweaver /var/www/mythweaver
-mkdir -p /var/www/loommaps /var/www/vtt3d/current /var/www/actionbuilder/current /var/www/generator/current
+mkdir -p /var/www/loommaps /var/www/vtt3d/current /var/www/generator/current
 ln -sfn /var/www/loomweaver/client /var/www/loommaps/client
 ln -sfn /var/www/loomweaver/client /var/www/vtt3d/current/client
-ln -sfn /var/www/loomweaver/client /var/www/actionbuilder/current/client
+ln -sfn /var/www/loomweaver/client/client
 ln -sfn /var/www/loomweaver/client /var/www/generator/current/client
 
 chown -R iamtrash:www-data /var/www/loomweaver
@@ -373,7 +373,7 @@ with open("/etc/nginx/sites-available/loomweaver-geo-gamers", "w", encoding="utf
 subdomain_routes = [
     ("/etc/nginx/sites-available/maps-loom-weaver", "/battlemap-builder/index.html"),
     ("/etc/nginx/sites-available/vtt-loom-weaver", "/vtt/index.html"),
-    ("/etc/nginx/sites-available/actionbuilder-loom-weaver", "/encounter-builder/index.html"),
+    ("/etc/nginx/sites-available/actionbuilder-loom-weaver-disabled", "/encounter-builder/index.html"),
     ("/etc/nginx/sites-available/3dassets-loom-weaver", "/3d-assets/index.html"),
     ("/etc/nginx/sites-available/generator-loom-weaver", "/3d-assets/index.html"),
 ]

@@ -65,6 +65,9 @@ export class ActionStudioAppComponent implements OnInit {
     let initialCampaignId: number | null = null;
     let initialAccount: string | null = null;
     if (typeof window !== 'undefined') {
+      if (window.location.pathname && window.location.pathname !== '/') {
+        window.history.replaceState({}, '', '/' + window.location.search);
+      }
       const params = new URLSearchParams(window.location.search);
       const cidParam = params.get('campaignId');
       if (cidParam && !Number.isNaN(Number(cidParam))) {
