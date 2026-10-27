@@ -40,8 +40,8 @@ export class SpellPickerComponent {
     const search=this.query(),offset=this.offset();this.retry();this.loading.set(true);this.error.set('');
     let subscription:Subscription|undefined;
     const timer=setTimeout(()=>{
-      subscription=this.http.get<SpellPage>('/api/spells',{params:{search,offset,limit:this.pageSize}}).subscribe({
-        next:page=>{this.items.set(page.items);this.total.set(page.total);this.loading.set(false);},
+      subscription=this.http.get<any>('/api/spells',{params:{search,offset,limit:this.pageSize}}).subscribe({
+        next:page=>{const list=Array.isArray(page)?page:Array.isArray(page?.items)?page.items:Array.isArray(page?.spells)?page.spells:[];this.items.set(list);this.total.set(typeof page?.total==='number'?page.total:list.length);this.loading.set(false);},
         error:()=>{this.items.set([]);this.total.set(0);this.loading.set(false);this.error.set('Could not load the spell catalog. Retry to continue.');}
       });
     },200);
