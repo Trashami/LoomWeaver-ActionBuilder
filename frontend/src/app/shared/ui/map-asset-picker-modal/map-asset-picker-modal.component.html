@@ -1,0 +1,226 @@
+@if (open()) {
+  <div
+    class="lw-asset-modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="title()"
+    (click)="closed.emit()"
+  >
+    <div class="lw-asset-modal" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <header class="lw-asset-modal__header">
+        <div class="lw-asset-modal__title-wrap">
+          <span class="lw-asset-modal__eyebrow">LoomMaps Asset Catalog &amp; Metadata Browser</span>
+          <h2 class="lw-asset-modal__title">{{ title() }}</h2>
+        </div>
+
+        <div class="lw-asset-modal__header-actions">
+          <label class="lw-asset-modal__upload-btn" title="Upload a new .glb 3D model">
+            <lw-icon name="upload" />
+            <span>Upload 3D .GLB</span>
+            <input type="file" accept=".glb" hidden (change)="onFileSelected($event)" />
+          </label>
+          <button
+            type="button"
+            ngpButton
+            class="lw-asset-modal__close-btn"
+            (click)="closed.emit()"
+          >
+            <lw-icon name="close" />
+            <span>Close (ESC)</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Metadata Filter Toolbar -->
+      <section class="lw-asset-modal__filters">
+        <div class="lw-asset-modal__search-row">
+          <div class="lw-asset-modal__search-box">
+            <lw-icon name="search" />
+            <input
+              type="search"
+              placeholder="Search by asset name, material, biome, or metadata tag..."
+              [value]="searchQuery()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
+
+          <div class="lw-asset-modal__meta-group">
+            <span class="lw-asset-modal__meta-label">Asset Type:</span>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="formatFilter() === 'all'"
+              (click)="selectFormatFilter('all')"
+            >
+              All ({{ assets().length }})
+            </button>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="formatFilter() === '3d-glb'"
+              (click)="selectFormatFilter('3d-glb')"
+            >
+              3D Models (.GLB)
+            </button>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="formatFilter() === '2d-stamp'"
+              (click)="selectFormatFilter('2d-stamp')"
+            >
+              2D Floor Stamps
+            </button>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="formatFilter() === '2d-floor'"
+              (click)="selectFormatFilter('2d-floor')"
+            >
+              Seamless Flooring
+            </button>
+          </div>
+
+          <div class="lw-asset-modal__meta-group">
+            <span class="lw-asset-modal__meta-label">Mesh Complexity:</span>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="polyFilter() === 'all'"
+              (click)="selectPolyFilter('all')"
+            >
+              Any
+            </button>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="polyFilter() === 'low'"
+              (click)="selectPolyFilter('low')"
+            >
+              Low (&lt;5k)
+            </button>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="polyFilter() === 'medium'"
+              (click)="selectPolyFilter('medium')"
+            >
+              Med (5k-20k)
+            </button>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__chip"
+              [class.lw-asset-modal__chip--active]="polyFilter() === 'high'"
+              (click)="selectPolyFilter('high')"
+            >
+              High (&gt;20k)
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Pills -->
+        <div class="lw-asset-modal__cat-row">
+          @for (cat of categories(); track cat) {
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__cat-pill"
+              [class.lw-asset-modal__cat-pill--active]="activeCategory() === cat"
+              (click)="selectCategory(cat)"
+            >
+              {{ cat }}
+            </button>
+          }
+        </div>
+
+        <!-- Metadata Tag Chips -->
+        @if (availableTags().length > 0) {
+          <div class="lw-asset-modal__tag-row">
+            <span class="lw-asset-modal__meta-label">Metadata Tags:</span>
+            <button
+              type="button"
+              ngpButton
+              class="lw-asset-modal__tag-chip"
+              [class.lw-asset-modal__tag-chip--active]="selectedTag() === 'all'"
+              (click)="selectTag('all')"
+            >
+              All Tags
+            </button>
+            @for (tag of availableTags(); track tag) {
+              <button
+                type="button"
+                ngpButton
+                class="lw-asset-modal__tag-chip"
+                [class.lw-asset-modal__tag-chip--active]="selectedTag() === tag"
+                (click)="selectTag(tag)"
+              >
+                #{{ tag }}
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Results Grid -->
+      <div class="lw-asset-modal__results-bar">
+        <span>Showing {{ visibleAssets().length }} of {{ filteredAssets().length }} matching assets</span>
+        <lw-badge variant="success" size="sm">Click any asset to equip on cursor</lw-badge>
+      </div>
+
+      <div class="lw-asset-modal__grid">
+        @for (asset of visibleAssets(); track asset.id) {
+          <article
+            class="lw-asset-modal__card"
+            [class.lw-asset-modal__card--selected]="asset.id === selectedAssetId()"
+            (click)="pickAsset(asset)"
+          >
+            <div class="lw-asset-modal__thumb-box">
+              <img [src]="asset.thumbnailUrl" [alt]="asset.name" loading="lazy" />
+              <span class="lw-asset-modal__badge">
+                {{ asset.modelUrl ? '3D GLB' : asset.isFloor ? 'FLOOR' : '2D STAMP' }}
+              </span>
+            </div>
+            <div class="lw-asset-modal__card-body">
+              <strong class="lw-asset-modal__card-title">{{ asset.name }}</strong>
+              <span class="lw-asset-modal__card-cat">{{ asset.category }}</span>
+              <div class="lw-asset-modal__card-meta">
+                @if (asset.faceCount) {
+                  <span>{{ asset.faceCount }} faces</span>
+                }
+                @if (asset.dimensions && asset.dimensions.length === 3) {
+                  <span>
+                    {{ asset.dimensions[0] }}×{{ asset.dimensions[1] }}×{{ asset.dimensions[2] }}m
+                  </span>
+                }
+                @if (!asset.faceCount && asset.normalUrl) {
+                  <span>Albedo + Normal + Height</span>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+
+      @if (hasMore()) {
+        <footer class="lw-asset-modal__footer">
+          <button
+            type="button"
+            ngpButton
+            class="lw-asset-modal__more-btn"
+            (click)="loadMore()"
+          >
+            Load More Assets ({{ filteredAssets().length - visibleAssets().length }} remaining)
+          </button>
+        </footer>
+      }
+    </div>
+  </div>
+}

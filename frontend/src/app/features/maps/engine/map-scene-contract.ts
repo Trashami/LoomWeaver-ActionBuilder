@@ -49,8 +49,11 @@ export interface MapCommandEntry {
 export interface MapStampNode {
   readonly id: string;
   readonly label: string;
-  readonly category: 'POI' | 'Prop' | 'Token' | 'Architecture';
+  readonly category: 'POI' | 'Prop' | 'Token' | 'Architecture' | 'DecalStamp';
   readonly entityCompositeKey?: string;
+  readonly modelUrl?: string;
+  readonly albedoUrl?: string;
+  readonly normalUrl?: string;
   readonly x: number;
   readonly z: number;
   readonly scale: number;
@@ -92,6 +95,7 @@ export interface MapWallSegmentNode {
   readonly name: string;
   readonly drawMode: WallDrawMode;
   readonly material: string;
+  readonly modelUrl?: string;
   readonly thicknessMeters: number;
   readonly heightMeters: number;
   readonly perspective: CutawayPerspectiveMode;

@@ -20,6 +20,23 @@ root = "/var/www/loomweaver/assets"
 items = []
 seen = set()
 
+STAMP_EXCLUDE = [
+    "circle", "tuft", "altar", "sarcophagus", "pillar", "column", "statue",
+    "ruin", "camp", "tree", "bush", "rock", "boulder", "patch", "crater",
+    "mound", "hill", "stairs", "bridge", "door", "gate", "wall", "cliff",
+    "buttress", "shelf", "shelves", "outcrop", "throne", "chest", "brazier",
+    "obelisk", "portal", "fountain", "well", "cart", "wagon", "tent", "table",
+    "chair", "bed", "barrel", "crate", "corpse", "skeleton", "bones", "skull",
+    "crystal", "mushroom", "fungus", "vine", "root-cluster", "web", "trap",
+    "rune", "sigil", "statuary", "arch", "rubble", "debris", "log", "stump"
+]
+
+FLOOR_INCLUDE = [
+    "floor", "cobble", "paver", "gravel", "basalt", "flagstone",
+    "tiles", "tile", "meadow", "sand", "peat", "slate", "parquet",
+    "planks", "dirt-ground", "mud-ground", "grass-ground", "stone-ground"
+]
+
 for dp, dn, fn in os.walk(root):
     if "/128" in dp or "/64" in dp:
         continue
@@ -43,17 +60,18 @@ for dp, dn, fn in os.walk(root):
         rel_alb = "/assets/" + os.path.relpath(alb, root).replace("\\", "/")
         rel_norm = "/assets/" + os.path.relpath(os.path.join(dp, f), root).replace("\\", "/")
         rel_hgt = ("/assets/" + os.path.relpath(hgt, root).replace("\\", "/")) if os.path.exists(hgt) else rel_norm
-        lower_key = (base + " " + dp).lower()
-        is_floor = any(
-            k in lower_key
-            for k in ["floor", "cobble", "paver", "gravel", "basalt", "flagstone", "terrain", "biome", "sand", "peat", "slate", "moss"]
-        )
+
+        base_lower = base.lower()
+        is_stamp_or_wall = any(k in base_lower for k in STAMP_EXCLUDE)
+        is_floor = (not is_stamp_or_wall) and any(k in base_lower for k in FLOOR_INCLUDE)
+
         if is_floor:
             cat = "Flooring (Bump/Height)"
-        elif any(k in lower_key for k in ["wall", "buttress", "cliff", "shelf", "shelves", "outcrop"]):
+        elif any(k in base_lower for k in ["wall", "buttress", "cliff", "shelf", "shelves", "outcrop"]):
             cat = "Walls & Cliffs (Bump/Height)"
         else:
             cat = "Stamps & Props (Bump/Height)"
+
         clean_name = (
             base.replace("new-", "")
             .replace("retrofit-", "")
@@ -61,6 +79,7 @@ for dp, dn, fn in os.walk(root):
             .replace("_", " ")
             .title()
         )
+        tags = [w for w in clean_name.lower().split() if len(w) > 2]
         items.append({
             "id": "bump-" + base,
             "name": clean_name,
@@ -70,11 +89,12 @@ for dp, dn, fn in os.walk(root):
             "albedoUrl": rel_alb,
             "normalUrl": rel_norm,
             "heightUrl": rel_hgt,
+            "tags": tags,
         })
 
 floor_items = [x for x in items if x["isFloor"]]
 other_items = [x for x in items if not x["isFloor"]]
-combined = floor_items + other_items[:160]
+combined = floor_items + other_items
 print(json.dumps({"total": len(combined), "items": combined}, indent=2))
 """
 
@@ -100,9 +120,9 @@ def main() -> None:
     ssh.close()
     print(f"Saved {parsed['total']} bump/height assets to {OUT_LOCAL}")
     floors = [x["name"] for x in parsed["items"] if x["isFloor"]]
-    print("Floors:", floors[:15])
+    print(f"Seamless Floors ({len(floors)}):", floors[:20])
     stamps = [x["name"] for x in parsed["items"] if not x["isFloor"]]
-    print("Bump Stamps:", stamps[:15])
+    print(f"2D Cutout Stamps & Walls ({len(stamps)}):", stamps[:20])
 
 
 if __name__ == "__main__":

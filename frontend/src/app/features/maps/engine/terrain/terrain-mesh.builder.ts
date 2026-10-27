@@ -13,6 +13,11 @@ export class TerrainMeshBuilder {
   private static customElevations: Float32Array | null = null;
   private static activeAlbedoUrl = '/assets/sewer-dungeon-wall-library-v1/512/worn-castle-flagstone.png';
   private static activeNormalUrl = '/assets/sewer-dungeon-wall-library-v1/512/worn-castle-flagstone_normal.png';
+  private static floorTilingScale = 10;
+
+  static resetElevations(): void {
+    this.customElevations = null;
+  }
 
   static buildTerrainAndGrid(
     scene: Scene,
@@ -31,14 +36,14 @@ export class TerrainMeshBuilder {
 
       const positions = ground.getVerticesData('position');
       if (positions) {
-        const amp = (Math.max(10, Math.min(100, reliefScale)) / 100) * 0.55;
+        const amp = reliefScale <= 0 ? 0 : (Math.min(100, reliefScale) / 100) * 0.55;
         for (let i = 0; i < positions.length; i += 3) {
           const x = positions[i];
           const z = positions[i + 2];
           const distFromCenter = Math.sqrt(x * x + z * z);
           const edgeFactor = Math.min(1, Math.max(0, (distFromCenter - 7) / 12));
           positions[i + 1] =
-            Math.sin(x * 0.35) * Math.cos(z * 0.35) * amp * edgeFactor;
+            amp === 0 ? 0 : Math.sin(x * 0.35) * Math.cos(z * 0.35) * amp * edgeFactor;
         }
         if (this.customElevations && this.customElevations.length === positions.length / 3) {
           for (let v = 0; v < this.customElevations.length; v++) {
@@ -58,10 +63,10 @@ export class TerrainMeshBuilder {
     if (!existingGrid) {
       const lines: Vector3[][] = [];
       for (let x = -18; x <= 18; x += 1.5) {
-        lines.push([new Vector3(x, 0.05, -14), new Vector3(x, 0.05, 14)]);
+        lines.push([new Vector3(x, 0.03, -14), new Vector3(x, 0.03, 14)]);
       }
       for (let z = -14; z <= 14; z += 1.5) {
-        lines.push([new Vector3(-18, 0.05, z), new Vector3(18, 0.05, z)]);
+        lines.push([new Vector3(-18, 0.03, z), new Vector3(18, 0.03, z)]);
       }
       const grid = MeshBuilder.CreateLineSystem('lw-terrain-grid', { lines }, scene);
       grid.color = Color3.FromHexString('#2b4a3c');
@@ -71,13 +76,34 @@ export class TerrainMeshBuilder {
     return ground;
   }
 
+  static sampleElevationAt(scene: Scene, worldX: number, worldZ: number): number {
+    const ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
+    if (!ground) return 0;
+    const positions = ground.getVerticesData('position');
+    if (!positions) return 0;
+    let bestY = 0;
+    let bestDistSq = Infinity;
+    for (let i = 0; i < positions.length; i += 3) {
+      const dx = positions[i] - worldX;
+      const dz = positions[i + 2] - worldZ;
+      const dSq = dx * dx + dz * dz;
+      if (dSq < bestDistSq) {
+        bestDistSq = dSq;
+        bestY = positions[i + 1];
+      }
+    }
+    return bestY;
+  }
+
   static applyFloorBumpTexture(
     scene: Scene,
     albedoUrl: string,
     normalUrl: string,
+    tilingScale = 10,
   ): void {
     this.activeAlbedoUrl = albedoUrl;
     this.activeNormalUrl = normalUrl;
+    this.floorTilingScale = tilingScale;
     const ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
     if (ground) {
       this.applyMaterialAndBump(scene, ground, '');
@@ -90,21 +116,23 @@ export class TerrainMeshBuilder {
       existingMat.dispose();
     }
     const mat = new StandardMaterial('lw-terrain-mat', scene);
-    mat.diffuseColor = Color3.FromHexString('#8ea396');
-    mat.specularColor = Color3.FromHexString('#222e27');
+    mat.diffuseColor = Color3.FromHexString('#9aaea1');
+    mat.specularColor = Color3.FromHexString('#1e2923');
     mat.roughness = 0.85;
 
     try {
+      const uScale = this.floorTilingScale;
+      const vScale = Math.round(this.floorTilingScale * 0.8);
       if (this.activeAlbedoUrl) {
         const diffTex = new Texture(this.activeAlbedoUrl, scene);
-        diffTex.uScale = 10;
-        diffTex.vScale = 8;
+        diffTex.uScale = uScale;
+        diffTex.vScale = vScale;
         mat.diffuseTexture = diffTex;
       }
       if (this.activeNormalUrl) {
         const bumpTex = new Texture(this.activeNormalUrl, scene);
-        bumpTex.uScale = 10;
-        bumpTex.vScale = 8;
+        bumpTex.uScale = uScale;
+        bumpTex.vScale = vScale;
         bumpTex.level = 1.35;
         mat.bumpTexture = bumpTex;
       }

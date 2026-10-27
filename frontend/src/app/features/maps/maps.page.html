@@ -115,11 +115,11 @@
             <button
               type="button"
               class="lw-maps-studio__edge-drawer lw-maps-studio__edge-drawer--right"
-              title="Expand Right Asset Library & Properties Inspector"
+              title="Expand Right Tool Settings & Asset Selector"
               (click)="rightDockCollapsed.set(false)"
             >
               <lw-icon name="chevron_left" />
-              <span>Assets &amp; Inspector</span>
+              <span>Tool Settings</span>
             </button>
           }
 
@@ -131,11 +131,11 @@
               Tool: <strong>{{ activeDockToolId().toUpperCase() }}</strong>
             </span>
             <span class="lw-maps-studio__hud-pill">
-              Ghost Cursor: <strong>({{ stage.hoverCoords().x }}, {{ stage.hoverCoords().z }})</strong>
+              Cursor: <strong>({{ stage.hoverCoords().x }}, {{ stage.hoverCoords().z }})</strong>
             </span>
             @if (wallStartAnchor()) {
               <span class="lw-maps-studio__hud-pill lw-maps-studio__hud-pill--gold">
-                Wall Start: ({{ wallStartAnchor()?.x }}, {{ wallStartAnchor()?.z }}) — Click End Point
+                Wall Start: ({{ wallStartAnchor()?.x }}, {{ wallStartAnchor()?.z }}) — Click End Point or ESC to Cancel
               </span>
             }
           </div>
@@ -173,31 +173,15 @@
       </section>
 
       @if (!rightDockCollapsed()) {
-        <aside class="lw-maps-studio__right-dock" aria-label="Asset Library & Object Properties">
-          <lw-map-png-asset-browser
-            [assets]="displayedAssets()"
-            [categories]="displayedCategories()"
-            [selectedAssetId]="selectedPngAssetId()"
-            [materials]="materials()"
-            [selectedMaterialId]="selectedNode().materialId"
-            [layers]="editorLayers()"
-            [activeTheme]="activeTheme()"
-            [batchBusy]="batchBusy()"
-            [statusBanner]="pngPipelineBanner()"
-            (assetSelect)="onSelectPngAsset($event)"
-            (assetPlaceInScene)="onPlacePngAssetInScene($event)"
-            (materialSelect)="onInspectorMaterialChange($event.id)"
-            (themeSelect)="onThemeChange($event)"
-            (layerToggleVisible)="onLayerToggleVisible($event)"
-            (layerToggleSecret)="onLayerToggleSecret($event)"
-            (triggerBatchRender)="triggerPythonBatchPngSync()"
-            (uploadSingleGlb)="onUploadSingleGlb($event)"
-          />
-
+        <aside class="lw-maps-studio__right-dock" aria-label="Tool Settings & Selected Asset">
           <lw-map-properties-inspector
+            [activeToolId]="activeDockToolId()"
             [selectedNode]="selectedNode()"
+            [hasPlacedSelection]="selectedPlacedId() !== null"
+            [wallInProgress]="wallStartAnchor() !== null"
             [materials]="materials()"
             [wallDrawMode]="wallDrawMode()"
+            [floorTilingScale]="floorTilingScale()"
             [terrainSculptOp]="terrainSculptOp()"
             [terrainBrushRadius]="terrainBrushRadius()"
             [terrainBrushDelta]="terrainBrushDelta()"
@@ -211,7 +195,10 @@
             [torchIntensity]="torchIntensity()"
             [scatterDensity]="scatterDensity()"
             [waterFlowSpeed]="waterFlowSpeed()"
-            (materialChange)="onInspectorMaterialChange($event)"
+            (openAssetModal)="assetModalOpen.set(true)"
+            (cancelPlacement)="cancelActivePlacement()"
+            (resetTerrain)="stage.resetTerrainElevations()"
+            (floorTilingChange)="onFloorTilingChange($event)"
             (heightSquaresChange)="onInspectorHeightChange($event)"
             (thicknessChange)="onInspectorThicknessChange($event)"
             (positionXChange)="onInspectorPositionChange('x', $event)"
@@ -232,11 +219,22 @@
             (torchIntensityChange)="torchIntensity.set($event); pushCelestialLightToStage()"
             (spawnCustomLight)="onSpawnCustomLightAt()"
             (secretToggle)="onInspectorSecretToggle()"
+            (deleteNode)="onDeleteSelectedPlacedNode()"
             (scatterDensityChange)="scatterDensity.set($event)"
             (waterFlowChange)="waterFlowSpeed.set($event)"
           />
         </aside>
       }
     </div>
+
+    <lw-map-asset-picker-modal
+      [open]="assetModalOpen()"
+      [assets]="displayedAssets()"
+      [categories]="displayedCategories()"
+      [selectedAssetId]="selectedPngAssetId()"
+      (assetPicked)="onSelectPngAsset($event)"
+      (uploadSingleGlb)="onUploadSingleGlb($event)"
+      (closed)="assetModalOpen.set(false)"
+    />
   </div>
 }

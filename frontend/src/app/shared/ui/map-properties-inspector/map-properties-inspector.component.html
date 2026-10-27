@@ -1,443 +1,482 @@
-<section class="lw-inspector" aria-label="Selected Scene Object & Real-Time Lighting Properties">
-  <header class="lw-inspector__header">
-    <h2 class="lw-inspector__title">Properties (Real-Time)</h2>
-    @if (selectedNode()) {
-      <div class="lw-inspector__header-actions">
+<section class="lw-map-inspector" aria-label="Active Tool & Object Properties">
+  <header class="lw-map-inspector__header">
+    <div>
+      <span class="lw-map-inspector__eyebrow">Active Tool Configuration</span>
+      <h3 class="lw-map-inspector__title">{{ toolHeading() }}</h3>
+    </div>
+    @if (hasPlacedSelection()) {
+      <div class="lw-map-inspector__header-actions">
         <button
-          ngpButton
           type="button"
-          class="lw-inspector__icon-btn"
-          title="Duplicate selected element"
-          (click)="duplicateNode.emit()"
-        >
-          <lw-icon name="content_copy" [size]="14" />
-        </button>
-        <button
           ngpButton
-          type="button"
-          class="lw-inspector__icon-btn lw-inspector__icon-btn--danger"
-          title="Delete selected element"
+          class="lw-map-inspector__icon-btn"
+          title="Delete selected item"
           (click)="deleteNode.emit()"
         >
-          <lw-icon name="delete_outline" [size]="15" />
+          <lw-icon name="delete" />
         </button>
       </div>
     }
   </header>
 
   @if (selectedNode(); as node) {
-    <div class="lw-inspector__summary-card">
-      <img
-        class="lw-inspector__summary-thumb"
-        [src]="node.thumbnailUrl"
-        [alt]="node.name"
-        loading="lazy"
-      />
-      <div class="lw-inspector__summary-meta">
-        <strong>{{ node.name }}</strong>
-        <span>{{ node.subtitle }} · ({{ node.gridX }}, {{ node.gridZ }})</span>
-      </div>
-    </div>
-
-    <div class="lw-inspector__tabs" role="tablist">
-      <button
-        ngpButton
-        type="button"
-        role="tab"
-        class="lw-inspector__tab"
-        [class.lw-inspector__tab--active]="activeTab() === 'appearance'"
-        (click)="selectTab('appearance')"
-      >
-        Wall &amp; Terrain
-      </button>
-      <button
-        ngpButton
-        type="button"
-        role="tab"
-        class="lw-inspector__tab"
-        [class.lw-inspector__tab--active]="activeTab() === 'transform'"
-        (click)="selectTab('transform')"
-      >
-        Transform
-      </button>
-      <button
-        ngpButton
-        type="button"
-        role="tab"
-        class="lw-inspector__tab"
-        [class.lw-inspector__tab--active]="activeTab() === 'lighting'"
-        (click)="selectTab('lighting')"
-      >
-        Sun/Moon &amp; Lights
-      </button>
-    </div>
-
-    @if (activeTab() === 'appearance') {
-      <div class="lw-inspector__body">
-        <div class="lw-inspector__field-row">
-          <span class="lw-inspector__label">3D Wall Draw Shape (Gapless)</span>
-          <select
-            class="lw-inspector__select"
-            [value]="wallDrawMode()"
-            (change)="onWallModeSelect($event)"
-            aria-label="3D Wall Draw Shape"
-          >
-            <option value="line">Custom Line (Start &rarr; End)</option>
-            <option value="room">Rectangle Chamber</option>
-            <option value="octagon">Octagon Rotunda</option>
-            <option value="circle">Circle Sanctum</option>
-            <option value="l_shape">L-Shape Hall</option>
-          </select>
-        </div>
-
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Material</span>
-            <select
-              class="lw-inspector__select"
-              [value]="node.materialId"
-              (change)="onStrInput($event, materialChange)"
-              aria-label="Material Preset"
-            >
-              @for (mat of materials(); track mat.id) {
-                <option [value]="mat.id">{{ mat.name }}</option>
-              }
-            </select>
+    <div class="lw-map-inspector__body">
+      <!-- Clickable Asset Image Card (Opens Large Asset Picker Modal) -->
+      @if (usesAssetPicker()) {
+        <button
+          type="button"
+          class="lw-map-inspector__asset-trigger"
+          title="Click to open large 3D/2D Asset Browser with metadata filters"
+          (click)="openAssetModal.emit()"
+        >
+          <div class="lw-map-inspector__asset-thumb">
+            <img [src]="node.thumbnailUrl" [alt]="node.name" />
           </div>
-
-          <div class="lw-inspector__swatches">
-            @for (mat of materials(); track mat.id) {
-              <button
-                ngpButton
-                type="button"
-                class="lw-inspector__swatch"
-                [class.lw-inspector__swatch--active]="node.materialId === mat.id"
-                [style.background]="'linear-gradient(135deg, ' + mat.baseHex + ' 0%, ' + mat.accentHex + ' 100%)'"
-                [title]="mat.name"
-                (click)="materialChange.emit(mat.id)"
-              ></button>
-            }
+          <div class="lw-map-inspector__asset-info">
+            <span class="lw-map-inspector__asset-tag">Selected Asset · Click to Change</span>
+            <strong class="lw-map-inspector__asset-name">{{ node.name }}</strong>
+            <span class="lw-map-inspector__asset-sub">{{ node.subtitle }}</span>
           </div>
-        </div>
+          <lw-icon name="open_in_new" />
+        </button>
+      }
 
-        <div class="lw-inspector__field-row">
-          <span class="lw-inspector__label">Wall / Object Height</span>
-          <select
-            class="lw-inspector__select"
-            [value]="node.heightSquares"
-            (change)="onNumInput($event, heightSquaresChange)"
-            aria-label="Wall or Object Height"
-          >
-            <option [value]="1">1 square (5 ft)</option>
-            <option [value]="2">2 squares (10 ft)</option>
-            <option [value]="3">3 squares (15 ft)</option>
-            <option [value]="4">4 squares (20 ft)</option>
-          </select>
-        </div>
-
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Wall Thickness</span>
-            <span class="lw-inspector__value">{{ node.thickness.toFixed(2) }}x</span>
+      <!-- 1. FLOORING TOOL -->
+      @if (activeToolId() === 'floor-bump') {
+        <div class="lw-map-inspector__section">
+          <div class="lw-map-inspector__slider-head">
+            <span>Flooring Tile Density</span>
+            <strong>{{ floorTilingScale() }}x Repeat</strong>
           </div>
           <input
             type="range"
-            class="lw-inspector__range"
-            min="0.3"
-            max="2.5"
-            step="0.05"
-            [value]="node.thickness"
-            (input)="onNumInput($event, thicknessChange)"
+            min="4"
+            max="24"
+            step="1"
+            class="lw-map-inspector__range"
+            [value]="floorTilingScale()"
+            (input)="onNumInput($event, floorTilingChange)"
           />
+          <p class="lw-map-inspector__hint">
+            Click the asset image above to browse seamless 2D Bump/Height floor textures.
+          </p>
         </div>
+      }
 
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Terrain Sculpt Tool</span>
-            <div class="lw-inspector__mini-group">
+      <!-- 2. RAISE / LOWER TERRAIN TOOL -->
+      @if (activeToolId() === 'terrain') {
+        <div class="lw-map-inspector__section">
+          <div class="lw-map-inspector__row">
+            <span class="lw-map-inspector__label">Sculpt Operation</span>
+            <div class="lw-map-inspector__pill-group">
               <button
-                ngpButton
                 type="button"
-                class="lw-inspector__scope-btn"
-                [class.lw-inspector__scope-btn--secret]="terrainSculptOp() === 'raise'"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="terrainSculptOp() === 'raise'"
                 (click)="terrainSculptOpChange.emit('raise')"
               >
                 Raise
               </button>
               <button
-                ngpButton
                 type="button"
-                class="lw-inspector__scope-btn"
-                [class.lw-inspector__scope-btn--secret]="terrainSculptOp() === 'lower'"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="terrainSculptOp() === 'lower'"
                 (click)="terrainSculptOpChange.emit('lower')"
               >
                 Lower
               </button>
               <button
-                ngpButton
                 type="button"
-                class="lw-inspector__scope-btn"
-                [class.lw-inspector__scope-btn--secret]="terrainSculptOp() === 'flatten'"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="terrainSculptOp() === 'flatten'"
                 (click)="terrainSculptOpChange.emit('flatten')"
               >
                 Flatten
               </button>
             </div>
           </div>
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Sculpt Radius &amp; Strength</span>
-            <span class="lw-inspector__value">{{ terrainBrushRadius() }}m · {{ terrainBrushDelta() }}m</span>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Outline Circle Radius</span>
+              <strong>{{ terrainBrushRadius().toFixed(1) }}m</strong>
+            </div>
+            <input
+              type="range"
+              min="1.5"
+              max="12.0"
+              step="0.5"
+              class="lw-map-inspector__range"
+              [value]="terrainBrushRadius()"
+              (input)="onNumInput($event, terrainRadiusChange)"
+            />
           </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="1.5"
-            max="10"
-            step="0.5"
-            [value]="terrainBrushRadius()"
-            (input)="onNumInput($event, terrainRadiusChange)"
-          />
-        </div>
 
-        <button
-          ngpButton
-          type="button"
-          class="lw-inspector__apply-btn"
-          (click)="applyToSimilar.emit()"
-        >
-          Apply to Similar Walls
-        </button>
-      </div>
-    }
-
-    @if (activeTab() === 'transform') {
-      <div class="lw-inspector__body">
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Position X (Real-Time)</span>
-            <span class="lw-inspector__value">{{ node.gridX }}</span>
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Sculpt Strength</span>
+              <strong>{{ terrainBrushDelta().toFixed(1) }}m</strong>
+            </div>
+            <input
+              type="range"
+              min="0.3"
+              max="3.5"
+              step="0.1"
+              class="lw-map-inspector__range"
+              [value]="terrainBrushDelta()"
+              (input)="onNumInput($event, terrainDeltaChange)"
+            />
           </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="-14"
-            max="14"
-            step="0.5"
-            [value]="node.gridX"
-            (input)="onNumInput($event, positionXChange)"
-          />
-        </div>
 
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Position Z (Real-Time)</span>
-            <span class="lw-inspector__value">{{ node.gridZ }}</span>
-          </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="-10"
-            max="10"
-            step="0.5"
-            [value]="node.gridZ"
-            (input)="onNumInput($event, positionZChange)"
-          />
-        </div>
-
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Rotation (Ghost &amp; Selected)</span>
-            <span class="lw-inspector__value">{{ node.rotationDeg }} deg</span>
-          </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="0"
-            max="345"
-            step="15"
-            [value]="node.rotationDeg"
-            (input)="onNumInput($event, rotationChange)"
-          />
-        </div>
-
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Uniform Scale</span>
-            <span class="lw-inspector__value">{{ node.scale.toFixed(2) }}x</span>
-          </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="0.4"
-            max="3.0"
-            step="0.05"
-            [value]="node.scale"
-            (input)="onNumInput($event, scaleChange)"
-          />
-        </div>
-
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Elevation Offset (Y)</span>
-            <span class="lw-inspector__value">{{ node.elevationY.toFixed(1) }} ft</span>
-          </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="-5"
-            max="20"
-            step="0.5"
-            [value]="node.elevationY"
-            (input)="onNumInput($event, elevationChange)"
-          />
-        </div>
-
-        <div class="lw-inspector__field-row">
-          <span class="lw-inspector__label">Export Scope</span>
           <button
-            ngpButton
             type="button"
-            class="lw-inspector__scope-btn"
-            [class.lw-inspector__scope-btn--secret]="node.gmSecretOnly"
-            (click)="secretToggle.emit()"
+            ngpButton
+            class="lw-map-inspector__apply-btn"
+            (click)="resetTerrain.emit()"
           >
-            {{ node.gmSecretOnly ? 'GM Secret Only' : 'Players + GM' }}
+            Reset Terrain to Flat Plane
           </button>
         </div>
-      </div>
-    }
+      }
 
-    @if (activeTab() === 'lighting') {
-      <div class="lw-inspector__body">
-        <div class="lw-inspector__field-row">
-          <span class="lw-inspector__label">Complete Map Sky Light</span>
-          <div class="lw-inspector__mini-group">
-            <button
-              ngpButton
-              type="button"
-              class="lw-inspector__scope-btn"
-              [class.lw-inspector__scope-btn--secret]="celestialMode() === 'sun'"
-              (click)="celestialModeChange.emit('sun')"
+      <!-- 3. WALL LINE / SHAPES / DOOR TOOLS -->
+      @if (activeToolId() === 'wall' || activeToolId() === 'room' || activeToolId() === 'door') {
+        <div class="lw-map-inspector__section">
+          <div class="lw-map-inspector__row">
+            <label class="lw-map-inspector__label" for="lw-wall-shape-select">
+              3D Wall Draw Shape (Gapless)
+            </label>
+            <select
+              id="lw-wall-shape-select"
+              class="lw-map-inspector__select"
+              [value]="wallDrawMode()"
+              (change)="onWallModeSelect($event)"
             >
-              Sunlight
-            </button>
-            <button
-              ngpButton
-              type="button"
-              class="lw-inspector__scope-btn"
-              [class.lw-inspector__scope-btn--secret]="celestialMode() === 'moon'"
-              (click)="celestialModeChange.emit('moon')"
+              <option value="line">Custom Line (Start -> End)</option>
+              <option value="room">Rectangle Chamber</option>
+              <option value="octagon">Octagon Chamber</option>
+              <option value="circle">Circular Rotunda</option>
+              <option value="l_shape">L-Shape Wing</option>
+            </select>
+          </div>
+
+          <div class="lw-map-inspector__row">
+            <label class="lw-map-inspector__label" for="lw-wall-height-select">Wall Height</label>
+            <select
+              id="lw-wall-height-select"
+              class="lw-map-inspector__select"
+              [value]="node.heightSquares"
+              (change)="onNumInput($event, heightSquaresChange)"
             >
-              Moonlight
+              <option [value]="1">1 sq (5 ft Low Wall)</option>
+              <option [value]="2">2 sq (10 ft Standard)</option>
+              <option [value]="3">3 sq (15 ft Vaulted)</option>
+              <option [value]="4">4 sq (20 ft Cathedral)</option>
+            </select>
+          </div>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Wall Thickness</span>
+              <strong>{{ node.thickness.toFixed(2) }}x</strong>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="2.5"
+              step="0.05"
+              class="lw-map-inspector__range"
+              [value]="node.thickness"
+              (input)="onNumInput($event, thicknessChange)"
+            />
+          </div>
+
+          @if (wallInProgress()) {
+            <button
+              type="button"
+              ngpButton
+              class="lw-map-inspector__cancel-btn"
+              (click)="cancelPlacement.emit()"
+            >
+              Cancel Active Wall Line (ESC)
+            </button>
+          } @else {
+            <p class="lw-map-inspector__hint">
+              Click once on the map to set the start point, then click the end point to finish. Drag mouse anytime to rotate the camera. Press ESC to cancel.
+            </p>
+          }
+        </div>
+      }
+
+      <!-- 4. OBJECTS / FLOOR STAMPS / SELECT TOOLS -->
+      @if (
+        activeToolId() === 'objects' ||
+        activeToolId() === 'annotate' ||
+        activeToolId() === 'select'
+      ) {
+        <div class="lw-map-inspector__section">
+          @if (activeToolId() === 'select' && !hasPlacedSelection()) {
+            <p class="lw-map-inspector__hint">
+              Click any placed 3D object, floor stamp, or wall in the scene to inspect or adjust its transform. Drag the mouse to orbit the camera.
+            </p>
+          }
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Rotation (Y-Axis)</span>
+              <strong>{{ node.rotationDeg }}°</strong>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              step="15"
+              class="lw-map-inspector__range"
+              [value]="node.rotationDeg"
+              (input)="onNumInput($event, rotationChange)"
+            />
+          </div>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Asset Scale</span>
+              <strong>{{ node.scale.toFixed(2) }}x</strong>
+            </div>
+            <input
+              type="range"
+              min="0.25"
+              max="3.0"
+              step="0.05"
+              class="lw-map-inspector__range"
+              [value]="node.scale"
+              (input)="onNumInput($event, scaleChange)"
+            />
+          </div>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Position X / Z</span>
+              <strong>({{ node.gridX }}m, {{ node.gridZ }}m)</strong>
+            </div>
+            <div class="lw-map-inspector__dual-range">
+              <input
+                type="range"
+                min="-16"
+                max="16"
+                step="0.5"
+                class="lw-map-inspector__range"
+                [value]="node.gridX"
+                (input)="onNumInput($event, positionXChange)"
+              />
+              <input
+                type="range"
+                min="-12"
+                max="12"
+                step="0.5"
+                class="lw-map-inspector__range"
+                [value]="node.gridZ"
+                (input)="onNumInput($event, positionZChange)"
+              />
+            </div>
+          </div>
+
+          <div class="lw-map-inspector__toggle-row">
+            <span>GM Secret Only (Hidden on Player VTT)</span>
+            <button
+              type="button"
+              ngpButton
+              class="lw-map-inspector__switch"
+              [class.lw-map-inspector__switch--on]="node.gmSecretOnly"
+              (click)="secretToggle.emit()"
+            >
+              {{ node.gmSecretOnly ? 'Secret' : 'Public' }}
             </button>
           </div>
         </div>
+      }
 
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">
-              {{ celestialMode() === 'sun' ? 'Sun' : 'Moon' }} Azimuth (Shadow Orbit)
-            </span>
-            <span class="lw-inspector__value">{{ celestialAzimuthDeg() }} deg</span>
+      <!-- 5. SUN / MOON & CUSTOM LIGHTING TOOLS -->
+      @if (activeToolId() === 'lighting' || activeToolId() === 'sun-moon') {
+        <div class="lw-map-inspector__section">
+          <div class="lw-map-inspector__row">
+            <span class="lw-map-inspector__label">Complete Map Lighting</span>
+            <div class="lw-map-inspector__pill-group">
+              <button
+                type="button"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="celestialMode() === 'sun'"
+                (click)="celestialModeChange.emit('sun')"
+              >
+                Sunlight
+              </button>
+              <button
+                type="button"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="celestialMode() === 'moon'"
+                (click)="celestialModeChange.emit('moon')"
+              >
+                Moonlight
+              </button>
+            </div>
           </div>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>{{ celestialMode() === 'sun' ? 'Sun' : 'Moon' }} Azimuth (Direction)</span>
+              <strong>{{ celestialAzimuthDeg() }}°</strong>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              step="1"
+              class="lw-map-inspector__range"
+              [value]="celestialAzimuthDeg()"
+              (input)="onNumInput($event, celestialAzimuthChange)"
+            />
+          </div>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>{{ celestialMode() === 'sun' ? 'Sun' : 'Moon' }} Altitude (Shadow Length)</span>
+              <strong>{{ celestialAltitudeDeg() }}°</strong>
+            </div>
+            <input
+              type="range"
+              min="8"
+              max="88"
+              step="1"
+              class="lw-map-inspector__range"
+              [value]="celestialAltitudeDeg()"
+              (input)="onNumInput($event, celestialAltitudeChange)"
+            />
+          </div>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Shadow Darkness</span>
+              <strong>{{ shadowDarkness() }}%</strong>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="95"
+              step="1"
+              class="lw-map-inspector__range"
+              [value]="shadowDarkness()"
+              (input)="onNumInput($event, shadowDarknessChange)"
+            />
+          </div>
+
+          <div class="lw-map-inspector__row">
+            <span class="lw-map-inspector__label">Custom Light Type</span>
+            <div class="lw-map-inspector__pill-group">
+              <button
+                type="button"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="customLightKind() === 'point'"
+                (click)="customLightKindChange.emit('point')"
+              >
+                Point
+              </button>
+              <button
+                type="button"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="customLightKind() === 'directional'"
+                (click)="customLightKindChange.emit('directional')"
+              >
+                Directional
+              </button>
+              <button
+                type="button"
+                ngpButton
+                class="lw-map-inspector__pill"
+                [class.lw-map-inspector__pill--active]="customLightKind() === 'torch'"
+                (click)="customLightKindChange.emit('torch')"
+              >
+                Torch
+              </button>
+            </div>
+          </div>
+
+          <div class="lw-map-inspector__row">
+            <label class="lw-map-inspector__label" for="lw-light-color">Light Color &amp; Range</label>
+            <div class="lw-map-inspector__color-row">
+              <input
+                id="lw-light-color"
+                type="color"
+                class="lw-map-inspector__color-picker"
+                [value]="customLightColor()"
+                (input)="onStrInput($event, customLightColorChange)"
+              />
+              <span>{{ customLightRange() }} ft</span>
+            </div>
+          </div>
+
           <input
             type="range"
-            class="lw-inspector__range"
-            min="0"
-            max="360"
+            min="5"
+            max="60"
             step="5"
-            [value]="celestialAzimuthDeg()"
-            (input)="onNumInput($event, celestialAzimuthChange)"
+            class="lw-map-inspector__range"
+            [value]="customLightRange()"
+            (input)="onNumInput($event, customLightRangeChange)"
           />
-        </div>
 
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">
-              {{ celestialMode() === 'sun' ? 'Sun' : 'Moon' }} Altitude (Shadow Length)
-            </span>
-            <span class="lw-inspector__value">{{ celestialAltitudeDeg() }} deg</span>
-          </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="8"
-            max="88"
-            step="2"
-            [value]="celestialAltitudeDeg()"
-            (input)="onNumInput($event, celestialAltitudeChange)"
-          />
-        </div>
-
-        <div class="lw-inspector__field">
-          <div class="lw-inspector__field-row">
-            <span class="lw-inspector__label">Directional Shadow Darkness</span>
-            <span class="lw-inspector__value">{{ shadowDarkness() }}%</span>
-          </div>
-          <input
-            type="range"
-            class="lw-inspector__range"
-            min="0"
-            max="95"
-            step="5"
-            [value]="shadowDarkness()"
-            (input)="onNumInput($event, shadowDarknessChange)"
-          />
-        </div>
-
-        <div class="lw-inspector__field-row">
-          <span class="lw-inspector__label">Custom Light Type</span>
-          <select
-            class="lw-inspector__select"
-            [value]="customLightKind()"
-            (change)="onStrInput($event, customLightKindChange)"
+          <button
+            type="button"
+            ngpButton
+            class="lw-map-inspector__apply-btn"
+            (click)="spawnCustomLight.emit()"
           >
-            <option value="point">Point Light (Omni)</option>
-            <option value="directional">Directional Beam</option>
-            <option value="torch">Flickering Wall Torch</option>
-          </select>
+            + Place Custom Light at Cursor
+          </button>
         </div>
+      }
 
-        <div class="lw-inspector__field-row">
-          <span class="lw-inspector__label">Light Color &amp; Range</span>
-          <input
-            type="color"
-            [value]="customLightColor()"
-            (input)="onStrInput($event, customLightColorChange)"
-            aria-label="Custom Light Color"
-          />
-          <span class="lw-inspector__value">{{ customLightRange() }} ft · {{ torchIntensity() }}%</span>
+      <!-- 6. WATER & SCATTER TOOLS -->
+      @if (activeToolId() === 'water' || activeToolId() === 'scatter') {
+        <div class="lw-map-inspector__section">
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Scatter Brush Density</span>
+              <strong>{{ scatterDensity() }}%</strong>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              class="lw-map-inspector__range"
+              [value]="scatterDensity()"
+              (input)="onNumInput($event, scatterDensityChange)"
+            />
+          </div>
+
+          <div class="lw-map-inspector__slider-block">
+            <div class="lw-map-inspector__slider-head">
+              <span>Water Flow Speed</span>
+              <strong>{{ waterFlowSpeed().toFixed(1) }}x</strong>
+            </div>
+            <input
+              type="range"
+              min="0.2"
+              max="4.0"
+              step="0.1"
+              class="lw-map-inspector__range"
+              [value]="waterFlowSpeed()"
+              (input)="onNumInput($event, waterFlowChange)"
+            />
+          </div>
         </div>
-
-        <input
-          type="range"
-          class="lw-inspector__range"
-          min="10"
-          max="60"
-          step="5"
-          [value]="customLightRange()"
-          (input)="onNumInput($event, customLightRangeChange)"
-        />
-
-        <input
-          type="range"
-          class="lw-inspector__range"
-          min="30"
-          max="220"
-          step="5"
-          [value]="torchIntensity()"
-          (input)="onNumInput($event, torchIntensityChange)"
-        />
-
-        <button
-          ngpButton
-          type="button"
-          class="lw-inspector__apply-btn"
-          (click)="spawnCustomLight.emit()"
-        >
-          + Place {{ customLightKind() }} Light at Cursor
-        </button>
-      </div>
-    }
+      }
+    </div>
   }
 </section>

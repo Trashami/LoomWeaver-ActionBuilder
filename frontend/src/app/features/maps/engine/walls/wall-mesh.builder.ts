@@ -1,5 +1,7 @@
 import { Color3, MeshBuilder, Scene, StandardMaterial } from '@babylonjs/core';
 import { MapWallSegmentNode, WallDrawMode } from '../map-scene-contract';
+import { GlbModelCache } from '../rendering/glb-model-cache';
+import { TerrainMeshBuilder } from '../terrain/terrain-mesh.builder';
 import { CutawayWallEngine } from './cutaway-wall.engine';
 
 export class WallMeshBuilder {
@@ -61,7 +63,11 @@ export class WallMeshBuilder {
     scene: Scene,
     walls: readonly MapWallSegmentNode[] | undefined,
     hideSecrets = false,
+    onGlbLoaded?: () => void,
   ): number {
+    scene.transformNodes
+      .filter((n) => n.name.startsWith('lw-wall-node-'))
+      .forEach((n) => n.dispose());
     scene.meshes
       .filter((m) => m.name.startsWith('lw-wall-') || m.name.startsWith('lw-portal-'))
       .forEach((m) => m.dispose());
@@ -80,11 +86,14 @@ export class WallMeshBuilder {
         wall.perspective,
         false,
       );
-      const colorHex = CutawayWallEngine.materialHex(wall.material);
+      const glbTemplate = wall.modelUrl
+        ? GlbModelCache.getOrLoadTemplate(scene, wall.modelUrl, onGlbLoaded)
+        : null;
 
+      const colorHex = CutawayWallEngine.materialHex(wall.material);
       const mat = new StandardMaterial(`lw-wall-mat-${wall.id}`, scene);
       mat.diffuseColor = Color3.FromHexString(colorHex);
-      mat.emissiveColor = Color3.FromHexString(colorHex).scale(0.14);
+      mat.emissiveColor = Color3.FromHexString(colorHex).scale(0.12);
 
       const segCount = closed ? pts.length : pts.length - 1;
       for (let i = 0; i < segCount; i++) {
@@ -95,8 +104,7 @@ export class WallMeshBuilder {
         const totalLen = Math.hypot(dx, dz);
         if (totalLen < 0.08) continue;
 
-        // Subdivide into gapless 3D wall blocks (nominal 2.0m per block, exact fit with +0.04m seam overlap)
-        const blockCount = Math.max(1, Math.round(totalLen / 2.0));
+        const blockCount = Math.max(1, Math.round(totalLen / 2.2));
         const blockLen = totalLen / blockCount;
         const angleY = -Math.atan2(dz, dx);
 
@@ -104,40 +112,40 @@ export class WallMeshBuilder {
           const tMid = (bIdx + 0.5) / blockCount;
           const bx = a[0] + dx * tMid;
           const bz = a[1] + dz * tMid;
+          const groundY = TerrainMeshBuilder.sampleElevationAt(scene, bx, bz);
 
-          const segMesh = MeshBuilder.CreateBox(
-            `lw-wall-${wall.id}-seg-${i}-${bIdx}`,
-            {
-              width: blockLen + 0.04,
+          if (glbTemplate) {
+            const inst = GlbModelCache.instantiateClone(
+              scene,
+              glbTemplate,
+              `lw-wall-node-${wall.id}-seg-${i}-${bIdx}`,
+              blockLen + 0.08,
               height,
-              depth: wall.thicknessMeters,
-            },
-            scene,
-          );
-          segMesh.position.set(bx, height / 2, bz);
-          segMesh.rotation.y = angleY;
-          segMesh.material = mat;
-          segMesh.receiveShadows = true;
-          meshCount++;
+              wall.thicknessMeters,
+              false,
+              false,
+            );
+            inst.position.set(bx, groundY, bz);
+            inst.rotation.y = angleY;
+            meshCount++;
+          } else {
+            const segMesh = MeshBuilder.CreateBox(
+              `lw-wall-${wall.id}-seg-${i}-${bIdx}`,
+              {
+                width: blockLen + 0.08,
+                height,
+                depth: wall.thicknessMeters,
+              },
+              scene,
+            );
+            segMesh.position.set(bx, groundY + height / 2, bz);
+            segMesh.rotation.y = angleY;
+            segMesh.material = mat;
+            segMesh.receiveShadows = true;
+            segMesh.metadata = { lwNodeName: `lw-wall-${wall.id}` };
+            meshCount++;
+          }
         }
-      }
-
-      // Place gapless corner/end posts at every vertex so corners and line joints never gap
-      for (let pIdx = 0; pIdx < pts.length; pIdx++) {
-        const pt = pts[pIdx];
-        const post = MeshBuilder.CreateCylinder(
-          `lw-wall-${wall.id}-post-${pIdx}`,
-          {
-            height: height * 1.04,
-            diameter: wall.thicknessMeters * 1.18,
-            tessellation: 14,
-          },
-          scene,
-        );
-        post.position.set(pt[0], (height * 1.04) / 2, pt[1]);
-        post.material = mat;
-        post.receiveShadows = true;
-        meshCount++;
       }
 
       for (const opening of wall.openings) {
@@ -186,7 +194,11 @@ export class WallMeshBuilder {
     endZ: number,
     heightMeters: number,
     thicknessMeters: number,
+    modelUrl?: string,
   ): void {
+    scene.transformNodes
+      .filter((n) => n.name.startsWith('lw-ghost-wall-'))
+      .forEach((n) => n.dispose());
     scene.meshes
       .filter((m) => m.name.startsWith('lw-ghost-wall-'))
       .forEach((m) => m.dispose());
@@ -195,6 +207,7 @@ export class WallMeshBuilder {
     if (pts.length < 2) return;
 
     const closed = drawMode !== 'line';
+    const glbTemplate = modelUrl ? GlbModelCache.getOrLoadTemplate(scene, modelUrl) : null;
     const mat = new StandardMaterial('lw-ghost-wall-mat', scene);
     mat.diffuseColor = Color3.FromHexString('#49e892');
     mat.emissiveColor = Color3.FromHexString('#2ee66b').scale(0.55);
@@ -204,18 +217,46 @@ export class WallMeshBuilder {
     for (let i = 0; i < segCount; i++) {
       const a = pts[i];
       const b = pts[(i + 1) % pts.length];
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      if (len < 0.05) continue;
+      const dx = b[0] - a[0];
+      const dz = b[1] - a[1];
+      const totalLen = Math.hypot(dx, dz);
+      if (totalLen < 0.05) continue;
 
-      const mesh = MeshBuilder.CreateBox(
-        `lw-ghost-wall-seg-${i}`,
-        { width: len + 0.04, height: heightMeters, depth: thicknessMeters },
-        scene,
-      );
-      mesh.position.set((a[0] + b[0]) / 2, heightMeters / 2, (a[1] + b[1]) / 2);
-      mesh.rotation.y = -Math.atan2(b[1] - a[1], b[0] - a[0]);
-      mesh.material = mat;
-      mesh.isPickable = false;
+      const blockCount = Math.max(1, Math.round(totalLen / 2.2));
+      const blockLen = totalLen / blockCount;
+      const angleY = -Math.atan2(dz, dx);
+
+      for (let bIdx = 0; bIdx < blockCount; bIdx++) {
+        const tMid = (bIdx + 0.5) / blockCount;
+        const bx = a[0] + dx * tMid;
+        const bz = a[1] + dz * tMid;
+        const groundY = TerrainMeshBuilder.sampleElevationAt(scene, bx, bz);
+
+        if (glbTemplate) {
+          const inst = GlbModelCache.instantiateClone(
+            scene,
+            glbTemplate,
+            `lw-ghost-wall-${i}-${bIdx}`,
+            blockLen + 0.08,
+            heightMeters,
+            thicknessMeters,
+            false,
+            true,
+          );
+          inst.position.set(bx, groundY, bz);
+          inst.rotation.y = angleY;
+        } else {
+          const mesh = MeshBuilder.CreateBox(
+            `lw-ghost-wall-seg-${i}-${bIdx}`,
+            { width: blockLen + 0.08, height: heightMeters, depth: thicknessMeters },
+            scene,
+          );
+          mesh.position.set(bx, groundY + heightMeters / 2, bz);
+          mesh.rotation.y = angleY;
+          mesh.material = mat;
+          mesh.isPickable = false;
+        }
+      }
     }
   }
 }
