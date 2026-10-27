@@ -661,8 +661,7 @@
               ><small>/mo</small>
             </div>
             <div class="billed">
-              @if (plan.monthlyPrice === 0) { {{ plan.billedDefault }} } @else
-              if (billingAnnual()) { ${{ plan.yearlyTotal }} billed annually (2
+              @if (plan.monthlyPrice === 0) { {{ plan.billedDefault }} } @else if (billingAnnual()) { ${{ plan.yearlyTotal }} billed annually (2
               months free) } @else { Billed monthly · or ${{ plan.yearlyTotal
               }}/yr }
             </div>
