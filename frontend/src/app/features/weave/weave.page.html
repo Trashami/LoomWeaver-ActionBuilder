@@ -102,6 +102,7 @@
         [repositioningLocationKey]="worldLore.repositioningLocationKey()"
         [isGm]="worldLore.isGm()"
         (markerSelected)="onMarkerSelected($event)"
+        (regionSelected)="worldLore.selectLocation($event.id)"
         (markerPositionCommitted)="onMarkerPositionCommitted($event)"
         (repositionCancelled)="worldLore.startRepositioningLocation(null)"
         (childMapRequested)="worldLore.selectMap($event)"
@@ -297,5 +298,6 @@
     (relatedEntitySelected)="onEditorRelatedSelected($event)"
     (loreSelected)="onEditorLoreSelected($event)"
     (locationSaved)="worldLore.saveLocation($event, !!$event.silent)"
+    (regionSaved)="worldLore.saveRegionOverlay($event)"
   />
 }

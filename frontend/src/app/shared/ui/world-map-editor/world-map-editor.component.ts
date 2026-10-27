@@ -1,34 +1,18 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  untracked,
+  ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgpButton } from 'ng-primitives/button';
 import {
-  LocationInspectorDetailVm,
-  LocationRelatedEntityVm,
-  MarkerFontFamily,
-  MarkerLabelPosition,
-  MarkerVisualStyleVm,
-  PlayerVisibilityMode,
-  WorldMapMarkerVm,
-  WorldMapRegionOverlayVm,
-  WorldMapSummaryVm,
+  LocationInspectorDetailVm, LocationRelatedEntityVm, MarkerFontFamily, MarkerLabelPosition,
+  MarkerVisualStyleVm, PlayerVisibilityMode, RegionPolygonPointVm, WorldMapMarkerVm,
+  WorldMapRegionOverlayVm, WorldMapSummaryVm,
 } from '../../../core/models/world-lore.models';
+import { buildRegionSvgPath, parseRegionPointsFromSvgPath } from '../../../core/services/world-lore-facade.helpers';
 import { LoomWeaverStoreService } from '../../../core/services/loomweaver-store.service';
 import {
-  CAMPAIGN_SESSION_OPTIONS,
-  DEFAULT_MARKER_ICONS,
-  MARKER_COLOR_SWATCHES,
-  MARKER_FONT_OPTIONS,
-  OLD_WORLD_STAMP_OPTIONS,
+  CAMPAIGN_SESSION_OPTIONS, DEFAULT_MARKER_ICONS, MARKER_COLOR_SWATCHES,
+  MARKER_FONT_OPTIONS, OLD_WORLD_STAMP_OPTIONS,
 } from '../../../core/services/world-lore-stamps.data';
 import { LwButtonComponent } from '../button/button.component';
 import { LwIconComponent } from '../icon/icon.component';
@@ -58,19 +42,13 @@ export interface MapEditorSavePayload {
 @Component({
   selector: 'lw-world-map-editor',
   standalone: true,
-  imports: [
-    FormsModule,
-    NgpButton,
-    LwButtonComponent,
-    LwIconComponent,
-  ],
+  imports: [FormsModule, NgpButton, LwButtonComponent, LwIconComponent],
   templateUrl: './world-map-editor.component.html',
   styleUrl: './world-map-editor.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwWorldMapEditorComponent {
   readonly store = inject(LoomWeaverStoreService);
-
   readonly map = input.required<WorldMapSummaryVm>();
   readonly maps = input<readonly WorldMapSummaryVm[]>([]);
   readonly overlays = input<readonly WorldMapRegionOverlayVm[]>([]);
@@ -83,6 +61,20 @@ export class LwWorldMapEditorComponent {
   readonly relatedEntitySelected = output<LocationRelatedEntityVm>();
   readonly loreSelected = output<string>();
   readonly locationSaved = output<MapEditorSavePayload>();
+  readonly regionSaved = output<{
+    id?: string;
+    name: string;
+    overlayType: 'region' | 'territory';
+    subtitle?: string;
+    colorHex: string;
+    labelX: number;
+    labelY: number;
+    points: readonly RegionPolygonPointVm[];
+    description?: string;
+    governanceAndRealm?: string;
+    visibility: 'players' | 'gm';
+    silent?: boolean;
+  }>();
 
   readonly stampCatalog = OLD_WORLD_STAMP_OPTIONS;
   readonly vectorIcons = DEFAULT_MARKER_ICONS;
@@ -99,7 +91,7 @@ export class LwWorldMapEditorComponent {
   readonly saveNotice = signal<string | null>(null);
 
   readonly stampArtistFilter = signal<'All' | 'Muller Old World' | 'Harrewyn Classic'>('All');
-  readonly rightPaneSection = signal<'properties' | 'customize' | 'attachments'>('properties');
+  readonly rightPaneSection = signal<'properties' | 'customize' | 'regions' | 'attachments'>('customize');
 
   readonly editName = signal<string>('');
   readonly editSubtitle = signal<string>('');
@@ -115,13 +107,28 @@ export class LwWorldMapEditorComponent {
   readonly editDescription = signal<string>('');
 
   readonly iconMode = signal<'default' | 'stamp'>('default');
-  readonly defaultIconName = signal<string>('landmark');
+  readonly defaultIconName = signal<string>('dot');
   readonly stampImageUrl = signal<string>(OLD_WORLD_STAMP_OPTIONS[0].imageUrl);
   readonly showIcon = signal<boolean>(true);
   readonly colorHex = signal<string>('#d9b77a');
   readonly fontFamily = signal<MarkerFontFamily>('Cinzel');
-  readonly labelPosition = signal<MarkerLabelPosition>('right');
+  readonly labelPosition = signal<MarkerLabelPosition>('top');
   readonly iconScale = signal<number>(1.0);
+
+  readonly selectedRegionId = signal<string | null>(null);
+  readonly regionName = signal<string>('CENTRAL KINGDOMS');
+  readonly regionSubtitle = signal<string>('Heartland Coalition & Trade Realms');
+  readonly regionType = signal<'region' | 'territory'>('region');
+  readonly regionColor = signal<string>('#d9b77a');
+  readonly regionVisibility = signal<'players' | 'gm'>('players');
+  readonly regionDescription = signal<string>('');
+  readonly regionGovernance = signal<string>('');
+  readonly regionPoints = signal<readonly RegionPolygonPointVm[]>([
+    { x: 29, y: 34 }, { x: 50, y: 31 }, { x: 52, y: 56 }, { x: 31, y: 59 },
+  ]);
+  readonly regionLabelX = signal<number>(40);
+  readonly regionLabelY = signal<number>(45);
+  readonly draggingVertexIdx = signal<number | 'label' | null>(null);
 
   private hydratedLocationKey: string | null = null;
   private dragStartX = 0;
@@ -136,9 +143,7 @@ export class LwWorldMapEditorComponent {
         this.hydratedLocationKey = null;
         return;
       }
-      if (this.hydratedLocationKey === loc.locationKey) {
-        return;
-      }
+      if (this.hydratedLocationKey === loc.locationKey) return;
       this.hydratedLocationKey = loc.locationKey;
       const m = untracked(() => this.markers().find((mk) => mk.locationKey === loc.locationKey));
       this.editName.set(loc.name);
@@ -156,40 +161,32 @@ export class LwWorldMapEditorComponent {
 
       const st = loc.style ?? m?.style;
       this.iconMode.set(st?.iconMode ?? 'default');
-      this.defaultIconName.set(st?.defaultIconName ?? 'landmark');
+      this.defaultIconName.set(st?.defaultIconName ?? 'dot');
       this.stampImageUrl.set(st?.stampImageUrl ?? OLD_WORLD_STAMP_OPTIONS[0].imageUrl);
       this.showIcon.set(st?.showIcon ?? true);
       this.colorHex.set(st?.colorHex ?? '#d9b77a');
       this.fontFamily.set(st?.fontFamily ?? 'Cinzel');
-      this.labelPosition.set(st?.labelPosition ?? 'right');
+      this.labelPosition.set(st?.labelPosition ?? 'top');
       this.iconScale.set(st?.iconScale ?? 1.0);
     });
   }
 
-  readonly transformStyle = computed(
-    () => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.zoom()})`,
-  );
-
-  readonly markerZoomScale = computed(() => {
-    const z = this.zoom();
-    if (z <= 1) return 1;
-    return +(1 / Math.pow(z, 1.22)).toFixed(4);
+  readonly markerDisplayMode = computed<'icon_text' | 'icon_only' | 'text_only'>(() => {
+    if (!this.showIcon()) return 'text_only';
+    if (this.labelPosition() === 'hidden') return 'icon_only';
+    return 'icon_text';
   });
 
+  readonly transformStyle = computed(() => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.zoom()})`);
+  readonly markerZoomScale = computed(() => (this.zoom() <= 1 ? 1 : +(1 / Math.pow(this.zoom(), 1.22)).toFixed(4)));
   readonly zoomPercentLabel = computed(() => `${Math.round(this.zoom() * 100)}%`);
-
   readonly filteredStamps = computed(() => {
     const f = this.stampArtistFilter();
     return f === 'All' ? this.stampCatalog : this.stampCatalog.filter((s) => s.collection === f);
   });
 
-  zoomIn(): void {
-    this.zoom.update((z) => Math.min(12.0, +(z * 1.25).toFixed(2)));
-  }
-
-  zoomOut(): void {
-    this.zoom.update((z) => Math.max(0.65, +(z / 1.25).toFixed(2)));
-  }
+  zoomIn(): void { this.zoom.update((z) => Math.min(12.0, +(z * 1.25).toFixed(2))); }
+  zoomOut(): void { this.zoom.update((z) => Math.max(0.65, +(z / 1.25).toFixed(2))); }
 
   onWheel(event: WheelEvent): void {
     event.preventDefault();
@@ -210,9 +207,7 @@ export class LwWorldMapEditorComponent {
       this.suppressNextMarkerClick = false;
       return;
     }
-    if (this.selectedLocation()?.locationKey === marker.locationKey) {
-      return;
-    }
+    if (this.selectedLocation()?.locationKey === marker.locationKey) return;
     this.markerSelected.emit(marker.locationKey);
   }
 
@@ -243,6 +238,25 @@ export class LwWorldMapEditorComponent {
   }
 
   onPointerMove(event: MouseEvent): void {
+    const activeVertex = this.draggingVertexIdx();
+    if (activeVertex !== null) {
+      const vp = (event.currentTarget as HTMLElement).querySelector('.lw-editor-viewport') as HTMLElement | null;
+      if (vp) {
+        const rect = vp.getBoundingClientRect();
+        const xPct = Math.max(2, Math.min(98, Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 10));
+        const yPct = Math.max(2, Math.min(98, Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 10));
+        if (activeVertex === 'label') {
+          this.regionLabelX.set(xPct);
+          this.regionLabelY.set(yPct);
+        } else {
+          const pts = this.regionPoints().map((p, idx) => (idx === activeVertex ? { x: xPct, y: yPct } : p));
+          this.regionPoints.set(pts);
+          this.regionLabelX.set(Math.round((pts.reduce((s, p) => s + p.x, 0) / pts.length) * 10) / 10);
+          this.regionLabelY.set(Math.round((pts.reduce((s, p) => s + p.y, 0) / pts.length) * 10) / 10);
+        }
+      }
+      return;
+    }
     if (this.isDraggingPin()) {
       const vp = (event.currentTarget as HTMLElement).querySelector('.lw-editor-viewport') as HTMLElement | null;
       if (vp) {
@@ -261,6 +275,11 @@ export class LwWorldMapEditorComponent {
   }
 
   onPointerUp(): void {
+    if (this.draggingVertexIdx() !== null) {
+      this.draggingVertexIdx.set(null);
+      this.saveRegion(true);
+      return;
+    }
     const wasDraggingPin = this.isDraggingPin();
     this.isPanning.set(false);
     this.isDraggingPin.set(false);
@@ -271,47 +290,108 @@ export class LwWorldMapEditorComponent {
     }
   }
 
-  setIconMode(mode: 'default' | 'stamp'): void {
-    this.iconMode.set(mode);
+  setMarkerDisplayMode(mode: 'icon_text' | 'icon_only' | 'text_only'): void {
+    if (mode === 'text_only') {
+      this.showIcon.set(false);
+      if (this.labelPosition() === 'hidden') this.labelPosition.set('top');
+    } else if (mode === 'icon_only') {
+      this.showIcon.set(true);
+      this.labelPosition.set('hidden');
+    } else {
+      this.showIcon.set(true);
+      if (this.labelPosition() === 'hidden') this.labelPosition.set('top');
+    }
     this.emitSave(true);
   }
 
-  setDefaultIcon(iconId: string): void {
-    this.iconMode.set('default');
-    this.defaultIconName.set(iconId);
-    this.emitSave(true);
+  selectRegionForEdit(ov: WorldMapRegionOverlayVm, event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.selectedRegionId.set(ov.id);
+    this.rightPaneSection.set('regions');
+    this.regionName.set(ov.name);
+    this.regionSubtitle.set(ov.subtitle || 'Charted Realm & Territory');
+    this.regionType.set(ov.overlayType);
+    this.regionColor.set(ov.colorHex);
+    this.regionVisibility.set(ov.visibility === 'gm' ? 'gm' : 'players');
+    this.regionDescription.set(ov.description || `Charted region of ${ov.name} in the campaign atlas.`);
+    this.regionGovernance.set(ov.governanceAndRealm || 'Realm governance, settlements, and trade routes.');
+    this.regionPoints.set(ov.points?.length ? [...ov.points] : parseRegionPointsFromSvgPath(ov.svgPath));
+    this.regionLabelX.set(ov.labelX);
+    this.regionLabelY.set(ov.labelY);
   }
 
-  selectStamp(url: string): void {
-    this.iconMode.set('stamp');
-    this.stampImageUrl.set(url);
-    this.emitSave(true);
+  createNewRegionOnMap(): void {
+    const id = `reg-custom-${Date.now().toString().slice(-4)}`;
+    const pts = [{ x: 34, y: 34 }, { x: 56, y: 34 }, { x: 56, y: 56 }, { x: 34, y: 56 }];
+    this.selectedRegionId.set(id);
+    this.rightPaneSection.set('regions');
+    this.regionName.set('CENTRAL KINGDOMS');
+    this.regionSubtitle.set('Coalition of Crown & Guild Realms');
+    this.regionType.set('region');
+    this.regionColor.set('#d9b77a');
+    this.regionVisibility.set('players');
+    this.regionDescription.set('Major regional realm spanning the central heartlands and trade corridors.');
+    this.regionGovernance.set('Capital: Regional Seat · Governance: Royal Charter & Council');
+    this.regionPoints.set(pts);
+    this.regionLabelX.set(45);
+    this.regionLabelY.set(45);
+    this.saveRegion(false);
   }
 
-  setShowIcon(val: boolean): void {
-    this.showIcon.set(val);
-    this.emitSave(true);
+  startVertexDrag(idx: number | 'label', event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.draggingVertexIdx.set(idx);
   }
 
-  setColorHex(hex: string): void {
-    this.colorHex.set(hex);
-    this.emitSave(true);
+  addRegionCorner(): void {
+    const pts = [...this.regionPoints()];
+    const last = pts[pts.length - 1] ?? { x: 40, y: 40 };
+    const first = pts[0] ?? { x: 30, y: 30 };
+    pts.push({ x: Math.round(((last.x + first.x) / 2) * 10) / 10, y: Math.round(((last.y + first.y) / 2 + 4) * 10) / 10 });
+    this.regionPoints.set(pts);
+    this.saveRegion(true);
   }
 
-  setFontFamily(font: MarkerFontFamily): void {
-    this.fontFamily.set(font);
-    this.emitSave(true);
+  removeRegionCorner(): void {
+    if (this.regionPoints().length <= 3) return;
+    this.regionPoints.set(this.regionPoints().slice(0, -1));
+    this.saveRegion(true);
   }
 
-  setLabelPosition(pos: MarkerLabelPosition): void {
-    this.labelPosition.set(pos);
-    this.emitSave(true);
+  displayRegionSvgPath(ov: WorldMapRegionOverlayVm): string {
+    return this.selectedRegionId() === ov.id ? buildRegionSvgPath(this.regionPoints()) : ov.svgPath;
   }
 
-  setIconScale(scale: number): void {
-    this.iconScale.set(scale);
-    this.emitSave(true);
+  saveRegion(silent = false): void {
+    const id = this.selectedRegionId() || `reg-${Date.now().toString().slice(-4)}`;
+    this.regionSaved.emit({
+      id,
+      name: this.regionName().trim() || 'CHARTED REGION',
+      overlayType: this.regionType(),
+      subtitle: this.regionSubtitle().trim(),
+      colorHex: this.regionColor(),
+      labelX: this.regionLabelX(),
+      labelY: this.regionLabelY(),
+      points: this.regionPoints(),
+      description: this.regionDescription().trim(),
+      governanceAndRealm: this.regionGovernance().trim(),
+      visibility: this.regionVisibility(),
+      silent,
+    });
+    if (!silent) {
+      this.saveNotice.set(`Saved region "${this.regionName()}" & synced regional lore.`);
+    }
   }
+
+  setIconMode(mode: 'default' | 'stamp'): void { this.iconMode.set(mode); this.emitSave(true); }
+  setDefaultIcon(iconId: string): void { this.iconMode.set('default'); this.defaultIconName.set(iconId); this.emitSave(true); }
+  selectStamp(url: string): void { this.iconMode.set('stamp'); this.stampImageUrl.set(url); this.emitSave(true); }
+  setShowIcon(val: boolean): void { this.showIcon.set(val); this.emitSave(true); }
+  setColorHex(hex: string): void { this.colorHex.set(hex); this.emitSave(true); }
+  setFontFamily(font: MarkerFontFamily): void { this.fontFamily.set(font); this.emitSave(true); }
+  setLabelPosition(pos: MarkerLabelPosition): void { this.labelPosition.set(pos); this.emitSave(true); }
+  setIconScale(scale: number): void { this.iconScale.set(scale); this.emitSave(true); }
 
   markerDisplayX(m: WorldMapMarkerVm): number {
     return this.selectedLocation()?.locationKey === m.locationKey ? this.editXPercent() : m.xPercent;
@@ -363,9 +443,7 @@ export class LwWorldMapEditorComponent {
       silent,
     });
 
-    if (feedbackMessage) {
-      this.saveNotice.set(feedbackMessage);
-    }
+    if (feedbackMessage) this.saveNotice.set(feedbackMessage);
   }
 
   createNewLocationOnMap(): void {

@@ -1,13 +1,21 @@
-import { createEffect,createLayer,createFireballComposition,createMagicMissileEffect,makePresets,EffectDefinition,EffectKind,EffectLayer,CinematicSettings,GAMEPLAY_DEFAULTS,TELEPORT_DEFAULTS } from './effect-definition';
+import { createEffect,createLayer,createFireballComposition,createMagicMissileEffect,makePresets,EffectDefinition,EffectKind,EffectLayer,CinematicSettings,GAMEPLAY_DEFAULTS,TELEPORT_DEFAULTS,PROJECTILE_CORE_DEFAULTS,ProjectileElement,ProjectileCoreShape } from './effect-definition';
 const layer=(kind:EffectKind,variant:string,color:string,anchor:EffectLayer['anchor'],delay:number,duration:number,size:number):EffectLayer=>({...createLayer(kind),variant,color,secondaryColor:'#eaffff',anchor,delay,duration,size,count:70,blendMode:'screen'});
+function proj3d(element:ProjectileElement,shape:ProjectileCoreShape,color:string,secondaryColor='#eaffff',delay=160,duration=720,size=18,arc=-20):EffectLayer{
+ const variant=shape==='lance'?'shard':shape==='comet'?'meteor':'orb';
+ return {...layer('projectile',variant,color,'path',delay,duration,size),secondaryColor,projectileCore:{...PROJECTILE_CORE_DEFAULTS,element,shape,arc}};
+}
 function volume(style:CinematicSettings['style'],element:CinematicSettings['element'],color:string,anchor:EffectLayer['anchor'],delay=200,duration=1100,reach=15,width=15):EffectLayer{const kind=style==='beam'?'beam':style==='cone'?'cone':'burst';return {...layer(kind,style==='beam'?'straight':style==='cone'?(element==='ice'?'frost':element==='gas'?'poison':'flame'):'radial',color,anchor,delay,duration,style==='beam'?7:55),motion:{...createLayer(kind).motion,direction:0},cinematic:{style,element,reachFeet:reach,widthFeet:width,bloom:.9,smoke:.6}};}
 function spell(name:string,description:string,layers:EffectLayer[]):EffectDefinition{const e=createEffect(name);e.spellName=name;e.id='premium-'+name.toLowerCase().replace(/[^a-z0-9]/g,'');e.description=description;e.layers=layers;return e;}
 const charge=(color:string)=>layer('aura','vortex',color,'caster',0,450,32);
 const hit=(color:string,element:CinematicSettings['element']='force',delay=650)=>volume('nova',element,color,'target',delay,1100,10,10);
-const bolt=(name:string,color:string,element:CinematicSettings['element'],description:string)=>spell(name,description,[charge(color),volume('beam',element,color,'path',200,700),hit(color,element,720)]);
+const bolt=(name:string,color:string,element:CinematicSettings['element'],description:string)=>{
+ const pElem:ProjectileElement=element==='force'?'eldritch':element==='ice'?'ice':element==='fire'?'fire':element==='radiant'?'radiant':element==='lightning'?'lightning':element==='acid'?'acid':'shadow';
+ const pShape:ProjectileCoreShape=pElem==='ice'?'lance':pElem==='fire'?'comet':pElem==='radiant'?'star':'prism';
+ return spell(name,description,[charge(color),proj3d(pElem,pShape,color,'#f2fffb',160,680,18,pElem==='fire'?-30:-12),volume('beam',element,color,'path',200,700),hit(color,element,720)]);
+};
 /** Curated first batch: common table spells, not a measured popularity ranking. Rules notes are summaries, not replacement spell text. */
 export function makeSpellTemplates():EffectDefinition[]{
- const eldritch=bolt('Eldritch Blast','#30efc1','force','A narrow white-hot emerald lance, twisting turquoise energy, a sharp starburst and drifting impact motes. Ranged spell attack; each beam resolves separately. Repelling Blast is optional; prone is homebrew.');Object.assign(eldritch.layers[2],{size:80,count:100,color:'#55edc5',secondaryColor:'#fff1cc'});eldritch.gameplay={...GAMEPLAY_DEFAULTS,move:'push',feet:10,basis:'feature',impactMs:720};
+ const eldritch=bolt('Eldritch Blast','#30efc1','force','A narrow white-hot emerald lance, twisting turquoise energy, a sharp starburst and drifting impact motes. Ranged spell attack; each beam resolves separately. Repelling Blast is optional; prone is homebrew.');Object.assign(eldritch.layers[eldritch.layers.length-1],{size:80,count:100,color:'#55edc5',secondaryColor:'#fff1cc'});eldritch.gameplay={...GAMEPLAY_DEFAULTS,move:'push',feet:10,basis:'feature',impactMs:720};
  const fire=createFireballComposition();fire.id='premium-fireball';fire.name='Fireball';
  const missile=createMagicMissileEffect();missile.id='premium-magicmissile';
  const whip=makePresets().find(e=>e.spellName==='Thorn Whip')!;whip.id='premium-thornwhip';whip.name='Thorn Whip';whip.gameplay={...GAMEPLAY_DEFAULTS,enabled:true,move:'pull',feet:5,impactMs:Math.round(whip.layers[0].duration*(whip.layers[0].whip.windup+whip.layers[0].whip.strike)/(whip.layers[0].whip.windup+whip.layers[0].whip.strike+whip.layers[0].whip.hold+whip.layers[0].whip.retract))};whip.description+=' On a hit, pull a Large or smaller target up to 10 feet. This template starts at 5 feet. GM approval is required for gameplay assignments.';

@@ -23,7 +23,7 @@ import { adaptEffectForCampaign, downloadStandaloneEffectFile, parseStandaloneEf
 import { EffectPreviewComponent } from './shared/effect-preview.component';
 import { TimelineComponent, ClipChange } from './shared/timeline/timeline.component';
 import { EffectApiService, EffectListing } from './effect-api.service';
-import { CINEMATIC_DEFAULTS,CinematicSettings,GameplaySettings,GAMEPLAY_DEFAULTS,createMageHandEffect, MageHandSettings, createFireballComposition, FireMaterialSettings, FIRE_MATERIAL_CONTROLS, createFireHitEffect, FIRE_HIT_CONTROLS, FireHitSettings, MISSILE_CONTROLS, MagicMissileSettings, PreviewScene, defaultScene, WHIP_CONTROLS, WHIP_DEFAULTS, WhipSettings, BLEND_MODES, EFFECT_KINDS, VARIANTS, EffectDefinition, EffectKind, EffectLayer, EffectMotion, EffectAssignment, createEffect, createLayer, defaultMotion, effectDuration, makePresets, newId, parseEffect } from './effects/effect-definition';
+import { CINEMATIC_DEFAULTS,CinematicSettings,GameplaySettings,GAMEPLAY_DEFAULTS,createMageHandEffect, MageHandSettings, createFireballComposition, FireMaterialSettings, FIRE_MATERIAL_CONTROLS, createFireHitEffect, FIRE_HIT_CONTROLS, FireHitSettings, MISSILE_CONTROLS, MagicMissileSettings, PreviewScene, defaultScene, WHIP_CONTROLS, WHIP_DEFAULTS, WhipSettings, BLEND_MODES, EFFECT_KINDS, VARIANTS, EffectDefinition, EffectKind, EffectLayer, EffectMotion, EffectAssignment, createEffect, createLayer, defaultMotion, effectDuration, makePresets, newId, parseEffect, PROJECTILE_ELEMENTS, PROJECTILE_SHAPES, PROJECTILE_CORE_CONTROLS, ProjectileCoreSettings, ProjectileElement, ProjectileCoreShape, defaultProjectileCoreForVariant, parseProjectileCore } from './effects/effect-definition';
 @Component({ selector: 'mw-root', standalone: true, imports: [OptionGridComponent, UserMenuComponent, SplitterComponent, FormsModule, SpellPickerComponent, ButtonComponent, IconComponent, ModalComponent, AuthModalComponent, EffectPreviewComponent, TimelineComponent], templateUrl: './app.component.html', styleUrl: './app.component.scss', changeDetection: ChangeDetectionStrategy.OnPush })
 export class AppComponent {
   private readonly http=inject(HttpClient);private readonly destroyRef=inject(DestroyRef);
@@ -70,6 +70,41 @@ export class AppComponent {
   layerIconUrl(l: EffectLayer): string { return getSpellIconUrl(resolveLayerIconSlug(l, this.definition().name)); }
   variantIconUrl(kind: EffectKind, variantId: string, name: string, desc: string): string { return getSpellIconUrl(resolveLayerIconSlug({ kind, variant: variantId, color: '#ffffff' }, `${name} ${desc}`)); }
   readonly kinds = EFFECT_KINDS; readonly blendModes = BLEND_MODES; readonly whipControls = WHIP_CONTROLS; readonly missileControls = MISSILE_CONTROLS; readonly activeBolt=signal(0);
+  readonly projectileElements = PROJECTILE_ELEMENTS;
+  readonly projectileShapes = PROJECTILE_SHAPES;
+  readonly projectileControls = PROJECTILE_CORE_CONTROLS;
+  projectileCoreSettings(layer: EffectLayer): ProjectileCoreSettings {
+    return parseProjectileCore(layer.projectileCore, layer.variant, layer.color);
+  }
+  applyProjectileElementPreset(elementId: ProjectileElement): void {
+    const l = this.selected();
+    if (!l || l.kind !== 'projectile') return;
+    const preset = this.projectileElements.find((e) => e.id === elementId);
+    if (!preset) return;
+    const cur = this.projectileCoreSettings(l);
+    const variant = preset.shape === 'lance' ? 'shard' : preset.shape === 'comet' ? 'meteor' : l.variant;
+    this.updateLayer({
+      variant,
+      color: preset.color,
+      secondaryColor: preset.secondaryColor,
+      fireMaterial: undefined,
+      projectileCore: {
+        ...cur,
+        element: preset.id,
+        shape: preset.shape,
+      },
+    });
+    this.replay();
+  }
+  projectileCore<K extends keyof ProjectileCoreSettings>(key: K, value: ProjectileCoreSettings[K]): void {
+    const l = this.selected();
+    if (!l || l.kind !== 'projectile') return;
+    const cur = this.projectileCoreSettings(l);
+    this.updateLayer({
+      fireMaterial: undefined,
+      projectileCore: parseProjectileCore({ ...cur, [key]: value }, l.variant, l.color),
+    });
+  }
   readonly viewportWidth=signal(window.innerWidth);readonly viewportHeight=signal(window.innerHeight);
   @HostListener('window:resize') viewportChanged():void{this.viewportWidth.set(window.innerWidth);this.viewportHeight.set(window.innerHeight);}
   readonly previewMin=computed(()=>Math.min(45,Math.max(20,190/Math.max(1,this.viewportHeight()-180)*100)));
@@ -90,7 +125,7 @@ export class AppComponent {
   readonly selected = computed(() => this.definition().layers.find(l => l.id === this.selectedId()));
   readonly variants = computed(() => VARIANTS[this.selected()?.kind ?? 'beam']);
   readonly variantDescription = computed(() => this.variants().find(v => v.id === this.selected()?.variant)?.description ?? '');
-  readonly clips = computed(() => this.definition().layers.map(l => ({ id: l.id, name:l.cinematic?'Cinematic / '+l.cinematic.element+' '+l.cinematic.style:l.mageHand?'Mage Hand / spectral shader':l.fireMaterial?'Fire / '+l.fireMaterial.role+' / textured GPU': l.fireHit ? 'Fire hit / GPU shader' : l.missile ? 'Magic Missile / 3 bolts' : `${l.kind} / ${VARIANTS[l.kind].find(v => v.id === l.variant)?.name ?? l.variant}`, color: l.color, start: l.delay, duration: l.duration, enabled: l.enabled, easing: l.easing, opacityKeyframes: l.opacityKeyframes })));
+  readonly clips = computed(() => this.definition().layers.map(l => ({ id: l.id, name:l.cinematic?'Cinematic / '+l.cinematic.element+' '+l.cinematic.style:l.mageHand?'Mage Hand / spectral shader':l.fireMaterial?'Fire / '+l.fireMaterial.role+' / textured GPU': l.fireHit ? 'Fire hit / GPU shader' : l.missile ? 'Magic Missile / 3 bolts' : l.kind==='projectile'&&l.projectileCore ? `Projectile / ${l.projectileCore.element} 3D ${l.projectileCore.shape}` : `${l.kind} / ${VARIANTS[l.kind].find(v => v.id === l.variant)?.name ?? l.variant}`, color: l.color, start: l.delay, duration: l.duration, enabled: l.enabled, easing: l.easing, opacityKeyframes: l.opacityKeyframes })));
   readonly duration = computed(() => effectDuration(this.definition()));
   readonly library = signal<EffectDefinition[]>([]); readonly listings = signal<EffectListing[]>([]);
   readonly assignments = signal<EffectAssignment[]>([]); readonly members = signal<{ character_id: number | null; character_name: string | null }[]>([]);
@@ -158,8 +193,8 @@ export class AppComponent {
   scene(scene:PreviewScene):void{this.definition.update(d=>({...d,previewScene:scene}));}
   resetScene():void{this.update({previewScene:defaultScene()});}
   whip(key: keyof WhipSettings, value: number): void { const l = this.selected(); if (l) this.updateLayer({ whip: { ...(l.whip ?? WHIP_DEFAULTS), [key]: Number(value) } }); }
-  kind(kind: EffectKind): void { const variant = VARIANTS[kind][0].id; const defaults = createLayer(kind); this.updateLayer({ kind, variant, ...(kind !== 'projectile' ? {missile:undefined,mageHand:undefined} : {}), ...(kind!=='burst'?{fireHit:undefined}:{}),fireMaterial:undefined,cinematic:defaults.cinematic, size: defaults.size, anchor: defaults.anchor, ...(kind === 'whip' ? {color: defaults.color, secondaryColor: defaults.secondaryColor, duration: defaults.duration} : {}), motion: defaultMotion(kind, variant) }); this.replay(); }
-  variant(id: string): void { const l = this.selected(); if (l) { this.updateLayer({ variant: id, motion: {...defaultMotion(l.kind, id),...(l.kind==='cone'?{direction:0}:{})},...(l.cinematic&&l.kind==='cone'?{cinematic:{...l.cinematic,element:id==='frost'||id==='shards'?'ice':id==='poison'?'gas':id==='force'?'force':'fire'}}:{}) }); this.replay(); } }
+  kind(kind: EffectKind): void { const variant = VARIANTS[kind][0].id; const defaults = createLayer(kind); this.updateLayer({ kind, variant, ...(kind !== 'projectile' ? {missile:undefined,mageHand:undefined,projectileCore:undefined} : {projectileCore:defaults.projectileCore}), ...(kind!=='burst'?{fireHit:undefined}:{}),fireMaterial:undefined,cinematic:defaults.cinematic, size: defaults.size, anchor: defaults.anchor, ...(kind === 'whip' ? {color: defaults.color, secondaryColor: defaults.secondaryColor, duration: defaults.duration} : {}), motion: defaultMotion(kind, variant) }); this.replay(); }
+  variant(id: string): void { const l = this.selected(); if (l) { const nextCore = l.kind==='projectile'&&!l.mageHand&&!l.missile?{...this.projectileCoreSettings(l),shape:(id==='shard'?'lance':id==='meteor'||id==='comet'?'comet':id==='swarm'?'prism':'sphere') as ProjectileCoreShape}:l.projectileCore; this.updateLayer({ variant: id, ...(l.kind==='projectile'?{projectileCore:nextCore}:{}), motion: {...defaultMotion(l.kind, id),...(l.kind==='cone'?{direction:0}:{})},...(l.cinematic&&l.kind==='cone'?{cinematic:{...l.cinematic,element:id==='frost'||id==='shards'?'ice':id==='poison'?'gas':id==='force'?'force':'fire'}}:{}) }); this.replay(); } }
   add(kind: EffectKind): void { if (this.definition().layers.length >= 16) return; const l = createLayer(kind); this.update({ layers: [...this.definition().layers, l] }); this.selectedId.set(l.id);this.dialog.set(null);this.workspace.set('layers'); this.replay(); }
   toggle(id: string): void { const l = this.definition().layers.find(l => l.id === id); if (l) this.updateLayer({ enabled: !l.enabled }, id); }
   duplicate(id: string): void { const l = this.definition().layers.find(l => l.id === id); if (!l || this.definition().layers.length >= 16) return; const clone = structuredClone(l); clone.id = newId(); this.update({ layers: [...this.definition().layers, clone] }); this.selectedId.set(clone.id); }

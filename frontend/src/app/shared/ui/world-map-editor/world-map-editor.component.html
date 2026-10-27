@@ -1,11 +1,10 @@
 @let m = map();
 <div class="lw-map-editor-backdrop" role="dialog" aria-modal="true" aria-label="World Atlas Interactive Map Editor">
   <div class="lw-map-editor">
-    <!-- Top Header Bar -->
     <header class="lw-map-editor__header">
       <div class="lw-map-editor__brand">
-        <span class="lw-map-editor__eyebrow">LOOMWEAVER ATLAS STUDIO · CUSTOM MAP &amp; ICON EDITOR</span>
-        <h2>{{ m.name }} — Interactive Map &amp; Marker Studio</h2>
+        <span class="lw-map-editor__eyebrow">LOOMWEAVER ATLAS STUDIO · CUSTOM MAP, STAMP &amp; REGION EDITOR</span>
+        <h2>{{ m.name }} — Interactive Map, Marker &amp; Region Studio</h2>
       </div>
 
       <div class="lw-map-editor__header-actions">
@@ -15,13 +14,14 @@
             <span>{{ notice }}</span>
           </span>
         }
-        <lw-button variant="secondary" size="sm" icon="plus" iconTone="gold" label="Add New Marker" (pressed)="createNewLocationOnMap()" />
+        <lw-button variant="secondary" size="sm" icon="plus" iconTone="gold" label="Add Marker" (pressed)="createNewLocationOnMap()" />
+        <lw-button variant="secondary" size="sm" icon="layers" iconTone="emerald" label="Add Region / Kingdom" (pressed)="createNewRegionOnMap()" />
         @if (selectedLocation()) {
           <lw-button
             [variant]="dragModeActive() ? 'emerald' : 'secondary'"
             size="sm"
             icon="map-pin"
-            [label]="dragModeActive() ? 'Dragging Enabled (Click or Drag Pin)' : 'Drag / Move Selected Location'"
+            [label]="dragModeActive() ? 'Dragging Enabled' : 'Drag / Move Location'"
             (pressed)="dragModeActive.set(!dragModeActive())"
           />
           <lw-button variant="gold" size="sm" icon="check" label="Save Location & Style" (pressed)="saveSelectedLocation()" />
@@ -33,7 +33,6 @@
     </header>
 
     <div class="lw-map-editor__body">
-      <!-- Left: Large Interactive Map Canvas -->
       <div
         class="lw-editor-stage"
         [class.lw-editor-stage--panning]="isPanning()"
@@ -57,19 +56,54 @@
 
           <svg class="lw-editor-svg" viewBox="0 0 1000 560" preserveAspectRatio="none">
             @for (ov of overlays(); track ov.id) {
-              <path [attr.d]="ov.svgPath" [attr.stroke]="ov.colorHex" [attr.fill]="ov.colorHex" class="lw-editor-poly" />
+              @let isRegSel = selectedRegionId() === ov.id;
+              <g class="lw-editor-region-group" [class.lw-editor-region-group--selected]="isRegSel" (click)="selectRegionForEdit(ov, $event)">
+                <path
+                  [attr.d]="displayRegionSvgPath(ov)"
+                  [attr.stroke]="isRegSel ? regionColor() : ov.colorHex"
+                  [attr.fill]="isRegSel ? regionColor() : ov.colorHex"
+                  class="lw-editor-poly"
+                />
+                <text
+                  [attr.x]="(isRegSel ? regionLabelX() : ov.labelX) * 10"
+                  [attr.y]="(isRegSel ? regionLabelY() : ov.labelY) * 5.6"
+                  class="lw-editor-region-label"
+                >{{ isRegSel ? regionName() : ov.name }}</text>
+              </g>
             }
           </svg>
+
+          @if (selectedRegionId()) {
+            @for (pt of regionPoints(); track $index) {
+              <button
+                type="button"
+                class="lw-poly-vertex"
+                [style.left.%]="pt.x"
+                [style.top.%]="pt.y"
+                [style.border-color]="regionColor()"
+                title="Drag corner to reshape region polygon"
+                (mousedown)="startVertexDrag($index, $event)"
+              ></button>
+            }
+            <button
+              type="button"
+              class="lw-poly-vertex lw-poly-vertex--label"
+              [style.left.%]="regionLabelX()"
+              [style.top.%]="regionLabelY()"
+              title="Drag to move region title position"
+              (mousedown)="startVertexDrag('label', $event)"
+            ><span>Label</span></button>
+          }
 
           @for (mk of markers(); track mk.markerId) {
             @let isSel = selectedLocation()?.locationKey === mk.locationKey;
             @let useIconMode = isSel ? iconMode() : (mk.style?.iconMode || 'default');
             @let useStampUrl = isSel ? stampImageUrl() : mk.style?.stampImageUrl;
-            @let useVecIcon = isSel ? defaultIconName() : (mk.style?.defaultIconName || 'landmark');
+            @let useVecIcon = isSel ? defaultIconName() : (mk.style?.defaultIconName || 'dot');
             @let useShowIcon = isSel ? showIcon() : (mk.style?.showIcon ?? true);
             @let useColor = isSel ? colorHex() : (mk.style?.colorHex || '#d9b77a');
             @let useFont = isSel ? fontFamily() : (mk.style?.fontFamily || 'Cinzel');
-            @let usePos = isSel ? labelPosition() : (mk.style?.labelPosition || 'right');
+            @let usePos = isSel ? labelPosition() : (mk.style?.labelPosition || 'top');
             @let useScale = isSel ? iconScale() : (mk.style?.iconScale || 1);
 
             <button
@@ -80,16 +114,17 @@
               [attr.data-label-pos]="usePos"
               [style.left.%]="markerDisplayX(mk)"
               [style.top.%]="markerDisplayY(mk)"
-              [style.border-color]="useColor"
               [style.font-family]="useFont"
               (mousedown)="onMarkerMouseDown(mk, $event)"
               (click)="onMarkerClick(mk, $event)"
             >
               @if (useShowIcon) {
                 @if (useIconMode === 'stamp' && useStampUrl) {
-                  <span class="lw-editor-marker__stamp-wrap" [style.border-color]="useColor" [style.transform]="'scale(' + useScale + ')'">
+                  <span class="lw-editor-marker__stamp-wrap" [style.transform]="'scale(' + useScale + ')'">
                     <img [src]="useStampUrl" [alt]="mk.name" class="lw-editor-marker__stamp" draggable="false" />
                   </span>
+                } @else if (useVecIcon === 'dot') {
+                  <span class="lw-editor-marker__dot" [style.background-color]="useColor" [style.transform]="'scale(' + useScale + ')'"></span>
                 } @else {
                   <span class="lw-editor-marker__pin" [style.border-color]="useColor" [style.color]="useColor" [style.transform]="'scale(' + useScale + ')'">
                     <lw-icon [name]="useVecIcon" [size]="15" />
@@ -106,51 +141,114 @@
           }
         </div>
 
-        <!-- Zoom Controls Overlay -->
         <div class="lw-editor-zoom-bar" (mousedown)="$event.stopPropagation()">
-          <button ngpButton type="button" class="lw-zoom-btn" title="Zoom In (Up to 1200%)" (click)="zoomIn()">
-            <lw-icon name="plus" [size]="15" />
-          </button>
+          <button ngpButton type="button" class="lw-zoom-btn" title="Zoom In" (click)="zoomIn()"><lw-icon name="plus" [size]="15" /></button>
           <span class="lw-zoom-readout">{{ zoomPercentLabel() }}</span>
-          <button ngpButton type="button" class="lw-zoom-btn" title="Zoom Out (Down to 65%)" (click)="zoomOut()">
-            <lw-icon name="minus" [size]="15" />
-          </button>
-          <button ngpButton type="button" class="lw-zoom-btn" title="Reset View" (click)="resetViewport()">
-            <lw-icon name="target" [size]="15" />
-          </button>
+          <button ngpButton type="button" class="lw-zoom-btn" title="Zoom Out" (click)="zoomOut()"><lw-icon name="minus" [size]="15" /></button>
+          <button ngpButton type="button" class="lw-zoom-btn" title="Reset View" (click)="resetViewport()"><lw-icon name="target" [size]="15" /></button>
         </div>
       </div>
 
-      <!-- Right Pane: Connected Properties, Hyperlinks, Custom Icon/Stamp & Attachment Tools -->
       <aside class="lw-editor-sidebar">
-        @if (selectedLocation(); as loc) {
+        <div class="lw-editor-tabs" role="tablist">
+          <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'properties'" (click)="rightPaneSection.set('properties')">Properties</button>
+          <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'customize'" (click)="rightPaneSection.set('customize')">Marker Style</button>
+          <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'regions'" (click)="rightPaneSection.set('regions')">Regions &amp; Lore</button>
+          <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'attachments'" (click)="rightPaneSection.set('attachments')">Maps &amp; DM</button>
+        </div>
+
+        @if (rightPaneSection() === 'regions') {
+          <div class="lw-editor-sidebar__top">
+            <div>
+              <span class="lw-editor-sidebar__eyebrow">REGIONAL REALMS &amp; POLYGON BOUNDARIES</span>
+              <h3>{{ regionName() || 'Select or Create a Region' }}</h3>
+              <span class="lw-editor-sidebar__coords">Drag polygon corners on the map to reshape boundaries</span>
+            </div>
+            <button ngpButton type="button" class="lw-drag-toggle-btn" (click)="createNewRegionOnMap()">
+              <lw-icon name="plus" [size]="13" /><span>New Region</span>
+            </button>
+          </div>
+
+          <div class="lw-editor-sidebar__scroll">
+            <div class="lw-editor-group">
+              <h4>CHARTED REGIONS ({{ overlays().length }})</h4>
+              <div class="lw-stamp-filter-bar">
+                @for (ov of overlays(); track ov.id) {
+                  <button ngpButton type="button" class="lw-artist-chip" [class.lw-artist-chip--active]="selectedRegionId() === ov.id" (click)="selectRegionForEdit(ov)">
+                    {{ ov.name }}
+                  </button>
+                }
+              </div>
+
+              <label class="lw-editor-field">
+                <span>Region / Kingdom Name</span>
+                <input type="text" [ngModel]="regionName()" (ngModelChange)="regionName.set($event)" placeholder="e.g. CENTRAL KINGDOMS, SOUTHERN KINGDOMS" />
+              </label>
+
+              <div class="lw-editor-row">
+                <label class="lw-editor-field">
+                  <span>Realm Subtitle</span>
+                  <input type="text" [ngModel]="regionSubtitle()" (ngModelChange)="regionSubtitle.set($event)" />
+                </label>
+                <label class="lw-editor-field">
+                  <span>Boundary Type</span>
+                  <select [ngModel]="regionType()" (ngModelChange)="regionType.set($event)">
+                    <option value="region">Kingdom / Region</option>
+                    <option value="territory">Faction Territory</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="lw-editor-row">
+                <label class="lw-editor-field">
+                  <span>Polygon Color</span>
+                  <div class="lw-color-swatches">
+                    @for (c of colorSwatches; track c.hex) {
+                      <button ngpButton type="button" class="lw-color-swatch" [class.lw-color-swatch--active]="regionColor() === c.hex" [style.background]="c.hex" (click)="regionColor.set(c.hex); saveRegion(true)"></button>
+                    }
+                  </div>
+                </label>
+                <label class="lw-editor-field">
+                  <span>Polygon Corners ({{ regionPoints().length }})</span>
+                  <div class="lw-editor-mode-switch">
+                    <button ngpButton type="button" class="lw-mode-btn" (click)="addRegionCorner()">+ Corner</button>
+                    <button ngpButton type="button" class="lw-mode-btn" (click)="removeRegionCorner()">- Corner</button>
+                  </div>
+                </label>
+              </div>
+
+              <label class="lw-editor-field">
+                <span>Regional Governance, Capital &amp; Factions</span>
+                <input type="text" [ngModel]="regionGovernance()" (ngModelChange)="regionGovernance.set($event)" placeholder="Capital, ruling houses, trade routes..." />
+              </label>
+
+              <label class="lw-editor-field">
+                <span>Regional Lore &amp; Encyclopedia Entry (Synced to Lore Library)</span>
+                <textarea rows="4" [ngModel]="regionDescription()" (ngModelChange)="regionDescription.set($event)" placeholder="History, culture, and borders of this realm..."></textarea>
+              </label>
+
+              <label class="lw-editor-field">
+                <span>Player Visibility</span>
+                <select [ngModel]="regionVisibility()" (ngModelChange)="regionVisibility.set($event)">
+                  <option value="players">Revealed to Players</option>
+                  <option value="gm">GM Secret Region</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <footer class="lw-editor-sidebar__foot">
+            <lw-button variant="gold" size="sm" [fullWidth]="true" icon="check" label="Save Region Polygon & Sync Lore" (pressed)="saveRegion(false)" />
+          </footer>
+        } @else if (selectedLocation(); as loc) {
           <div class="lw-editor-sidebar__top">
             <div>
               <span class="lw-editor-sidebar__eyebrow">SELECTED MAP ELEMENT</span>
               <h3>{{ editName() || loc.name }}</h3>
               <span class="lw-editor-sidebar__coords">Coordinates: {{ editXPercent() }}% E, {{ editYPercent() }}% N</span>
             </div>
-            <button
-              ngpButton
-              type="button"
-              class="lw-drag-toggle-btn"
-              [class.lw-drag-toggle-btn--active]="dragModeActive()"
-              (click)="dragModeActive.set(!dragModeActive())"
-            >
-              <lw-icon name="map-pin" [size]="13" />
-              <span>{{ dragModeActive() ? 'Dragging Active' : 'Edit / Drag Location' }}</span>
-            </button>
-          </div>
-
-          <div class="lw-editor-tabs" role="tablist">
-            <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'properties'" (click)="rightPaneSection.set('properties')">
-              Connected Properties
-            </button>
-            <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'customize'" (click)="rightPaneSection.set('customize')">
-              Icon, Stamp &amp; Font
-            </button>
-            <button ngpButton type="button" class="lw-editor-tab" [class.lw-editor-tab--active]="rightPaneSection() === 'attachments'" (click)="rightPaneSection.set('attachments')">
-              Sessions, Maps &amp; DM
+            <button ngpButton type="button" class="lw-drag-toggle-btn" [class.lw-drag-toggle-btn--active]="dragModeActive()" (click)="dragModeActive.set(!dragModeActive())">
+              <lw-icon name="map-pin" [size]="13" /><span>{{ dragModeActive() ? 'Dragging Active' : 'Edit / Drag Location' }}</span>
             </button>
           </div>
 
@@ -188,19 +286,13 @@
                   <h4>HYPERLINKED CONNECTIONS ({{ loc.relatedEntities.length }})</h4>
                   @for (rel of loc.relatedEntities; track rel.compositeKey) {
                     <button ngpButton type="button" class="lw-editor-link-card" (click)="relatedEntitySelected.emit(rel)">
-                      <div>
-                        <strong>{{ rel.name }}</strong>
-                        <small>{{ rel.relationshipLabel }} · {{ rel.subtitle }}</small>
-                      </div>
+                      <div><strong>{{ rel.name }}</strong><small>{{ rel.relationshipLabel }} · {{ rel.subtitle }}</small></div>
                       <lw-icon name="arrow-right" [size]="13" />
                     </button>
                   }
                   @for (loreId of loc.linkedLoreIds; track loreId) {
                     <button ngpButton type="button" class="lw-editor-link-card" (click)="loreSelected.emit(loreId)">
-                      <div>
-                        <strong>Lore Codex: {{ loreId }}</strong>
-                        <small>Click to open in Lore Library</small>
-                      </div>
+                      <div><strong>Lore Codex: {{ loreId }}</strong><small>Click to open in Lore Library</small></div>
                       <lw-icon name="book-open" [size]="13" />
                     </button>
                   }
@@ -209,61 +301,38 @@
 
               @case ('customize') {
                 <div class="lw-editor-group">
-                  <div class="lw-editor-toggle-row">
-                    <span>Show Marker Icon / Image</span>
-                    <input type="checkbox" [ngModel]="showIcon()" (ngModelChange)="setShowIcon($event)" />
-                  </div>
+                  <label class="lw-editor-field">
+                    <span>Marker Display Mode (Text Only, Icon Only, or Both)</span>
+                    <div class="lw-editor-mode-switch lw-editor-mode-switch--three">
+                      <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="markerDisplayMode() === 'icon_text'" (click)="setMarkerDisplayMode('icon_text')">Dot/Icon + Text</button>
+                      <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="markerDisplayMode() === 'icon_only'" (click)="setMarkerDisplayMode('icon_only')">Icon Only</button>
+                      <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="markerDisplayMode() === 'text_only'" (click)="setMarkerDisplayMode('text_only')">Text Only</button>
+                    </div>
+                  </label>
 
                   <div class="lw-editor-mode-switch">
-                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'default'" (click)="setIconMode('default')">
-                      Default Vector Icons
-                    </button>
-                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'stamp'" (click)="setIconMode('stamp')">
-                      Old World Stamps (Muller &amp; Harrewyn)
-                    </button>
+                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'default'" (click)="setIconMode('default')">Map Dot &amp; Vector Icons</button>
+                    <button ngpButton type="button" class="lw-mode-btn" [class.lw-mode-btn--active]="iconMode() === 'stamp'" (click)="setIconMode('stamp')">Old World Stamps (Muller &amp; Harrewyn)</button>
                   </div>
 
                   @if (iconMode() === 'default') {
                     <div class="lw-vector-grid">
                       @for (ic of vectorIcons; track ic.id) {
-                        <button
-                          ngpButton
-                          type="button"
-                          class="lw-vector-option"
-                          [class.lw-vector-option--active]="defaultIconName() === ic.id"
-                          (click)="setDefaultIcon(ic.id)"
-                        >
-                          <lw-icon [name]="ic.id" [size]="16" />
-                          <span>{{ ic.label }}</span>
+                        <button ngpButton type="button" class="lw-vector-option" [class.lw-vector-option--active]="defaultIconName() === ic.id" (click)="setDefaultIcon(ic.id)">
+                          <lw-icon [name]="ic.id === 'dot' ? 'map-pin' : ic.id" [size]="15" /><span>{{ ic.label }}</span>
                         </button>
                       }
                     </div>
                   } @else {
                     <div class="lw-stamp-filter-bar">
                       @for (artist of ['All', 'Muller Old World', 'Harrewyn Classic']; track artist) {
-                        <button
-                          ngpButton
-                          type="button"
-                          class="lw-artist-chip"
-                          [class.lw-artist-chip--active]="stampArtistFilter() === artist"
-                          (click)="stampArtistFilter.set($any(artist))"
-                        >
-                          {{ artist }}
-                        </button>
+                        <button ngpButton type="button" class="lw-artist-chip" [class.lw-artist-chip--active]="stampArtistFilter() === artist" (click)="stampArtistFilter.set($any(artist))">{{ artist }}</button>
                       }
                     </div>
                     <div class="lw-stamp-grid">
                       @for (st of filteredStamps(); track st.id) {
-                        <button
-                          ngpButton
-                          type="button"
-                          class="lw-stamp-card"
-                          [class.lw-stamp-card--active]="stampImageUrl() === st.imageUrl"
-                          (click)="selectStamp(st.imageUrl)"
-                        >
-                          <span class="lw-stamp-card__plate">
-                            <img [src]="st.imageUrl" [alt]="st.label" />
-                          </span>
+                        <button ngpButton type="button" class="lw-stamp-card" [class.lw-stamp-card--active]="stampImageUrl() === st.imageUrl" (click)="selectStamp(st.imageUrl)">
+                          <span class="lw-stamp-card__plate"><img [src]="st.imageUrl" [alt]="st.label" /></span>
                           <span>{{ st.label }}</span>
                         </button>
                       }
@@ -274,15 +343,7 @@
                     <span>Color Accent &amp; Swatches</span>
                     <div class="lw-color-swatches">
                       @for (c of colorSwatches; track c.hex) {
-                        <button
-                          ngpButton
-                          type="button"
-                          class="lw-color-swatch"
-                          [class.lw-color-swatch--active]="colorHex() === c.hex"
-                          [style.background]="c.hex"
-                          [title]="c.label"
-                          (click)="setColorHex(c.hex)"
-                        ></button>
+                        <button ngpButton type="button" class="lw-color-swatch" [class.lw-color-swatch--active]="colorHex() === c.hex" [style.background]="c.hex" [title]="c.label" (click)="setColorHex(c.hex)"></button>
                       }
                       <input type="color" [ngModel]="colorHex()" (ngModelChange)="setColorHex($event)" />
                     </div>
@@ -300,8 +361,8 @@
                     <label class="lw-editor-field">
                       <span>Title Position</span>
                       <select [ngModel]="labelPosition()" (ngModelChange)="setLabelPosition($event)">
+                        <option value="top">Above Dot / Icon (Default)</option>
                         <option value="right">Right of Icon</option>
-                        <option value="top">Above Icon</option>
                         <option value="bottom">Below Icon</option>
                         <option value="left">Left of Icon</option>
                         <option value="overlay">Centered Overlay</option>
@@ -311,8 +372,8 @@
                   </div>
 
                   <label class="lw-editor-field">
-                    <span>Icon Scale ({{ iconScale() }}x)</span>
-                    <input type="range" min="0.7" max="2.2" step="0.1" [ngModel]="iconScale()" (ngModelChange)="setIconScale(+$event)" />
+                    <span>Icon / Stamp Scale ({{ iconScale() }}x)</span>
+                    <input type="range" min="0.7" max="2.4" step="0.1" [ngModel]="iconScale()" (ngModelChange)="setIconScale(+$event)" />
                   </label>
                 </div>
               }
@@ -390,8 +451,8 @@
         } @else {
           <div class="lw-editor-empty">
             <lw-icon name="map-pin" [size]="28" />
-            <h4>Select a Map Element</h4>
-            <p>Click any marker on the large map canvas to inspect its connected entities, drag it to a new coordinate, or customize its Old World stamp, font, and attached maps.</p>
+            <h4>Select a Marker or Region Polygon</h4>
+            <p>Click any marker or region polygon on the map to inspect its connected entities, customize its dot/stamp/text display, or edit regional boundaries and lore.</p>
           </div>
         }
       </aside>

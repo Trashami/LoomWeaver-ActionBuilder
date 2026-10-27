@@ -336,9 +336,15 @@ export const LANDING_PRICING_PLANS: readonly PricingPlanVm[] = [
 export const LANDING_FAQS: readonly LandingFaqItemVm[] = [
   {
     id: 'faq-what-is-loomweaver-vtt',
-    question: 'What is LoomWeaver (Loom-Weaver) and how does it compare to a traditional VTT?',
+    question: 'What is LoomWeaver VTT and how does it compare to a traditional Virtual Tabletop (Virtual Table Top)?',
     answer:
-      'LoomWeaver (accessible at loom-weaver.com) is an all-in-one Tabletop RPG Operating System and 2.5D Virtual Tabletop (VTT). Unlike standalone VTTs that separate your battlemaps from your campaign wiki, LoomWeaver connects your 2.5D tactical combat map, 3D physics dice, Character Studio, World Atlas, and living campaign memory (The Loom) into one unified dark-fantasy workspace.',
+      'LoomWeaver VTT (accessible at loom-weaver.com/vtt and vtt.loom-weaver.com) is an all-in-one 2D, 2.5D, and 3D Virtual Tabletop (VTT / virtual table top) and fantasy tabletop role playing game (TTRPG / table top role playing game) campaign manager. Unlike standalone VTTs that separate your fantasy table top battlemaps from your campaign wiki, LoomWeaver connects your 2D & 3D tactical combat map, 3D physics dice, Character Studio, World Atlas, and living campaign memory (The Loom) into one unified dark-fantasy workspace.',
+  },
+  {
+    id: 'faq-fantasy-ttrpg-systems',
+    question: 'Which fantasy TTRPG and table top role playing game systems work with LoomWeaver VTT?',
+    answer:
+      'LoomWeaver VTT supports D&D 5e (2014 & 2024 SRD), Pathfinder 2e, Vampire: The Masquerade V5, and custom fantasy TTRPG / fantasy tabletop worlds. Game Masters can build custom monster actions, spells, items, and character sheets for any table top role playing game.',
   },
   {
     id: 'faq-gm-authorship',
