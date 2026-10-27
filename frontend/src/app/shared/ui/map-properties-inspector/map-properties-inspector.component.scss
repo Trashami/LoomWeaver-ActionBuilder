@@ -236,6 +236,12 @@
   }
 }
 
+.lw-inspector__mini-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+}
+
 .lw-inspector__scope-btn {
   padding: 0.26rem 0.55rem;
   border-radius: 5px;

@@ -27,22 +27,20 @@ FE_TAR = os.path.join(ROOT, "frontend_maps_deploy.tar.gz")
 
 NGINX_MAPS_CONF = r"""server {
     listen 80;
-    listen [::]:80;
     server_name maps.loom-weaver.com;
     return 301 https://$host$request_uri;
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
     server_name maps.loom-weaver.com;
 
-    ssl_certificate /etc/letsencrypt/live/maps.loom-weaver.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/maps.loom-weaver.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    ssl_certificate /etc/ssl/certs/loom-weaver.pem;
+    ssl_certificate_key /etc/ssl/private/loom-weaver.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
 
-    client_max_body_size 64M;
+    client_max_body_size 100M;
 
     root /var/www/loommaps/current/client;
     index index.html;
@@ -65,14 +63,14 @@ server {
         proxy_set_header Host $host;
     }
 
-    location /assets/ {
+    location ^~ /assets/ {
         alias /var/www/loomweaver/assets/;
         expires 7d;
         add_header Cache-Control "public, max-age=604800";
         add_header Access-Control-Allow-Origin "*";
     }
 
-    location /landing-assets/ {
+    location ^~ /landing-assets/ {
         alias /var/www/loomweaver/client/landing-assets/;
         expires 7d;
         add_header Cache-Control "public, max-age=604800";
@@ -125,7 +123,7 @@ def main() -> int:
     sftp.put(PY_RENDER_SCRIPT, "/tmp/render_3d_asset_thumbnails.py")
     if os.path.exists(FE_TAR):
         sftp.put(FE_TAR, "/tmp/frontend_maps_deploy.tar.gz")
-    with sftp.open("/tmp/maps.loom-weaver.com.nginx", "w") as f:
+    with sftp.open("/tmp/maps-loom-weaver.nginx", "w") as f:
         f.write(NGINX_MAPS_CONF)
     sftp.close()
 
@@ -143,8 +141,9 @@ def main() -> int:
         "systemctl stop loom-weaver.service || true",
         "mkdir -p /var/www/loomweaver/server",
         "tar -xzf /tmp/backend_maps_deploy.tar.gz -C /var/www/loomweaver/server",
-        "cp /tmp/maps.loom-weaver.com.nginx /etc/nginx/sites-available/maps.loom-weaver.com",
-        "ln -sf /etc/nginx/sites-available/maps.loom-weaver.com /etc/nginx/sites-enabled/maps.loom-weaver.com",
+        "rm -f /etc/nginx/sites-enabled/maps.loom-weaver.com /etc/nginx/sites-available/maps.loom-weaver.com",
+        "cp /tmp/maps-loom-weaver.nginx /etc/nginx/sites-available/maps-loom-weaver",
+        "ln -sf /etc/nginx/sites-available/maps-loom-weaver /etc/nginx/sites-enabled/maps-loom-weaver",
         "chown -R www-data:www-data /var/www/loommaps /var/www/loomweaver/assets/previews-png /var/www/loomweaver/server /var/www/loomweaver/client",
         "systemctl start loom-weaver.service",
         "nginx -t && systemctl reload nginx",
@@ -156,7 +155,7 @@ def main() -> int:
     _, stdout, _ = ssh.exec_command(
         "curl -s -o /dev/null -w 'MAPS_HTML:%{http_code} ' https://maps.loom-weaver.com/ && "
         "curl -s -o /dev/null -w 'THUMB_API:%{http_code} ' https://maps.loom-weaver.com/api/v2/maps/assets/thumbnails && "
-        "curl -s -o /dev/null -w 'PNG_FILE:%{http_code}\\n' https://maps.loom-weaver.com/assets/previews-png/wall-cracked.png"
+        "curl -s -o /dev/null -w 'PNG_FILE:%{http_code}\\n' https://maps.loom-weaver.com/assets/previews-png/obj-4f9776736fb571f1.png"
     )
     print(stdout.read().decode("utf-8", errors="replace"))
     ssh.close()

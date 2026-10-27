@@ -1,138 +1,242 @@
-<div class="lw-maps-studio">
-  <lw-map-studio-subbar
-    [mapTitle]="mapTitle()"
-    [gridCols]="50"
-    [gridRows]="50"
-    [gridCellFeet]="5"
-    [revision]="sceneGraph().revision"
-    [activeMode]="studioMode()"
-    [canUndo]="history.canUndo()"
-    [canRedo]="history.canRedo()"
-    [viewerRole]="store.viewerRole()"
-    (titleChanged)="mapTitle.set($event)"
-    (modeChanged)="studioMode.set($event)"
-    (undoRequested)="undoLastCommand()"
-    (redoRequested)="redoLastCommand()"
-    (saveRequested)="saveSceneRevision()"
+@if (showLandingHub()) {
+  <lw-map-studio-landing
+    [existingMaps]="existingMaps()"
+    [campaigns]="campaigns()"
+    [sessions]="sessions()"
+    [encounters]="encounters()"
+    [activeCampaignId]="store.activeCampaignId()"
+    (campaignChange)="store.setCampaign($event)"
+    (createNewMap)="onCreateMapFromLanding($event)"
+    (openExistingMap)="onOpenExistingMapFromLanding($event)"
   />
-
-  <div class="lw-maps-studio__workbench">
-    <lw-map-tool-dock
-      [activeToolId]="activeDockToolId()"
-      (toolSelected)="onDockToolSelected($event)"
+} @else {
+  <div class="lw-maps-studio">
+    <lw-map-studio-subbar
+      [mapTitle]="mapTitle()"
+      [dimensionMode]="dimensionMode()"
+      [gridCols]="gridCols()"
+      [gridRows]="gridRows()"
+      [gridCellFeet]="5"
+      [revision]="sceneGraph().revision"
+      [activeMode]="studioMode()"
+      [canUndo]="history.canUndo()"
+      [canRedo]="history.canRedo()"
+      [viewerRole]="store.viewerRole()"
+      [leftCollapsed]="leftDockCollapsed()"
+      [rightCollapsed]="rightDockCollapsed()"
+      [campaigns]="campaigns()"
+      [activeCampaignId]="store.activeCampaignId()"
+      [sessions]="sessions()"
+      [selectedSessionId]="assignSessionId()"
+      [encounters]="encounters()"
+      [selectedEncounterId]="assignEncounterId()"
+      (backRequested)="showLandingHub.set(true)"
+      (titleChanged)="mapTitle.set($event)"
+      (dimensionModeChanged)="onDimensionModeSwitch($event)"
+      (modeChanged)="studioMode.set($event)"
+      (campaignChanged)="store.setCampaign($event)"
+      (sessionChanged)="assignSessionId.set($event)"
+      (encounterChanged)="assignEncounterId.set($event)"
+      (toggleLeftDock)="leftDockCollapsed.set(!leftDockCollapsed())"
+      (toggleRightDock)="rightDockCollapsed.set(!rightDockCollapsed())"
+      (undoRequested)="undoLastCommand()"
+      (redoRequested)="redoLastCommand()"
+      (saveRequested)="saveSceneRevision()"
+      (publishRequested)="publishMapToCoreCampaign()"
+      (exportRequested)="onExportScenePng($event)"
     />
 
-    <section class="lw-maps-studio__stage-column" aria-label="Interactive 2D/3D Map Viewport">
-      <div
-        class="lw-maps-studio__viewport-wrap"
-        [class.lw-maps-studio__viewport-wrap--split]="cameraView() === 'split-2d-3d'"
-      >
+    <div
+      class="lw-maps-studio__workbench"
+      [class.lw-maps-studio__workbench--left-collapsed]="leftDockCollapsed()"
+      [class.lw-maps-studio__workbench--right-collapsed]="rightDockCollapsed()"
+    >
+      @if (!leftDockCollapsed()) {
+        <lw-map-tool-dock
+          [activeToolId]="activeDockToolId()"
+          (toolSelected)="onDockToolSelected($event)"
+        />
+      }
+
+      <section class="lw-maps-studio__stage-column" aria-label="Interactive 2D/3D Map Viewport">
         <div
-          class="lw-maps-studio__canvas-pane"
-          [class.lw-maps-studio__canvas-pane--hidden]="!show3dCanvas()"
+          class="lw-maps-studio__viewport-wrap"
+          [class.lw-maps-studio__viewport-wrap--split]="cameraView() === 'split-2d-3d'"
         >
-          <canvas
-            #babylonCanvas
-            class="lw-maps-studio__canvas"
-            aria-label="Babylon.js 3D Tactical Scene Canvas"
-          ></canvas>
-          <div class="lw-maps-studio__pane-tag">
-            <span>Babylon.js 3D · {{ activeQuality() }} · Rev {{ sceneGraph().revision }}</span>
+          <div
+            class="lw-maps-studio__canvas-pane"
+            [class.lw-maps-studio__canvas-pane--hidden]="!show3dCanvas()"
+          >
+            <canvas
+              #babylonCanvas
+              class="lw-maps-studio__canvas"
+              aria-label="Babylon.js 3D Tactical Scene Canvas"
+            ></canvas>
+            <div class="lw-maps-studio__pane-tag">
+              <span>
+                Babylon.js 3D · {{ celestialMode() === 'sun' ? 'Sunlight' : 'Moonlight' }} ({{
+                  celestialAzimuthDeg()
+                }}° / {{ celestialAltitudeDeg() }}°) · Rev {{ sceneGraph().revision }}
+              </span>
+            </div>
+          </div>
+
+          <div
+            class="lw-maps-studio__canvas-pane lw-maps-studio__canvas-pane--2d"
+            [class.lw-maps-studio__canvas-pane--hidden]="!show2dCanvas()"
+          >
+            <canvas
+              #real2dCanvas
+              width="960"
+              height="620"
+              class="lw-maps-studio__canvas"
+              aria-label="Authoritative Real 2D Tactical Canvas"
+              (mousemove)="on2dCanvasMove($event)"
+              (click)="on2dCanvasClick($event)"
+            ></canvas>
+            <div class="lw-maps-studio__pane-tag">
+              <span>2D Bump/Height Map Renderer · Normal + Height Relief</span>
+            </div>
+          </div>
+
+          @if (leftDockCollapsed()) {
+            <button
+              type="button"
+              class="lw-maps-studio__edge-drawer lw-maps-studio__edge-drawer--left"
+              title="Expand Left Tool Dock"
+              (click)="leftDockCollapsed.set(false)"
+            >
+              <lw-icon name="chevron_right" />
+              <span>Tools</span>
+            </button>
+          }
+
+          @if (rightDockCollapsed()) {
+            <button
+              type="button"
+              class="lw-maps-studio__edge-drawer lw-maps-studio__edge-drawer--right"
+              title="Expand Right Asset Library & Properties Inspector"
+              (click)="rightDockCollapsed.set(false)"
+            >
+              <lw-icon name="chevron_left" />
+              <span>Assets &amp; Inspector</span>
+            </button>
+          }
+
+          <div class="lw-maps-studio__hud-top-left">
+            <span class="lw-maps-studio__hud-pill">
+              Mode: <strong>{{ dimensionMode().toUpperCase() }}</strong>
+            </span>
+            <span class="lw-maps-studio__hud-pill">
+              Tool: <strong>{{ activeDockToolId().toUpperCase() }}</strong>
+            </span>
+            <span class="lw-maps-studio__hud-pill">
+              Ghost Cursor: <strong>({{ stage.hoverCoords().x }}, {{ stage.hoverCoords().z }})</strong>
+            </span>
+            @if (wallStartAnchor()) {
+              <span class="lw-maps-studio__hud-pill lw-maps-studio__hud-pill--gold">
+                Wall Start: ({{ wallStartAnchor()?.x }}, {{ wallStartAnchor()?.z }}) — Click End Point
+              </span>
+            }
+          </div>
+
+          @if (pngPipelineBanner()) {
+            <div class="lw-maps-studio__toast-banner">
+              <span>{{ pngPipelineBanner() }}</span>
+            </div>
+          }
+
+          <div class="lw-maps-studio__compass" aria-label="Scene Compass">
+            <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--n">N</span>
+            <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--e">E</span>
+            <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--s">S</span>
+            <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--w">W</span>
+            <div class="lw-maps-studio__compass-needle"></div>
           </div>
         </div>
 
-        <div
-          class="lw-maps-studio__canvas-pane lw-maps-studio__canvas-pane--2d"
-          [class.lw-maps-studio__canvas-pane--hidden]="!show2dCanvas()"
-        >
-          <canvas
-            #real2dCanvas
-            width="960"
-            height="620"
-            class="lw-maps-studio__canvas"
-            aria-label="Authoritative Real 2D Tactical Canvas"
-            (click)="on2dCanvasClick($event)"
-          ></canvas>
-          <div class="lw-maps-studio__pane-tag">
-            <span>Real 2D Canvas Renderer · Instant 2D &lt;-&gt; 3D Sync</span>
-          </div>
-        </div>
+        <lw-map-viewport-bar
+          [activeView]="cameraView()"
+          [activeTheme]="activeTheme()"
+          [activeQuality]="activeQuality()"
+          [gridSize]="gridSizeLabel()"
+          [snapEnabled]="snapEnabled()"
+          [showPlayerSafeOnly]="showPlayerSafeOnly()"
+          [fps]="stage.fps()"
+          (viewChange)="onCameraViewChange($event)"
+          (themeChange)="onThemeChange($event)"
+          (qualityChange)="onQualityChange($event)"
+          (gridSizeChange)="gridSizeLabel.set($event)"
+          (snapToggle)="snapEnabled.set(!snapEnabled()); stage.setSnapToGrid(snapEnabled())"
+          (playerSafeToggle)="onTogglePlayerSafeView()"
+        />
+      </section>
 
-        <div class="lw-maps-studio__hud-top-left">
-          <span class="lw-maps-studio__hud-pill">
-            Tool: <strong>{{ activeDockToolId().toUpperCase() }}</strong>
-          </span>
-          <span class="lw-maps-studio__hud-pill">
-            Coords: <strong>({{ stage.lastPickedCoords().x }}, {{ stage.lastPickedCoords().z }})</strong>
-          </span>
-          <span class="lw-maps-studio__hud-pill">
-            Instances: <strong>{{ stage.activeInstanceCount() }}</strong>
-          </span>
-        </div>
+      @if (!rightDockCollapsed()) {
+        <aside class="lw-maps-studio__right-dock" aria-label="Asset Library & Object Properties">
+          <lw-map-png-asset-browser
+            [assets]="displayedAssets()"
+            [categories]="displayedCategories()"
+            [selectedAssetId]="selectedPngAssetId()"
+            [materials]="materials()"
+            [selectedMaterialId]="selectedNode().materialId"
+            [layers]="editorLayers()"
+            [activeTheme]="activeTheme()"
+            [batchBusy]="batchBusy()"
+            [statusBanner]="pngPipelineBanner()"
+            (assetSelect)="onSelectPngAsset($event)"
+            (assetPlaceInScene)="onPlacePngAssetInScene($event)"
+            (materialSelect)="onInspectorMaterialChange($event.id)"
+            (themeSelect)="onThemeChange($event)"
+            (layerToggleVisible)="onLayerToggleVisible($event)"
+            (layerToggleSecret)="onLayerToggleSecret($event)"
+            (triggerBatchRender)="triggerPythonBatchPngSync()"
+            (uploadSingleGlb)="onUploadSingleGlb($event)"
+          />
 
-        <div class="lw-maps-studio__compass" aria-label="Scene Compass">
-          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--n">N</span>
-          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--e">E</span>
-          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--s">S</span>
-          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--w">W</span>
-          <div class="lw-maps-studio__compass-needle"></div>
-        </div>
-      </div>
-
-      <lw-map-viewport-bar
-        [activeView]="cameraView()"
-        [activeTheme]="activeTheme()"
-        [activeQuality]="activeQuality()"
-        [gridSize]="gridSizeLabel()"
-        [snapEnabled]="snapEnabled()"
-        [showPlayerSafeOnly]="showPlayerSafeOnly()"
-        [fps]="stage.fps()"
-        (viewChange)="onCameraViewChange($event)"
-        (themeChange)="onThemeChange($event)"
-        (qualityChange)="onQualityChange($event)"
-        (gridSizeChange)="gridSizeLabel.set($event)"
-        (snapToggle)="snapEnabled.set(!snapEnabled())"
-        (playerSafeToggle)="onTogglePlayerSafeView()"
-      />
-    </section>
-
-    <aside class="lw-maps-studio__right-dock" aria-label="Asset Library & Object Properties">
-      <lw-map-png-asset-browser
-        [assets]="pngAssets()"
-        [selectedAssetId]="selectedPngAssetId()"
-        [materials]="materials()"
-        [selectedMaterialId]="selectedNode().materialId"
-        [layers]="editorLayers()"
-        [activeTheme]="activeTheme()"
-        [batchBusy]="batchBusy()"
-        [statusBanner]="pngPipelineBanner()"
-        (assetSelect)="onSelectPngAsset($event)"
-        (assetPlaceInScene)="onPlacePngAssetInScene($event)"
-        (materialSelect)="onInspectorMaterialChange($event.id)"
-        (themeSelect)="onThemeChange($event)"
-        (layerToggleVisible)="onLayerToggleVisible($event)"
-        (layerToggleSecret)="onLayerToggleSecret($event)"
-        (triggerBatchRender)="triggerPythonBatchPngSync()"
-        (uploadSingleGlb)="onUploadSingleGlb($event)"
-      />
-
-      <lw-map-properties-inspector
-        [selectedNode]="selectedNode()"
-        [materials]="materials()"
-        [scatterDensity]="scatterDensity()"
-        [waterFlowSpeed]="waterFlowSpeed()"
-        [torchIntensity]="torchIntensity()"
-        (materialChange)="onInspectorMaterialChange($event)"
-        (heightSquaresChange)="onInspectorHeightChange($event)"
-        (thicknessChange)="onInspectorThicknessChange($event)"
-        (rotationChange)="onInspectorRotationChange($event)"
-        (scaleChange)="onInspectorScaleChange($event)"
-        (secretToggle)="onInspectorSecretToggle()"
-        (applyToSimilar)="onApplyToSimilarWalls()"
-        (scatterDensityChange)="scatterDensity.set($event)"
-        (waterFlowChange)="waterFlowSpeed.set($event)"
-        (torchIntensityChange)="torchIntensity.set($event)"
-      />
-    </aside>
+          <lw-map-properties-inspector
+            [selectedNode]="selectedNode()"
+            [materials]="materials()"
+            [wallDrawMode]="wallDrawMode()"
+            [terrainSculptOp]="terrainSculptOp()"
+            [terrainBrushRadius]="terrainBrushRadius()"
+            [terrainBrushDelta]="terrainBrushDelta()"
+            [celestialMode]="celestialMode()"
+            [celestialAzimuthDeg]="celestialAzimuthDeg()"
+            [celestialAltitudeDeg]="celestialAltitudeDeg()"
+            [shadowDarkness]="shadowDarkness()"
+            [customLightKind]="customLightKind()"
+            [customLightColor]="customLightColor()"
+            [customLightRange]="customLightRange()"
+            [torchIntensity]="torchIntensity()"
+            [scatterDensity]="scatterDensity()"
+            [waterFlowSpeed]="waterFlowSpeed()"
+            (materialChange)="onInspectorMaterialChange($event)"
+            (heightSquaresChange)="onInspectorHeightChange($event)"
+            (thicknessChange)="onInspectorThicknessChange($event)"
+            (positionXChange)="onInspectorPositionChange('x', $event)"
+            (positionZChange)="onInspectorPositionChange('z', $event)"
+            (rotationChange)="onInspectorRotationChange($event)"
+            (scaleChange)="onInspectorScaleChange($event)"
+            (wallDrawModeChange)="wallDrawMode.set($event); syncGhostCursorToStage()"
+            (terrainSculptOpChange)="terrainSculptOp.set($event)"
+            (terrainRadiusChange)="terrainBrushRadius.set($event); syncGhostCursorToStage()"
+            (terrainDeltaChange)="terrainBrushDelta.set($event)"
+            (celestialModeChange)="celestialMode.set($event); pushCelestialLightToStage()"
+            (celestialAzimuthChange)="celestialAzimuthDeg.set($event); pushCelestialLightToStage()"
+            (celestialAltitudeChange)="celestialAltitudeDeg.set($event); pushCelestialLightToStage()"
+            (shadowDarknessChange)="shadowDarkness.set($event); pushCelestialLightToStage()"
+            (customLightKindChange)="customLightKind.set($event)"
+            (customLightColorChange)="customLightColor.set($event)"
+            (customLightRangeChange)="customLightRange.set($event)"
+            (torchIntensityChange)="torchIntensity.set($event); pushCelestialLightToStage()"
+            (spawnCustomLight)="onSpawnCustomLightAt()"
+            (secretToggle)="onInspectorSecretToggle()"
+            (scatterDensityChange)="scatterDensity.set($event)"
+            (waterFlowChange)="waterFlowSpeed.set($event)"
+          />
+        </aside>
+      }
+    </div>
   </div>
-</div>
+}

@@ -10,6 +10,10 @@ export interface LwMapPngAssetItem {
   readonly category: string;
   readonly modelUrl: string;
   readonly thumbnailUrl: string;
+  readonly albedoUrl?: string;
+  readonly normalUrl?: string;
+  readonly heightUrl?: string;
+  readonly isFloor?: boolean;
   readonly contentHash?: string;
   readonly vertexCount?: number;
   readonly faceCount?: number;

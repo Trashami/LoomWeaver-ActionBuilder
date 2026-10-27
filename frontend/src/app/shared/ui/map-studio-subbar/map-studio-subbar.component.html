@@ -1,22 +1,32 @@
-<section class="lw-map-subbar" role="region" aria-label="Map Studio Subheader">
-  <div class="lw-map-subbar__left">
+<header class="lw-subbar" role="region" aria-label="Map Studio Campaign, Session & Publish Bar">
+  <div class="lw-subbar__left">
     <button
       ngpButton
       type="button"
-      class="lw-map-subbar__icon-btn"
-      title="Back to Campaign Maps"
-      aria-label="Back to Campaign Maps"
+      class="lw-subbar__icon-btn"
+      title="Return to LoomMaps Landing Hub (Create New or Open Existing Map)"
       (click)="backRequested.emit()"
     >
       <lw-icon name="arrow-left" [size]="16" />
     </button>
 
-    <div class="lw-map-subbar__identity">
-      <div class="lw-map-subbar__title-row">
+    <button
+      ngpButton
+      type="button"
+      class="lw-subbar__icon-btn"
+      [class.lw-subbar__icon-btn--active]="!leftCollapsed()"
+      title="Toggle Left Tool Dock"
+      (click)="toggleLeftDock.emit()"
+    >
+      <lw-icon name="menu" [size]="15" />
+    </button>
+
+    <div class="lw-subbar__identity">
+      <div class="lw-subbar__title-row">
         @if (editingTitle()) {
           <input
             type="text"
-            class="lw-map-subbar__title-input"
+            class="lw-subbar__title-input"
             [ngModel]="mapTitle()"
             (ngModelChange)="titleChanged.emit($event)"
             (blur)="editingTitle.set(false)"
@@ -24,155 +34,147 @@
             aria-label="Map Title"
           />
         } @else {
-          <h1 class="lw-map-subbar__title" (click)="toggleTitleEdit()">{{ mapTitle() }}</h1>
+          <h1 class="lw-subbar__title" (click)="toggleTitleEdit()">{{ mapTitle() }}</h1>
         }
         <button
           ngpButton
           type="button"
-          class="lw-map-subbar__edit-btn"
+          class="lw-subbar__edit-btn"
           title="Rename Map"
-          aria-label="Rename Map"
           (click)="toggleTitleEdit()"
         >
-          <lw-icon name="pen" [size]="13" />
+          <lw-icon name="pen" [size]="12" />
         </button>
-        <lw-badge [label]="'Rev ' + revision()" tone="emerald" />
+        <lw-badge [tone]="dimensionMode() === '3d' ? 'gold' : 'emerald'">
+          {{ dimensionMode() === '3d' ? '3D Map' : '2D Bump Map' }}
+        </lw-badge>
       </div>
 
-      <div class="lw-map-subbar__meta">
-        <span>Map · {{ gridCols() }} x {{ gridRows() }} squares · {{ gridCellFeet() }} ft grid</span>
-        <span class="lw-map-subbar__dot">·</span>
-        <button
-          ngpButton
-          type="button"
-          class="lw-map-subbar__scope-pill"
-          [class.lw-map-subbar__scope-pill--active]="sceneScope() === 'battlemap'"
-          (click)="scopeChanged.emit('battlemap')"
-        >
-          Battle Scene
-        </button>
-        <button
-          ngpButton
-          type="button"
-          class="lw-map-subbar__scope-pill"
-          [class.lw-map-subbar__scope-pill--active]="sceneScope() === 'world_overlay'"
-          (click)="scopeChanged.emit('world_overlay')"
-        >
-          World / Region Overlays
-        </button>
+      <div class="lw-subbar__meta-row">
+        <span>{{ gridCols() }} x {{ gridRows() }} · {{ gridCellFeet() }}ft grid · Rev {{ revision() }}</span>
+        <div class="lw-subbar__dim-switch" role="group" aria-label="2D or 3D Map Mode">
+          <button
+            ngpButton
+            type="button"
+            class="lw-subbar__dim-pill"
+            [class.lw-subbar__dim-pill--active]="dimensionMode() === '2d'"
+            (click)="dimensionModeChanged.emit('2d')"
+          >
+            2D Bump Map
+          </button>
+          <button
+            ngpButton
+            type="button"
+            class="lw-subbar__dim-pill"
+            [class.lw-subbar__dim-pill--active]="dimensionMode() === '3d'"
+            (click)="dimensionModeChanged.emit('3d')"
+          >
+            3D Map
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <nav class="lw-map-subbar__modes" role="tablist" aria-label="Map Studio Mode">
-    <button
-      ngpButton
-      type="button"
-      role="tab"
-      class="lw-map-subbar__mode-btn"
-      [class.lw-map-subbar__mode-btn--active]="activeMode() === 'build'"
-      [attr.aria-selected]="activeMode() === 'build'"
-      (click)="modeChanged.emit('build')"
-    >
-      <lw-icon name="wand" [size]="15" />
-      <span>Build</span>
-    </button>
-    <button
-      ngpButton
-      type="button"
-      role="tab"
-      class="lw-map-subbar__mode-btn"
-      [class.lw-map-subbar__mode-btn--active]="activeMode() === 'playtest'"
-      [attr.aria-selected]="activeMode() === 'playtest'"
-      (click)="modeChanged.emit('playtest')"
-    >
-      <lw-icon name="play" [size]="15" />
-      <span>Playtest</span>
-    </button>
-    <button
-      ngpButton
-      type="button"
-      role="tab"
-      class="lw-map-subbar__mode-btn"
-      [class.lw-map-subbar__mode-btn--active]="activeMode() === 'encounter'"
-      [attr.aria-selected]="activeMode() === 'encounter'"
-      (click)="modeChanged.emit('encounter')"
-    >
-      <lw-icon name="swords" [size]="15" />
-      <span>Run Encounter</span>
-    </button>
-  </nav>
+  <div class="lw-subbar__campaign-bindings" role="group" aria-label="Campaign, Session and Encounter Attachment">
+    <label class="lw-subbar__binding-pill" title="Select GM Campaign for this map">
+      <span class="lw-subbar__binding-label">Campaign:</span>
+      <select
+        class="lw-subbar__binding-select"
+        [value]="activeCampaignId()"
+        (change)="onCampaignSelect($event)"
+        aria-label="Select Campaign"
+      >
+        @for (c of campaigns(); track c.id) {
+          <option [value]="c.id">{{ c.name }}</option>
+        }
+      </select>
+    </label>
 
-  <div class="lw-map-subbar__right">
-    <div class="lw-map-subbar__history">
+    <label class="lw-subbar__binding-pill" title="Select Planned Session for this map">
+      <span class="lw-subbar__binding-label">Session:</span>
+      <select
+        class="lw-subbar__binding-select"
+        [value]="selectedSessionId()"
+        (change)="onSessionSelect($event)"
+        aria-label="Select Planned Session"
+      >
+        @for (s of sessions(); track s.id) {
+          <option [value]="s.id">{{ s.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="lw-subbar__binding-pill" title="Select Planned Encounter for this map">
+      <span class="lw-subbar__binding-label">Encounter:</span>
+      <select
+        class="lw-subbar__binding-select"
+        [value]="selectedEncounterId()"
+        (change)="onEncounterSelect($event)"
+        aria-label="Select Planned Encounter"
+      >
+        @for (e of encounters(); track e.id) {
+          <option [value]="e.id">{{ e.label }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="lw-subbar__right">
+    <div class="lw-subbar__history-group">
       <button
         ngpButton
         type="button"
-        class="lw-map-subbar__icon-btn"
+        class="lw-subbar__icon-btn"
         [disabled]="!canUndo()"
-        title="Undo Last Command"
-        aria-label="Undo Last Command"
+        title="Undo (Ctrl+Z)"
         (click)="undoRequested.emit()"
       >
-        <lw-icon name="undo" [size]="16" />
+        <lw-icon name="undo" [size]="15" />
       </button>
       <button
         ngpButton
         type="button"
-        class="lw-map-subbar__icon-btn"
+        class="lw-subbar__icon-btn"
         [disabled]="!canRedo()"
-        title="Redo Command"
-        aria-label="Redo Command"
+        title="Redo (Ctrl+Y)"
         (click)="redoRequested.emit()"
       >
-        <lw-icon name="redo" [size]="16" />
+        <lw-icon name="redo" [size]="15" />
       </button>
     </div>
 
     <button
       ngpButton
       type="button"
-      class="lw-map-subbar__action-btn"
-      [disabled]="saving() || viewerRole() !== 'gm'"
+      class="lw-subbar__action-btn lw-subbar__action-btn--save"
+      [disabled]="saving()"
       (click)="saveRequested.emit()"
     >
       <lw-icon name="save" [size]="15" />
-      <span>{{ saving() ? 'Saving...' : 'Save' }}</span>
+      <span>Save Draft</span>
     </button>
 
     <button
       ngpButton
       type="button"
-      class="lw-map-subbar__action-btn lw-map-subbar__action-btn--gold"
-      (click)="onExportClick('player-safe')"
-      title="Export Sanitized Player-Safe 2D Map PNG"
+      class="lw-subbar__action-btn lw-subbar__action-btn--publish"
+      title="Publish and attach this map to the selected Campaign, Session, and Encounter in LoomWeaver"
+      (click)="publishRequested.emit()"
     >
       <lw-icon name="upload" [size]="15" />
-      <span>Share</span>
+      <span>Publish to Campaign</span>
     </button>
 
-    <div class="lw-map-subbar__more-wrap">
-      <button
-        ngpButton
-        type="button"
-        class="lw-map-subbar__icon-btn"
-        title="Export & Scene Options"
-        aria-label="Export and Scene Options"
-        (click)="moreMenuOpen.set(!moreMenuOpen())"
-      >
-        <lw-icon name="more-vertical" [size]="16" />
-      </button>
-
-      @if (moreMenuOpen()) {
-        <div class="lw-map-subbar__dropdown" role="menu">
-          <button ngpButton type="button" class="lw-map-subbar__menu-item" (click)="onExportClick('player-safe')">
-            Export Player-Safe 2D PNG (No Secrets)
-          </button>
-          <button ngpButton type="button" class="lw-map-subbar__menu-item" (click)="onExportClick('gm')">
-            Export Full GM Canonical 2D PNG
-          </button>
-        </div>
-      }
-    </div>
+    <button
+      ngpButton
+      type="button"
+      class="lw-subbar__icon-btn"
+      [class.lw-subbar__icon-btn--active]="!rightCollapsed()"
+      title="Toggle Right Assets & Properties Inspector Panel"
+      (click)="toggleRightDock.emit()"
+    >
+      <lw-icon name="layers" [size]="15" />
+    </button>
   </div>
-</section>
+</header>

@@ -1,0 +1,251 @@
+<section class="lw-map-landing" aria-label="LoomMaps Studio Hub">
+  <div class="lw-map-landing__hero">
+    <div class="lw-map-landing__hero-copy">
+      <div class="lw-map-landing__eyebrow-row">
+        <lw-badge tone="emerald">LoomMaps Studio · maps.loom-weaver.com</lw-badge>
+        <lw-badge tone="gold">Authoritative 2D Bump/Height &amp; 3D Babylon.js Scene Engine</lw-badge>
+      </div>
+      <h1 class="lw-map-landing__title">Craft Tactical Battlemaps &amp; Living World Atlases.</h1>
+      <p class="lw-map-landing__subtitle">
+        Start a new map or open an existing scene for your campaign. Choose between our classic
+        <strong>2D Bump/Height Map Builder</strong> or our full <strong>3D Map Studio</strong> with
+        2D bump-mapped flooring, real-time terrain elevation sculpting, gapless 3D wall lines &amp; shapes,
+        ghost cursor placement, and directional Sun &amp; Moon shadows.
+      </p>
+
+      <div class="lw-map-landing__cta-row">
+        <button
+          ngpButton
+          type="button"
+          class="lw-map-landing__primary-btn"
+          (click)="openNewMapModal('3d')"
+        >
+          <lw-icon name="add_circle" [size]="18" />
+          <span>Create a New Map (2D or 3D)</span>
+        </button>
+
+        <button
+          ngpButton
+          type="button"
+          class="lw-map-landing__secondary-btn"
+          (click)="openNewMapModal('2d')"
+        >
+          <lw-icon name="map" [size]="17" />
+          <span>Quick New 2D Bump Map</span>
+        </button>
+
+        <label class="lw-map-landing__campaign-filter">
+          <span>Campaign:</span>
+          <select [value]="activeCampaignId()" (change)="onCampaignSelect($event)">
+            @for (c of campaigns(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="lw-map-landing__mode-cards">
+      <article class="lw-mode-card" (click)="openNewMapModal('2d')">
+        <div class="lw-mode-card__header">
+          <lw-icon name="layers" [size]="22" />
+          <lw-badge tone="emerald">2D Bump / Height Engine</lw-badge>
+        </div>
+        <h2>Build a 2D Map</h2>
+        <p>
+          Classic top-down tactical map workflow powered exclusively by our 382 verified
+          <strong>Albedo + Normal + Height</strong> bump assets with dynamic light relief and ghost stamp placement.
+        </p>
+        <span class="lw-mode-card__action">Launch 2D Map Studio &rarr;</span>
+      </article>
+
+      <article class="lw-mode-card lw-mode-card--featured" (click)="openNewMapModal('3d')">
+        <div class="lw-mode-card__header">
+          <lw-icon name="view_in_ar" [size]="22" />
+          <lw-badge tone="gold">Babylon.js 3D + Bump Flooring</lw-badge>
+        </div>
+        <h2>Build a 3D Map</h2>
+        <p>
+          Paint 2D bump/height maps onto 3D flooring, raise or lower terrain heightfields, draw gapless 3D wall lines
+          and room shapes, place 3D objects with ghost previews, and position the Sun or Moon for live shadows.
+        </p>
+        <span class="lw-mode-card__action">Launch 3D Map Studio &rarr;</span>
+      </article>
+    </div>
+  </div>
+
+  <div class="lw-map-landing__existing">
+    <header class="lw-map-landing__section-header">
+      <div>
+        <h2>Select an Existing Map</h2>
+        <p>Open any saved campaign battlemap. Left and right studio docks start collapsed for maximum canvas space.</p>
+      </div>
+      <span class="lw-map-landing__count">{{ existingMaps().length }} Saved Maps</span>
+    </header>
+
+    <div class="lw-map-landing__grid">
+      @for (map of existingMaps(); track map.sceneKey) {
+        <article class="lw-existing-card" (click)="openExistingMap.emit(map)">
+          <div class="lw-existing-card__preview">
+            <img [src]="map.previewUrl" [alt]="map.name" loading="lazy" />
+            <div class="lw-existing-card__badges">
+              <lw-badge [tone]="map.dimensionMode === '3d' ? 'gold' : 'emerald'">
+                {{ map.dimensionMode === '3d' ? '3D Map' : '2D Bump Map' }}
+              </lw-badge>
+              <lw-badge tone="neutral">Rev {{ map.revision }}</lw-badge>
+            </div>
+          </div>
+
+          <div class="lw-existing-card__body">
+            <h3>{{ map.name }}</h3>
+            <p class="lw-existing-card__meta">
+              {{ map.gridSummary }} · Floor: {{ map.floorBumpName }}
+            </p>
+            <div class="lw-existing-card__links">
+              <span>Campaign: <strong>{{ map.campaignName }}</strong></span>
+              <span>Planned: <strong>{{ map.sessionLabel }} · {{ map.encounterLabel }}</strong></span>
+            </div>
+            <div class="lw-existing-card__footer">
+              <small>{{ map.updatedLabel }}</small>
+              <button ngpButton type="button" class="lw-existing-card__open-btn">
+                Open Map
+              </button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+
+  @if (showCreatePrompt()) {
+    <div class="lw-map-modal-backdrop" (click)="showCreatePrompt.set(false)">
+      <div
+        class="lw-map-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Create New 2D or 3D Map"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="lw-map-modal__header">
+          <div>
+            <h2>Create a New Campaign Map</h2>
+            <p>Choose 2D or 3D mode and link this map to your campaign session or encounter.</p>
+          </div>
+          <button
+            ngpButton
+            type="button"
+            class="lw-map-modal__close"
+            (click)="showCreatePrompt.set(false)"
+          >
+            <lw-icon name="close" [size]="18" />
+          </button>
+        </header>
+
+        <div class="lw-map-modal__mode-picker">
+          <button
+            ngpButton
+            type="button"
+            class="lw-map-modal__mode-option"
+            [class.lw-map-modal__mode-option--active]="selectedDimension() === '2d'"
+            (click)="selectedDimension.set('2d')"
+          >
+            <lw-icon name="map" [size]="22" />
+            <div>
+              <strong>2D Map (Bump / Height Assets)</strong>
+              <small>Top-down tactical builder restricted to verified 2D bump/normal/height assets.</small>
+            </div>
+          </button>
+
+          <button
+            ngpButton
+            type="button"
+            class="lw-map-modal__mode-option"
+            [class.lw-map-modal__mode-option--active]="selectedDimension() === '3d'"
+            (click)="selectedDimension.set('3d')"
+          >
+            <lw-icon name="view_in_ar" [size]="22" />
+            <div>
+              <strong>3D Map (Babylon.js + Bump Flooring)</strong>
+              <small>2D bump flooring, terrain raise/lower tool, gapless 3D wall lines/shapes, 3D objects &amp; Sun/Moon shadows.</small>
+            </div>
+          </button>
+        </div>
+
+        <div class="lw-map-modal__fields">
+          <label class="lw-map-modal__field">
+            <span>Map Name</span>
+            <input
+              type="text"
+              [ngModel]="draftMapName()"
+              (ngModelChange)="draftMapName.set($event)"
+              placeholder="e.g., The Forgotten Crypt"
+            />
+          </label>
+
+          <div class="lw-map-modal__row">
+            <label class="lw-map-modal__field">
+              <span>Grid Columns (5ft sq)</span>
+              <input
+                type="number"
+                min="16"
+                max="120"
+                [ngModel]="draftGridCols()"
+                (ngModelChange)="draftGridCols.set(+$event)"
+              />
+            </label>
+            <label class="lw-map-modal__field">
+              <span>Grid Rows (5ft sq)</span>
+              <input
+                type="number"
+                min="16"
+                max="120"
+                [ngModel]="draftGridRows()"
+                (ngModelChange)="draftGridRows.set(+$event)"
+              />
+            </label>
+          </div>
+
+          <div class="lw-map-modal__row">
+            <label class="lw-map-modal__field">
+              <span>Planned Session</span>
+              <select [ngModel]="draftSessionId()" (ngModelChange)="draftSessionId.set($event)">
+                @for (s of sessions(); track s.id) {
+                  <option [value]="s.id">{{ s.label }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="lw-map-modal__field">
+              <span>Planned Encounter</span>
+              <select [ngModel]="draftEncounterId()" (ngModelChange)="draftEncounterId.set($event)">
+                @for (e of encounters(); track e.id) {
+                  <option [value]="e.id">{{ e.label }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <footer class="lw-map-modal__footer">
+          <button
+            ngpButton
+            type="button"
+            class="lw-map-modal__cancel"
+            (click)="showCreatePrompt.set(false)"
+          >
+            Cancel
+          </button>
+          <button
+            ngpButton
+            type="button"
+            class="lw-map-modal__confirm"
+            (click)="confirmCreateMap()"
+          >
+            <lw-icon name="check" [size]="16" />
+            <span>Open {{ selectedDimension() === '3d' ? '3D' : '2D' }} Map Studio</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</section>

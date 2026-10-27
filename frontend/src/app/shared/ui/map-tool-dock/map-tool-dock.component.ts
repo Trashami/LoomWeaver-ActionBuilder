@@ -10,17 +10,17 @@ export interface MapDockToolItem {
 }
 
 export const DEFAULT_MAP_DOCK_TOOLS: readonly MapDockToolItem[] = [
-  { id: 'select', label: 'Select', icon: 'cursor', layerHint: 'Transform & Gizmo' },
-  { id: 'room', label: 'Room', icon: 'grid', layerHint: 'Grid-Snapped Rooms & Floors' },
-  { id: 'wall', label: 'Wall', icon: 'shield', layerHint: 'Cutaway Stone & Timber Walls' },
+  { id: 'select', label: 'Select', icon: 'cursor', layerHint: 'Select & Inspect Properties' },
+  { id: 'floor-bump', label: 'Flooring', icon: 'pipette', layerHint: '2D Bump/Height Floor Texture' },
+  { id: 'terrain', label: 'Raise/Lower', icon: 'map', layerHint: 'Raise or Lower Terrain Heightfield' },
+  { id: 'wall', label: 'Wall Line', icon: 'shield', layerHint: 'Draw Custom Gapless 3D Wall Line' },
+  { id: 'room', label: 'Shapes', icon: 'grid', layerHint: 'Gapless 3D Wall Room / Circle / Octagon' },
   { id: 'door', label: 'Door', icon: 'key-round', layerHint: 'Portals, Archways & Secret Doors' },
-  { id: 'paint', label: 'Paint', icon: 'pipette', layerHint: 'PBR Blend & Roughness Brushes' },
-  { id: 'objects', label: 'Objects', icon: 'cube', layerHint: '3D Props, Furniture & Tokens' },
-  { id: 'terrain', label: 'Terrain', icon: 'map', layerHint: 'Chunked Heightfield & Cliffs' },
-  { id: 'scatter', label: 'Scatter', icon: 'layers', layerHint: 'Seeded Foliage & Rock Brush' },
+  { id: 'objects', label: 'Objects', icon: 'cube', layerHint: 'Place 3D Assets or 2D Bump Stamps (Ghost)' },
+  { id: 'lighting', label: 'Lights', icon: 'zap', layerHint: 'Point Lights, Spotlights & Sun/Moon' },
+  { id: 'sun-moon', label: 'Sun/Moon', icon: 'compass', layerHint: 'Adjust Sun & Moon Shadow Position' },
   { id: 'water', label: 'Water', icon: 'globe', layerHint: 'Spline Rivers, Pools & Ocean' },
-  { id: 'lighting', label: 'Lighting', icon: 'zap', layerHint: 'Torches, Sun/Moon & Fog' },
-  { id: 'stairs', label: 'Stairs', icon: 'arrow-up', layerHint: 'Multi-Level Stairs & Elevations' },
+  { id: 'scatter', label: 'Scatter', icon: 'layers', layerHint: 'Seeded Foliage & Rock Brush' },
   { id: 'annotate', label: 'Annotate', icon: 'pen', layerHint: 'World Overlays & GM Secrets' },
 ];
 

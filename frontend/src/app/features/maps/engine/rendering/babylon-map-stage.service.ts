@@ -4,23 +4,39 @@ import {
   Color3,
   Color4,
   Engine,
+  Mesh,
   MeshBuilder,
   PointerEventTypes,
   Scene,
   StandardMaterial,
   Vector3,
 } from '@babylonjs/core';
-import { SceneLightingController } from '../lighting/scene-lighting.controller';
+import {
+  CelestialLightConfig,
+  SceneLightingController,
+} from '../lighting/scene-lighting.controller';
 import {
   MapRenderMode,
   MapSceneGraphState,
   MapStampNode,
+  WallDrawMode,
 } from '../map-scene-contract';
 import { SeededScatterEngine } from '../scatter/seeded-scatter.engine';
 import { TerrainMeshBuilder } from '../terrain/terrain-mesh.builder';
 import { WallMeshBuilder } from '../walls/wall-mesh.builder';
 import { PathRibbonEngine } from '../paths/path-ribbon.engine';
 import { WaterSplineBuilder } from '../water/water-spline.builder';
+
+export interface GhostAssetConfig {
+  readonly enabled: boolean;
+  readonly label: string;
+  readonly kind: 'prop' | 'wall' | 'light' | 'terrain';
+  readonly scale: number;
+  readonly rotationRad: number;
+  readonly heightMeters: number;
+  readonly thicknessMeters: number;
+  readonly wallDrawMode: WallDrawMode;
+}
 
 @Injectable({ providedIn: 'root' })
 export class BabylonMapStageService {
@@ -29,15 +45,29 @@ export class BabylonMapStageService {
   private camera: ArcRotateCamera | null = null;
   private selectedPosition: Vector3 = new Vector3(-2.5, 1.4, 1.5);
   private hideGmSecrets = false;
+  private snapToGrid = true;
+  private ghostConfig: GhostAssetConfig = {
+    enabled: true,
+    label: 'Stone Wall Segment',
+    kind: 'wall',
+    scale: 1,
+    rotationRad: 0,
+    heightMeters: 3.0,
+    thicknessMeters: 0.45,
+    wallDrawMode: 'line',
+  };
+  private wallStartAnchor: { x: number; z: number } | null = null;
 
   readonly fps = signal<number>(60);
   readonly activeInstanceCount = signal<number>(24);
   readonly lastPickedCoords = signal<{ x: number; z: number }>({ x: 0, z: 0 });
+  readonly hoverCoords = signal<{ x: number; z: number }>({ x: 0, z: 0 });
 
   mountCanvas(
     canvas: HTMLCanvasElement,
     initialState: MapSceneGraphState,
     onGroundClicked: (x: number, z: number, pickedMeshName?: string) => void,
+    onGroundHovered?: (x: number, z: number) => void,
   ): void {
     this.dispose();
 
@@ -48,6 +78,7 @@ export class BabylonMapStageService {
       });
       this.scene = new Scene(this.engine);
       this.scene.clearColor = new Color4(0.02, 0.06, 0.04, 1);
+      this.scene.shadowsEnabled = true;
 
       this.camera = new ArcRotateCamera(
         'lw-map-cam',
@@ -62,16 +93,30 @@ export class BabylonMapStageService {
       this.camera.attachControl(canvas, true);
 
       this.scene.onPointerObservable.add((pointerInfo) => {
-        if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
-          const pick = pointerInfo.pickInfo;
-          if (pick?.hit && pick.pickedPoint) {
-            const rx = Math.round(pick.pickedPoint.x * 10) / 10;
-            const rz = Math.round(pick.pickedPoint.z * 10) / 10;
-            this.lastPickedCoords.set({ x: rx, z: rz });
-            this.selectedPosition = new Vector3(rx, Math.max(1.1, pick.pickedPoint.y + 0.9), rz);
-            this.rebuildSelectionGizmo();
-            onGroundClicked(rx, rz, pick.pickedMesh?.name);
+        if (!this.scene) return;
+        const pick = this.scene.pick(
+          this.scene.pointerX,
+          this.scene.pointerY,
+          (m) => m.name === 'lw-terrain-ground' || m.name.startsWith('lw-wall-') || m.name.startsWith('lw-stamp-'),
+        );
+        if (!pick?.hit || !pick.pickedPoint) return;
+
+        const rawX = pick.pickedPoint.x;
+        const rawZ = pick.pickedPoint.z;
+        const gx = this.snapToGrid ? Math.round(rawX * 2) / 2 : Math.round(rawX * 10) / 10;
+        const gz = this.snapToGrid ? Math.round(rawZ * 2) / 2 : Math.round(rawZ * 10) / 10;
+
+        if (pointerInfo.type === PointerEventTypes.POINTERMOVE) {
+          this.hoverCoords.set({ x: gx, z: gz });
+          this.updateGhostMeshAt(gx, gz);
+          if (onGroundHovered) {
+            onGroundHovered(gx, gz);
           }
+        } else if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
+          this.lastPickedCoords.set({ x: gx, z: gz });
+          this.selectedPosition = new Vector3(gx, Math.max(1.1, pick.pickedPoint.y + 0.9), gz);
+          this.rebuildSelectionGizmo();
+          onGroundClicked(gx, gz, pick.pickedMesh?.name);
         }
       });
 
@@ -86,6 +131,112 @@ export class BabylonMapStageService {
     } catch {
       // Headless or non-WebGL browser environment fallback
     }
+  }
+
+  setSnapToGrid(snap: boolean): void {
+    this.snapToGrid = snap;
+  }
+
+  setGhostConfig(config: GhostAssetConfig, wallAnchor: { x: number; z: number } | null): void {
+    this.ghostConfig = config;
+    this.wallStartAnchor = wallAnchor;
+    const h = this.hoverCoords();
+    this.updateGhostMeshAt(h.x, h.z);
+  }
+
+  private updateGhostMeshAt(gx: number, gz: number): void {
+    if (!this.scene) return;
+
+    this.scene.meshes
+      .filter((m) => m.name.startsWith('lw-ghost-'))
+      .forEach((m) => m.dispose());
+
+    if (!this.ghostConfig.enabled) return;
+
+    if (this.ghostConfig.kind === 'wall' && this.wallStartAnchor) {
+      WallMeshBuilder.renderGhostWallPreview(
+        this.scene,
+        this.ghostConfig.wallDrawMode,
+        this.wallStartAnchor.x,
+        this.wallStartAnchor.z,
+        gx,
+        gz,
+        this.ghostConfig.heightMeters,
+        this.ghostConfig.thicknessMeters,
+      );
+      return;
+    }
+
+    const mat = new StandardMaterial('lw-ghost-cursor-mat', this.scene);
+    mat.diffuseColor = Color3.FromHexString('#49e892');
+    mat.emissiveColor = Color3.FromHexString('#2ee66b').scale(0.55);
+    mat.alpha = 0.45;
+
+    let ghost: Mesh;
+    if (this.ghostConfig.kind === 'terrain') {
+      ghost = MeshBuilder.CreateCylinder(
+        'lw-ghost-cursor-mesh',
+        { height: 0.18, diameter: this.ghostConfig.scale * 2, tessellation: 28 },
+        this.scene,
+      );
+      ghost.position.set(gx, 0.15, gz);
+    } else if (this.ghostConfig.kind === 'light') {
+      ghost = MeshBuilder.CreateSphere(
+        'lw-ghost-cursor-mesh',
+        { diameter: 0.9, segments: 12 },
+        this.scene,
+      );
+      ghost.position.set(gx, 2.2, gz);
+    } else if (this.ghostConfig.kind === 'wall') {
+      ghost = MeshBuilder.CreateBox(
+        'lw-ghost-cursor-mesh',
+        {
+          width: 2.0,
+          height: this.ghostConfig.heightMeters,
+          depth: this.ghostConfig.thicknessMeters,
+        },
+        this.scene,
+      );
+      ghost.position.set(gx, this.ghostConfig.heightMeters / 2, gz);
+      ghost.rotation.y = this.ghostConfig.rotationRad;
+    } else {
+      ghost = MeshBuilder.CreateBox(
+        'lw-ghost-cursor-mesh',
+        {
+          width: 1.7 * this.ghostConfig.scale,
+          height: 1.5 * this.ghostConfig.scale,
+          depth: 1.4 * this.ghostConfig.scale,
+        },
+        this.scene,
+      );
+      ghost.position.set(gx, 0.75 * this.ghostConfig.scale, gz);
+      ghost.rotation.y = this.ghostConfig.rotationRad;
+    }
+
+    ghost.material = mat;
+    ghost.isPickable = false;
+  }
+
+  applyFloorBumpMap(albedoUrl: string, normalUrl: string): void {
+    if (!this.scene) return;
+    TerrainMeshBuilder.applyFloorBumpTexture(this.scene, albedoUrl, normalUrl);
+  }
+
+  sculptTerrainAt(
+    worldX: number,
+    worldZ: number,
+    radius: number,
+    deltaY: number,
+    mode: 'raise' | 'lower' | 'flatten',
+  ): void {
+    if (!this.scene) return;
+    TerrainMeshBuilder.sculptElevationAt(this.scene, worldX, worldZ, radius, deltaY, mode);
+  }
+
+  updateCelestialLight(config: CelestialLightConfig): void {
+    if (!this.scene) return;
+    SceneLightingController.syncCelestialDirectionalLight(this.scene, config);
+    SceneLightingController.refreshShadowCasters(this.scene);
   }
 
   setCameraMode(mode: MapRenderMode | string): void {
@@ -148,6 +299,7 @@ export class BabylonMapStageService {
     );
     const pathCount = PathRibbonEngine.rebuildPathRibbonMeshes(this.scene, state.pathRibbons);
     this.rebuildStamps(this.scene, state.stamps);
+    SceneLightingController.refreshShadowCasters(this.scene);
     this.rebuildSelectionGizmo();
     this.activeInstanceCount.set(
       scatterCount + state.stamps.length + state.lights.length + wallCount + pathCount,
@@ -192,10 +344,11 @@ export class BabylonMapStageService {
         st.z,
       );
       mesh.rotation.y = st.rotationY;
+      mesh.receiveShadows = true;
 
       const mat = new StandardMaterial(`lw-stamp-mat-${st.id}`, scene);
       mat.diffuseColor = Color3.FromHexString(st.colorHex || '#7d8a82');
-      mat.emissiveColor = Color3.FromHexString(st.colorHex || '#49e892').scale(0.24);
+      mat.emissiveColor = Color3.FromHexString(st.colorHex || '#49e892').scale(0.2);
       mesh.material = mat;
     }
   }
