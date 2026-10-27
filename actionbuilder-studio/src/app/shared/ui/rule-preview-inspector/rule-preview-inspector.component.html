@@ -1,161 +1,224 @@
 <aside class="ab-inspector">
-  <lw-panel
-    eyebrow="Live Campaign Sheet Preview"
-    [title]="rule().name"
-    [subtitle]="'Scoped to DM Campaign: ' + campaignName()"
-    [elevated]="true"
-  >
-    <div panelActions class="ab-inspector__mode-tabs">
-      <lw-button
-        label="Player Sheet"
-        variant="guide-pill"
-        size="xs"
-        [active]="previewMode() === 'player'"
-        (pressed)="previewMode.set('player')"
-      />
-      <lw-button
-        label="GM Engine View"
-        variant="guide-pill"
-        size="xs"
-        [active]="previewMode() === 'gm'"
-        (pressed)="previewMode.set('gm')"
-      />
+  <!-- 1. CONCISE PLAYER / GM ABILITY CARD -->
+  <section class="ab-preview-card">
+    <div class="ab-preview-card__tabs">
+      <div class="ab-preview-card__tab-group" role="tablist">
+        <button
+          ngpButton
+          type="button"
+          class="ab-preview-card__tab"
+          [class.ab-preview-card__tab--active]="previewMode() === 'player'"
+          (click)="previewMode.set('player')"
+        >
+          Preview (Player)
+        </button>
+        <button
+          ngpButton
+          type="button"
+          class="ab-preview-card__tab"
+          [class.ab-preview-card__tab--active]="previewMode() === 'gm'"
+          (click)="previewMode.set('gm')"
+        >
+          Preview (GM)
+        </button>
+      </div>
+      <span class="ab-preview-card__view-label">Sheet View</span>
     </div>
 
-    <div class="ab-sheet-card">
-      <div class="ab-sheet-card__badges">
-        <lw-badge [label]="rule().actionCost" tone="gold" />
-        <lw-badge [label]="rule().rangeLabel" tone="emerald" />
+    <div class="ab-ability-sheet">
+      <div class="ab-ability-sheet__top">
+        <div class="ab-ability-sheet__crest">
+          <span>{{ rule().name.slice(0, 2).toUpperCase() }}</span>
+        </div>
+        <div class="ab-ability-sheet__titles">
+          <h3 class="ab-ability-sheet__name">{{ rule().name }}</h3>
+          <span class="ab-ability-sheet__type">{{ rule().actionCost }} · {{ rule().actionType }}</span>
+        </div>
+      </div>
+
+      <div class="ab-ability-sheet__meta-line">
+        <span>{{ rule().rangeLabel }}</span>
+        <span>·</span>
+        <span>{{ rule().durationLabel }}</span>
         @if (rule().acBonus > 0) {
-          <lw-badge [label]="'+' + rule().acBonus + ' AC'" tone="cyan" />
-        }
-        @if (rule().saveDc > 0) {
-          <lw-badge [label]="'DC ' + rule().saveDc" tone="violet" />
+          <span>·</span>
+          <strong class="ab-ability-sheet__emerald">+{{ rule().acBonus }} AC</strong>
         }
       </div>
 
-      <p class="ab-sheet-card__summary">{{ rule().summary }}</p>
+      <p class="ab-ability-sheet__desc">{{ rule().summary }}</p>
 
-      <div class="ab-sheet-card__formula">
-        <span class="ab-sheet-card__label">Outcome / Formula:</span>
-        <strong>{{ rule().damageOrEffectFormula }}</strong>
+      <div class="ab-ability-sheet__digest">
+        <div class="ab-ability-sheet__digest-row">
+          <strong>Trigger:</strong>
+          <span>{{ triggerLine() }}</span>
+        </div>
+        <div class="ab-ability-sheet__digest-row">
+          <strong>Requires:</strong>
+          <span>{{ requirementLine() }}</span>
+        </div>
+        <div class="ab-ability-sheet__digest-row">
+          <strong>Effect:</strong>
+          <span>{{ effectLine() }}</span>
+        </div>
       </div>
 
       @if (previewMode() === 'gm') {
-        <div class="ab-sheet-card__engine">
-          <div class="ab-sheet-card__engine-line">
-            <span>Bound Class:</span>
-            <code>{{ rule().primaryClassName }}.{{ rule().primaryMethodName }}()</code>
+        <div class="ab-ability-sheet__gm-box">
+          <div class="ab-ability-sheet__gm-line">
+            <span>Campaign Scope:</span>
+            <strong>{{ campaignName() }} (DM Only)</strong>
           </div>
-          <div class="ab-sheet-card__engine-line">
-            <span>Source File:</span>
-            <code>{{ rule().sourceFilePath }}</code>
+          <div class="ab-ability-sheet__gm-line">
+            <span>Engine Handler:</span>
+            <code>{{ rule().primaryClassName }}.{{ rule().primaryMethodName }}</code>
           </div>
-          @if (activeSymbolInfo().method; as methodInfo) {
-            <div class="ab-sheet-card__engine-line">
-              <span>Signature:</span>
-              <code>{{ methodInfo.signature }} -> {{ methodInfo.returnType }}</code>
-            </div>
-          }
         </div>
       }
 
-      <div class="ab-sheet-card__clauses">
-        @for (c of rule().clauses; track c.id) {
-          <div class="ab-sheet-card__clause-line">
-            <strong class="ab-sheet-card__kw">{{ c.keyword.toUpperCase() }}</strong>
-            <span>{{ c.tokens.join(' · ') }}</span>
-          </div>
-        }
+      <div class="ab-ability-sheet__footer">
+        <lw-badge [label]="rule().actionCost" tone="gold" />
+        <lw-button
+          label="Test in Encounter"
+          variant="ghost"
+          size="xs"
+          (pressed)="openTestTabRequested.emit()"
+        />
       </div>
-
-      @if (rule().worksWith.length > 0 || rule().conflictsWith.length > 0) {
-        <div class="ab-sheet-card__compat">
-          @if (rule().worksWith.length > 0) {
-            <div>
-              <small class="ab-sheet-card__compat-title">Works With:</small>
-              <span class="ab-sheet-card__compat-items">{{ rule().worksWith.join(', ') }}</span>
-            </div>
-          }
-          @if (rule().conflictsWith.length > 0) {
-            <div>
-              <small class="ab-sheet-card__compat-title ab-sheet-card__compat-title--warn">Conflicts With:</small>
-              <span class="ab-sheet-card__compat-items">{{ rule().conflictsWith.join(', ') }}</span>
-            </div>
-          }
-        </div>
-      }
     </div>
-  </lw-panel>
+  </section>
 
-  <lw-panel
-    eyebrow="Rules Engine Combat Sandbox"
-    title="Test Rule in Combat"
-    subtitle="Simulate an incoming attack or spell to verify your clause logic against CombatRuleInterpreter."
-  >
-    <div panelActions>
-      <lw-button
-        [label]="evaluating() ? 'Running...' : 'Test Rule'"
-        icon="play"
-        variant="emerald"
-        size="sm"
-        [disabled]="evaluating()"
-        (pressed)="triggerSimulation()"
+  <!-- 2. DRAFT-TO-CAMPAIGN CHANGE SUMMARY -->
+  <section class="ab-draft-summary">
+    <div class="ab-draft-summary__header">
+      <div>
+        <strong class="ab-draft-summary__title">Draft-to-Campaign Change Summary</strong>
+        <span class="ab-draft-summary__sub">Target: {{ campaignName() }}</span>
+      </div>
+      <lw-badge
+        [label]="draftDiffs().length > 0 ? draftDiffs().length + ' Changed' : (hasDraftSaved() ? 'Draft Saved' : 'In Sync')"
+        [tone]="draftDiffs().length > 0 ? 'gold' : 'emerald'"
       />
     </div>
 
-    <div class="ab-sim-grid">
-      <label class="ab-sim-field">
-        <span>Attack Roll</span>
-        <input type="number" [ngModel]="simAttackRoll()" (ngModelChange)="simAttackRoll.set(+$event)" />
-      </label>
-      <label class="ab-sim-field">
-        <span>Target AC</span>
-        <input type="number" [ngModel]="simTargetAc()" (ngModelChange)="simTargetAc.set(+$event)" />
-      </label>
-      <label class="ab-sim-field">
-        <span>Distance (ft)</span>
-        <input type="number" [ngModel]="simDistanceFeet()" (ngModelChange)="simDistanceFeet.set(+$event)" />
-      </label>
-      <label class="ab-sim-field">
-        <span>Base Damage</span>
-        <input type="number" [ngModel]="simDamageRolled()" (ngModelChange)="simDamageRolled.set(+$event)" />
-      </label>
-    </div>
-
-    <div class="ab-sim-toggles">
-      <label class="ab-sim-check">
-        <input type="checkbox" [ngModel]="simReactionAvailable()" (ngModelChange)="simReactionAvailable.set($event)" />
-        <span>Defender Reaction Available</span>
-      </label>
-      <label class="ab-sim-check">
-        <input type="checkbox" [ngModel]="simHasSpellSlot()" (ngModelChange)="simHasSpellSlot.set($event)" />
-        <span>Spell Slot Available</span>
-      </label>
-    </div>
-
-    @if (evaluationResult(); as res) {
-      <div class="ab-sim-result">
-        <div class="ab-sim-result__banner" [class.ab-sim-result__banner--pass]="res.conditionsPassed">
-          <strong>{{ res.finalResolutionSummary }}</strong>
-          <small>{{ res.combatLogPreview }}</small>
-        </div>
-
-        <div class="ab-sim-trace">
-          @for (step of res.traceSteps; track step.stepNumber) {
-            <div class="ab-sim-trace__row">
-              <lw-badge
-                [label]="step.keyword"
-                [tone]="step.passed ? 'emerald' : 'crimson'"
-              />
-              <div class="ab-sim-trace__copy">
-                <code>{{ step.boundSymbol }}</code>
-                <span>{{ step.outcomeDetail }}</span>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
+    @if (draftDiffs().length > 0) {
+      <ul class="ab-draft-summary__list">
+        @for (diff of draftDiffs(); track diff.label) {
+          <li class="ab-draft-summary__item">
+            <strong class="ab-draft-summary__field">{{ diff.label }}:</strong>
+            <span class="ab-draft-summary__before">{{ diff.before }}</span>
+            <span class="ab-draft-summary__arrow">-></span>
+            <span class="ab-draft-summary__after">{{ diff.after }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="ab-draft-summary__empty">
+        No pending differences from the active campaign version. Edit any field or condition to stage a draft.
+      </p>
     }
-  </lw-panel>
+
+    <div class="ab-draft-summary__actions">
+      <lw-button
+        [label]="hasDraftSaved() ? 'Draft Saved' : 'Save Draft'"
+        variant="secondary"
+        size="sm"
+        (pressed)="saveDraftRequested.emit()"
+      />
+      <lw-button
+        [label]="saving() ? 'Applying...' : 'Apply to ' + campaignName()"
+        variant="gold"
+        size="sm"
+        [disabled]="saving()"
+        (pressed)="applyToCampaign.emit()"
+      />
+    </div>
+  </section>
+
+  <!-- 3. SCALING & LEVEL UP OPTIONS -->
+  <section class="ab-scaling-card">
+    <div class="ab-scaling-card__header">
+      <strong class="ab-scaling-card__title">Scaling &amp; Level Up Options</strong>
+      <label class="ab-scaling-card__toggle">
+        <span>Enable Level Scaling</span>
+        <input
+          type="checkbox"
+          [ngModel]="scalingEnabled()"
+          (ngModelChange)="scalingEnabled.set($event)"
+        />
+      </label>
+    </div>
+
+    @if (scalingEnabled()) {
+      <div class="ab-scaling-table">
+        <div class="ab-scaling-table__head">
+          <span>Level</span>
+          <span>Range</span>
+          <span>Additional Effects</span>
+          <span></span>
+        </div>
+        @for (tier of rule().scalingTiers; track $index; let idx = $index) {
+          <div class="ab-scaling-table__row">
+            <input
+              ngpInput
+              type="text"
+              [ngModel]="tier.levelRange"
+              (ngModelChange)="updateScalingTier(idx, 'levelRange', $event)"
+            />
+            <input
+              ngpInput
+              type="text"
+              [ngModel]="tier.diceOrValue"
+              (ngModelChange)="updateScalingTier(idx, 'diceOrValue', $event)"
+            />
+            <input
+              ngpInput
+              type="text"
+              [ngModel]="tier.summary"
+              (ngModelChange)="updateScalingTier(idx, 'summary', $event)"
+            />
+            <button
+              ngpButton
+              type="button"
+              class="ab-scaling-table__del"
+              (click)="removeScalingTier(idx)"
+            >
+              <lw-icon name="x" [size]="12" />
+            </button>
+          </div>
+        }
+      </div>
+      <lw-button
+        label="+ Add Level Tier"
+        variant="secondary"
+        size="xs"
+        (pressed)="addScalingTier()"
+      />
+    }
+  </section>
+
+  <!-- 4. TAGS & LINKING -->
+  <section class="ab-tags-card">
+    <strong class="ab-tags-card__title">Tags &amp; Linking</strong>
+    <div class="ab-tags-card__chips">
+      @for (tag of rule().tags; track tag; let idx = $index) {
+        <span class="ab-tag-pill">
+          <span>{{ tag }}</span>
+          <button ngpButton type="button" (click)="removeTag(idx)">
+            <lw-icon name="x" [size]="11" />
+          </button>
+        </span>
+      }
+      <div class="ab-tags-card__add">
+        <input
+          ngpInput
+          type="text"
+          placeholder="+ Add Tag"
+          [ngModel]="newTagText()"
+          (ngModelChange)="newTagText.set($event)"
+          (keydown.enter)="addTag()"
+        />
+      </div>
+    </div>
+  </section>
 </aside>

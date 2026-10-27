@@ -1,0 +1,368 @@
+<section class="ab-guided">
+  <div class="ab-guided__intro">
+    <div>
+      <span class="ab-guided__eyebrow">Describe the Rule</span>
+      <h3 class="ab-guided__heading">Trigger, Requirements &amp; Effects</h3>
+    </div>
+    <p class="ab-guided__hint">
+      Click any section to adjust its conditions. Condition groups explicitly state whether <strong>ALL (AND)</strong> or <strong>ANY (OR)</strong> conditions are required.
+    </p>
+  </div>
+
+  <!-- 1. TRIGGER GROUP -->
+  <article class="ab-group-card" [class.ab-group-card--open]="expandedGroup() === 'trigger'">
+    <button
+      ngpButton
+      type="button"
+      class="ab-group-card__header"
+      (click)="toggleGroup('trigger')"
+      [attr.aria-expanded]="expandedGroup() === 'trigger'"
+    >
+      <div class="ab-group-card__title-wrap">
+        <span class="ab-group-card__step">1. Trigger</span>
+        <lw-badge
+          [label]="(triggerClause().combiner || 'ANY') === 'ANY' ? 'Match ANY (OR)' : 'Require ALL (AND)'"
+          tone="cyan"
+        />
+      </div>
+      <p class="ab-group-card__summary">{{ triggerSummary() }}</p>
+      <lw-icon [name]="expandedGroup() === 'trigger' ? 'chevron-up' : 'chevron-down'" [size]="16" tone="muted" />
+    </button>
+
+    @if (expandedGroup() === 'trigger') {
+      <div class="ab-group-card__body">
+        <div class="ab-group-card__toolbar">
+          <span class="ab-group-card__label">When should this ability trigger?</span>
+          <div class="ab-combiner-toggle" role="group" aria-label="Trigger condition match mode">
+            <button
+              ngpButton
+              type="button"
+              class="ab-combiner-toggle__btn"
+              [class.ab-combiner-toggle__btn--active]="(triggerClause().combiner || 'ANY') === 'ANY'"
+              (click)="setTriggerCombiner('ANY')"
+            >
+              Match ANY (OR)
+            </button>
+            <button
+              ngpButton
+              type="button"
+              class="ab-combiner-toggle__btn"
+              [class.ab-combiner-toggle__btn--active]="triggerClause().combiner === 'ALL'"
+              (click)="setTriggerCombiner('ALL')"
+            >
+              Require ALL (AND)
+            </button>
+          </div>
+        </div>
+
+        <div class="ab-condition-list">
+          @for (tok of triggerClause().tokens; track tok; let idx = $index) {
+            @if (idx > 0) {
+              <div class="ab-condition-joiner">
+                <span>{{ (triggerClause().combiner || 'ANY') === 'ANY' ? 'OR' : 'AND' }}</span>
+              </div>
+            }
+            <div class="ab-condition-row">
+              <span class="ab-condition-row__text">{{ tok }}</span>
+              <button
+                ngpButton
+                type="button"
+                class="ab-condition-row__remove"
+                title="Remove trigger condition"
+                (click)="removeTriggerToken(idx)"
+              >
+                <lw-icon name="x" [size]="13" />
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="ab-group-card__footer">
+          <lw-button
+            label="+ Add trigger"
+            variant="secondary"
+            size="xs"
+            (pressed)="openPicker('trigger')"
+          />
+        </div>
+
+        @if (activePicker() === 'trigger') {
+          <div class="ab-picker">
+            <span class="ab-picker__title">Select a tabletop trigger or enter a custom one:</span>
+            <div class="ab-picker__presets">
+              @for (preset of triggerPresets; track preset) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="ab-picker__chip"
+                  (click)="addConditionToGroup('trigger', preset)"
+                >
+                  {{ preset }}
+                </button>
+              }
+            </div>
+            <div class="ab-picker__custom">
+              <input
+                ngpInput
+                type="text"
+                class="ab-picker__input"
+                placeholder="Custom trigger description..."
+                [ngModel]="customInputText()"
+                (ngModelChange)="customInputText.set($event)"
+                (keydown.enter)="addConditionToGroup('trigger', customInputText())"
+              />
+              <lw-button
+                label="Add"
+                variant="emerald"
+                size="xs"
+                (pressed)="addConditionToGroup('trigger', customInputText())"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </article>
+
+  <!-- 2. REQUIREMENTS GROUP -->
+  <article class="ab-group-card" [class.ab-group-card--open]="expandedGroup() === 'requirements'">
+    <button
+      ngpButton
+      type="button"
+      class="ab-group-card__header"
+      (click)="toggleGroup('requirements')"
+      [attr.aria-expanded]="expandedGroup() === 'requirements'"
+    >
+      <div class="ab-group-card__title-wrap">
+        <span class="ab-group-card__step">2. Requirements</span>
+        <lw-badge
+          [label]="requirementCombiner() === 'ALL' ? 'Require ALL (AND)' : 'Match ANY (OR)'"
+          tone="gold"
+        />
+      </div>
+      <p class="ab-group-card__summary">{{ requirementsSummary() }}</p>
+      <lw-icon [name]="expandedGroup() === 'requirements' ? 'chevron-up' : 'chevron-down'" [size]="16" tone="muted" />
+    </button>
+
+    @if (expandedGroup() === 'requirements') {
+      <div class="ab-group-card__body">
+        <div class="ab-group-card__toolbar">
+          <span class="ab-group-card__label">What resources and conditions must be true?</span>
+          <div class="ab-combiner-toggle" role="group" aria-label="Requirements match mode">
+            <button
+              ngpButton
+              type="button"
+              class="ab-combiner-toggle__btn"
+              [class.ab-combiner-toggle__btn--active]="requirementCombiner() === 'ALL'"
+              (click)="setRequirementsCombiner('ALL')"
+            >
+              Require ALL (AND)
+            </button>
+            <button
+              ngpButton
+              type="button"
+              class="ab-combiner-toggle__btn"
+              [class.ab-combiner-toggle__btn--active]="requirementCombiner() === 'ANY'"
+              (click)="setRequirementsCombiner('ANY')"
+            >
+              Match ANY (OR)
+            </button>
+          </div>
+        </div>
+
+        <div class="ab-condition-list">
+          @for (item of requirementItems(); track item.clauseId + '-' + item.tokenIdx; let idx = $index) {
+            @if (idx > 0) {
+              <div class="ab-condition-joiner ab-condition-joiner--gold">
+                <span>{{ requirementCombiner() === 'ALL' ? 'AND' : 'OR' }}</span>
+              </div>
+            }
+            <div class="ab-condition-row">
+              <span class="ab-condition-row__text">{{ item.token }}</span>
+              <button
+                ngpButton
+                type="button"
+                class="ab-condition-row__remove"
+                title="Remove requirement"
+                (click)="removeRequirementItem(item.clauseId, item.tokenIdx)"
+              >
+                <lw-icon name="x" [size]="13" />
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="ab-group-card__footer">
+          <lw-button
+            label="+ Add condition"
+            variant="secondary"
+            size="xs"
+            (pressed)="openPicker('requirements')"
+          />
+        </div>
+
+        @if (activePicker() === 'requirements') {
+          <div class="ab-picker">
+            <span class="ab-picker__title">Add a resource, range, or casting requirement:</span>
+            <div class="ab-picker__presets">
+              @for (preset of requirementPresets; track preset) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="ab-picker__chip"
+                  (click)="addConditionToGroup('requirements', preset)"
+                >
+                  {{ preset }}
+                </button>
+              }
+            </div>
+            <div class="ab-picker__custom">
+              <input
+                ngpInput
+                type="text"
+                class="ab-picker__input"
+                placeholder="Or enter a custom requirement..."
+                [ngModel]="customInputText()"
+                (ngModelChange)="customInputText.set($event)"
+                (keydown.enter)="addConditionToGroup('requirements', customInputText())"
+              />
+              <lw-button
+                label="Add"
+                variant="emerald"
+                size="xs"
+                (pressed)="addConditionToGroup('requirements', customInputText())"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </article>
+
+  <!-- 3. EFFECTS GROUP -->
+  <article class="ab-group-card" [class.ab-group-card--open]="expandedGroup() === 'effects'">
+    <button
+      ngpButton
+      type="button"
+      class="ab-group-card__header"
+      (click)="toggleGroup('effects')"
+      [attr.aria-expanded]="expandedGroup() === 'effects'"
+    >
+      <div class="ab-group-card__title-wrap">
+        <span class="ab-group-card__step">3. Effects</span>
+        <lw-badge label="In Order" tone="emerald" />
+      </div>
+      <p class="ab-group-card__summary">{{ effectsSummary() }}</p>
+      <lw-icon [name]="expandedGroup() === 'effects' ? 'chevron-up' : 'chevron-down'" [size]="16" tone="muted" />
+    </button>
+
+    @if (expandedGroup() === 'effects') {
+      <div class="ab-group-card__body">
+        <div class="ab-effects-quickgrid">
+          <label class="ab-effects-field">
+            <span>AC Bonus Granted</span>
+            <input
+              ngpInput
+              type="number"
+              [ngModel]="rule().acBonus"
+              (ngModelChange)="patchNumericAcBonus($event)"
+            />
+          </label>
+          <label class="ab-effects-field">
+            <span>Effect / Damage Outcome</span>
+            <input
+              ngpInput
+              type="text"
+              [ngModel]="rule().damageOrEffectFormula"
+              (ngModelChange)="ruleChange.emit({ ...rule(), damageOrEffectFormula: $event })"
+            />
+          </label>
+          <label class="ab-effects-field">
+            <span>Duration</span>
+            <input
+              ngpInput
+              type="text"
+              [ngModel]="rule().durationLabel"
+              (ngModelChange)="ruleChange.emit({ ...rule(), durationLabel: $event })"
+            />
+          </label>
+        </div>
+
+        <div class="ab-condition-list">
+          @for (tok of effectClause().tokens; track tok; let idx = $index) {
+            <div class="ab-condition-row ab-condition-row--effect">
+              <span class="ab-condition-row__num">{{ idx + 1 }}.</span>
+              <span class="ab-condition-row__text">{{ tok }}</span>
+              <button
+                ngpButton
+                type="button"
+                class="ab-condition-row__remove"
+                title="Remove effect step"
+                (click)="removeEffectToken(idx)"
+              >
+                <lw-icon name="x" [size]="13" />
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (fallbackClause(); as fb) {
+          <div class="ab-fallback-box">
+            <strong>Otherwise (If not used or requirements fail):</strong>
+            <span>{{ fb.tokens.join(', ') }}</span>
+          </div>
+        }
+
+        <div class="ab-group-card__footer">
+          <lw-button
+            label="+ Add effect step"
+            variant="secondary"
+            size="xs"
+            (pressed)="openPicker('effects')"
+          />
+          <lw-button
+            label="Open Advanced Expressions"
+            variant="ghost"
+            size="xs"
+            (pressed)="openAdvancedRequested.emit()"
+          />
+        </div>
+
+        @if (activePicker() === 'effects') {
+          <div class="ab-picker">
+            <span class="ab-picker__title">Add an effect resolution step:</span>
+            <div class="ab-picker__presets">
+              @for (preset of effectPresets; track preset) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="ab-picker__chip"
+                  (click)="addConditionToGroup('effects', preset)"
+                >
+                  {{ preset }}
+                </button>
+              }
+            </div>
+            <div class="ab-picker__custom">
+              <input
+                ngpInput
+                type="text"
+                class="ab-picker__input"
+                placeholder="Or describe custom effect step..."
+                [ngModel]="customInputText()"
+                (ngModelChange)="customInputText.set($event)"
+                (keydown.enter)="addConditionToGroup('effects', customInputText())"
+              />
+              <lw-button
+                label="Add"
+                variant="emerald"
+                size="xs"
+                (pressed)="addConditionToGroup('effects', customInputText())"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </article>
+</section>

@@ -1,82 +1,181 @@
-<header class="ab-navbar">
-  <div class="ab-navbar__brand">
-    <a class="ab-navbar__home-link" href="https://loom-weaver.com" title="Return to LoomWeaver">
-      <lw-icon name="shield" [size]="20" tone="emerald" [framed]="true" />
-      <div class="ab-navbar__titles">
-        <span class="ab-navbar__eyebrow">LoomWeaver Studio</span>
-        <strong class="ab-navbar__title">ActionBuilder · Campaign Rules Engine</strong>
-      </div>
-    </a>
-  </div>
+<div class="lw-header-stack">
+  <header class="lw-topbar" role="banner">
+    <div class="lw-topbar__left">
+      <a class="lw-topbar__brand-tile" href="https://loom-weaver.com" title="Return to LoomWeaver">
+        <div class="lw-topbar__crest" aria-hidden="true">
+          <lw-icon name="shield" [size]="18" tone="gold" />
+        </div>
+        <div class="lw-topbar__titles">
+          <span class="lw-topbar__name">LoomWeaver</span>
+          <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
+        </div>
+      </a>
 
-  <div class="ab-navbar__selectors">
-    @if (canAccess() && dmCampaigns().length > 0) {
-      <div class="ab-navbar__field">
-        <label class="ab-navbar__label" for="dmCampaignSelect">Your DM Campaign (Scoped)</label>
-        <div class="ab-navbar__select-row">
+      <div class="lw-campaign-tile">
+        @if (canAccess() && dmCampaigns().length > 0) {
+          <div class="lw-campaign-tile__body">
+            <select
+              class="lw-campaign-tile__select"
+              [ngModel]="activeCampaign()?.id"
+              (ngModelChange)="onCampaignChange($event)"
+              aria-label="Active DM Campaign"
+            >
+              @for (camp of dmCampaigns(); track camp.id) {
+                <option [value]="camp.id">{{ camp.name }}</option>
+              }
+            </select>
+            <span class="lw-campaign-tile__sub">
+              Campaign · {{ activeCampaign()?.rulesetLabel || 'High Fantasy' }} · {{ activeCampaign()?.customizedRuleCount || 0 }} custom rules
+            </span>
+          </div>
+        } @else {
+          <div class="lw-campaign-tile__body">
+            <span class="lw-campaign-tile__restricted">Player Session (No DM Campaign)</span>
+            <span class="lw-campaign-tile__sub">ActionBuilder is scoped to Dungeon Masters</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="lw-topbar__search">
+      <lw-icon name="search" [size]="16" tone="emerald" />
+      <input
+        ngpInput
+        type="search"
+        class="lw-topbar__search-input"
+        placeholder="Ask The Loom or filter rules... (e.g. Shield, Reaction, AC)"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        aria-label="Search campaign rules"
+      />
+      <span class="lw-topbar__search-hint">Rules · Balance · GM Only</span>
+    </div>
+
+    <div class="lw-topbar__right">
+      <a class="lw-topbar__rect-btn" href="https://loom-weaver.com/home" title="Open Core Studio">
+        <span>Studio</span>
+      </a>
+
+      <div class="lw-account-wrap">
+        <button
+          ngpButton
+          type="button"
+          class="lw-profile-tile"
+          (click)="toggleAccountMenu()"
+          [attr.aria-expanded]="accountMenuOpen()"
+        >
+          <span class="lw-profile-tile__avatar">{{ initials() }}</span>
+          <span class="lw-profile-tile__info">
+            <strong>{{ shortDisplayName() }}</strong>
+            <span>{{ canAccess() ? 'Dungeon Master' : 'Player Account' }}</span>
+          </span>
+          <lw-icon name="chevron-down" [size]="14" tone="muted" />
+        </button>
+
+        @if (accountMenuOpen()) {
+          <div class="lw-account-menu" role="menu">
+            <div class="lw-account-menu__section">
+              <span class="lw-account-menu__eyebrow">Signed-In Account</span>
+              <strong class="lw-account-menu__user">{{ currentDisplayName() }}</strong>
+              @if (activeCampaign(); as camp) {
+                <span class="lw-account-menu__camp">Active DM Scope: {{ camp.name }}</span>
+              }
+            </div>
+
+            <div class="lw-account-menu__divider"></div>
+
+            <div class="lw-account-menu__section">
+              <button
+                ngpButton
+                type="button"
+                class="lw-account-menu__dev-toggle"
+                (click)="devRoleDrawerOpen.set(!devRoleDrawerOpen())"
+              >
+                <span>Developer Tools: Role &amp; Scope Verification</span>
+                <lw-icon [name]="devRoleDrawerOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+              </button>
+
+              @if (devRoleDrawerOpen()) {
+                <div class="lw-account-menu__dev-body">
+                  <p class="lw-account-menu__dev-note">
+                    Verify DM campaign isolation and player access rules across accounts:
+                  </p>
+                  @for (acc of demoAccounts(); track acc.accountId) {
+                    <button
+                      ngpButton
+                      type="button"
+                      class="lw-account-menu__role-option"
+                      [class.lw-account-menu__role-option--active]="acc.accountId === selectedAccountId()"
+                      (click)="onAccountChange(acc.accountId)"
+                    >
+                      <strong>{{ acc.username }}</strong>
+                      <span>{{ acc.roleSummary }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (canAccess() && activeCampaign()) {
+    <section class="ab-subbar">
+      <div class="ab-subbar__top">
+        <div class="ab-subbar__identity">
+          <div class="ab-subbar__emblem" aria-hidden="true">
+            <lw-icon name="gavel" [size]="20" tone="gold" />
+          </div>
+          <div>
+            <h1 class="ab-subbar__title">Action Builder</h1>
+            <p class="ab-subbar__subtitle">
+              Create and customize actions, spells, reactions, class features, and level progression for your campaign.
+            </p>
+          </div>
+        </div>
+
+        <div class="ab-subbar__actions">
           <select
-            id="dmCampaignSelect"
-            class="ab-navbar__select"
-            [ngModel]="activeCampaign()?.id"
-            (ngModelChange)="onCampaignChange($event)"
+            class="ab-subbar__ruleset-select"
+            [ngModel]="rulesetEdition()"
+            (ngModelChange)="rulesetEdition.set($event)"
+            aria-label="Ruleset Edition"
           >
-            @for (camp of dmCampaigns(); track camp.id) {
-              <option [value]="camp.id">
-                {{ camp.name }} (DM: {{ camp.dmUsername }} · {{ camp.customizedRuleCount }} custom)
-              </option>
-            }
+            <option value="5e (SRD 5.1 / 2024)">5e (SRD 5.1 / 2024)</option>
+            <option value="5e (Icrandor Campaign Canon)">5e (Icrandor Campaign Canon)</option>
           </select>
-          <lw-badge label="DM Owned Only" tone="emerald" />
+
+          <lw-button
+            label="+ New Action"
+            variant="emerald"
+            size="sm"
+            (pressed)="createNewRule.emit()"
+          />
+
+          <lw-button
+            label="Import / Export"
+            variant="secondary"
+            size="sm"
+            (pressed)="exportRuleJson.emit()"
+          />
         </div>
       </div>
-    } @else {
-      <div class="ab-navbar__field">
-        <span class="ab-navbar__label">Campaign Scope</span>
-        <lw-badge label="No DM Campaign Found for Player" tone="crimson" />
-      </div>
-    }
 
-    <div class="ab-navbar__field">
-      <label class="ab-navbar__label" for="studioRoleSwitcher">Active User / Role Verification</label>
-      <select
-        id="studioRoleSwitcher"
-        class="ab-navbar__select ab-navbar__select--account"
-        [ngModel]="selectedAccountId()"
-        (ngModelChange)="onAccountChange($event)"
-      >
-        @for (acc of demoAccounts(); track acc.accountId) {
-          <option [value]="acc.accountId">
-            {{ acc.displayName }}
-          </option>
+      <nav class="ab-subbar__tabs" aria-label="Rule Categories">
+        @for (cat of categories; track cat) {
+          <button
+            ngpButton
+            type="button"
+            class="ab-subbar__tab"
+            [class.ab-subbar__tab--active]="activeCategory() === cat"
+            (click)="categorySelected.emit(cat)"
+          >
+            {{ cat }}
+          </button>
         }
-      </select>
-    </div>
-  </div>
-
-  <div class="ab-navbar__actions">
-    @if (canAccess() && activeCampaign(); as camp) {
-      <lw-button
-        label="New Custom Rule"
-        icon="plus"
-        variant="secondary"
-        size="sm"
-        (pressed)="createNewRule.emit()"
-      />
-      <lw-button
-        label="Reset to Core SRD"
-        icon="rotate-ccw"
-        variant="ghost"
-        size="sm"
-        (pressed)="resetCurrentRule.emit()"
-      />
-      <lw-button
-        [label]="saving() ? 'Applying...' : 'Apply to ' + camp.name"
-        icon="check"
-        variant="gold"
-        size="md"
-        [disabled]="saving()"
-        (pressed)="applyToCampaign.emit()"
-      />
-    }
-  </div>
-</header>
+      </nav>
+    </section>
+  }
+</div>

@@ -3,23 +3,24 @@
 ## Overview
 **LoomWeaver ActionBuilder** (`actionbuilder-studio`) is a standalone Angular 22 application served at `https://actionbuilder.loom-weaver.com` and powered by the unified `.NET 10` backend (`LoomWeaver.Api` -> `LoomWeaver.Modules.ActionStudio`).
 
-It replaces the legacy monolithic ActionBuilder interface with a clean, campaign-scoped 3-column workbench that lets Dungeon Masters select a rule or reaction, edit its `When / If / Contains / Has / Has Not / Where / And / Or / With / Then / Else` clauses bound to real classes and methods in the LoomWeaver Rules Engine, test it in a live combat sandbox, and apply it **exclusively to their own campaign**.
+It uses the standard LoomWeaver Header Bar (without a left app-navigation sidebar) and defaults to a **Guided Ability Builder ("Describe the rule")** organized around three workspace modes (`Build` | `Test` | `Advanced`) editing a single unified rule model.
 
-## Campaign & Role Authorization Matrix
-| User Scenario | Campaign Ownership | ActionBuilder Behavior |
-|---|---|---|
-| **Primary DM** (`GeoJason`, `trashami`, `GregMeinert`) | DM of `Shadow of the Mountain` (or their own campaigns) | Full access to select, edit, test, and apply rules to their own DM campaign(s). |
-| **Player in Campaign A who ALSO has their own DM Campaign B** (`ScottBrogan`, `StickHazen`) | Player in `Shadow of the Mountain` (`#1`), DM of their own campaign (`#103` / `#104`) | Cannot see or modify `Shadow of the Mountain` (`#1`). Even if navigated with `?campaignId=1`, ActionBuilder filters out `#1` and **automatically defaults to their own DM campaign** (`#103` / `#104`). |
-| **Pure Player with No DM Campaign** (`DallasCrow`, `RyanIssak`, `PeteHigano`) | Player in `Shadow of the Mountain` (`#1`), owns `0` DM campaigns | Editor is hidden and replaced by `<lw-dm-access-gate>` (`403` Player Access Restricted). Allows 1-click creation of their own DM campaign if they wish to DM. |
+## Workspace Modes (Single Rule Model)
+1. **`1. Build` (Default — "Describe the rule")**:
+   - **Three Collapsible Rule Groups (`<lw-guided-rule-groups>`)**:
+     - **Trigger**: Plain-language triggers (e.g., *An attack hits you OR Magic Missile targets you*) with explicit `Match ANY (OR)` vs `Require ALL (AND)` selection and a single `+ Add trigger` contextual picker.
+     - **Requirements**: Resource, casting, and spatial requirements (e.g., *Reaction available AND Appropriate 1st-level spell slot available AND Applicable casting requirements*) with explicit `Require ALL (AND)` vs `Match ANY (OR)` badges between conditions.
+     - **Effects**: Ordered effects and numeric/formula adjusters (`AC Bonus`, `Outcome Formula`, `Duration`), plus optional fallback outcome.
+   - **Ability Details & Interactions (`<lw-rule-parameters-editor>`)**: Plain-language fields (`Name`, `Type`, `Action Cost`, `Source`, `Description`, `Range`, `Target`, `Duration`, `Works With`, and `Conflicts With`).
+2. **`2. Test` (`<lw-rule-test-sandbox>`)**:
+   - Dedicated tabletop scenario sandbox that answers the tabletop question directly (e.g., *`Attack total 17 against AC 15. Shield raises AC to 20. The attack misses.`*) and verifies resource consumption (`Reaction` and `Spell Slot`).
+   - Includes 1-click preset tests for success and failure cases: `Hit Turned Into Miss`, `Failure: No Reaction`, `Failure: No Spell Slot`, `Attack Still Hits (22 vs AC 15)`, `Magic Missile Targeted`, and `Unsupported Check ("Not evaluated")`.
+3. **`3. Advanced` (`<lw-clause-sentence-editor>`)**:
+   - Edits the same underlying `clauses` and engine bindings without losing data when switching modes.
+   - Provides plain-language branch headings, single contextual `+ Add condition` pickers, diagnostics for unsupported checks, and a collapsed **Engine Details & C#/TS Symbol Bindings** drawer.
 
-## Reusable Component Audit (`actionbuilder-studio/src/app/shared/ui`)
-- `<lw-icon>`: Angular Material Icons (`MatIconModule`) wrapper with strict Zero-Emoji and Zero-Star/Sparkles enforcement.
-- `<lw-button>`: `ng-primitives/button` (`NgpButton`) action primitive with `emerald`, `gold`, `secondary`, `ghost`, `danger`, `guide-pill`, and `guide-chip` variants.
-- `<lw-badge>`: Status pill component (`gold`, `emerald`, `crimson`, `violet`, `cyan`, `neutral`).
-- `<lw-panel>`: Framed surface container with header eyebrow, title, subtitle, and `panelActions` slot.
-- `<lw-action-top-navbar>`: Top studio bar with DM-scoped campaign selector, role verification switcher, and primary `Apply to <Campaign>` CTA.
-- `<lw-rule-catalog-sidebar>`: Searchable, filterable catalog of Core SRD and Campaign Modified rules (`Shield`, `Counterspell`, `Opportunity Attack`, `Concentration`, `Action Economy Budget`, `Diagonal Movement`, `Sneak Attack`, `Fivi's Tooth Slingshot`, `Chokrah Overchannel Surge`).
-- `<lw-clause-sentence-editor>`: Interactive `When / If / Contains / Has / Has Not / Where / And / Or / With / Then / Else` clause editor with context-aware token suggestions and direct C#/TS class & method bindings (`CombatRuleInterpreter`, `MidiCombatAutomationService`, `CombatSessionStateService`, `CharacterCalculationEngine`).
-- `<lw-rule-parameters-editor>`: Form for Action Cost, Range, Formula, AC Bonus, Save DC, Duration, and Level 1–20 Scaling Tiers.
-- `<lw-rule-preview-inspector>`: Live Player Sheet vs. GM Engine View card and 1-click Combat Rule Test Runner (`POST /api/v2/actions/evaluate-logic`).
-- `<lw-dm-access-gate>`: Role-enforced gate blocking players from viewing or editing another DM's campaign rules while offering a 1-click form to create their own DM campaign.
+## Right-Hand Inspector (`<lw-rule-preview-inspector>`)
+- **Concise Player / GM Ability Card**: Defaults to a concise player-facing ability card (`Preview (Player)` / `Preview (GM)` + `Sheet View`) without repeating raw technical clause lists.
+- **Draft-to-Campaign Change Summary**: Diffs the working draft against the saved campaign baseline (`before -> after`), allowing the DM to `Save Draft` separately before clicking `Apply to <Campaign>`.
+- **Scaling & Level Up Options**: Level `1-4`, `5-10`, `11-16`, `17-20` progression table.
+- **Tags & Linking**: Quick tag management.

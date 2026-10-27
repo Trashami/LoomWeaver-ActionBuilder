@@ -1,0 +1,191 @@
+<section class="ab-test-tab">
+  <div class="ab-test-tab__header">
+    <div>
+      <span class="ab-test-tab__eyebrow">Authoritative .NET Scenario Verification</span>
+      <h3 class="ab-test-tab__title">Test {{ rule().name }} in a Tabletop Scenario</h3>
+      <p class="ab-test-tab__subtitle">
+        Pick a preset tabletop scenario or adjust the inputs below to verify triggers, requirements, AC changes, and resource consumption.
+      </p>
+    </div>
+    <lw-button
+      [label]="evaluating() ? 'Evaluating...' : 'Run Scenario Test'"
+      variant="emerald"
+      size="md"
+      [disabled]="evaluating()"
+      (pressed)="triggerSimulation()"
+    />
+  </div>
+
+  <div class="ab-presets-grid" role="group" aria-label="Preset test scenarios">
+    @for (preset of presets; track preset.id) {
+      <button
+        ngpButton
+        type="button"
+        class="ab-preset-btn"
+        [class.ab-preset-btn--active]="activePresetId() === preset.id"
+        (click)="selectPreset(preset)"
+      >
+        <strong>{{ preset.label }}</strong>
+        <span>{{ preset.subtitle }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="ab-inputs-card">
+    <div class="ab-inputs-grid">
+      <label class="ab-test-field">
+        <span>Attack Total</span>
+        <input
+          ngpInput
+          type="number"
+          [ngModel]="simAttackRoll()"
+          (ngModelChange)="simAttackRoll.set(+$event); activePresetId.set('custom')"
+        />
+      </label>
+      <label class="ab-test-field">
+        <span>Base AC</span>
+        <input
+          ngpInput
+          type="number"
+          [ngModel]="simTargetAc()"
+          (ngModelChange)="simTargetAc.set(+$event); activePresetId.set('custom')"
+        />
+      </label>
+      <label class="ab-test-field">
+        <span>Incoming Damage</span>
+        <input
+          ngpInput
+          type="number"
+          [ngModel]="simDamageRolled()"
+          (ngModelChange)="simDamageRolled.set(+$event); activePresetId.set('custom')"
+        />
+      </label>
+      <label class="ab-test-field">
+        <span>Distance (ft)</span>
+        <input
+          ngpInput
+          type="number"
+          [ngModel]="simDistanceFeet()"
+          (ngModelChange)="simDistanceFeet.set(+$event); activePresetId.set('custom')"
+        />
+      </label>
+    </div>
+
+    <div class="ab-toggles-row">
+      <label class="ab-toggle-pill">
+        <input
+          type="checkbox"
+          [ngModel]="simReactionAvailable()"
+          (ngModelChange)="simReactionAvailable.set($event); activePresetId.set('custom')"
+        />
+        <span>Reaction Available</span>
+      </label>
+
+      <label class="ab-toggle-pill">
+        <input
+          type="checkbox"
+          [ngModel]="simHasSpellSlot()"
+          (ngModelChange)="simHasSpellSlot.set($event); activePresetId.set('custom')"
+        />
+        <span>Appropriate Spell Slot Available</span>
+      </label>
+
+      <label class="ab-toggle-pill">
+        <input
+          type="checkbox"
+          [ngModel]="simIsMagicMissile()"
+          (ngModelChange)="simIsMagicMissile.set($event); activePresetId.set('custom')"
+        />
+        <span>Incoming Effect is Magic Missile</span>
+      </label>
+
+      <label class="ab-toggle-pill ab-toggle-pill--warn">
+        <input
+          type="checkbox"
+          [ngModel]="testUnsupportedCheck()"
+          (ngModelChange)="testUnsupportedCheck.set($event); activePresetId.set('custom')"
+        />
+        <span>Include Unsupported Condition</span>
+      </label>
+    </div>
+  </div>
+
+  @if (evaluationResult(); as res) {
+    <div
+      class="ab-verdict-card"
+      [attr.data-status]="(res.notEvaluatedCount || 0) > 0 ? 'warn' : (res.conditionsPassed ? 'pass' : 'fail')"
+    >
+      <div class="ab-verdict-card__top">
+        <div>
+          <span class="ab-verdict-card__eyebrow">Tabletop Resolution</span>
+          <h4 class="ab-verdict-card__headline">
+            {{ res.tabletopHeadline || res.finalResolutionSummary }}
+          </h4>
+        </div>
+        <lw-badge
+          [label]="res.attackOutcomeLabel || (res.conditionsPassed ? 'Resolved' : 'Did Not Resolve')"
+          [tone]="(res.notEvaluatedCount || 0) > 0 ? 'gold' : (res.conditionsPassed ? 'emerald' : 'crimson')"
+        />
+      </div>
+
+      <div class="ab-verdict-metrics">
+        <div class="ab-verdict-metric">
+          <span class="ab-verdict-metric__label">Armor Class</span>
+          <strong class="ab-verdict-metric__val">
+            {{ simTargetAc() }} -> {{ res.computedAcAfterRule }}
+          </strong>
+        </div>
+        <div class="ab-verdict-metric">
+          <span class="ab-verdict-metric__label">Final Damage Taken</span>
+          <strong class="ab-verdict-metric__val">
+            {{ res.computedDamageAfterRule }} dmg
+          </strong>
+        </div>
+        <div class="ab-verdict-metric">
+          <span class="ab-verdict-metric__label">Reaction Verified</span>
+          <strong class="ab-verdict-metric__val" [class.ab-verdict-metric__val--emerald]="res.reactionConsumed">
+            {{ res.reactionConsumed ? 'Consumed (1 -> 0)' : (simReactionAvailable() ? 'Unspent (1 left)' : 'Unavailable (0)') }}
+          </strong>
+        </div>
+        <div class="ab-verdict-metric">
+          <span class="ab-verdict-metric__label">Spell Slot Verified</span>
+          <strong class="ab-verdict-metric__val" [class.ab-verdict-metric__val--emerald]="res.spellSlotConsumed">
+            {{ res.spellSlotConsumed ? 'Consumed (1st-Level Slot)' : (simHasSpellSlot() ? 'Unspent' : 'Unavailable (0)') }}
+          </strong>
+        </div>
+      </div>
+
+      <div class="ab-trace-section">
+        <h5 class="ab-trace-section__title">Step-by-Step Condition &amp; Effect Verification</h5>
+        <div class="ab-trace-list">
+          @for (step of res.traceSteps; track step.stepNumber) {
+            <div class="ab-trace-row">
+              <div class="ab-trace-row__left">
+                <span class="ab-trace-row__kw">{{ step.keyword }}</span>
+                <span class="ab-trace-row__combiner">
+                  {{ step.combiner === 'ANY' ? 'ANY (OR)' : 'ALL (AND)' }}
+                </span>
+              </div>
+
+              <div class="ab-trace-row__center">
+                <strong class="ab-trace-row__expr">{{ step.expressionText }}</strong>
+                <span class="ab-trace-row__detail">{{ step.outcomeDetail }}</span>
+                @if (step.tokenOutcomes && step.tokenOutcomes.length > 0) {
+                  <div class="ab-trace-row__tokens">
+                    @for (to of step.tokenOutcomes; track to) {
+                      <span class="ab-trace-row__token-pill">{{ to }}</span>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="ab-trace-row__right">
+                <lw-badge [label]="stepStatusLabel(step)" [tone]="stepTone(step)" />
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</section>

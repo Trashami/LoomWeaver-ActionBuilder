@@ -1,19 +1,14 @@
-<lw-panel
-  eyebrow="Rule Configuration & Engine Binding"
-  [title]="rule().name"
-  [subtitle]="'Adjust parameters below. Changes apply exclusively to your DM campaign (' + activeCampaignName() + ').'"
->
-  <div panelActions>
-    <lw-badge
-      [label]="rule().isCustomizedForCampaign ? 'Campaign Modified' : 'Core SRD Default'"
-      [tone]="rule().isCustomizedForCampaign ? 'gold' : 'emerald'"
-    />
+<section class="ab-details-card">
+  <div class="ab-details-card__header">
+    <h3 class="ab-details-card__title">Ability Details &amp; Tabletop Parameters</h3>
+    <span class="ab-details-card__sub">Scoped to {{ activeCampaignName() }}</span>
   </div>
 
   <div class="ab-params-grid">
-    <div class="ab-field ab-field--wide">
-      <label class="ab-field__label">Rule / Action Name</label>
+    <div class="ab-field ab-field--span2">
+      <label class="ab-field__label">Name</label>
       <input
+        ngpInput
         type="text"
         class="ab-field__input"
         [ngModel]="rule().name"
@@ -22,17 +17,7 @@
     </div>
 
     <div class="ab-field">
-      <label class="ab-field__label">Rule Code</label>
-      <input
-        type="text"
-        class="ab-field__input ab-field__input--mono"
-        [ngModel]="rule().ruleCode"
-        (ngModelChange)="patchField('ruleCode', $event)"
-      />
-    </div>
-
-    <div class="ab-field">
-      <label class="ab-field__label">Category</label>
+      <label class="ab-field__label">Type</label>
       <select
         class="ab-field__select"
         [ngModel]="rule().category"
@@ -40,32 +25,6 @@
       >
         @for (cat of categories; track cat) {
           <option [value]="cat">{{ cat }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="ab-field">
-      <label class="ab-field__label">Primary Rules Engine Class</label>
-      <select
-        class="ab-field__select ab-field__input--mono"
-        [ngModel]="rule().primaryClassName"
-        (ngModelChange)="patchField('primaryClassName', $event)"
-      >
-        @for (sym of engineSymbols(); track sym.className) {
-          <option [value]="sym.className">{{ sym.className }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="ab-field">
-      <label class="ab-field__label">Primary Engine Method</label>
-      <select
-        class="ab-field__select ab-field__input--mono"
-        [ngModel]="rule().primaryMethodName"
-        (ngModelChange)="patchField('primaryMethodName', $event)"
-      >
-        @for (m of methodsForPrimaryClass(rule().primaryClassName); track m.methodName) {
-          <option [value]="m.methodName">{{ m.methodName }}()</option>
         }
       </select>
     </div>
@@ -84,8 +43,32 @@
     </div>
 
     <div class="ab-field">
-      <label class="ab-field__label">Range / Reach</label>
+      <label class="ab-field__label">Source</label>
+      <select
+        class="ab-field__select"
+        [ngModel]="rule().sourceLabel"
+        (ngModelChange)="patchField('sourceLabel', $event)"
+      >
+        @for (src of sourceOptions; track src) {
+          <option [value]="src">{{ src }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="ab-field ab-field--full">
+      <label class="ab-field__label">Description</label>
+      <textarea
+        rows="3"
+        class="ab-field__textarea"
+        [ngModel]="rule().summary"
+        (ngModelChange)="patchField('summary', $event)"
+      ></textarea>
+    </div>
+
+    <div class="ab-field">
+      <label class="ab-field__label">Range</label>
       <input
+        ngpInput
         type="text"
         class="ab-field__input"
         [ngModel]="rule().rangeLabel"
@@ -93,19 +76,32 @@
       />
     </div>
 
-    <div class="ab-field">
-      <label class="ab-field__label">Damage / Effect Formula</label>
+    <div class="ab-field ab-field--span2">
+      <label class="ab-field__label">Target</label>
       <input
+        ngpInput
         type="text"
-        class="ab-field__input ab-field__input--mono"
-        [ngModel]="rule().damageOrEffectFormula"
-        (ngModelChange)="patchField('damageOrEffectFormula', $event)"
+        class="ab-field__input"
+        [ngModel]="rule().targetLabel"
+        (ngModelChange)="patchField('targetLabel', $event)"
+      />
+    </div>
+
+    <div class="ab-field ab-field--span2">
+      <label class="ab-field__label">Duration</label>
+      <input
+        ngpInput
+        type="text"
+        class="ab-field__input"
+        [ngModel]="rule().durationLabel"
+        (ngModelChange)="patchField('durationLabel', $event)"
       />
     </div>
 
     <div class="ab-field">
-      <label class="ab-field__label">AC Bonus Modifier</label>
+      <label class="ab-field__label">AC Bonus</label>
       <input
+        ngpInput
         type="number"
         class="ab-field__input"
         [ngModel]="rule().acBonus"
@@ -116,6 +112,7 @@
     <div class="ab-field">
       <label class="ab-field__label">Save DC (0 if None)</label>
       <input
+        ngpInput
         type="number"
         class="ab-field__input"
         [ngModel]="rule().saveDc"
@@ -123,71 +120,72 @@
       />
     </div>
 
-    <div class="ab-field">
-      <label class="ab-field__label">Duration</label>
+    <div class="ab-field ab-field--span3">
+      <label class="ab-field__label">Attack / Save Interaction</label>
       <input
+        ngpInput
         type="text"
         class="ab-field__input"
-        [ngModel]="rule().durationLabel"
-        (ngModelChange)="patchField('durationLabel', $event)"
+        [ngModel]="rule().attackOrSaveLabel"
+        (ngModelChange)="patchField('attackOrSaveLabel', $event)"
       />
-    </div>
-
-    <div class="ab-field ab-field--full">
-      <label class="ab-field__label">Rule Description & Table Summary</label>
-      <textarea
-        rows="2"
-        class="ab-field__textarea"
-        [ngModel]="rule().summary"
-        (ngModelChange)="patchField('summary', $event)"
-      ></textarea>
     </div>
   </div>
 
-  <div class="ab-scaling-section">
-    <div class="ab-scaling-section__header">
-      <strong class="ab-scaling-section__title">Level 1–20 Progression & Scaling Tiers</strong>
-      <lw-button
-        label="+ Add Scaling Tier"
-        variant="guide-chip"
-        size="xs"
-        (pressed)="addScalingTier()"
-      />
-    </div>
-
-    <div class="ab-scaling-list">
-      @for (tier of rule().scalingTiers; track $index; let tIdx = $index) {
-        <div class="ab-scaling-row">
+  <div class="ab-interactions">
+    <h4 class="ab-interactions__heading">Affected By / Interactions</h4>
+    <div class="ab-interactions__grid">
+      <div class="ab-interactions__box ab-interactions__box--works">
+        <strong class="ab-interactions__box-title ab-interactions__box-title--emerald">Works With</strong>
+        <ul class="ab-interactions__list">
+          @for (item of rule().worksWith; track item; let idx = $index) {
+            <li class="ab-interactions__item">
+              <span class="ab-interactions__dot ab-interactions__dot--emerald">+</span>
+              <span class="ab-interactions__text">{{ item }}</span>
+              <button ngpButton type="button" class="ab-interactions__remove" (click)="removeWorksWith(idx)">
+                <lw-icon name="x" [size]="12" />
+              </button>
+            </li>
+          }
+        </ul>
+        <div class="ab-interactions__add">
           <input
+            ngpInput
             type="text"
-            class="ab-field__input ab-scaling-row__range"
-            [ngModel]="tier.levelRange"
-            (ngModelChange)="updateScalingTier(tIdx, 'levelRange', $event)"
-            placeholder="Levels"
+            placeholder="Add synergy (e.g. Mage Armor)..."
+            [ngModel]="newWorksWith()"
+            (ngModelChange)="newWorksWith.set($event)"
+            (keydown.enter)="addWorksWith()"
           />
-          <input
-            type="text"
-            class="ab-field__input ab-field__input--mono ab-scaling-row__dice"
-            [ngModel]="tier.diceOrValue"
-            (ngModelChange)="updateScalingTier(tIdx, 'diceOrValue', $event)"
-            placeholder="Dice/Value"
-          />
-          <input
-            type="text"
-            class="ab-field__input ab-scaling-row__summary"
-            [ngModel]="tier.summary"
-            (ngModelChange)="updateScalingTier(tIdx, 'summary', $event)"
-            placeholder="Effect at this tier"
-          />
-          <lw-button
-            icon="trash"
-            variant="ghost"
-            size="xs"
-            [iconOnly]="true"
-            (pressed)="removeScalingTier(tIdx)"
-          />
+          <lw-button label="Add" variant="ghost" size="xs" (pressed)="addWorksWith()" />
         </div>
-      }
+      </div>
+
+      <div class="ab-interactions__box ab-interactions__box--conflicts">
+        <strong class="ab-interactions__box-title ab-interactions__box-title--crimson">Conflicts With</strong>
+        <ul class="ab-interactions__list">
+          @for (item of rule().conflictsWith; track item; let idx = $index) {
+            <li class="ab-interactions__item">
+              <span class="ab-interactions__dot ab-interactions__dot--crimson">-</span>
+              <span class="ab-interactions__text">{{ item }}</span>
+              <button ngpButton type="button" class="ab-interactions__remove" (click)="removeConflict(idx)">
+                <lw-icon name="x" [size]="12" />
+              </button>
+            </li>
+          }
+        </ul>
+        <div class="ab-interactions__add">
+          <input
+            ngpInput
+            type="text"
+            placeholder="Add blocker (e.g. Incapacitated)..."
+            [ngModel]="newConflict()"
+            (ngModelChange)="newConflict.set($event)"
+            (keydown.enter)="addConflict()"
+          />
+          <lw-button label="Add" variant="ghost" size="xs" (pressed)="addConflict()" />
+        </div>
+      </div>
     </div>
   </div>
-</lw-panel>
+</section>

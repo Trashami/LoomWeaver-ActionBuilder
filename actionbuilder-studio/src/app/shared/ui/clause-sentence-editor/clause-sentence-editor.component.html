@@ -1,101 +1,119 @@
-<lw-panel
-  eyebrow="Rule Logic Sentence Builder"
-  title="If / Then / When / Contains / Has Clause Editor"
-  subtitle="Select a keyword, click to add or remove rule tokens, and bind each step directly to a class and method in the LoomWeaver Rules Engine."
->
-  <div panelActions class="ab-clause-quickbar">
-    @for (kw of ['When', 'If', 'Contains', 'Has', 'Has Not', 'Where', 'With', 'Then', 'Else']; track kw) {
-      <lw-button
-        [label]="'+ ' + kw"
-        variant="guide-chip"
-        size="xs"
-        (pressed)="addClause(kw)"
-      />
-    }
+<section class="ab-advanced">
+  <div class="ab-advanced__header">
+    <div>
+      <span class="ab-advanced__eyebrow">Advanced Expression &amp; Branch Graph</span>
+      <h3 class="ab-advanced__title">Detailed Clause Branches &amp; Diagnostics</h3>
+      <p class="ab-advanced__subtitle">
+        Edits the same unified rule model as the Guided Builder. Use Advanced mode for nested branches, spatial constraints, or custom expressions.
+      </p>
+    </div>
+
+    <div class="ab-advanced__add-bar">
+      @for (kw of ['When', 'Has', 'Contains', 'Where', 'If', 'Has Not', 'With', 'Then', 'Else']; track kw) {
+        <lw-button
+          [label]="'+ ' + kw"
+          variant="guide-chip"
+          size="xs"
+          (pressed)="addClause(kw)"
+        />
+      }
+    </div>
   </div>
+
+  @if (diagnostics().length > 0) {
+    <div class="ab-advanced__diag">
+      <strong>Diagnostics ({{ diagnostics().length }}):</strong>
+      <ul>
+        @for (msg of diagnostics(); track msg) {
+          <li>{{ msg }}</li>
+        }
+      </ul>
+    </div>
+  }
 
   <div class="ab-clause-list">
     @for (clause of clauses(); track clause.id; let idx = $index) {
-      <div class="ab-clause-row" [attr.data-tone]="keywordTone(clause.keyword)">
-        <div class="ab-clause-row__header">
-          <div class="ab-clause-row__keyword-wrap">
-            <span class="ab-clause-row__step">#{{ idx + 1 }}</span>
+      <article class="ab-clause-row">
+        <div class="ab-clause-row__top">
+          <div class="ab-clause-row__heading">
+            <span class="ab-clause-row__idx">#{{ idx + 1 }}</span>
+            <strong class="ab-clause-row__plain">{{ plainHeadingForKeyword(clause.keyword) }}</strong>
             <select
-              class="ab-clause-row__keyword-select"
+              class="ab-clause-row__type-select"
               [ngModel]="clause.keyword"
               (ngModelChange)="onKeywordChange(idx, $event)"
-              aria-label="Clause Keyword"
+              aria-label="Change branch type"
             >
               @for (kw of keywords(); track kw) {
-                <option [value]="kw">{{ kw.toUpperCase() }}</option>
-              }
-            </select>
-            <lw-badge [label]="clause.keyword" [tone]="keywordTone(clause.keyword)" />
-          </div>
-
-          <div class="ab-clause-row__engine-bind">
-            <span class="ab-clause-row__bind-label">Engine Class:</span>
-            <select
-              class="ab-clause-row__class-select"
-              [ngModel]="clause.boundClass"
-              (ngModelChange)="onClassChange(idx, $event)"
-              aria-label="Bound Engine Class"
-            >
-              @for (sym of engineSymbols(); track sym.className) {
-                <option [value]="sym.className">{{ sym.className }}</option>
-              }
-            </select>
-            <span class="ab-clause-row__dot">.</span>
-            <select
-              class="ab-clause-row__method-select"
-              [ngModel]="clause.boundMethod"
-              (ngModelChange)="onMethodChange(idx, $event)"
-              aria-label="Bound Engine Method"
-            >
-              @for (m of methodsForClass(clause.boundClass); track m.methodName) {
-                <option [value]="m.methodName">{{ m.methodName }}()</option>
+                <option [value]="kw">Change to {{ kw }}</option>
               }
             </select>
           </div>
 
-          <div class="ab-clause-row__controls">
-            <lw-button
-              icon="chevron-up"
-              variant="ghost"
-              size="xs"
-              [iconOnly]="true"
-              title="Move Clause Up"
-              [disabled]="idx === 0"
-              (pressed)="moveClause(idx, -1)"
-            />
-            <lw-button
-              icon="chevron-down"
-              variant="ghost"
-              size="xs"
-              [iconOnly]="true"
-              title="Move Clause Down"
-              [disabled]="idx === clauses().length - 1"
-              (pressed)="moveClause(idx, 1)"
-            />
-            <lw-button
-              icon="trash"
-              variant="ghost"
-              size="xs"
-              [iconOnly]="true"
-              title="Remove Clause"
-              (pressed)="removeClause(idx)"
-            />
+          <div class="ab-clause-row__right">
+            <div class="ab-combiner-pills" role="group" aria-label="Branch condition combiner">
+              <button
+                ngpButton
+                type="button"
+                class="ab-combiner-pills__btn"
+                [class.ab-combiner-pills__btn--active]="(clause.combiner || 'ALL') === 'ALL'"
+                (click)="onCombinerChange(idx, 'ALL')"
+              >
+                ALL (AND)
+              </button>
+              <button
+                ngpButton
+                type="button"
+                class="ab-combiner-pills__btn"
+                [class.ab-combiner-pills__btn--active]="clause.combiner === 'ANY'"
+                (click)="onCombinerChange(idx, 'ANY')"
+              >
+                ANY (OR)
+              </button>
+            </div>
+
+            <div class="ab-clause-row__move">
+              <lw-button
+                icon="chevron-up"
+                variant="ghost"
+                size="xs"
+                [iconOnly]="true"
+                [disabled]="idx === 0"
+                (pressed)="moveClause(idx, -1)"
+              />
+              <lw-button
+                icon="chevron-down"
+                variant="ghost"
+                size="xs"
+                [iconOnly]="true"
+                [disabled]="idx === clauses().length - 1"
+                (pressed)="moveClause(idx, 1)"
+              />
+              <lw-button
+                icon="trash"
+                variant="ghost"
+                size="xs"
+                [iconOnly]="true"
+                (pressed)="removeClause(idx)"
+              />
+            </div>
           </div>
         </div>
 
         <div class="ab-clause-row__tokens">
           @for (tok of clause.tokens; track tok; let tIdx = $index) {
+            @if (tIdx > 0) {
+              <span class="ab-clause-row__joiner">
+                {{ clause.combiner === 'ANY' ? 'OR' : 'AND' }}
+              </span>
+            }
             <span class="ab-token-chip">
-              <span class="ab-token-chip__text">{{ tok }}</span>
+              <span>{{ tok }}</span>
               <button
+                ngpButton
                 type="button"
                 class="ab-token-chip__remove"
-                title="Remove token"
+                title="Remove condition"
                 (click)="removeToken(idx, tIdx)"
               >
                 <lw-icon name="x" [size]="12" />
@@ -103,40 +121,121 @@
             </span>
           }
 
-          <select
-            class="ab-clause-row__token-picker"
-            [ngModel]="''"
-            (ngModelChange)="addSuggestedToken(idx, $event)"
-            aria-label="Add suggested token"
-          >
-            <option value="">+ Pick {{ clause.keyword }} Token...</option>
-            @for (sug of suggestionsForKeyword(clause.keyword); track sug) {
-              <option [value]="sug">{{ sug }}</option>
-            }
-          </select>
-
-          <div class="ab-clause-row__custom-token">
-            <input
-              type="text"
-              class="ab-clause-row__custom-input"
-              placeholder="Or type custom condition..."
-              [ngModel]="customTokenDrafts()[clause.id] || ''"
-              (ngModelChange)="updateDraft(clause.id, $event)"
-              (keydown.enter)="addCustomToken(idx, clause.id)"
-            />
-            <lw-button
-              label="Add"
-              variant="secondary"
-              size="xs"
-              (pressed)="addCustomToken(idx, clause.id)"
-            />
-          </div>
+          <lw-button
+            label="+ Add condition"
+            variant="secondary"
+            size="xs"
+            (pressed)="togglePicker(clause.id)"
+          />
         </div>
+
+        @if (activePickerClauseId() === clause.id) {
+          <div class="ab-clause-picker">
+            <div class="ab-clause-picker__chips">
+              @for (sug of suggestionsForKeyword(clause.keyword); track sug) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="ab-clause-picker__chip"
+                  (click)="addTokenToClause(idx, sug)"
+                >
+                  {{ sug }}
+                </button>
+              }
+            </div>
+            <div class="ab-clause-picker__custom">
+              <input
+                ngpInput
+                type="text"
+                placeholder="Or enter a custom expression..."
+                [ngModel]="customDraftText()"
+                (ngModelChange)="customDraftText.set($event)"
+                (keydown.enter)="addTokenToClause(idx, customDraftText())"
+              />
+              <lw-button
+                label="Add"
+                variant="emerald"
+                size="xs"
+                (pressed)="addTokenToClause(idx, customDraftText())"
+              />
+            </div>
+          </div>
+        }
+      </article>
+    }
+  </div>
+
+  <!-- Collapsed Engine Details Inspector -->
+  <div class="ab-engine-drawer">
+    <button
+      ngpButton
+      type="button"
+      class="ab-engine-drawer__toggle"
+      (click)="engineInspectorOpen.set(!engineInspectorOpen())"
+      [attr.aria-expanded]="engineInspectorOpen()"
+    >
+      <div>
+        <strong>Engine Details &amp; C#/TS Symbol Bindings</strong>
+        <span>
+          Primary Handler: <code>{{ defaultClassName() }}.{{ defaultMethodName() }}()</code>
+        </span>
       </div>
-    } @empty {
-      <div class="ab-clause-empty">
-        <p>No clauses defined yet. Click any <strong>+ When</strong>, <strong>+ If</strong>, <strong>+ Contains</strong>, or <strong>+ Then</strong> button above to add one.</p>
+      <lw-icon [name]="engineInspectorOpen() ? 'chevron-up' : 'chevron-down'" [size]="16" tone="muted" />
+    </button>
+
+    @if (engineInspectorOpen()) {
+      <div class="ab-engine-drawer__body">
+        <div class="ab-engine-drawer__primary">
+          <label class="ab-engine-field">
+            <span>Primary Rules Engine Class</span>
+            <select
+              [ngModel]="defaultClassName()"
+              (ngModelChange)="onPrimaryClassChange($event)"
+            >
+              @for (sym of engineSymbols(); track sym.className) {
+                <option [value]="sym.className">{{ sym.className }} ({{ sym.layerLabel }})</option>
+              }
+            </select>
+          </label>
+          <label class="ab-engine-field">
+            <span>Primary Engine Method</span>
+            <select
+              [ngModel]="defaultMethodName()"
+              (ngModelChange)="onPrimaryMethodChange($event)"
+            >
+              @for (m of methodsForClass(defaultClassName()); track m.methodName) {
+                <option [value]="m.methodName">{{ m.signature }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <div class="ab-engine-drawer__clauses">
+          @for (clause of clauses(); track clause.id; let idx = $index) {
+            <div class="ab-engine-clause-bind">
+              <span class="ab-engine-clause-bind__label">
+                #{{ idx + 1 }} {{ plainHeadingForKeyword(clause.keyword) }}
+              </span>
+              <select
+                [ngModel]="clause.boundClass"
+                (ngModelChange)="onClassChange(idx, $event)"
+              >
+                @for (sym of engineSymbols(); track sym.className) {
+                  <option [value]="sym.className">{{ sym.className }}</option>
+                }
+              </select>
+              <select
+                [ngModel]="clause.boundMethod"
+                (ngModelChange)="onMethodChange(idx, $event)"
+              >
+                @for (m of methodsForClass(clause.boundClass); track m.methodName) {
+                  <option [value]="m.methodName">{{ m.methodName }}()</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
       </div>
     }
   </div>
-</lw-panel>
+</section>

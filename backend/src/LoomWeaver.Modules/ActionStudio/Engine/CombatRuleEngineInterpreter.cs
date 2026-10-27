@@ -442,62 +442,24 @@ public sealed class CombatRuleEngineInterpreter
         var resourceSummary = $"Reaction: {(reactionConsumed ? "Consumed (1 -> 0)" : (req.ReactionAvailable ? "Not consumed (1 remaining)" : "Unavailable (0 remaining)"))} · Spell Slot: {(spellSlotConsumed ? "Consumed (1st-level slot spent)" : (req.HasSpellSlot ? "Not consumed" : "Unavailable (0 slots)"))}";
 
         if (notEvaluatedCount > 0)
-        {
-            return (
-                $"Not evaluated: {firstFailureReason ?? $"{notEvaluatedCount} condition(s) could not be verified automatically."}",
-                "Not Evaluated",
-                resourceSummary
-            );
-        }
+            return ($"Not evaluated: {firstFailureReason ?? $"{notEvaluatedCount} condition(s) could not be verified automatically."}", "Not Evaluated", resourceSummary);
 
         if (!triggered)
-        {
-            return (
-                $"Trigger did not match: {firstFailureReason ?? $"Attack total {req.AttackRollTotal} against AC {req.TargetAc} did not trigger {req.RuleName}."}",
-                "Rule Did Not Trigger",
-                resourceSummary
-            );
-        }
+            return ($"Trigger did not match: {firstFailureReason ?? $"Attack total {req.AttackRollTotal} against AC {req.TargetAc} did not trigger {req.RuleName}."}", "Rule Did Not Trigger", resourceSummary);
 
         if (!allConditionsPassed)
-        {
-            return (
-                $"{req.RuleName} blocked by unmet requirement: {firstFailureReason}. Attack total {req.AttackRollTotal} against AC {req.TargetAc} resolves normally ({computedDamage} damage).",
-                "Requirements Not Met",
-                resourceSummary
-            );
-        }
+            return ($"{req.RuleName} blocked by unmet requirement: {firstFailureReason}. Attack total {req.AttackRollTotal} against AC {req.TargetAc} resolves normally ({computedDamage} damage).", "Requirements Not Met", resourceSummary);
 
         if (req.IsMagicMissile)
-        {
-            return (
-                $"Magic Missile targets you. {req.RuleName} raises AC from {req.TargetAc} to {computedAc} and negates all Magic Missile darts (0 damage).",
-                "Magic Missile Negated",
-                resourceSummary
-            );
-        }
+            return ($"Magic Missile targets you. {req.RuleName} raises AC from {req.TargetAc} to {computedAc} and negates all Magic Missile darts (0 damage).", "Magic Missile Negated", resourceSummary);
 
         if (req.AcBonus > 0 || computedAc > req.TargetAc)
         {
-            if (req.AttackRollTotal < computedAc)
-            {
-                return (
-                    $"Attack total {req.AttackRollTotal} against AC {req.TargetAc}. {req.RuleName} raises AC to {computedAc}. The attack misses.",
-                    "The Attack Misses",
-                    resourceSummary
-                );
-            }
-            return (
-                $"Attack total {req.AttackRollTotal} against AC {req.TargetAc}. {req.RuleName} raises AC to {computedAc}, but the attack still hits ({req.AttackRollTotal} >= {computedAc}) for {computedDamage} damage.",
-                "Attack Still Hits",
-                resourceSummary
-            );
+            return req.AttackRollTotal < computedAc
+                ? ($"Attack total {req.AttackRollTotal} against AC {req.TargetAc}. {req.RuleName} raises AC to {computedAc}. The attack misses.", "The Attack Misses", resourceSummary)
+                : ($"Attack total {req.AttackRollTotal} against AC {req.TargetAc}. {req.RuleName} raises AC to {computedAc}, but the attack still hits ({req.AttackRollTotal} >= {computedAc}) for {computedDamage} damage.", "Attack Still Hits", resourceSummary);
         }
 
-        return (
-            $"{req.RuleName} triggered and passed all requirements ({req.DamageOrEffectFormula}).",
-            "Effect Applied",
-            resourceSummary
-        );
+        return ($"{req.RuleName} triggered and passed all requirements ({req.DamageOrEffectFormula}).", "Effect Applied", resourceSummary);
     }
 }

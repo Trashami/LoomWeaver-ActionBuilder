@@ -7,13 +7,13 @@
     [currentDisplayName]="studioContext().displayName"
     [demoAccounts]="studioContext().demoAccounts"
     [selectedAccountId]="selectedAccountId()"
-    [saving]="saving()"
-    [hasUnsavedChanges]="hasUnsavedChanges()"
+    [activeCategory]="activeCategory()"
+    [(searchQuery)]="globalSearchQuery"
     (campaignSelected)="onCampaignSelected($event)"
     (accountSwitched)="onAccountSwitched($event)"
+    (categorySelected)="activeCategory.set($event)"
     (createNewRule)="onCreateNewRule()"
-    (resetCurrentRule)="onResetCurrentRule()"
-    (applyToCampaign)="onApplyRuleToCampaign()"
+    (exportRuleJson)="onExportRuleJson()"
   />
 
   @if (studioContext().switchedFromPlayerCampaignNotice; as switchedNotice) {
@@ -33,43 +33,178 @@
 
   @if (canAccess() && activeCampaign(); as camp) {
     <main class="ab-workbench">
+      <!-- LEFT COLUMN: Searchable Ability Library -->
       <div class="ab-workbench__left">
         <lw-rule-catalog-sidebar
           [rules]="rules()"
           [selectedRuleId]="activeRule().id"
+          [externalCategory]="activeCategory()"
+          [globalSearch]="globalSearchQuery()"
+          [draftRuleIds]="draftRuleIds()"
           (ruleSelected)="onRuleSelected($event)"
         />
       </div>
 
+      <!-- CENTER COLUMN: Ability Header + 3 Workspace Tabs (Build / Test / Advanced) -->
       <div class="ab-workbench__center">
-        <lw-clause-sentence-editor
-          [clauses]="activeRule().clauses"
-          [keywords]="studioContext().clauseKeywords"
-          [tokenSuggestions]="studioContext().tokenSuggestionsByKeyword"
-          [engineSymbols]="studioContext().engineSymbols"
-          [defaultClassName]="activeRule().primaryClassName"
-          [defaultMethodName]="activeRule().primaryMethodName"
-          (clausesChange)="onClausesChanged($event)"
-        />
+        <section class="ab-ability-header">
+          <div class="ab-ability-header__left">
+            <div class="ab-ability-header__emblem">
+              <span>{{ activeRule().name.slice(0, 2).toUpperCase() }}</span>
+            </div>
+            <div>
+              <div class="ab-ability-header__title-row">
+                <h2 class="ab-ability-header__name">{{ activeRule().name }}</h2>
+                <lw-badge
+                  [label]="activeRule().isCustomizedForCampaign ? 'Campaign Modified' : 'Core SRD'"
+                  [tone]="activeRule().isCustomizedForCampaign ? 'gold' : 'emerald'"
+                />
+                @if (draftDiffs().length > 0) {
+                  <lw-badge [label]="draftDiffs().length + ' Draft Edits'" tone="cyan" />
+                }
+              </div>
+              <span class="ab-ability-header__sub">
+                {{ activeRule().actionType }} · Scoped to {{ camp.name }}
+              </span>
+            </div>
+          </div>
 
-        <lw-rule-parameters-editor
-          [rule]="activeRule()"
-          [engineSymbols]="studioContext().engineSymbols"
-          [activeCampaignName]="camp.name"
-          (ruleChange)="onRuleUpdated($event)"
-        />
+          <div class="ab-ability-header__actions">
+            <lw-button
+              label="Test in Encounter"
+              variant="secondary"
+              size="sm"
+              (pressed)="openTestTabAndRun()"
+            />
+            <lw-button
+              [label]="hasDraftForCurrent() ? 'Draft Saved' : 'Save Draft'"
+              variant="emerald"
+              size="sm"
+              (pressed)="onSaveDraft()"
+            />
+
+            <div class="ab-more-wrap">
+              <button
+                ngpButton
+                type="button"
+                class="ab-more-btn"
+                title="Secondary actions (Duplicate, Reset, Export)"
+                (click)="secondaryMenuOpen.set(!secondaryMenuOpen())"
+              >
+                <span>...</span>
+              </button>
+
+              @if (secondaryMenuOpen()) {
+                <div class="ab-more-menu" role="menu">
+                  <button ngpButton type="button" class="ab-more-menu__item" (click)="onDuplicateRule()">
+                    Duplicate Ability
+                  </button>
+                  <button ngpButton type="button" class="ab-more-menu__item" (click)="onDiscardDraft()">
+                    Discard Unsaved Draft
+                  </button>
+                  <button ngpButton type="button" class="ab-more-menu__item" (click)="onExportRuleJson()">
+                    Copy Rule JSON
+                  </button>
+                  <div class="ab-more-menu__sep"></div>
+                  <button
+                    ngpButton
+                    type="button"
+                    class="ab-more-menu__item ab-more-menu__item--danger"
+                    (click)="onResetCurrentRule()"
+                  >
+                    Reset to Core SRD Default
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Three Workspace Mode Tabs: Build | Test | Advanced -->
+        <nav class="ab-mode-tabs" role="tablist" aria-label="Ability workspace mode">
+          <button
+            ngpButton
+            type="button"
+            class="ab-mode-tab"
+            [class.ab-mode-tab--active]="workspaceTab() === 'build'"
+            (click)="workspaceTab.set('build')"
+          >
+            <strong>1. Build</strong>
+            <span>Describe Trigger, Requirements &amp; Effects</span>
+          </button>
+          <button
+            ngpButton
+            type="button"
+            class="ab-mode-tab"
+            [class.ab-mode-tab--active]="workspaceTab() === 'test'"
+            (click)="openTestTabAndRun()"
+          >
+            <strong>2. Test</strong>
+            <span>Scenario Sandbox &amp; Resource Verification</span>
+          </button>
+          <button
+            ngpButton
+            type="button"
+            class="ab-mode-tab"
+            [class.ab-mode-tab--active]="workspaceTab() === 'advanced'"
+            (click)="workspaceTab.set('advanced')"
+          >
+            <strong>3. Advanced</strong>
+            <span>Detailed Branches, Expressions &amp; Engine Bindings</span>
+          </button>
+        </nav>
+
+        @switch (workspaceTab()) {
+          @case ('build') {
+            <lw-guided-rule-groups
+              [rule]="activeRule()"
+              (ruleChange)="onRuleUpdated($event)"
+              (openAdvancedRequested)="workspaceTab.set('advanced')"
+            />
+
+            <lw-rule-parameters-editor
+              [rule]="activeRule()"
+              [activeCampaignName]="camp.name"
+              (ruleChange)="onRuleUpdated($event)"
+            />
+          }
+          @case ('test') {
+            <lw-rule-test-sandbox
+              [rule]="activeRule()"
+              [campaignId]="camp.id"
+              [evaluationResult]="evaluationResult()"
+              [evaluating]="evaluating()"
+              (runSimulation)="onRunSimulation($event)"
+            />
+          }
+          @case ('advanced') {
+            <lw-clause-sentence-editor
+              [rule]="activeRule()"
+              [clauses]="activeRule().clauses"
+              [keywords]="studioContext().clauseKeywords"
+              [tokenSuggestions]="studioContext().tokenSuggestionsByKeyword"
+              [engineSymbols]="studioContext().engineSymbols"
+              [defaultClassName]="activeRule().primaryClassName"
+              [defaultMethodName]="activeRule().primaryMethodName"
+              (clausesChange)="onClausesChanged($event)"
+              (primaryBindingChange)="onPrimaryBindingChanged($event)"
+            />
+          }
+        }
       </div>
 
+      <!-- RIGHT COLUMN: Concise Player Card + Draft Change Summary + Scaling & Tags -->
       <div class="ab-workbench__right">
         <lw-rule-preview-inspector
           [rule]="activeRule()"
-          [campaignId]="camp.id"
           [campaignName]="camp.name"
-          [engineSymbols]="studioContext().engineSymbols"
-          [evaluationResult]="evaluationResult()"
-          [evaluating]="evaluating()"
-          (runSimulation)="onRunSimulation($event)"
+          [draftDiffs]="draftDiffs()"
+          [hasDraftSaved]="hasDraftForCurrent()"
+          [saving]="saving()"
+          (ruleChange)="onRuleUpdated($event)"
+          (saveDraftRequested)="onSaveDraft()"
           (applyToCampaign)="onApplyRuleToCampaign()"
+          (openTestTabRequested)="openTestTabAndRun()"
         />
       </div>
     </main>

@@ -6,12 +6,15 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { NgpButton } from 'ng-primitives/button';
 import {
   ActionStudioContext,
   CampaignActionRule,
   EvaluateRuleLogicRequest,
   EvaluateRuleLogicResponse,
+  RuleDraftDiffItem,
   RuleLogicClause,
+  WorkspaceTabMode,
 } from './core/models/action-studio.models';
 import {
   FALLBACK_RULES,
@@ -20,23 +23,30 @@ import {
 import { ActionStudioApiService } from './core/services/action-studio-api.service';
 import { LwActionTopNavbarComponent } from './shared/ui/action-top-navbar/action-top-navbar.component';
 import { LwBadgeComponent } from './shared/ui/badge/badge.component';
+import { LwButtonComponent } from './shared/ui/button/button.component';
 import { LwClauseSentenceEditorComponent } from './shared/ui/clause-sentence-editor/clause-sentence-editor.component';
 import { LwDmAccessGateComponent } from './shared/ui/dm-access-gate/dm-access-gate.component';
+import { LwGuidedRuleGroupsComponent } from './shared/ui/guided-rule-groups/guided-rule-groups.component';
 import { LwIconComponent } from './shared/ui/icon/icon.component';
 import { LwRuleCatalogSidebarComponent } from './shared/ui/rule-catalog-sidebar/rule-catalog-sidebar.component';
 import { LwRuleParametersEditorComponent } from './shared/ui/rule-parameters-editor/rule-parameters-editor.component';
 import { LwRulePreviewInspectorComponent } from './shared/ui/rule-preview-inspector/rule-preview-inspector.component';
+import { LwRuleTestSandboxComponent } from './shared/ui/rule-test-sandbox/rule-test-sandbox.component';
 
 @Component({
   selector: 'lw-action-studio-root',
   standalone: true,
   imports: [
+    NgpButton,
     LwActionTopNavbarComponent,
     LwRuleCatalogSidebarComponent,
+    LwGuidedRuleGroupsComponent,
     LwRuleParametersEditorComponent,
+    LwRuleTestSandboxComponent,
     LwClauseSentenceEditorComponent,
     LwRulePreviewInspectorComponent,
     LwDmAccessGateComponent,
+    LwButtonComponent,
     LwBadgeComponent,
     LwIconComponent,
   ],
@@ -49,7 +59,14 @@ export class ActionStudioAppComponent implements OnInit {
 
   readonly studioContext = signal<ActionStudioContext>(FALLBACK_STUDIO_CONTEXT);
   readonly selectedAccountId = signal<string>('acc-gm-geojason');
+  readonly baselineRule = signal<CampaignActionRule>(FALLBACK_RULES[0]);
   readonly activeRule = signal<CampaignActionRule>(FALLBACK_RULES[0]);
+  readonly savedDrafts = signal<Record<string, CampaignActionRule>>({});
+  readonly workspaceTab = signal<WorkspaceTabMode>('build');
+  readonly activeCategory = signal<string>('All');
+  readonly globalSearchQuery = signal<string>('');
+  readonly secondaryMenuOpen = signal<boolean>(false);
+
   readonly hasUnsavedChanges = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
   readonly creatingCampaign = signal<boolean>(false);
@@ -60,6 +77,57 @@ export class ActionStudioAppComponent implements OnInit {
   readonly activeCampaign = computed(() => this.studioContext().activeCampaign);
   readonly canAccess = computed(() => this.studioContext().canAccessActionBuilder);
   readonly rules = computed(() => this.studioContext().rules);
+  readonly draftRuleIds = computed(() => Object.keys(this.savedDrafts()));
+  readonly hasDraftForCurrent = computed(() => Boolean(this.savedDrafts()[this.activeRule().id]));
+
+  readonly draftDiffs = computed<RuleDraftDiffItem[]>(() => {
+    const base = this.baselineRule();
+    const cur = this.activeRule();
+    if (!base || !cur) return [];
+    const diffs: RuleDraftDiffItem[] = [];
+
+    if (base.name !== cur.name) {
+      diffs.push({ label: 'Name', before: base.name, after: cur.name });
+    }
+    if (base.actionCost !== cur.actionCost) {
+      diffs.push({ label: 'Action Cost', before: base.actionCost, after: cur.actionCost });
+    }
+    if (base.acBonus !== cur.acBonus) {
+      diffs.push({ label: 'AC Bonus', before: `+${base.acBonus}`, after: `+${cur.acBonus}` });
+    }
+    if (base.saveDc !== cur.saveDc) {
+      diffs.push({ label: 'Save DC', before: `DC ${base.saveDc}`, after: `DC ${cur.saveDc}` });
+    }
+    if (base.rangeLabel !== cur.rangeLabel) {
+      diffs.push({ label: 'Range', before: base.rangeLabel, after: cur.rangeLabel });
+    }
+    if (base.durationLabel !== cur.durationLabel) {
+      diffs.push({ label: 'Duration', before: base.durationLabel, after: cur.durationLabel });
+    }
+    if (base.damageOrEffectFormula !== cur.damageOrEffectFormula) {
+      diffs.push({ label: 'Outcome Formula', before: base.damageOrEffectFormula, after: cur.damageOrEffectFormula });
+    }
+
+    const baseTrigger = this.summarizeClauseType(base, 'when');
+    const curTrigger = this.summarizeClauseType(cur, 'when');
+    if (baseTrigger !== curTrigger) {
+      diffs.push({ label: 'Trigger', before: baseTrigger, after: curTrigger });
+    }
+
+    const baseReq = this.summarizeRequirements(base);
+    const curReq = this.summarizeRequirements(cur);
+    if (baseReq !== curReq) {
+      diffs.push({ label: 'Requirements', before: baseReq, after: curReq });
+    }
+
+    const baseEff = this.summarizeClauseType(base, 'then');
+    const curEff = this.summarizeClauseType(cur, 'then');
+    if (baseEff !== curEff) {
+      diffs.push({ label: 'Effects', before: baseEff, after: curEff });
+    }
+
+    return diffs;
+  });
 
   ngOnInit(): void {
     let initialCampaignId: number | null = null;
@@ -97,16 +165,16 @@ export class ActionStudioAppComponent implements OnInit {
   onAccountSwitched(accountId: string): void {
     this.selectedAccountId.set(accountId);
     this.statusBanner.set(null);
-    // Pass campaignId = 1 when switching to a player account so the backend demonstrates
-    // filtering out Campaign 1 and defaulting to the player's own DM campaign (or blocking if none).
-    const requestedCid = accountId === 'acc-gm-geojason' ? 1 : 1;
-    this.fetchContext(requestedCid, accountId);
+    this.fetchContext(1, accountId);
   }
 
   onRuleSelected(rule: CampaignActionRule): void {
-    this.activeRule.set(this.cloneRule(rule));
-    this.hasUnsavedChanges.set(false);
-    this.evaluationResult.set(null);
+    this.baselineRule.set(this.cloneRule(rule));
+    const draft = this.savedDrafts()[rule.id];
+    this.activeRule.set(this.cloneRule(draft ?? rule));
+    this.hasUnsavedChanges.set(Boolean(draft));
+    this.secondaryMenuOpen.set(false);
+    this.runDefaultEvaluationForRule(draft ?? rule);
   }
 
   onRuleUpdated(updated: CampaignActionRule): void {
@@ -122,25 +190,76 @@ export class ActionStudioAppComponent implements OnInit {
     this.hasUnsavedChanges.set(true);
   }
 
+  onPrimaryBindingChanged(binding: {
+    primaryClassName: string;
+    primaryMethodName: string;
+    sourceFilePath: string;
+  }): void {
+    this.activeRule.update((curr) => ({
+      ...curr,
+      primaryClassName: binding.primaryClassName,
+      primaryMethodName: binding.primaryMethodName,
+      sourceFilePath: binding.sourceFilePath || curr.sourceFilePath,
+    }));
+    this.hasUnsavedChanges.set(true);
+  }
+
+  onSaveDraft(): void {
+    const rule = this.cloneRule(this.activeRule());
+    this.savedDrafts.update((map) => ({ ...map, [rule.id]: rule }));
+    this.statusBanner.set(
+      `Saved working draft for '${rule.name}'. Review the change summary on the right before applying to ${this.activeCampaign()?.name || 'your campaign'}.`
+    );
+  }
+
+  onDiscardDraft(): void {
+    const id = this.activeRule().id;
+    this.savedDrafts.update((map) => {
+      const next = { ...map };
+      delete next[id];
+      return next;
+    });
+    this.activeRule.set(this.cloneRule(this.baselineRule()));
+    this.hasUnsavedChanges.set(false);
+    this.secondaryMenuOpen.set(false);
+    this.statusBanner.set(`Reverted unsaved draft changes for '${this.baselineRule().name}'.`);
+  }
+
+  onDuplicateRule(): void {
+    const base = this.activeRule();
+    const copy: CampaignActionRule = {
+      ...this.cloneRule(base),
+      id: `rule-copy-${Date.now()}`,
+      name: `${base.name} (Campaign Variant)`,
+      sourceLabel: 'Custom Action',
+      isCustomizedForCampaign: true,
+    };
+    this.baselineRule.set(this.cloneRule(base));
+    this.activeRule.set(copy);
+    this.hasUnsavedChanges.set(true);
+    this.secondaryMenuOpen.set(false);
+    this.statusBanner.set(`Duplicated '${base.name}' as a new draft.`);
+  }
+
   onCreateNewRule(): void {
     const campName = this.activeCampaign()?.name || 'Campaign';
     const customRule: CampaignActionRule = {
       id: `rule-custom-${Date.now()}`,
       ruleCode: 'Campaign.CustomActionRule',
-      name: `Custom ${campName} Rule`,
-      category: 'Campaign Custom',
-      sourceLabel: 'Campaign Modified',
+      name: `New ${campName} Ability`,
+      category: 'Actions',
+      sourceLabel: 'Custom Action',
       rulesetCode: 'dnd5e-2024',
-      summary: 'Custom campaign-scoped combat rule bound to the LoomWeaver Rules Engine.',
+      summary: 'Describe what this ability does at the table and when it can be used.',
       actionCost: '1 Reaction',
-      actionType: 'Custom Campaign Rule',
-      rangeLabel: '60 ft',
-      targetLabel: '1 Creature in Sight',
-      attackOrSaveLabel: 'Triggered Reaction / Save',
-      damageOrEffectFormula: '2d8 + 4 Force',
-      saveDc: 15,
-      acBonus: 2,
-      durationLabel: '1 Round',
+      actionType: 'Custom Campaign Ability',
+      rangeLabel: 'Self',
+      targetLabel: 'Self',
+      attackOrSaveLabel: 'Interrupts Attack Roll vs AC',
+      damageOrEffectFormula: '+5 AC until start of next turn',
+      saveDc: 0,
+      acBonus: 5,
+      durationLabel: 'Until the start of your next turn',
       requiresConcentration: false,
       primaryClassName: 'CombatRuleInterpreter',
       primaryMethodName: 'ResolveShieldReactionWindow',
@@ -149,54 +268,55 @@ export class ActionStudioAppComponent implements OnInit {
         {
           id: `c-${Date.now()}-1`,
           keyword: 'When',
-          tokens: ['Attack Roll Hits Self'],
+          combiner: 'ANY',
+          tokens: ['An attack hits you'],
           boundClass: 'MidiCombatAutomationService',
           boundMethod: 'openReactionWindow',
-          notes: 'Opens reaction window on incoming attack.',
+          notes: 'Trigger condition',
         },
         {
           id: `c-${Date.now()}-2`,
-          keyword: 'Contains',
-          tokens: ["Action.Tags Contains 'Reaction'"],
-          boundClass: 'CombatRuleInterpreter',
-          boundMethod: 'ResolveShieldReactionWindow',
-          notes: 'Checks reaction tag membership.',
+          keyword: 'Has',
+          combiner: 'ALL',
+          tokens: ['Reaction available', 'Appropriate 1st-level spell slot available'],
+          boundClass: 'CombatSessionStateService',
+          boundMethod: 'consumeActionResource',
+          notes: 'Resource requirement',
         },
         {
           id: `c-${Date.now()}-3`,
-          keyword: 'If',
-          tokens: ['Reaction Available', 'AttackTotal >= TargetAC'],
-          boundClass: 'CombatRuleInterpreter',
-          boundMethod: 'ResolveShieldReactionWindow',
-          notes: 'Verifies reaction availability and hit threshold.',
-        },
-        {
-          id: `c-${Date.now()}-4`,
           keyword: 'Then',
-          tokens: ['Consume Reaction & Grant +5 AC'],
+          combiner: 'ALL',
+          tokens: [
+            'Spend the required resources (1 Reaction + 1st-level Spell Slot)',
+            'Grant +5 AC until the start of your next turn',
+            'Resolve the triggering attack or Magic Missile interaction',
+          ],
           boundClass: 'CombatRuleInterpreter',
           boundMethod: 'ResolveShieldReactionWindow',
-          notes: 'Applies campaign rule outcome.',
+          notes: 'Effects',
         },
       ],
       scalingTiers: [
         {
-          levelRange: 'Levels 1-10',
-          diceOrValue: '+2 AC / 2d8',
+          levelRange: '1-4',
+          diceOrValue: 'Self',
           label: 'Base Tier',
-          summary: 'Standard campaign rule scaling.',
+          summary: '+5 AC until start of your next turn.',
         },
       ],
-      worksWith: ['Mage Armor', 'War Caster'],
+      worksWith: ['Mage Armor'],
       conflictsWith: ['Incapacitated'],
-      tags: ['Campaign Custom', 'Reaction'],
+      tags: ['Reaction', 'Custom'],
       isCustomizedForCampaign: true,
       updatedByUsername: this.studioContext().username,
       updatedAt: new Date().toISOString(),
     };
+    this.baselineRule.set(this.cloneRule(customRule));
     this.activeRule.set(customRule);
+    this.workspaceTab.set('build');
     this.hasUnsavedChanges.set(true);
-    this.statusBanner.set(`Drafting new custom rule for ${campName}. Click 'Apply to ${campName}' to save.`);
+    this.statusBanner.set(`Drafting new ability for ${campName}.`);
   }
 
   onApplyRuleToCampaign(): void {
@@ -210,7 +330,13 @@ export class ActionStudioAppComponent implements OnInit {
           this.saving.set(false);
           this.hasUnsavedChanges.set(false);
           this.statusBanner.set(res.message);
+          this.baselineRule.set(this.cloneRule(res.rule));
           this.activeRule.set(this.cloneRule(res.rule));
+          this.savedDrafts.update((map) => {
+            const next = { ...map };
+            delete next[res.rule.id];
+            return next;
+          });
           this.studioContext.update((ctx) => {
             const exists = ctx.rules.some((r) => r.id === res.rule.id);
             const nextRules = exists
@@ -219,16 +345,14 @@ export class ActionStudioAppComponent implements OnInit {
             const nextActive = ctx.activeCampaign
               ? { ...ctx.activeCampaign, customizedRuleCount: res.customizedRuleCount }
               : null;
-            return {
-              ...ctx,
-              activeCampaign: nextActive,
-              rules: nextRules,
-            };
+            return { ...ctx, activeCampaign: nextActive, rules: nextRules };
           });
         },
         error: (err) => {
           this.saving.set(false);
-          this.statusBanner.set(err?.error?.error || 'Only the Dungeon Master of this campaign can apply rules.');
+          this.statusBanner.set(
+            err?.error?.error || 'Only the Dungeon Master of this campaign can apply rules.'
+          );
         },
       });
   }
@@ -237,17 +361,32 @@ export class ActionStudioAppComponent implements OnInit {
     const camp = this.activeCampaign();
     if (!camp) return;
     const ruleId = this.activeRule().id;
+    this.secondaryMenuOpen.set(false);
     this.api.resetRuleToDefault(camp.id, ruleId, this.selectedAccountId()).subscribe({
       next: (res) => {
         this.statusBanner.set(res.message);
         this.studioContext.update((ctx) => ({ ...ctx, rules: res.rules }));
         const match = res.rules.find((r) => r.id === ruleId) || res.rules[0];
         if (match) {
+          this.baselineRule.set(this.cloneRule(match));
           this.activeRule.set(this.cloneRule(match));
         }
         this.hasUnsavedChanges.set(false);
       },
     });
+  }
+
+  onExportRuleJson(): void {
+    this.secondaryMenuOpen.set(false);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(JSON.stringify(this.activeRule(), null, 2));
+      this.statusBanner.set(`Copied portable JSON for '${this.activeRule().name}' to clipboard.`);
+    }
+  }
+
+  openTestTabAndRun(): void {
+    this.workspaceTab.set('test');
+    this.runDefaultEvaluationForRule(this.activeRule());
   }
 
   onCreateOwnDmCampaign(payload: { name: string; rulesetLabel: string }): void {
@@ -281,15 +420,56 @@ export class ActionStudioAppComponent implements OnInit {
     });
   }
 
+  private runDefaultEvaluationForRule(rule: CampaignActionRule): void {
+    this.onRunSimulation({
+      campaignId: this.activeCampaign()?.id || 1,
+      ruleId: rule.id,
+      ruleName: rule.name,
+      primaryClassName: rule.primaryClassName,
+      primaryMethodName: rule.primaryMethodName,
+      clauses: rule.clauses,
+      actionCost: rule.actionCost,
+      damageOrEffectFormula: rule.damageOrEffectFormula,
+      saveDc: rule.saveDc,
+      acBonus: rule.acBonus,
+      attackerName: 'Vaelkorath (Boss)',
+      defenderName: 'Kycius',
+      attackRollTotal: 17,
+      targetAc: 15,
+      distanceFeet: 30,
+      reactionAvailable: true,
+      hasSpellSlot: true,
+      damageRolled: 11,
+      isMagicMissile: false,
+    });
+  }
+
   private applyLoadedContext(ctx: ActionStudioContext): void {
     this.studioContext.set(ctx);
     if (ctx.rules && ctx.rules.length > 0) {
       const currentId = this.activeRule()?.id;
       const keep = ctx.rules.find((r) => r.id === currentId) || ctx.rules[0];
+      this.baselineRule.set(this.cloneRule(keep));
       this.activeRule.set(this.cloneRule(keep));
+      this.runDefaultEvaluationForRule(keep);
     }
     this.hasUnsavedChanges.set(false);
-    this.evaluationResult.set(null);
+  }
+
+  private summarizeClauseType(rule: CampaignActionRule, kwLower: string): string {
+    const c = rule.clauses.find((x) => x.keyword.toLowerCase() === kwLower);
+    if (!c) return 'None';
+    const joiner = (c.combiner || 'ALL') === 'ANY' ? ' OR ' : ' AND ';
+    return c.tokens.join(joiner);
+  }
+
+  private summarizeRequirements(rule: CampaignActionRule): string {
+    const reqs = rule.clauses.filter((c) =>
+      ['has', 'contains', 'where', 'if', 'has not'].includes(c.keyword.toLowerCase())
+    );
+    if (reqs.length === 0) return 'None';
+    const combiner = (reqs[0].combiner || 'ALL') === 'ANY' ? ' OR ' : ' AND ';
+    return reqs.flatMap((c) => c.tokens).join(combiner);
   }
 
   private cloneRule(rule: CampaignActionRule): CampaignActionRule {
