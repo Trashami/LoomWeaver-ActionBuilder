@@ -1,0 +1,32 @@
+<div class="lw-maps-shell">
+  <lw-app-header-bar
+    variant="studio"
+    [campaigns]="store.campaigns()"
+    [activeCampaign]="store.activeCampaign()"
+    [activeCampaignId]="store.activeCampaignId()"
+    [viewerRole]="store.viewerRole()"
+    [loomOpen]="loomDrawerOpen()"
+    [userDisplayName]="auth.currentUserProfile()?.displayName ?? 'Dungeon Master'"
+    [userEmail]="auth.currentUserProfile()?.email ?? 'gm@loom-weaver.com'"
+    [userTierCode]="auth.currentUserProfile()?.tierCode ?? 'weaver'"
+    [generativeAiEnabled]="store.weaveEnabled()"
+    [hideAiContent]="store.hideAiContent()"
+    [experienceMode]="store.experienceMode()"
+    (campaignSelected)="onCampaignSelected($event)"
+    (viewerRoleToggled)="onToggleViewerRole()"
+    (loomToggled)="loomDrawerOpen.set(!loomDrawerOpen())"
+    (generativeAiToggled)="store.setGenerativeAiOptIn($event)"
+    (hideAiContentToggled)="store.setHideAiContent($event)"
+    (experienceModeChanged)="store.setExperienceMode($event)"
+  />
+
+  <main class="lw-maps-shell__main">
+    <lw-maps-page />
+  </main>
+
+  @if (loomDrawerOpen()) {
+    <aside class="lw-maps-shell__loom-drawer" aria-label="The Loom Campaign Memory Assistant">
+      <lw-loom-launcher [generativeAiEnabled]="store.weaveEnabled()" />
+    </aside>
+  }
+</div>

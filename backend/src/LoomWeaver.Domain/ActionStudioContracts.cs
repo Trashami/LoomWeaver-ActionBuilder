@@ -61,7 +61,11 @@ public sealed record CampaignActionRuleDto(
     IReadOnlyList<string> Tags,
     bool IsCustomizedForCampaign,
     string UpdatedByUsername,
-    string UpdatedAt
+    string UpdatedAt,
+    bool IsCoreEngineRule = true,
+    string? BypassesCoreRuleId = null,
+    string? BypassedByRuleId = null,
+    string? BypassedByRuleName = null
 );
 
 public sealed record DmCampaignOptionDto(
@@ -116,7 +120,8 @@ public sealed record ApplyCampaignRuleResponse(
     int CampaignId,
     string CampaignName,
     CampaignActionRuleDto Rule,
-    int CustomizedRuleCount
+    int CustomizedRuleCount,
+    IReadOnlyList<CampaignActionRuleDto>? Rules = null
 );
 
 public sealed record ResetCampaignRuleRequest(
@@ -180,4 +185,52 @@ public sealed record EvaluateRuleLogicResponse(
     bool SpellSlotConsumed = false,
     string ResourceVerificationSummary = "",
     int NotEvaluatedCount = 0
+);
+
+public sealed record EncounterReactionOptionDto(
+    string RuleId,
+    string RuleCode,
+    string Name,
+    string SourceLabel,
+    bool IsCampaignBypass,
+    string TriggerSummary,
+    string EffectPreviewLabel,
+    int AcBonusDelta,
+    int DamageReductionFlat,
+    bool HalvesDamage,
+    int RetaliationDamage,
+    bool TurnsHitIntoMiss
+);
+
+public sealed record EncounterAttackStepRequest(
+    int CampaignId,
+    string AttackerName,
+    string TargetName,
+    string ActionName,
+    int AttackRollTotal,
+    int TargetBaseAc,
+    int RawDamage,
+    int DistanceFeet,
+    bool TargetReactionAvailable,
+    bool TargetIsConcentrating = false,
+    string? SelectedReactionRuleId = null,
+    bool ReactionDecisionMade = false,
+    string RollMode = "auto"
+);
+
+public sealed record EncounterAttackStepResponse(
+    string Phase,
+    bool RequiresReactionPrompt,
+    string PromptMessage,
+    IReadOnlyList<EncounterReactionOptionDto> AvailableReactions,
+    bool HitAfterReaction,
+    int EffectiveAc,
+    int FinalDamage,
+    int RetaliationDamage,
+    bool ReactionConsumed,
+    string? AppliedReactionName,
+    bool ConcentrationCheckTriggered,
+    int ConcentrationDc,
+    IReadOnlyList<string> StepByStepLog,
+    string SummaryBanner
 );

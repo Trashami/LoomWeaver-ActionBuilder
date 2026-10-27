@@ -1,12 +1,17 @@
 <aside class="ab-sidebar">
   <div class="ab-sidebar__header">
+    <div class="ab-sidebar__campaign-head">
+      <span class="ab-sidebar__eyebrow">Engine &amp; Campaign Rules</span>
+      <strong class="ab-sidebar__camp-name">{{ campaignName() }}</strong>
+    </div>
+
     <div class="ab-sidebar__search">
       <lw-icon name="search" [size]="15" tone="muted" />
       <input
         ngpInput
         type="search"
         class="ab-sidebar__search-input"
-        placeholder="Search actions..."
+        placeholder="Search 5e actions, reactions, spells..."
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
         aria-label="Search actions"
@@ -21,7 +26,7 @@
         [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'all'"
         (click)="activeSourceFilter.set('all')"
       >
-        All
+        All ({{ allCount() }})
       </button>
       <button
         ngpButton
@@ -30,7 +35,7 @@
         [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'custom'"
         (click)="activeSourceFilter.set('custom')"
       >
-        Custom
+        Bypass ({{ customCount() }})
       </button>
       <button
         ngpButton
@@ -39,7 +44,7 @@
         [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'srd'"
         (click)="activeSourceFilter.set('srd')"
       >
-        SRD
+        Core ({{ coreCount() }})
       </button>
     </div>
   </div>
@@ -52,6 +57,7 @@
         class="ab-rule-card"
         [class.ab-rule-card--active]="rule.id === selectedRuleId()"
         [class.ab-rule-card--modified]="rule.isCustomizedForCampaign"
+        [class.ab-rule-card--bypassed]="!!rule.bypassedByRuleId"
         (click)="ruleSelected.emit(rule)"
       >
         <div class="ab-rule-card__avatar" [attr.data-custom]="rule.isCustomizedForCampaign">
@@ -63,11 +69,25 @@
             <strong class="ab-rule-card__name">{{ rule.name }}</strong>
             @if (hasDraft(rule.id)) {
               <lw-badge label="Draft" tone="gold" />
+            } @else if (rule.bypassedByRuleId) {
+              <lw-badge label="Bypassed" tone="gold" />
+            } @else if (rule.bypassesCoreRuleId) {
+              <lw-badge label="Overrides Core" tone="gold" />
             }
           </div>
           <div class="ab-rule-card__meta">
-            <span class="ab-rule-card__source" [class.ab-rule-card__source--gold]="rule.isCustomizedForCampaign">
-              {{ rule.isCustomizedForCampaign ? 'Modified SRD' : 'SRD' }}
+            <span
+              class="ab-rule-card__source"
+              [class.ab-rule-card__source--gold]="rule.isCustomizedForCampaign"
+              [class.ab-rule-card__source--muted]="!!rule.bypassedByRuleId"
+            >
+              @if (rule.isCustomizedForCampaign) {
+                {{ rule.bypassesCoreRuleId ? 'Campaign Bypass' : 'Campaign Custom' }}
+              } @else if (rule.bypassedByRuleId) {
+                Core SQL (Bypassed)
+              } @else {
+                Core SQL
+              }
             </span>
             <span class="ab-rule-card__sep">·</span>
             <span class="ab-rule-card__cost">{{ rule.actionCost }}</span>

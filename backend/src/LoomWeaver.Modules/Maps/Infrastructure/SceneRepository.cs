@@ -105,7 +105,7 @@ public static class SceneRepository
                     new("layer-objects", "2D/3D Linked Stamps & Props", "objects", "box", true, false, 100, "normal", 50),
                     new("layer-lights", "2.5D Dynamic Lights & Shadows", "lights", "sun", true, false, 100, "screen", 60),
                     new("layer-notes", "GM Scene Notes & Secrets", "notes", "eye", true, false, 90, "normal", 70),
-                    new("layer-overlays", "Cartography & Weather FX", "overlays", "sparkles", true, false, 85, "overlay", 80)
+                    new("layer-overlays", "Cartography & Weather FX", "overlays", "compass", true, false, 85, "overlay", 80)
                 ],
                 UpdatedBy: "Joshua (GM)",
                 UpdatedAtUtc: DateTimeOffset.UtcNow

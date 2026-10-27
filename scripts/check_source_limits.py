@@ -11,6 +11,7 @@ SCAN_DIRS = [
     os.path.join(ROOT, "frontend", "src"),
     os.path.join(ROOT, "effectbuilder-studio", "src"),
     os.path.join(ROOT, "actionbuilder-studio", "src"),
+    os.path.join(ROOT, "loommaps-studio", "src"),
     os.path.join(ROOT, "backend", "src"),
 ]
 EXTENSIONS = {".ts", ".html", ".scss", ".css", ".cs"}

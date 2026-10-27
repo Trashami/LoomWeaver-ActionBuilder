@@ -57,7 +57,7 @@ export class Scene3dAssetController {
   private gridMaxZ = 20;
   private hasHeightGrid = false;
   private fallbackGroundY = 0;
-  private waterLevelY = 0.25;
+  private waterLevelY = 0.22;
   private waterFloorY = 0;
 
   mapTransform: MapTransformState = {
@@ -278,13 +278,14 @@ export class Scene3dAssetController {
   }
 
   /**
-   * Rasterizes world-space walkable terrain and riverbed triangles into a 128x128 heightfield.
-   * Filters out upper tree foliage and vertical trunk walls so tokens stand accurately on the
-   * riverbank slopes and sink all the way down to the water floor when placed in the river.
+   * Rasterizes the TOP walkable surface of rocks, sandbars, and river water into a 128x128 heightfield.
+   * On the south/foreground bank (+Z, where the large boulders are), the full rock height is preserved
+   * so tokens stand on top of the rocks. On the north bank (-Z, where tall trees grow), upper tree
+   * canopies (>56% height) are filtered out so tokens stand on the bank underneath.
    */
   private bakeHeightGrid(): void {
     if (!this.envModel) return;
-    this.heightGrid.fill(999);
+    this.heightGrid.fill(-999);
     const bounds = this.envModel.wrapper.getHierarchyBoundingVectors(true);
     this.gridMinX = bounds.min.x - 0.25;
     this.gridMaxX = bounds.max.x + 0.25;
@@ -293,10 +294,12 @@ export class Scene3dAssetController {
     const spanX = Math.max(0.01, this.gridMaxX - this.gridMinX);
     const spanZ = Math.max(0.01, this.gridMaxZ - this.gridMinZ);
     const totalHeight = Math.max(0.1, bounds.max.y - bounds.min.y);
-    const groundCapY = bounds.min.y + totalHeight * 0.48;
+    const northTreeCapY = bounds.min.y + totalHeight * 0.56;
+    const southRockCapY = bounds.max.y;
+    const treeZoneMaxZ = this.gridMinZ + spanZ * 0.44;
     this.waterFloorY = bounds.min.y;
-    this.waterLevelY = bounds.min.y + totalHeight * 0.17;
-    this.fallbackGroundY = bounds.min.y + totalHeight * 0.22;
+    this.waterLevelY = bounds.min.y + totalHeight * 0.18;
+    this.fallbackGroundY = bounds.min.y + totalHeight * 0.28;
 
     const v0 = new Vector3();
     const v1 = new Vector3();
@@ -318,8 +321,10 @@ export class Scene3dAssetController {
         Vector3.TransformCoordinatesFromFloatsToRef(pos[i1], pos[i1 + 1], pos[i1 + 2], wm, v1);
         Vector3.TransformCoordinatesFromFloatsToRef(pos[i2], pos[i2 + 1], pos[i2 + 2], wm, v2);
 
+        const avgZ = (v0.z + v1.z + v2.z) / 3;
+        const capY = avgZ < treeZoneMaxZ ? northTreeCapY : southRockCapY;
         const minTriY = Math.min(v0.y, v1.y, v2.y);
-        if (minTriY > groundCapY) continue;
+        if (minTriY > capY) continue;
 
         const gx0 = (v0.x - this.gridMinX) * invSpanX;
         const gz0 = (v0.z - this.gridMinZ) * invSpanZ;
@@ -342,10 +347,10 @@ export class Scene3dAssetController {
             const w1 = ((gz2 - gz0) * (gx - gx2) + (gx0 - gx2) * (gz - gz2)) * invDenom;
             const w2 = 1 - w0 - w1;
             if (w0 >= -0.05 && w1 >= -0.05 && w2 >= -0.05) {
-              const yVal = Math.min(groundCapY, w0 * v0.y + w1 * v1.y + w2 * v2.y);
+              const yVal = Math.min(capY, w0 * v0.y + w1 * v1.y + w2 * v2.y);
               const idx = gz * HEIGHT_GRID_RES + gx;
-              // Record the lowest walkable ground/water floor under any overhanging branches
-              if (yVal < this.heightGrid[idx]) {
+              // Record the TOP surface of rocks, banks, and water so tokens never fall inside rocks
+              if (yVal > this.heightGrid[idx]) {
                 this.heightGrid[idx] = yVal;
               }
             }
@@ -361,7 +366,7 @@ export class Scene3dAssetController {
       for (let z = 0; z < HEIGHT_GRID_RES; z++) {
         for (let x = 0; x < HEIGHT_GRID_RES; x++) {
           const idx = z * HEIGHT_GRID_RES + x;
-          if (src[idx] < 900) {
+          if (src[idx] > -900) {
             dst[idx] = src[idx];
             continue;
           }
@@ -373,20 +378,20 @@ export class Scene3dAssetController {
               const nz = z + dz;
               if (nx >= 0 && nx < HEIGHT_GRID_RES && nz >= 0 && nz < HEIGHT_GRID_RES) {
                 const v = src[nz * HEIGHT_GRID_RES + nx];
-                if (v < 900) {
+                if (v > -900) {
                   sum += v;
                   count++;
                 }
               }
             }
           }
-          dst[idx] = count > 0 ? sum / count : 999;
+          dst[idx] = count > 0 ? sum / count : -999;
         }
       }
     }
 
     for (let i = 0; i < this.heightGrid.length; i++) {
-      this.heightGrid[i] = this.heightGrid[i] < 900 ? this.heightGrid[i] : this.fallbackGroundY;
+      this.heightGrid[i] = this.heightGrid[i] > -900 ? Math.max(0, this.heightGrid[i]) : this.fallbackGroundY;
     }
     this.hasHeightGrid = true;
   }
@@ -419,38 +424,29 @@ export class Scene3dAssetController {
     return h00 * (1 - tx) * (1 - tz) + h10 * tx * (1 - tz) + h01 * (1 - tx) * tz + h11 * tx * tz;
   }
 
-  /** Returns true when (x, z) is inside the river water channel. */
-  isInWaterAt(x: number, z: number): boolean {
-    if (!this.hasHeightGrid) return false;
-    return this.terrainElevationAt(x, z) <= this.waterLevelY;
-  }
-
   /**
-   * When a token is in the water channel, lowers the token to the riverbed / water floor
-   * (submerging its sculpted pedestal base beneath the river surface). On dry banks/rocks,
-   * samples the circular footprint so the base sits cleanly on slopes.
+   * Samples the token's 9-point footprint. If the entire footprint is in the low river channel
+   * (hMax <= waterLevelY), lowers the token onto the riverbed floor. If on or touching rocks/banks,
+   * places the token on top of the highest rock in its footprint so it never clips into boulders.
    */
-  tokenElevationAt(x: number, z: number, radius = 0.22): number {
+  tokenElevationAt(x: number, z: number, radius = 0.28): number {
     const hc = this.terrainElevationAt(x, z);
-    if (this.hasHeightGrid && hc <= this.waterLevelY) {
-      const hMin = Math.min(
-        hc,
-        this.terrainElevationAt(x - radius * 0.5, z),
-        this.terrainElevationAt(x + radius * 0.5, z),
-        this.terrainElevationAt(x, z - radius * 0.5),
-        this.terrainElevationAt(x, z + radius * 0.5)
-      );
-      // Sink the miniature's rocky pedestal base below the water floor so feet rest on the riverbed
-      return Math.max(this.waterFloorY - 0.2, hMin - 0.18);
-    }
+    const d = radius * 0.7;
     const hMax = Math.max(
       hc,
       this.terrainElevationAt(x - radius, z),
       this.terrainElevationAt(x + radius, z),
       this.terrainElevationAt(x, z - radius),
-      this.terrainElevationAt(x, z + radius)
+      this.terrainElevationAt(x, z + radius),
+      this.terrainElevationAt(x - d, z - d),
+      this.terrainElevationAt(x + d, z - d),
+      this.terrainElevationAt(x - d, z + d),
+      this.terrainElevationAt(x + d, z + d)
     );
-    return hc * 0.45 + hMax * 0.55;
+    if (this.hasHeightGrid && hMax <= this.waterLevelY) {
+      return Math.max(this.waterFloorY - 0.16, hc - 0.18);
+    }
+    return Math.max(hc, hMax * 0.85 + hc * 0.15) + 0.04;
   }
 
   sync(
@@ -494,10 +490,8 @@ export class Scene3dAssetController {
       }
     }
 
-    const resolveY = (x: number, z: number) => {
-      if (!options.showForestMap) return surfaceHeight(x, z) + 0.04;
-      return this.isInWaterAt(x, z) ? this.tokenElevationAt(x, z) : this.tokenElevationAt(x, z) + 0.03;
-    };
+    const resolveY = (x: number, z: number) =>
+      options.showForestMap ? this.tokenElevationAt(x, z) : surfaceHeight(x, z) + 0.04;
 
     const primaryTarget = targetPositions[0] ?? { x: casterPos.x + 200, y: casterPos.y };
 

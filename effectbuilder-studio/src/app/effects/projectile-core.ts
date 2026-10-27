@@ -123,7 +123,7 @@ export const PROJECTILE_CORE_CONTROLS: readonly {
   max: number;
   step: number;
 }[] = [
-  { key: 'arc', label: '3D flight arc height', min: -160, max: 160, step: 5 },
+  { key: 'arc', label: 'Flight arc (curve / wall bypass)', min: -180, max: 180, step: 1 },
   { key: 'coreScale', label: '3D core mesh scale', min: 0.4, max: 2.5, step: 0.05 },
   { key: 'coronaSize', label: '3D outer shell / corona', min: 0, max: 2.5, step: 0.05 },
   { key: 'spinSpeed', label: '3D core & ring spin speed', min: 0, max: 4, step: 0.1 },
@@ -191,7 +191,7 @@ export function parseProjectileCore(
   return {
     element,
     shape,
-    arc: clamp(r['arc'], -160, 160, base.arc),
+    arc: clamp(r['arc'], -180, 180, base.arc),
     coreScale: clamp(r['coreScale'], 0.4, 2.5, base.coreScale),
     coronaSize: clamp(r['coronaSize'], 0, 2.5, base.coronaSize),
     spinSpeed: clamp(r['spinSpeed'], 0, 4, base.spinSpeed),

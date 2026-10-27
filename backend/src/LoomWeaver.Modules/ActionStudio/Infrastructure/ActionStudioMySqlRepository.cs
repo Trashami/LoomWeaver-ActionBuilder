@@ -12,6 +12,7 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
 {
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
     private static readonly ConcurrentDictionary<string, CampaignActionRuleDto> MemoryOverrides = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, bool> DeletedInitialCustomIds = new(StringComparer.OrdinalIgnoreCase);
     private static readonly List<DmCampaignOptionDto> SeedDmCampaigns = BuildSeedDmCampaigns();
     private static bool _schemaReady;
 
@@ -23,29 +24,21 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
             await using var conn = await mysql.OpenConnectionAsync(ct);
             const string ddl = """
                 CREATE TABLE IF NOT EXISTS lw_dm_campaigns (
-                    id INT PRIMARY KEY,
-                    slug VARCHAR(80) NOT NULL,
-                    name VARCHAR(140) NOT NULL,
-                    system_code VARCHAR(32) NOT NULL DEFAULT 'dnd5e',
-                    ruleset_label VARCHAR(64) NOT NULL DEFAULT 'D&D 5e (2024 + Campaign Rules)',
-                    dm_user_id BIGINT NOT NULL,
-                    dm_username VARCHAR(64) NOT NULL,
-                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    id INT PRIMARY KEY, slug VARCHAR(80) NOT NULL, name VARCHAR(140) NOT NULL,
+                    system_code VARCHAR(32) NOT NULL DEFAULT 'dnd5e', ruleset_label VARCHAR(64) NOT NULL DEFAULT 'D&D 5e (2024 + Campaign Rules)',
+                    dm_user_id BIGINT NOT NULL, dm_username VARCHAR(64) NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
+                CREATE TABLE IF NOT EXISTS lw_engine_core_rules (
+                    rule_id VARCHAR(80) PRIMARY KEY, rule_code VARCHAR(100) NOT NULL, name VARCHAR(140) NOT NULL,
+                    category VARCHAR(64) NOT NULL, ruleset_code VARCHAR(32) NOT NULL DEFAULT 'dnd5e-2024',
+                    is_locked TINYINT(1) NOT NULL DEFAULT 1, rule_json LONGTEXT NOT NULL, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 CREATE TABLE IF NOT EXISTS lw_campaign_rule_overrides (
-                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    campaign_id INT NOT NULL,
-                    rule_id VARCHAR(80) NOT NULL,
-                    rule_code VARCHAR(100) NOT NULL,
-                    name VARCHAR(140) NOT NULL,
-                    category VARCHAR(64) NOT NULL,
-                    updated_by_user_id BIGINT NOT NULL,
-                    updated_by_username VARCHAR(64) NOT NULL,
-                    rule_json LONGTEXT NOT NULL,
-                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY uq_camp_rule (campaign_id, rule_id),
-                    INDEX idx_camp_rules (campaign_id)
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, campaign_id INT NOT NULL, rule_id VARCHAR(80) NOT NULL,
+                    bypasses_core_rule_id VARCHAR(80) NULL, rule_code VARCHAR(100) NOT NULL, name VARCHAR(140) NOT NULL,
+                    category VARCHAR(64) NOT NULL, updated_by_user_id BIGINT NOT NULL, updated_by_username VARCHAR(64) NOT NULL,
+                    rule_json LONGTEXT NOT NULL, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_camp_rule (campaign_id, rule_id), INDEX idx_camp_rules (campaign_id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 """;
             await using (var cmd = new MySqlCommand(ddl, conn))
@@ -55,16 +48,8 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
 
             foreach (var c in SeedDmCampaigns)
             {
-                const string upsert = """
-                    INSERT INTO lw_dm_campaigns (id, slug, name, system_code, ruleset_label, dm_user_id, dm_username)
-                    VALUES (@id, @slug, @name, @sys, @ruleset, @dmid, @dmuser)
-                    ON DUPLICATE KEY UPDATE
-                        name = @name,
-                        ruleset_label = @ruleset,
-                        dm_user_id = @dmid,
-                        dm_username = @dmuser;
-                    """;
-                await using var cCmd = new MySqlCommand(upsert, conn);
+                const string upsertCamp = "INSERT INTO lw_dm_campaigns (id, slug, name, system_code, ruleset_label, dm_user_id, dm_username) VALUES (@id, @slug, @name, @sys, @ruleset, @dmid, @dmuser) ON DUPLICATE KEY UPDATE name = @name, ruleset_label = @ruleset, dm_user_id = @dmid, dm_username = @dmuser;";
+                await using var cCmd = new MySqlCommand(upsertCamp, conn);
                 cCmd.Parameters.AddWithValue("@id", c.Id);
                 cCmd.Parameters.AddWithValue("@slug", c.Slug);
                 cCmd.Parameters.AddWithValue("@name", c.Name);
@@ -73,6 +58,19 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
                 cCmd.Parameters.AddWithValue("@dmid", c.DmUserId);
                 cCmd.Parameters.AddWithValue("@dmuser", c.DmUsername);
                 await cCmd.ExecuteNonQueryAsync(ct);
+            }
+
+            foreach (var coreRule in ActionRuleCatalog.GetDefaultRules())
+            {
+                const string upsertCore = "INSERT INTO lw_engine_core_rules (rule_id, rule_code, name, category, ruleset_code, is_locked, rule_json) VALUES (@rid, @rcode, @name, @cat, @rset, 1, @json) ON DUPLICATE KEY UPDATE rule_code = @rcode, name = @name, category = @cat, is_locked = 1, rule_json = @json;";
+                await using var rCmd = new MySqlCommand(upsertCore, conn);
+                rCmd.Parameters.AddWithValue("@rid", coreRule.Id);
+                rCmd.Parameters.AddWithValue("@rcode", coreRule.RuleCode);
+                rCmd.Parameters.AddWithValue("@name", coreRule.Name);
+                rCmd.Parameters.AddWithValue("@cat", coreRule.Category);
+                rCmd.Parameters.AddWithValue("@rset", coreRule.RulesetCode);
+                rCmd.Parameters.AddWithValue("@json", JsonSerializer.Serialize(coreRule, JsonOpts));
+                await rCmd.ExecuteNonQueryAsync(ct);
             }
 
             _schemaReady = true;
@@ -142,11 +140,21 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
 
         if (activeCampaign is not null)
         {
-            var customCount = rules.Count(r => r.IsCustomizedForCampaign);
-            activeCampaign = activeCampaign with { CustomizedRuleCount = customCount };
-            dmOwnedCampaigns = dmOwnedCampaigns
-                .Select(c => c.Id == activeCampaign.Id ? activeCampaign : c)
-                .ToList();
+            var populatedCampaigns = new List<DmCampaignOptionDto>();
+            foreach (var camp in dmOwnedCampaigns)
+            {
+                var campRules = camp.Id == activeCampaign.Id
+                    ? rules
+                    : await GetRulesForCampaignAsync(camp.Id, ct);
+                var count = campRules.Count(r => r.IsCustomizedForCampaign && !r.IsCoreEngineRule);
+                var updatedCamp = camp with { CustomizedRuleCount = count };
+                populatedCampaigns.Add(updatedCamp);
+                if (camp.Id == activeCampaign.Id)
+                {
+                    activeCampaign = updatedCamp;
+                }
+            }
+            dmOwnedCampaigns = populatedCampaigns;
         }
 
         return new ActionStudioContextDto(
@@ -171,14 +179,22 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
     public async Task<IReadOnlyList<CampaignActionRuleDto>> GetRulesForCampaignAsync(int campaignId, CancellationToken ct = default)
     {
         await EnsureSchemaAsync(ct);
-        var defaults = ActionRuleCatalog.GetDefaultRules();
-        var overrides = new Dictionary<string, CampaignActionRuleDto>(StringComparer.OrdinalIgnoreCase);
+        var coreRules = ActionRuleCatalog.GetDefaultRules();
+        var customMap = new Dictionary<string, CampaignActionRuleDto>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var seedCustom in ActionRuleCatalog.GetInitialCampaignCustomRules(campaignId))
+        {
+            if (!DeletedInitialCustomIds.ContainsKey($"{campaignId}:{seedCustom.Id}"))
+            {
+                customMap[seedCustom.Id] = seedCustom;
+            }
+        }
 
         foreach (var kv in MemoryOverrides)
         {
             if (kv.Key.StartsWith($"{campaignId}:", StringComparison.OrdinalIgnoreCase))
             {
-                overrides[kv.Value.Id] = kv.Value;
+                customMap[kv.Value.Id] = kv.Value;
             }
         }
 
@@ -194,39 +210,77 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
                 var dto = JsonSerializer.Deserialize<CampaignActionRuleDto>(r.GetString(1), JsonOpts);
                 if (dto is not null)
                 {
-                    overrides[r.GetString(0)] = dto;
+                    // Legacy safety: if an older override had a core rule ID directly, convert it into a non-destructive Campaign Bypass
+                    var matchingCore = coreRules.FirstOrDefault(c => string.Equals(c.Id, dto.Id, StringComparison.OrdinalIgnoreCase));
+                    if (matchingCore is not null)
+                    {
+                        var bypassId = $"bypass-c{campaignId}-{matchingCore.Id}";
+                        dto = dto with
+                        {
+                            Id = bypassId,
+                            Name = dto.Name.Contains("Bypass", StringComparison.OrdinalIgnoreCase) || dto.Name != matchingCore.Name
+                                ? dto.Name
+                                : $"{matchingCore.Name} (Campaign Bypass)",
+                            SourceLabel = "Campaign Bypass",
+                            IsCoreEngineRule = false,
+                            IsCustomizedForCampaign = true,
+                            BypassesCoreRuleId = matchingCore.Id
+                        };
+                    }
+
+                    customMap[dto.Id] = dto;
                     MemoryOverrides[$"{campaignId}:{dto.Id}"] = dto;
                 }
             }
         }
         catch { }
 
-        var merged = new List<CampaignActionRuleDto>();
-        foreach (var def in defaults)
+        var bypassByCoreId = customMap.Values
+            .Where(x => !string.IsNullOrWhiteSpace(x.BypassesCoreRuleId))
+            .GroupBy(x => x.BypassesCoreRuleId!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        var result = new List<CampaignActionRuleDto>();
+
+        // 1. Campaign Bypass & Custom Rules at top of campaign rules list so GM sees active overrides immediately
+        foreach (var customRule in customMap.Values.OrderByDescending(x => !string.IsNullOrWhiteSpace(x.BypassesCoreRuleId)).ThenBy(x => x.Name))
         {
-            if (overrides.TryGetValue(def.Id, out var custom))
+            result.Add(customRule with
             {
-                merged.Add(custom);
-                overrides.Remove(def.Id);
+                IsCoreEngineRule = false,
+                IsCustomizedForCampaign = true,
+                SourceLabel = !string.IsNullOrWhiteSpace(customRule.BypassesCoreRuleId) ? "Campaign Bypass" : "Campaign Custom"
+            });
+        }
+
+        // 2. All Immutable Core Engine Rules (never overwritten in SQL; annotated if bypassed in this campaign)
+        foreach (var core in coreRules)
+        {
+            if (bypassByCoreId.TryGetValue(core.Id, out var activeBypass))
+            {
+                result.Add(core with
+                {
+                    IsCoreEngineRule = true,
+                    IsCustomizedForCampaign = false,
+                    SourceLabel = "Core Engine (Bypassed)",
+                    BypassedByRuleId = activeBypass.Id,
+                    BypassedByRuleName = activeBypass.Name
+                });
             }
             else
             {
-                // Campaign 1 has Fivi & Chokrah pre-customized; other DM campaigns start clean SRD unless customized
-                var isDefaultCustom = campaignId == 1 && def.IsCustomizedForCampaign;
-                merged.Add(def with
+                result.Add(core with
                 {
-                    IsCustomizedForCampaign = isDefaultCustom,
-                    SourceLabel = isDefaultCustom ? "Campaign Modified" : "Core SRD"
+                    IsCoreEngineRule = true,
+                    IsCustomizedForCampaign = false,
+                    SourceLabel = "Core Engine",
+                    BypassedByRuleId = null,
+                    BypassedByRuleName = null
                 });
             }
         }
 
-        foreach (var extra in overrides.Values)
-        {
-            merged.Insert(0, extra);
-        }
-
-        return merged;
+        return result;
     }
 
     public async Task<ApplyCampaignRuleResponse> ApplyRuleToCampaignAsync(
@@ -245,42 +299,58 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
                 "Access denied: Only the Dungeon Master of this campaign can apply or modify its rules.");
         }
 
-        var ruleId = string.IsNullOrWhiteSpace(rule.Id)
-            ? $"rule-custom-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}"
-            : rule.Id.Trim();
+        var coreRules = ActionRuleCatalog.GetDefaultRules();
+        var matchedCore = coreRules.FirstOrDefault(c =>
+            string.Equals(c.Id, rule.Id, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(c.Id, rule.BypassesCoreRuleId, StringComparison.OrdinalIgnoreCase));
+
+        string savedRuleId;
+        string? bypassesCoreId = rule.BypassesCoreRuleId;
+        string savedName = string.IsNullOrWhiteSpace(rule.Name) ? "Custom Campaign Rule" : rule.Name.Trim();
+
+        if (rule.IsCoreEngineRule || (matchedCore is not null && string.Equals(rule.Id, matchedCore.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            // Core Engine rules in SQL are immutable! Create/update a Campaign Bypass rule instead.
+            var coreTarget = matchedCore ?? coreRules[0];
+            bypassesCoreId = coreTarget.Id;
+            savedRuleId = $"bypass-c{campaignId}-{coreTarget.Id}";
+            if (string.Equals(savedName, coreTarget.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                savedName = $"{coreTarget.Name} ({targetCampaign.Name} Bypass)";
+            }
+        }
+        else
+        {
+            savedRuleId = string.IsNullOrWhiteSpace(rule.Id)
+                ? $"rule-custom-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}"
+                : rule.Id.Trim();
+        }
 
         var savedRule = rule with
         {
-            Id = ruleId,
-            Name = string.IsNullOrWhiteSpace(rule.Name) ? "Custom Campaign Rule" : rule.Name.Trim(),
-            SourceLabel = "Campaign Modified",
+            Id = savedRuleId,
+            Name = savedName,
+            SourceLabel = !string.IsNullOrWhiteSpace(bypassesCoreId) ? "Campaign Bypass" : "Campaign Custom",
             IsCustomizedForCampaign = true,
+            IsCoreEngineRule = false,
+            BypassesCoreRuleId = bypassesCoreId,
+            BypassedByRuleId = null,
+            BypassedByRuleName = null,
             UpdatedByUsername = user.Username,
             UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
         };
 
+        DeletedInitialCustomIds.TryRemove($"{campaignId}:{savedRule.Id}", out _);
         MemoryOverrides[$"{campaignId}:{savedRule.Id}"] = savedRule;
 
         try
         {
             await using var conn = await mysql.OpenConnectionAsync(ct);
-            const string upsert = """
-                INSERT INTO lw_campaign_rule_overrides
-                    (campaign_id, rule_id, rule_code, name, category, updated_by_user_id, updated_by_username, rule_json)
-                VALUES
-                    (@cid, @rid, @rcode, @name, @cat, @uid, @uname, @json)
-                ON DUPLICATE KEY UPDATE
-                    rule_code = @rcode,
-                    name = @name,
-                    category = @cat,
-                    updated_by_user_id = @uid,
-                    updated_by_username = @uname,
-                    rule_json = @json,
-                    updated_at = CURRENT_TIMESTAMP;
-                """;
+            const string upsert = "INSERT INTO lw_campaign_rule_overrides (campaign_id, rule_id, bypasses_core_rule_id, rule_code, name, category, updated_by_user_id, updated_by_username, rule_json) VALUES (@cid, @rid, @bcore, @rcode, @name, @cat, @uid, @uname, @json) ON DUPLICATE KEY UPDATE bypasses_core_rule_id = @bcore, rule_code = @rcode, name = @name, category = @cat, updated_by_user_id = @uid, updated_by_username = @uname, rule_json = @json, updated_at = CURRENT_TIMESTAMP;";
             await using var cmd = new MySqlCommand(upsert, conn);
             cmd.Parameters.AddWithValue("@cid", campaignId);
             cmd.Parameters.AddWithValue("@rid", savedRule.Id);
+            cmd.Parameters.AddWithValue("@bcore", (object?)savedRule.BypassesCoreRuleId ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@rcode", savedRule.RuleCode);
             cmd.Parameters.AddWithValue("@name", savedRule.Name);
             cmd.Parameters.AddWithValue("@cat", savedRule.Category);
@@ -292,15 +362,20 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
         catch { }
 
         var allRules = await GetRulesForCampaignAsync(campaignId, ct);
-        var customCount = allRules.Count(r => r.IsCustomizedForCampaign);
+        var customCount = allRules.Count(r => r.IsCustomizedForCampaign && !r.IsCoreEngineRule);
+
+        var msg = !string.IsNullOrWhiteSpace(bypassesCoreId)
+            ? $"Core SQL rule kept intact. Saved Campaign Bypass '{savedRule.Name}' for '{targetCampaign.Name}' (overrides Core Engine rule '{bypassesCoreId}')."
+            : $"Applied custom rule '{savedRule.Name}' to your campaign '{targetCampaign.Name}'.";
 
         return new ApplyCampaignRuleResponse(
             Success: true,
-            Message: $"Applied '{savedRule.Name}' to your campaign '{targetCampaign.Name}'. Other campaigns are unaffected.",
+            Message: msg,
             CampaignId: campaignId,
             CampaignName: targetCampaign.Name,
             Rule: savedRule,
-            CustomizedRuleCount: customCount
+            CustomizedRuleCount: customCount,
+            Rules: allRules
         );
     }
 
@@ -316,18 +391,23 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
 
         if (targetCampaign is null || !IsUserDmOfCampaign(user, targetCampaign))
         {
-            throw new UnauthorizedAccessException("Only the Dungeon Master of this campaign can reset its rules.");
+            throw new UnauthorizedAccessException("Only the Dungeon Master of this campaign can remove campaign bypass rules.");
         }
 
+        var bypassIdForCore = $"bypass-c{campaignId}-{ruleId}";
         MemoryOverrides.TryRemove($"{campaignId}:{ruleId}", out _);
+        MemoryOverrides.TryRemove($"{campaignId}:{bypassIdForCore}", out _);
+        DeletedInitialCustomIds[$"{campaignId}:{ruleId}"] = true;
 
         try
         {
             await using var conn = await mysql.OpenConnectionAsync(ct);
             await using var cmd = new MySqlCommand(
-                "DELETE FROM lw_campaign_rule_overrides WHERE campaign_id = @cid AND rule_id = @rid;", conn);
+                "DELETE FROM lw_campaign_rule_overrides WHERE campaign_id = @cid AND (rule_id = @rid OR rule_id = @brid OR bypasses_core_rule_id = @rid);",
+                conn);
             cmd.Parameters.AddWithValue("@cid", campaignId);
             cmd.Parameters.AddWithValue("@rid", ruleId);
+            cmd.Parameters.AddWithValue("@brid", bypassIdForCore);
             await cmd.ExecuteNonQueryAsync(ct);
         }
         catch { }
@@ -341,36 +421,17 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
         CancellationToken ct = default)
     {
         await EnsureSchemaAsync(ct);
-        var cleanName = string.IsNullOrWhiteSpace(req.Name)
-            ? $"{user.DisplayName}'s Homebrew Campaign"
-            : req.Name.Trim();
-        var cleanRuleset = string.IsNullOrWhiteSpace(req.RulesetLabel)
-            ? "D&D 5e (2024 + Campaign Rules)"
-            : req.RulesetLabel.Trim();
+        var cleanName = string.IsNullOrWhiteSpace(req.Name) ? $"{user.DisplayName}'s Homebrew Campaign" : req.Name.Trim();
+        var cleanRuleset = string.IsNullOrWhiteSpace(req.RulesetLabel) ? "D&D 5e (2024 + Campaign Rules)" : req.RulesetLabel.Trim();
         var newId = 200 + (int)(user.Id % 1000) + SeedDmCampaigns.Count;
-        var created = new DmCampaignOptionDto(
-            Id: newId,
-            Slug: $"campaign-{newId}",
-            Name: cleanName,
-            SystemCode: "dnd5e",
-            RulesetLabel: cleanRuleset,
-            DmUserId: user.Id,
-            DmUsername: user.Username,
-            MyRole: "dm",
-            CustomizedRuleCount: 0
-        );
-
+        var created = new DmCampaignOptionDto(newId, $"campaign-{newId}", cleanName, "dnd5e", cleanRuleset, user.Id, user.Username, "dm", 0);
         SeedDmCampaigns.RemoveAll(c => c.Id == newId);
         SeedDmCampaigns.Add(created);
 
         try
         {
             await using var conn = await mysql.OpenConnectionAsync(ct);
-            const string sql = """
-                INSERT INTO lw_dm_campaigns (id, slug, name, system_code, ruleset_label, dm_user_id, dm_username)
-                VALUES (@id, @slug, @name, 'dnd5e', @ruleset, @dmid, @dmuser)
-                ON DUPLICATE KEY UPDATE name = @name, ruleset_label = @ruleset;
-                """;
+            const string sql = "INSERT INTO lw_dm_campaigns (id, slug, name, system_code, ruleset_label, dm_user_id, dm_username) VALUES (@id, @slug, @name, 'dnd5e', @ruleset, @dmid, @dmuser) ON DUPLICATE KEY UPDATE name = @name, ruleset_label = @ruleset;";
             await using var cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id", created.Id);
             cmd.Parameters.AddWithValue("@slug", created.Slug);
@@ -418,8 +479,8 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
     private static List<DmCampaignOptionDto> BuildSeedDmCampaigns() =>
     [
         new(1, "shadow-of-the-mountain", "Shadow of the Mountain", "dnd5e", "D&D 5e (2024 + Icrandor Canon)", 1, "GeoJason", "dm", 2),
-        new(2, "echoes-of-the-starstone", "Echoes of the Starstone", "pf2e", "Pathfinder 2e Remaster", 1, "GeoJason", "dm", 0),
-        new(3, "court-of-velvet-ash", "Court of Velvet Ash", "vtm5e", "Vampire: The Masquerade V5", 1, "GeoJason", "dm", 0),
+        new(2, "echoes-of-the-starstone", "Echoes of the Starstone", "pf2e", "Pathfinder 2e Remaster", 1, "GeoJason", "dm", 1),
+        new(3, "court-of-velvet-ash", "Court of Velvet Ash", "vtm5e", "Vampire: The Masquerade V5", 1, "GeoJason", "dm", 1),
         new(103, "edhellain-exiles-scott", "Chronicles of Edhellain (Scott's Campaign)", "dnd5e", "D&D 5e (2024 Homebrew)", 3, "ScottBrogan", "dm", 0),
         new(104, "lost-isles-threads-stick", "Threads of the Lost Isles (Stick's Campaign)", "dnd5e", "D&D 5e (2024 Homebrew)", 4, "StickHazen", "dm", 0),
         new(105, "vandia-nocturne-greg", "Vandia Nocturne (Greg's Campaign)", "dnd5e", "D&D 5e (2024 Homebrew)", 4522, "GregMeinert", "dm", 0)

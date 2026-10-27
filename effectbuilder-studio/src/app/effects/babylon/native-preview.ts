@@ -499,7 +499,7 @@ export class BabylonEffectPreview {
       const wx = p.x / 66;
       const wz = p.y / 66;
       const markerY = show3dTerrain
-        ? this.assets3d.terrainElevationAt(wx, wz) + 0.03
+        ? this.assets3d.tokenElevationAt(wx, wz) + 0.02
         : this.surfaceHeight(wx, wz) + 0.03;
       m.position.set(wx, markerY, wz);
       m.scaling.setAll(scale);
@@ -510,10 +510,10 @@ export class BabylonEffectPreview {
 
     const effectTarget = teleport?.enabled ? { x: teleport.destination.x * w, y: teleport.destination.y * h } : allTargets[0];
     const sourceY = show3dTerrain
-      ? this.assets3d.terrainElevationAt(from.x / 66, from.y / 66)
+      ? this.assets3d.tokenElevationAt(from.x / 66, from.y / 66)
       : this.surfaceHeight(from.x / 66, from.y / 66);
     const targetY = show3dTerrain
-      ? this.assets3d.terrainElevationAt(effectTarget.x / 66, effectTarget.y / 66)
+      ? this.assets3d.tokenElevationAt(effectTarget.x / 66, effectTarget.y / 66)
       : this.surfaceHeight(effectTarget.x / 66, effectTarget.y / 66);
     try {
       this.runtime.draw(

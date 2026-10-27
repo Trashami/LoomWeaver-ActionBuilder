@@ -1,0 +1,288 @@
+<section class="lw-inspector" aria-label="Selected Scene Object Properties">
+  <header class="lw-inspector__header">
+    <h2 class="lw-inspector__title">Properties</h2>
+    @if (selectedNode(); as node) {
+      <div class="lw-inspector__header-actions">
+        <button
+          ngpButton
+          type="button"
+          class="lw-inspector__icon-btn"
+          title="Duplicate selected element"
+          (click)="duplicateNode.emit()"
+        >
+          <lw-icon name="content_copy" [size]="14" />
+        </button>
+        <button
+          ngpButton
+          type="button"
+          class="lw-inspector__icon-btn lw-inspector__icon-btn--danger"
+          title="Delete selected element"
+          (click)="deleteNode.emit()"
+        >
+          <lw-icon name="delete_outline" [size]="15" />
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (selectedNode(); as node) {
+    <div class="lw-inspector__summary-card">
+      <img
+        class="lw-inspector__summary-thumb"
+        [src]="node.thumbnailUrl"
+        [alt]="node.name"
+        loading="lazy"
+      />
+      <div class="lw-inspector__summary-meta">
+        <strong>{{ node.name }}</strong>
+        <span>{{ node.subtitle }}</span>
+      </div>
+    </div>
+
+    <div class="lw-inspector__tabs" role="tablist">
+      <button
+        ngpButton
+        type="button"
+        role="tab"
+        class="lw-inspector__tab"
+        [class.lw-inspector__tab--active]="activeTab() === 'transform'"
+        (click)="selectTab('transform')"
+      >
+        Transform
+      </button>
+      <button
+        ngpButton
+        type="button"
+        role="tab"
+        class="lw-inspector__tab"
+        [class.lw-inspector__tab--active]="activeTab() === 'appearance'"
+        (click)="selectTab('appearance')"
+      >
+        Appearance
+      </button>
+      <button
+        ngpButton
+        type="button"
+        role="tab"
+        class="lw-inspector__tab"
+        [class.lw-inspector__tab--active]="activeTab() === 'advanced'"
+        (click)="selectTab('advanced')"
+      >
+        Advanced
+      </button>
+    </div>
+
+    @if (activeTab() === 'appearance') {
+      <div class="lw-inspector__body">
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Material</span>
+            <select
+              class="lw-inspector__select"
+              [value]="node.materialId"
+              (change)="onMaterialSelect($event)"
+              aria-label="Material Preset"
+            >
+              @for (mat of materials(); track mat.id) {
+                <option [value]="mat.id">{{ mat.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="lw-inspector__swatches">
+            @for (mat of materials(); track mat.id) {
+              <button
+                ngpButton
+                type="button"
+                class="lw-inspector__swatch"
+                [class.lw-inspector__swatch--active]="node.materialId === mat.id"
+                [style.background]="'linear-gradient(135deg, ' + mat.baseHex + ' 0%, ' + mat.accentHex + ' 100%)'"
+                [title]="mat.name"
+                (click)="materialChange.emit(mat.id)"
+              ></button>
+            }
+          </div>
+        </div>
+
+        <div class="lw-inspector__field-row">
+          <span class="lw-inspector__label">Height</span>
+          <select
+            class="lw-inspector__select"
+            [value]="node.heightSquares"
+            (change)="onHeightSelect($event)"
+            aria-label="Wall or Object Height"
+          >
+            <option [value]="1">1 square (5 ft)</option>
+            <option [value]="2">2 squares (10 ft)</option>
+            <option [value]="3">3 squares (15 ft)</option>
+            <option [value]="4">4 squares (20 ft)</option>
+          </select>
+        </div>
+
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Thickness</span>
+            <span class="lw-inspector__value">{{ node.thickness.toFixed(2) }}x</span>
+          </div>
+          <input
+            type="range"
+            class="lw-inspector__range"
+            min="0.25"
+            max="2.5"
+            step="0.05"
+            [value]="node.thickness"
+            (input)="onThicknessInput($event)"
+            aria-label="Thickness"
+          />
+        </div>
+
+        <button
+          ngpButton
+          type="button"
+          class="lw-inspector__apply-btn"
+          (click)="applyToSimilar.emit()"
+        >
+          Apply to Similar Walls
+        </button>
+      </div>
+    }
+
+    @if (activeTab() === 'transform') {
+      <div class="lw-inspector__body">
+        <div class="lw-inspector__coords-grid">
+          <div class="lw-inspector__coord-box">
+            <span>Grid X</span>
+            <strong>{{ node.gridX }}</strong>
+          </div>
+          <div class="lw-inspector__coord-box">
+            <span>Grid Z</span>
+            <strong>{{ node.gridZ }}</strong>
+          </div>
+          <div class="lw-inspector__coord-box">
+            <span>Elev Y</span>
+            <strong>{{ node.elevationY.toFixed(1) }} ft</strong>
+          </div>
+        </div>
+
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Rotation</span>
+            <span class="lw-inspector__value">{{ node.rotationDeg }} deg</span>
+          </div>
+          <input
+            type="range"
+            class="lw-inspector__range"
+            min="0"
+            max="315"
+            step="45"
+            [value]="node.rotationDeg"
+            (input)="onRotationInput($event)"
+            aria-label="Rotation Degrees"
+          />
+        </div>
+
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Uniform Scale</span>
+            <span class="lw-inspector__value">{{ node.scale.toFixed(2) }}x</span>
+          </div>
+          <input
+            type="range"
+            class="lw-inspector__range"
+            min="0.5"
+            max="2.5"
+            step="0.05"
+            [value]="node.scale"
+            (input)="onScaleInput($event)"
+            aria-label="Uniform Scale"
+          />
+        </div>
+
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Elevation Offset</span>
+            <span class="lw-inspector__value">{{ node.elevationY.toFixed(1) }} ft</span>
+          </div>
+          <input
+            type="range"
+            class="lw-inspector__range"
+            min="-10"
+            max="25"
+            step="2.5"
+            [value]="node.elevationY"
+            (input)="onElevationInput($event)"
+            aria-label="Elevation Offset"
+          />
+        </div>
+      </div>
+    }
+
+    @if (activeTab() === 'advanced') {
+      <div class="lw-inspector__body">
+        <div class="lw-inspector__field-row">
+          <span class="lw-inspector__label">Client Export Scope</span>
+          <button
+            ngpButton
+            type="button"
+            class="lw-inspector__scope-btn"
+            [class.lw-inspector__scope-btn--secret]="node.gmSecretOnly"
+            (click)="secretToggle.emit()"
+          >
+            {{ node.gmSecretOnly ? 'GM Secret Only (Sanitized)' : 'Public Player + GM' }}
+          </button>
+        </div>
+
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Scatter Brush Density (Thin Instances)</span>
+            <span class="lw-inspector__value">{{ scatterDensity() }}% · ≤{{ scatterSlopeMax() }} deg</span>
+          </div>
+          <input
+            type="range"
+            class="lw-inspector__range"
+            min="10"
+            max="100"
+            step="5"
+            [value]="scatterDensity()"
+            (input)="onScatterDensityInput($event)"
+            aria-label="Scatter Brush Density"
+          />
+        </div>
+
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Water Spline Flow Speed</span>
+            <span class="lw-inspector__value">{{ waterFlowSpeed().toFixed(1) }} m/s</span>
+          </div>
+          <input
+            type="range"
+            class="lw-inspector__range"
+            min="0.2"
+            max="4.0"
+            step="0.2"
+            [value]="waterFlowSpeed()"
+            (input)="onWaterFlowInput($event)"
+            aria-label="Water Flow Speed"
+          />
+        </div>
+
+        <div class="lw-inspector__field">
+          <div class="lw-inspector__field-row">
+            <span class="lw-inspector__label">Atmosphere & Torch Glow</span>
+            <span class="lw-inspector__value">{{ torchIntensity() }}%</span>
+          </div>
+          <input
+            type="range"
+            class="lw-inspector__range"
+            min="20"
+            max="150"
+            step="5"
+            [value]="torchIntensity()"
+            (input)="onTorchIntensityInput($event)"
+            aria-label="Torch Intensity"
+          />
+        </div>
+      </div>
+    }
+  }
+</section>

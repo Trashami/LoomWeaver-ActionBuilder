@@ -26,6 +26,7 @@ export class LwActionTopNavbarComponent {
   readonly demoAccounts = input<ActionStudioAccountOption[]>([]);
   readonly selectedAccountId = input<string>('acc-gm-geojason');
   readonly activeCategory = input<string>('All');
+  readonly totalRuleCount = input<number>(0);
   readonly searchQuery = model<string>('');
 
   readonly campaignSelected = output<number>();
@@ -33,10 +34,11 @@ export class LwActionTopNavbarComponent {
   readonly categorySelected = output<string>();
   readonly createNewRule = output<void>();
   readonly exportRuleJson = output<void>();
+  readonly openEncounterRunner = output<void>();
 
+  readonly appSwitcherOpen = signal<boolean>(false);
   readonly accountMenuOpen = signal<boolean>(false);
   readonly devRoleDrawerOpen = signal<boolean>(false);
-  readonly rulesetEdition = signal<string>('5e (SRD 5.1 / 2024)');
 
   readonly categories: string[] = [
     'All',
@@ -52,10 +54,13 @@ export class LwActionTopNavbarComponent {
     return name.slice(0, 2).toUpperCase();
   });
 
-  readonly shortDisplayName = computed(() => {
+  readonly headerDisplayName = computed(() => {
     const raw = this.currentDisplayName() || this.currentUsername();
-    const parenIdx = raw.indexOf('(');
-    return parenIdx > 0 ? raw.slice(0, parenIdx).trim() : raw;
+    if (raw.includes('·')) {
+      const beforeDot = raw.split('·')[0].trim();
+      return beforeDot.endsWith(')') ? beforeDot : `${beforeDot})`;
+    }
+    return raw;
   });
 
   onCampaignChange(rawValue: string | number): void {
@@ -74,5 +79,11 @@ export class LwActionTopNavbarComponent {
 
   toggleAccountMenu(): void {
     this.accountMenuOpen.update((v) => !v);
+    this.appSwitcherOpen.set(false);
+  }
+
+  toggleAppSwitcher(): void {
+    this.appSwitcherOpen.update((v) => !v);
+    this.accountMenuOpen.set(false);
   }
 }

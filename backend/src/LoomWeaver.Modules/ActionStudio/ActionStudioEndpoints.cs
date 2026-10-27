@@ -132,6 +132,17 @@ public static class ActionStudioEndpoints
             return Results.Ok(response);
         });
 
+        api.MapPost("/actions/encounter-step", async (
+            EncounterAttackStepRequest req,
+            LoomWeaverMySqlRepository mysql,
+            CancellationToken ct) =>
+        {
+            var repo = new ActionStudioMySqlRepository(mysql);
+            var pipeline = new EncounterReactionPipelineService(repo);
+            var result = await pipeline.ExecuteAttackStepAsync(req, ct);
+            return Results.Ok(result);
+        });
+
         return api;
     }
 

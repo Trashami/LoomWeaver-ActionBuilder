@@ -114,7 +114,11 @@
       </ul>
     } @else {
       <p class="ab-draft-summary__empty">
-        No pending differences from the active campaign version. Edit any field or condition to stage a draft.
+        @if (rule().isCoreEngineRule !== false && !rule().isCustomizedForCampaign) {
+          Core Engine rules are read-only in SQL. Edit any field and apply to create a <strong>Campaign Bypass</strong> rule for {{ campaignName() }} that overrides this core rule.
+        } @else {
+          No pending differences from the active campaign bypass version. Edit any field or condition to stage a draft.
+        }
       </p>
     }
 
@@ -126,7 +130,7 @@
         (pressed)="saveDraftRequested.emit()"
       />
       <lw-button
-        [label]="saving() ? 'Applying...' : 'Apply to ' + campaignName()"
+        [label]="saving() ? 'Applying...' : (rule().isCoreEngineRule !== false && !rule().isCustomizedForCampaign ? 'Save Campaign Bypass' : 'Apply to ' + campaignName())"
         variant="gold"
         size="sm"
         [disabled]="saving()"

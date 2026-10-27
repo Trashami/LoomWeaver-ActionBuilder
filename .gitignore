@@ -3,6 +3,11 @@ node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+loommaps-studio/node_modules/
+loommaps-studio/dist/
+loommaps-studio/.angular/
+loommaps-studio/public
+frontend/public/assets/previews-png/*.png
 *.log
 
 # .NET

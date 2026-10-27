@@ -1,0 +1,234 @@
+<section class="lw-asset-browser" aria-label="2D PNG Asset Browser & Scene Layers">
+  <header class="lw-asset-browser__tabs" role="tablist">
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-asset-browser__tab"
+      [class.lw-asset-browser__tab--active]="activeTab() === 'assets'"
+      [attr.aria-selected]="activeTab() === 'assets'"
+      (click)="selectTab('assets')"
+    >
+      Assets
+    </button>
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-asset-browser__tab"
+      [class.lw-asset-browser__tab--active]="activeTab() === 'materials'"
+      [attr.aria-selected]="activeTab() === 'materials'"
+      (click)="selectTab('materials')"
+    >
+      Materials
+    </button>
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-asset-browser__tab"
+      [class.lw-asset-browser__tab--active]="activeTab() === 'themes'"
+      [attr.aria-selected]="activeTab() === 'themes'"
+      (click)="selectTab('themes')"
+    >
+      Themes
+    </button>
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-asset-browser__tab"
+      [class.lw-asset-browser__tab--active]="activeTab() === 'layers'"
+      [attr.aria-selected]="activeTab() === 'layers'"
+      (click)="selectTab('layers')"
+    >
+      Layers
+    </button>
+  </header>
+
+  @if (activeTab() === 'assets') {
+    <div class="lw-asset-browser__search-row">
+      <div class="lw-asset-browser__search-box">
+        <lw-icon name="search" [size]="15" />
+        <input
+          type="search"
+          class="lw-asset-browser__search-input"
+          placeholder="Search 526+ PNG-rendered 3D assets..."
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          aria-label="Search assets"
+        />
+      </div>
+
+      <label class="lw-asset-browser__action-icon" title="Upload single 3D (.glb) model and print PNG thumbnail">
+        <lw-icon name="upload_file" [size]="15" />
+        <span>+GLB</span>
+        <input
+          type="file"
+          accept=".glb"
+          class="lw-asset-browser__file-input"
+          (change)="onSingleFilePicked($event)"
+        />
+      </label>
+
+      <button
+        ngpButton
+        type="button"
+        class="lw-asset-browser__action-icon"
+        [disabled]="batchBusy()"
+        (click)="triggerBatchRender.emit()"
+        title="Run Python batch 3D-to-PNG thumbnail sync"
+      >
+        <lw-icon name="sync" [size]="15" />
+        <span>{{ batchBusy() ? 'Syncing' : 'PNG Sync' }}</span>
+      </button>
+    </div>
+
+    <div class="lw-asset-browser__categories" role="toolbar" aria-label="Asset Categories">
+      @for (cat of categories(); track cat) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-asset-browser__cat-pill"
+          [class.lw-asset-browser__cat-pill--active]="activeCategory() === cat"
+          (click)="selectCategory(cat)"
+        >
+          {{ cat }}
+        </button>
+      }
+    </div>
+
+    @if (statusBanner()) {
+      <div class="lw-asset-browser__banner">
+        <span>{{ statusBanner() }}</span>
+      </div>
+    }
+
+    <div class="lw-asset-browser__meta-bar">
+      <span>Showing {{ visibleAssets().length }} of {{ filteredAssets().length }} PNG thumbnails</span>
+      <span class="lw-asset-browser__perf-pill">2D PNG Cache · 0 WebGL overhead</span>
+    </div>
+
+    <div class="lw-asset-browser__grid" role="listbox" aria-label="3D Asset PNG Previews">
+      @for (asset of visibleAssets(); track asset.id) {
+        <article
+          class="lw-asset-card"
+          role="option"
+          [class.lw-asset-card--selected]="selectedAssetId() === asset.id"
+          [attr.aria-selected]="selectedAssetId() === asset.id"
+          (click)="assetSelect.emit(asset)"
+          (dblclick)="assetPlaceInScene.emit(asset)"
+        >
+          <div class="lw-asset-card__thumb-wrap">
+            <img
+              class="lw-asset-card__thumb"
+              [src]="asset.thumbnailUrl"
+              [alt]="asset.name"
+              loading="lazy"
+              decoding="async"
+            />
+            <button
+              ngpButton
+              type="button"
+              class="lw-asset-card__place-btn"
+              title="Place in synchronized 2D/3D scene"
+              (click)="$event.stopPropagation(); assetPlaceInScene.emit(asset)"
+            >
+              <lw-icon name="add" [size]="13" />
+            </button>
+          </div>
+          <span class="lw-asset-card__title" [title]="asset.name">{{ asset.name }}</span>
+        </article>
+      }
+    </div>
+
+    @if (hasMoreAssets()) {
+      <button
+        ngpButton
+        type="button"
+        class="lw-asset-browser__load-more"
+        (click)="showMoreAssets()"
+      >
+        Load More PNG Previews ({{ filteredAssets().length - visibleAssets().length }} remaining)
+      </button>
+    }
+  }
+
+  @if (activeTab() === 'materials') {
+    <div class="lw-asset-browser__materials-list">
+      @for (mat of materials(); track mat.id) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-material-row"
+          [class.lw-material-row--active]="selectedMaterialId() === mat.id"
+          (click)="materialSelect.emit(mat)"
+        >
+          <span
+            class="lw-material-row__swatch"
+            [style.background]="'linear-gradient(135deg, ' + mat.baseHex + ' 0%, ' + mat.accentHex + ' 100%)'"
+          ></span>
+          <span class="lw-material-row__info">
+            <strong>{{ mat.name }}</strong>
+            <small>{{ mat.family }} · {{ mat.roughnessLabel }}</small>
+          </span>
+        </button>
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'themes') {
+    <div class="lw-asset-browser__materials-list">
+      @for (theme of themes(); track theme) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-material-row"
+          [class.lw-material-row--active]="activeTheme() === theme"
+          (click)="themeSelect.emit(theme)"
+        >
+          <lw-icon name="landscape" [size]="18" />
+          <span class="lw-material-row__info">
+            <strong>{{ theme }}</strong>
+            <small>Synchronized 2D palette + 3D lighting & fog preset</small>
+          </span>
+        </button>
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'layers') {
+    <div class="lw-asset-browser__layers-list">
+      @for (layer of layers(); track layer.id) {
+        <div class="lw-layer-row">
+          <div class="lw-layer-row__main">
+            <strong>{{ layer.label }}</strong>
+            <small>{{ layer.subtitle }} ({{ layer.itemCount }})</small>
+          </div>
+          <div class="lw-layer-row__actions">
+            <button
+              ngpButton
+              type="button"
+              class="lw-layer-row__pill"
+              [class.lw-layer-row__pill--active]="layer.visible"
+              (click)="layerToggleVisible.emit(layer.id)"
+              title="Toggle layer visibility"
+            >
+              <lw-icon [name]="layer.visible ? 'visibility' : 'visibility_off'" [size]="14" />
+            </button>
+            <button
+              ngpButton
+              type="button"
+              class="lw-layer-row__pill"
+              [class.lw-layer-row__pill--secret]="layer.gmSecretOnly"
+              (click)="layerToggleSecret.emit(layer.id)"
+              title="Toggle GM-only secret isolation (never exported to player client)"
+            >
+              <span>{{ layer.gmSecretOnly ? 'GM Secret' : 'Public' }}</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

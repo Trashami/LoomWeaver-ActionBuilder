@@ -1,0 +1,125 @@
+:host {
+  display: block;
+}
+
+.lw-viewport-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.9rem;
+  background: linear-gradient(180deg, rgba(8, 22, 16, 0.96) 0%, rgba(5, 14, 10, 0.99) 100%);
+  border-top: 1px solid rgba(73, 232, 146, 0.22);
+  flex-wrap: wrap;
+}
+
+.lw-viewport-bar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.lw-viewport-bar__mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.68rem;
+  border-radius: 6px;
+  border: 1px solid rgba(73, 232, 146, 0.16);
+  background: rgba(10, 26, 19, 0.8);
+  color: rgba(214, 235, 222, 0.82);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 140ms ease;
+
+  &:hover {
+    border-color: rgba(73, 232, 146, 0.45);
+    color: #f2fbf6;
+  }
+
+  &--active {
+    background: linear-gradient(180deg, rgba(46, 230, 107, 0.24) 0%, rgba(19, 86, 48, 0.52) 100%);
+    border-color: rgba(73, 232, 146, 0.75);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(46, 230, 107, 0.22);
+
+    lw-icon {
+      color: #49e892;
+    }
+  }
+}
+
+.lw-viewport-bar__select-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.26rem 0.58rem;
+  border-radius: 6px;
+  border: 1px solid rgba(73, 232, 146, 0.2);
+  background: rgba(8, 21, 15, 0.9);
+  color: rgba(214, 235, 222, 0.82);
+  font-size: 0.75rem;
+}
+
+.lw-viewport-bar__select-label {
+  color: rgba(217, 183, 122, 0.88);
+  font-weight: 600;
+}
+
+.lw-viewport-bar__select {
+  background: transparent;
+  border: none;
+  color: #edf8f1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+
+  option {
+    background: #071610;
+    color: #edf8f1;
+  }
+}
+
+.lw-viewport-bar__fps-badge {
+  padding: 0.08rem 0.38rem;
+  border-radius: 4px;
+  background: rgba(46, 230, 107, 0.16);
+  border: 1px solid rgba(73, 232, 146, 0.35);
+  color: #49e892;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.lw-viewport-bar__toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.62rem;
+  border-radius: 6px;
+  border: 1px solid rgba(73, 232, 146, 0.2);
+  background: rgba(8, 21, 15, 0.9);
+  color: rgba(214, 235, 222, 0.82);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 140ms ease;
+
+  &:hover {
+    border-color: rgba(73, 232, 146, 0.45);
+    color: #ffffff;
+  }
+
+  &--active {
+    border-color: rgba(73, 232, 146, 0.62);
+    background: rgba(21, 68, 44, 0.55);
+    color: #e8fff1;
+
+    lw-icon {
+      color: #49e892;
+    }
+  }
+}

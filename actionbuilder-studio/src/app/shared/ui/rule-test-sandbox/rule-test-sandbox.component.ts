@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpInput } from 'ng-primitives/input';
 import {
   CampaignActionRule,
+  EncounterAttackStepResponse,
   EvaluateRuleLogicRequest,
   EvaluateRuleLogicResponse,
   RuleClauseTraceStep,
 } from '../../../core/models/action-studio.models';
+import { ActionStudioApiService } from '../../../core/services/action-studio-api.service';
 import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
 
@@ -34,6 +36,8 @@ export interface ScenarioPreset {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwRuleTestSandboxComponent {
+  private readonly api = inject(ActionStudioApiService);
+
   readonly rule = input.required<CampaignActionRule>();
   readonly campaignId = input<number>(1);
   readonly evaluationResult = input<EvaluateRuleLogicResponse | null>(null);
@@ -46,12 +50,18 @@ export class LwRuleTestSandboxComponent {
   readonly defenderName = model<string>('Kycius');
   readonly simAttackRoll = model<number>(17);
   readonly simTargetAc = model<number>(15);
-  readonly simDamageRolled = model<number>(11);
+  readonly simDamageRolled = model<number>(18);
   readonly simDistanceFeet = model<number>(30);
   readonly simReactionAvailable = model<boolean>(true);
   readonly simHasSpellSlot = model<boolean>(true);
   readonly simIsMagicMissile = model<boolean>(false);
+  readonly simTargetConcentrating = model<boolean>(true);
   readonly testUnsupportedCheck = model<boolean>(false);
+
+  readonly rollMode = signal<'auto' | 'prompt'>('auto');
+  readonly pendingRollConfirm = signal<boolean>(false);
+  readonly encounterStepState = signal<EncounterAttackStepResponse | null>(null);
+  readonly runningEncounterStep = signal<boolean>(false);
 
   readonly presets: ScenarioPreset[] = [
     {
@@ -60,7 +70,7 @@ export class LwRuleTestSandboxComponent {
       subtitle: 'Attack 17 vs AC 15 -> Shield raises AC to 20 -> Misses',
       attackRollTotal: 17,
       targetAc: 15,
-      damageRolled: 11,
+      damageRolled: 18,
       distanceFeet: 30,
       reactionAvailable: true,
       hasSpellSlot: true,
@@ -72,7 +82,7 @@ export class LwRuleTestSandboxComponent {
       subtitle: 'Reaction already spent this round',
       attackRollTotal: 17,
       targetAc: 15,
-      damageRolled: 11,
+      damageRolled: 18,
       distanceFeet: 30,
       reactionAvailable: false,
       hasSpellSlot: true,
@@ -84,7 +94,7 @@ export class LwRuleTestSandboxComponent {
       subtitle: 'Reaction ready, but 0 spell slots remaining',
       attackRollTotal: 17,
       targetAc: 15,
-      damageRolled: 11,
+      damageRolled: 18,
       distanceFeet: 30,
       reactionAvailable: true,
       hasSpellSlot: false,
@@ -93,10 +103,10 @@ export class LwRuleTestSandboxComponent {
     {
       id: 'attack-still-hits',
       label: 'Attack Still Hits (22 vs AC 15)',
-      subtitle: 'Shield raises AC to 20, but 22 still hits',
+      subtitle: 'Shield raises AC to 20, but 22 still hits (Uncanny Dodge halves dmg)',
       attackRollTotal: 22,
       targetAc: 15,
-      damageRolled: 14,
+      damageRolled: 18,
       distanceFeet: 30,
       reactionAvailable: true,
       hasSpellSlot: true,
@@ -120,7 +130,7 @@ export class LwRuleTestSandboxComponent {
       subtitle: 'Verifies engine reports Not evaluated instead of false pass',
       attackRollTotal: 17,
       targetAc: 15,
-      damageRolled: 11,
+      damageRolled: 18,
       distanceFeet: 30,
       reactionAvailable: true,
       hasSpellSlot: true,
@@ -140,6 +150,69 @@ export class LwRuleTestSandboxComponent {
     this.simIsMagicMissile.set(preset.isMagicMissile);
     this.testUnsupportedCheck.set(Boolean(preset.injectUnsupportedCondition));
     this.triggerSimulation();
+    this.startEncounterAttackFlow();
+  }
+
+  startEncounterAttackFlow(): void {
+    if (this.rollMode() === 'prompt' && !this.pendingRollConfirm()) {
+      this.pendingRollConfirm.set(true);
+      return;
+    }
+    this.pendingRollConfirm.set(false);
+    this.runningEncounterStep.set(true);
+    this.api
+      .runEncounterAttackStep({
+        campaignId: this.campaignId(),
+        attackerName: this.attackerName(),
+        targetName: this.defenderName(),
+        actionName: 'Sanguine Rapier Strike',
+        attackRollTotal: Number(this.simAttackRoll()),
+        targetBaseAc: Number(this.simTargetAc()),
+        rawDamage: Number(this.simDamageRolled()),
+        distanceFeet: Number(this.simDistanceFeet()),
+        targetReactionAvailable: Boolean(this.simReactionAvailable()),
+        targetIsConcentrating: Boolean(this.simTargetConcentrating()),
+        reactionDecisionMade: false,
+        rollMode: this.rollMode(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.runningEncounterStep.set(false);
+          this.encounterStepState.set(res);
+        },
+        error: () => {
+          this.runningEncounterStep.set(false);
+        },
+      });
+  }
+
+  chooseEncounterReaction(reactionRuleId: string): void {
+    this.runningEncounterStep.set(true);
+    this.api
+      .runEncounterAttackStep({
+        campaignId: this.campaignId(),
+        attackerName: this.attackerName(),
+        targetName: this.defenderName(),
+        actionName: 'Sanguine Rapier Strike',
+        attackRollTotal: Number(this.simAttackRoll()),
+        targetBaseAc: Number(this.simTargetAc()),
+        rawDamage: Number(this.simDamageRolled()),
+        distanceFeet: Number(this.simDistanceFeet()),
+        targetReactionAvailable: Boolean(this.simReactionAvailable()),
+        targetIsConcentrating: Boolean(this.simTargetConcentrating()),
+        selectedReactionRuleId: reactionRuleId,
+        reactionDecisionMade: true,
+        rollMode: this.rollMode(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.runningEncounterStep.set(false);
+          this.encounterStepState.set(res);
+        },
+        error: () => {
+          this.runningEncounterStep.set(false);
+        },
+      });
   }
 
   triggerSimulation(): void {

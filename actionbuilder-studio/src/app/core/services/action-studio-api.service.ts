@@ -5,6 +5,8 @@ import {
   ActionStudioContext,
   ApplyCampaignRuleResponse,
   CampaignActionRule,
+  EncounterAttackStepRequest,
+  EncounterAttackStepResponse,
   EvaluateRuleLogicRequest,
   EvaluateRuleLogicResponse,
 } from '../models/action-studio.models';
@@ -99,6 +101,17 @@ export class ActionStudioApiService {
   evaluateRuleLogic(req: EvaluateRuleLogicRequest): Observable<EvaluateRuleLogicResponse> {
     return this.http.post<EvaluateRuleLogicResponse>(
       `${this.apiBase}/evaluate-logic`,
+      req,
+      {
+        headers: this.buildAuthHeaders(),
+        withCredentials: true,
+      }
+    );
+  }
+
+  runEncounterAttackStep(req: EncounterAttackStepRequest): Observable<EncounterAttackStepResponse> {
+    return this.http.post<EncounterAttackStepResponse>(
+      `${this.apiBase}/encounter-step`,
       req,
       {
         headers: this.buildAuthHeaders(),

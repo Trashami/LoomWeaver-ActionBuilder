@@ -78,6 +78,10 @@ export interface CampaignActionRule {
   isCustomizedForCampaign: boolean;
   updatedByUsername: string;
   updatedAt: string;
+  isCoreEngineRule?: boolean;
+  bypassesCoreRuleId?: string | null;
+  bypassedByRuleId?: string | null;
+  bypassedByRuleName?: string | null;
 }
 
 export interface RuleDraftDiffItem {
@@ -134,6 +138,7 @@ export interface ApplyCampaignRuleResponse {
   campaignName: string;
   rule: CampaignActionRule;
   customizedRuleCount: number;
+  rules?: CampaignActionRule[];
 }
 
 export interface RuleClauseTraceStep {
@@ -187,4 +192,52 @@ export interface EvaluateRuleLogicResponse {
   spellSlotConsumed?: boolean;
   resourceVerificationSummary?: string;
   notEvaluatedCount?: number;
+}
+
+export interface EncounterReactionOption {
+  ruleId: string;
+  ruleCode: string;
+  name: string;
+  sourceLabel: string;
+  isCampaignBypass: boolean;
+  triggerSummary: string;
+  effectPreviewLabel: string;
+  acBonusDelta: number;
+  damageReductionFlat: number;
+  halvesDamage: boolean;
+  retaliationDamage: number;
+  turnsHitIntoMiss: boolean;
+}
+
+export interface EncounterAttackStepRequest {
+  campaignId: number;
+  attackerName: string;
+  targetName: string;
+  actionName: string;
+  attackRollTotal: number;
+  targetBaseAc: number;
+  rawDamage: number;
+  distanceFeet: number;
+  targetReactionAvailable: boolean;
+  targetIsConcentrating?: boolean;
+  selectedReactionRuleId?: string | null;
+  reactionDecisionMade?: boolean;
+  rollMode?: 'auto' | 'prompt';
+}
+
+export interface EncounterAttackStepResponse {
+  phase: 'ReactionPrompt' | 'Completed' | string;
+  requiresReactionPrompt: boolean;
+  promptMessage: string;
+  availableReactions: EncounterReactionOption[];
+  hitAfterReaction: boolean;
+  effectiveAc: number;
+  finalDamage: number;
+  retaliationDamage: number;
+  reactionConsumed: boolean;
+  appliedReactionName: string | null;
+  concentrationCheckTriggered: boolean;
+  concentrationDc: number;
+  stepByStepLog: string[];
+  summaryBanner: string;
 }

@@ -8,6 +8,8 @@ import { materialFrame, materialParticle, projectileMaterialPoint } from '../arc
 import {
   clippedFireball,
   EffectWorld,
+  fireballContact,
+  fireballCurve,
   FIREBALL_FLIGHT_FRACTION,
   FxPoint,
   seeded,
@@ -436,49 +438,59 @@ export function evaluateNativeLayer(
         }
       : varDefaults;
     const n = l.variant === 'swarm' ? 5 : 1;
-    const varArc = core.arc + (variant - 2) * 8;
-    const sample3D = (u: number, idx: number): NativePoint => {
-      const basePt = offset(projectileMaterialPoint(l, f, from, to, scale, u, idx));
-      const arcLift = Math.sin(u * Math.PI) * (Math.abs(varArc) * 0.55 + variant * 3.5) * scale;
-      const sideCurve = Math.sin(u * Math.PI) * varArc * 0.35 * scale;
-      return point(
-        {
-          x: basePt.x - Math.sin(angle) * sideCurve,
-          y: basePt.y + Math.cos(angle) * sideCurve,
-        },
-        (22 + variant * 1.5 + (idx % 2 ? 4 : -2)) * scale + arcLift
-      );
+    const baseArc = core.arc;
+    const sample3D = (u: number, idx: number, arcVal: number, maxFrac: number): NativePoint => {
+      const uClamped = Math.max(0, Math.min(maxFrac, u));
+      const curved = fireballCurve(from, to, uClamped, arcVal, scale);
+      const env = Math.sin((uClamped / Math.max(0.01, maxFrac)) * Math.PI);
+      const turbWave =
+        (Math.sin(uClamped * 8 + idx) * l.motion.turbulence * 0.35 +
+          Math.sin(uClamped * TAU + f.clock * l.motion.twirl * TAU) * l.motion.twirl * 4) *
+        scale *
+        env;
+      const basePt = offset({
+        x: curved.x - Math.sin(angle) * turbWave,
+        y: curved.y + Math.cos(angle) * turbWave + l.motion.gravity * uClamped * uClamped * 0.25 * scale,
+      });
+      const arcLift = env * (Math.abs(arcVal) * 0.48 + variant * 3.5) * scale;
+      return point(basePt, (22 + variant * 1.5 + (idx % 2 ? 4 : -2)) * scale + arcLift);
     };
     for (let i = 0; i < n; i++) {
-      const t = Math.max(0, Math.min(1, (p * l.motion.speed * 1.18) / (1 + l.motion.drag * p) - i * 0.04));
-      const head = sample3D(t, i);
-      const prev = sample3D(Math.max(0, t - 0.04), i);
-      // Volumetric shader glow field anchored directly at the 3D projectile head
+      const arcForBolt = baseArc + (i - (n - 1) / 2) * 18;
+      const contact = fireballContact(from, to, arcForBolt, scale, world.walls);
+      const rawT = Math.max(0, Math.min(1, (p * l.motion.speed * 1.18) / (1 + l.motion.drag * p) - i * 0.04));
+      const t = Math.min(rawT, contact.fraction);
+      const hitWall = contact.fraction < 0.999 && rawT >= contact.fraction;
+      const head = sample3D(t, i, arcForBolt, contact.fraction);
+      const prev = sample3D(Math.max(0, t - 0.04), i, arcForBolt, contact.fraction);
+      // Volumetric shader glow field anchored directly at the 3D projectile head (or wall impact)
       field(
         { x: head.x, y: head.y },
-        size * (core.element === 'fire' ? 4.8 : 5.2) * core.coronaSize,
-        size * (core.element === 'fire' ? 4.8 : 5.2) * core.coronaSize,
+        size * (core.element === 'fire' ? 4.8 : 5.2) * core.coronaSize * (hitWall ? 1.35 : 1),
+        size * (core.element === 'fire' ? 4.8 : 5.2) * core.coronaSize * (hitWall ? 1.35 : 1),
         core.element === 'fire' ? 'fire' : 'arcane',
-        core.element === 'fire' ? 1 : 2,
+        hitWall ? 2 : core.element === 'fire' ? 1 : 2,
         head.height,
         angle,
         t
       );
-      out.projectiles.push({
-        head,
-        prev,
-        radius: Math.max(8 * scale, size * (n > 1 ? 0.55 : 0.8 + variant * 0.05)),
-        element: core.element,
-        shape: core.shape,
-        coreScale: core.coreScale,
-        coronaSize: core.coronaSize,
-        spinSpeed: core.spinSpeed + variant * 0.15,
-        orbitCount: core.orbitCount,
-        clock: f.clock + i * 0.5,
-        progress: t,
-        color: l.color,
-        secondaryColor: l.secondaryColor,
-      });
+      if (!hitWall) {
+        out.projectiles.push({
+          head,
+          prev,
+          radius: Math.max(8 * scale, size * (n > 1 ? 0.55 : 0.8 + variant * 0.05)),
+          element: core.element,
+          shape: core.shape,
+          coreScale: core.coreScale,
+          coronaSize: core.coronaSize,
+          spinSpeed: core.spinSpeed + variant * 0.15,
+          orbitCount: core.orbitCount,
+          clock: f.clock + i * 0.5,
+          progress: t,
+          color: l.color,
+          secondaryColor: l.secondaryColor,
+        });
+      }
 
       const wakeLen = (0.08 + l.motion.trail * 0.22 + variant * 0.025) * core.wakeLength;
       const coils = Math.max(1, Math.min(5, core.wakeRibbons));
@@ -487,7 +499,7 @@ export function evaluateNativeLayer(
         const pts = Array.from({ length: 26 }, (_, j) => {
           const frac = j / 25;
           const u = Math.max(0, t - (1 - frac) * wakeLen);
-          const centerPt = sample3D(u, i);
+          const centerPt = sample3D(u, i, arcForBolt, contact.fraction);
           if (c === 0) return centerPt;
           const helixR = (1 - frac) * Math.max(2.5 * scale, size * (0.32 + variant * 0.04));
           const theta = frac * (9 + variant) + f.clock * core.spinSpeed * 4 + coilPhase;
@@ -505,7 +517,6 @@ export function evaluateNativeLayer(
         );
       }
 
-      // 3D wake particles emitted directly along the 3D projectile path (never detached below!)
       const pCount = Math.max(6, Math.min(48, Math.round(l.count / n)));
       const pTile =
         core.element === 'ice'
@@ -518,9 +529,9 @@ export function evaluateNativeLayer(
       for (let k = 0; k < pCount; k++) {
         const seedA = seeded(k + i * 71, l.motion.seed);
         const seedB = seeded(k + i * 71 + 193, l.motion.seed);
-        const age = ((f.clock * 2.2 + seedA) % 1) * Math.min(1, t * 2.5);
+        const age = ((f.clock * 2.2 + seedA) % 1) * Math.min(1, rawT * 2.5);
         const uTrail = Math.max(0, t - age * wakeLen * 1.15);
-        const trailPt = sample3D(uTrail, i);
+        const trailPt = sample3D(uTrail, i, arcForBolt, contact.fraction);
         const theta = seedA * TAU + f.clock * core.spinSpeed * 2.5;
         const radialSpread = (0.15 + age * (0.85 + seedB * 0.9)) * Math.max(3 * scale, size * 0.42);
         const px = trailPt.x - Math.sin(angle) * Math.cos(theta) * radialSpread;
@@ -682,5 +693,27 @@ export function evaluateNativeEffect(
   targets: FxPoint[] = [to],
   world: EffectWorld = {}
 ): NativeLayerFrame[] {
-  return def.layers.map((l) => evaluateNativeLayer(l, time, from, to, scale, targets, world));
+  let effectiveTarget = to;
+  if (world.walls?.length) {
+    const projLayer = def.layers.find((l) => l.enabled && l.kind === 'projectile' && !l.mageHand && !l.missile);
+    if (projLayer) {
+      const baseArc =
+        projLayer.projectileCore?.arc ?? defaultProjectileCoreForVariant(projLayer.variant, projLayer.color).arc;
+      const contact = fireballContact(from, to, baseArc, scale, world.walls);
+      if (contact.fraction < 0.999) {
+        effectiveTarget = contact.point;
+      }
+    }
+  }
+  return def.layers.map((l) =>
+    evaluateNativeLayer(
+      l,
+      time,
+      from,
+      l.anchor === 'target' ? effectiveTarget : to,
+      scale,
+      targets,
+      world
+    )
+  );
 }

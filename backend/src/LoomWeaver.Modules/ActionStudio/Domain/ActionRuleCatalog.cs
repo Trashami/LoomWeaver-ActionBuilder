@@ -4,14 +4,14 @@ namespace LoomWeaver.Modules.ActionStudio.Domain;
 
 public static class ActionRuleCatalog
 {
-    private static readonly IReadOnlyList<CampaignActionRuleDto> DefaultRules =
+    private static readonly IReadOnlyList<CampaignActionRuleDto> PrimaryCoreRules =
     [
         new(
             Id: "rule-shield-reaction",
             RuleCode: "Reaction.ShieldSpell",
             Name: "Shield",
             Category: "Spells",
-            SourceLabel: "Core SRD",
+            SourceLabel: "Core Engine",
             RulesetCode: "dnd5e-2024",
             Summary: "An invisible barrier of magical force appears and protects you. Until the start of your next turn, you have a +5 bonus to AC, including against the triggering attack, and you take no damage from Magic Missile.",
             ActionCost: "1 Reaction",
@@ -45,17 +45,18 @@ public static class ActionRuleCatalog
             ],
             WorksWith: ["Mage Armor", "Bladesong", "Arcane Ward", "War Caster"],
             ConflictsWith: ["Incapacitated", "Shocking Grasp (No Reactions)", "Silence (Verbal Component)"],
-            Tags: ["Reaction", "Abjuration", "AC Bonus", "Interrupt", "Spell"],
+            Tags: ["Reaction", "Abjuration", "AC Bonus", "Interrupt", "Spell", "Core Engine"],
             IsCustomizedForCampaign: false,
-            UpdatedByUsername: "System SRD",
-            UpdatedAt: "2026-10-26T00:00:00Z"
+            UpdatedByUsername: "Core Engine SQL",
+            UpdatedAt: "2026-10-26T00:00:00Z",
+            IsCoreEngineRule: true
         ),
         new(
             Id: "rule-counterspell-interrupt",
             RuleCode: "Reaction.Counterspell",
             Name: "Counterspell",
             Category: "Spells",
-            SourceLabel: "Core SRD",
+            SourceLabel: "Core Engine",
             RulesetCode: "dnd5e-2024",
             Summary: "You attempt to interrupt a creature in the process of casting a spell within 60 feet. Automatically interrupts spells of 3rd level or lower, or requires a spellcasting ability check (DC 10 + spell level).",
             ActionCost: "1 Reaction",
@@ -89,17 +90,18 @@ public static class ActionRuleCatalog
             ],
             WorksWith: ["Abjuration Savant", "Jack of All Trades", "Tactical Wit"],
             ConflictsWith: ["Subtle Spell (No Perceivable Components)", "Blindness", "Out of 60 ft Range"],
-            Tags: ["Reaction", "Interrupt", "Spell Denial", "60 ft"],
+            Tags: ["Reaction", "Interrupt", "Spell Denial", "60 ft", "Core Engine"],
             IsCustomizedForCampaign: false,
-            UpdatedByUsername: "System SRD",
-            UpdatedAt: "2026-10-26T00:00:00Z"
+            UpdatedByUsername: "Core Engine SQL",
+            UpdatedAt: "2026-10-26T00:00:00Z",
+            IsCoreEngineRule: true
         ),
         new(
             Id: "rule-opportunity-attack",
             RuleCode: "Combat.OpportunityAttack",
             Name: "Opportunity Attack",
             Category: "Actions",
-            SourceLabel: "Core SRD",
+            SourceLabel: "Core Engine",
             RulesetCode: "dnd5e-2024",
             Summary: "When a hostile creature that you can see moves out of your reach without taking the Disengage action, you can use your Reaction to make one melee attack against the provoking creature.",
             ActionCost: "1 Reaction",
@@ -132,17 +134,18 @@ public static class ActionRuleCatalog
             ],
             WorksWith: ["Sentinel", "Polearm Master", "War Caster", "Sneak Attack (Off-Turn)"],
             ConflictsWith: ["Disengage Action", "Misty Step / Teleportation", "Forced Push Movement"],
-            Tags: ["Reaction", "Melee", "Movement", "Reach"],
+            Tags: ["Reaction", "Melee", "Movement", "Reach", "Core Engine"],
             IsCustomizedForCampaign: false,
-            UpdatedByUsername: "System SRD",
-            UpdatedAt: "2026-10-26T00:00:00Z"
+            UpdatedByUsername: "Core Engine SQL",
+            UpdatedAt: "2026-10-26T00:00:00Z",
+            IsCoreEngineRule: true
         ),
         new(
             Id: "rule-concentration-save",
             RuleCode: "SavingThrows.Concentration",
             Name: "Concentration Saving Throw",
             Category: "Conditions",
-            SourceLabel: "Core SRD",
+            SourceLabel: "Core Engine",
             RulesetCode: "dnd5e-2024",
             Summary: "Whenever you take damage while concentrating on a spell, you must make a Constitution saving throw to maintain concentration. The DC equals 10 or half the damage you take, whichever number is higher.",
             ActionCost: "Free (Triggered on Damage)",
@@ -176,17 +179,18 @@ public static class ActionRuleCatalog
             ],
             WorksWith: ["War Caster (Advantage)", "Resilient (CON)", "Aura of Protection", "Bladesong (+INT to CON Save)"],
             ConflictsWith: ["Casting Another Concentration Spell", "Unconscious / 0 HP"],
-            Tags: ["Saving Throw", "Concentration", "Spellcasting", "Constitution"],
+            Tags: ["Saving Throw", "Concentration", "Spellcasting", "Constitution", "Core Engine"],
             IsCustomizedForCampaign: false,
-            UpdatedByUsername: "System SRD",
-            UpdatedAt: "2026-10-26T00:00:00Z"
+            UpdatedByUsername: "Core Engine SQL",
+            UpdatedAt: "2026-10-26T00:00:00Z",
+            IsCoreEngineRule: true
         ),
         new(
             Id: "rule-sneak-attack",
             RuleCode: "Class.RogueSneakAttack",
             Name: "Sneak Attack",
             Category: "Class Features",
-            SourceLabel: "Core SRD",
+            SourceLabel: "Core Engine",
             RulesetCode: "dnd5e-2024",
             Summary: "Once per turn, you can deal extra precision damage to one creature you hit with an attack if you have Advantage on the attack roll, or if another enemy of the target is within 5 feet of it and you don't have Disadvantage.",
             ActionCost: "Free (1/Turn on Hit)",
@@ -219,97 +223,194 @@ public static class ActionRuleCatalog
             ],
             WorksWith: ["Fivi's Tooth Slingshot", "Opportunity Attack (Off-Turn)", "Steady Aim"],
             ConflictsWith: ["Disadvantage on Attack Roll", "Heavy Non-Finesse Weapons"],
-            Tags: ["Rogue", "Precision", "Finesse", "Class Feature"],
+            Tags: ["Rogue", "Precision", "Finesse", "Class Feature", "Core Engine"],
             IsCustomizedForCampaign: false,
-            UpdatedByUsername: "System SRD",
-            UpdatedAt: "2026-10-26T00:00:00Z"
-        ),
-        new(
-            Id: "rule-fivi-tooth-slingshot",
-            RuleCode: "Campaign.FiviToothSlingshot",
-            Name: "Fivi's Tooth Slingshot",
-            Category: "Actions",
-            SourceLabel: "Custom Action",
-            RulesetCode: "dnd5e-2024",
-            Summary: "Fivi's signature fey-tuned slingshot loaded with an ancient tooth. Deals piercing damage and ricochets with a lethal final-sliver finisher against mythic targets.",
-            ActionCost: "1 Action",
-            ActionType: "Ranged Weapon Attack",
-            RangeLabel: "60 / 120 feet",
-            TargetLabel: "1 Creature in Line of Sight",
-            AttackOrSaveLabel: "+9 to Hit vs Target AC",
-            DamageOrEffectFormula: "3d8 + 5 Piercing + Fey Gold Ricochet",
-            SaveDc: 16,
-            AcBonus: 0,
-            DurationLabel: "Instantaneous",
-            RequiresConcentration: false,
-            PrimaryClassName: "MidiCombatAutomationService",
-            PrimaryMethodName: "executeWorkflow",
-            SourceFilePath: "frontend/src/app/services/midi-combat-automation.service.ts",
-            Clauses:
-            [
-                new("c-fv-1", "When", ["Ranged Slingshot Attack Declared"], "MidiCombatAutomationService", "executeWorkflow", "Initiates Fivi's ranged attack workflow.", "ANY"),
-                new("c-fv-2", "Contains", ["Weapon.Properties Contains 'Ranged'", "Action.Tags Contains 'Spell'"], "MidiCombatAutomationService", "evaluateSneakAttackEligibility", "Eligible for Sneak Attack and Fey ricochet.", "ALL"),
-                new("c-fv-3", "Where", ["Distance(Attacker, Target) <= 60 ft"], "MidiCombatAutomationService", "executeWorkflow", "Normal range 60 ft without disadvantage.", "ALL"),
-                new("c-fv-4", "If", ["AttackTotal >= TargetAC"], "CombatRuleInterpreter", "ResolveShieldReactionWindow", "Checks hit against target AC.", "ALL"),
-                new("c-fv-5", "Then", ["Deal 3d8+5 Piercing & Trigger Ricochet Arc"], "MidiCombatAutomationService", "executeWorkflow", "Deals 3d8+5 piercing and spawns fx-projectile-arc.", "ALL")
-            ],
-            ScalingTiers:
-            [
-                new("1-4", "60 ft", "1d8 + 4 piercing pebble or tooth.", "Scrap Tooth Shot"),
-                new("5-10", "60 ft", "3d8 + 5 piercing + Fey Gold Ricochet.", "Runic Dragon-Tooth Shot"),
-                new("11-16", "90 ft", "4d8 + 6 piercing; ignores half/three-quarters cover.", "Feywild Outcast Arc"),
-                new("17-20", "120 ft", "Guaranteed lethal finisher when target is at its last sliver of HP.", "Mountain-Slayer Slingshot")
-            ],
-            WorksWith: ["Sneak Attack", "Dolly Pocket-Maw Ammo Pouch", "Laksis Ember Assist"],
-            ConflictsWith: ["Wind Wall"],
-            Tags: ["Campaign Custom", "Fivi", "Ranged", "Slingshot"],
-            IsCustomizedForCampaign: true,
-            UpdatedByUsername: "GeoJason",
-            UpdatedAt: "2026-10-26T15:00:00Z"
-        ),
-        new(
-            Id: "rule-chokrah-overchannel",
-            RuleCode: "Campaign.ChokrahOverchannel",
-            Name: "Chokrah Ritual Overchannel",
-            Category: "Actions",
-            SourceLabel: "Custom Action",
-            RulesetCode: "dnd5e-2024",
-            Summary: "Consumes refined Chokrah ritual reagent during spellcasting to amplify spell damage by +2d8 Radiant/Necrotic and raise Spell Save DC by +2 for the cast.",
-            ActionCost: "1 Bonus Action",
-            ActionType: "Bonus Action Augmentation",
-            RangeLabel: "Self",
-            TargetLabel: "Self (Augments Active Spell)",
-            AttackOrSaveLabel: "Increases Spell Save DC by +2",
-            DamageOrEffectFormula: "+2d8 Radiant/Necrotic & +2 Save DC",
-            SaveDc: 18,
-            AcBonus: 0,
-            DurationLabel: "Until the start of your next turn",
-            RequiresConcentration: false,
-            PrimaryClassName: "CharacterCalculationEngine",
-            PrimaryMethodName: "ComputeSpellSaveDc",
-            SourceFilePath: "LoomWeaver.GameSystems/Dnd5eSystemRules.cs",
-            Clauses:
-            [
-                new("c-ck-1", "When", ["Chokrah Ritual Overchannel Declared"], "MidiCombatAutomationService", "executeWorkflow", "Declared alongside a leveled spell cast.", "ANY"),
-                new("c-ck-2", "Contains", ["Inventory.Reagents Contains 'Chokrah'", "Action.Tags Contains 'Spell'"], "CharacterCalculationEngine", "ComputeSpellSaveDc", "Verifies Chokrah reagent in caster inventory.", "ALL"),
-                new("c-ck-3", "With", ["VFX Preset 'fx-ground-sigil'"], "CharacterCalculationEngine", "ComputeSpellSaveDc", "Triggers hexagonal Anelith ground sigil.", "ALL"),
-                new("c-ck-4", "Then", ["Apply Chokrah +2d8 Necrotic/Radiant Surge"], "CharacterCalculationEngine", "ComputeSpellSaveDc", "Adds +2d8 damage and +2 Save DC.", "ALL")
-            ],
-            ScalingTiers:
-            [
-                new("1-4", "Self", "+1d8 damage and +1 Spell Save DC.", "Initiate Chokrah Dose"),
-                new("5-10", "Self", "+2d8 damage and +2 Spell Save DC.", "Refined Chokrah Dose"),
-                new("11-16", "Self", "+3d8 damage and +2 Spell Save DC.", "Cinth Guild Distillation"),
-                new("17-20", "Self", "+4d8 damage and +3 Spell Save DC.", "Prior Overdraw")
-            ],
-            WorksWith: ["Kycius Thread-Seer Hex", "Kildrid Anelith Binding Pulse"],
-            ConflictsWith: ["Antimagic Field"],
-            Tags: ["Campaign Custom", "Chokrah", "Spell Augmentation"],
-            IsCustomizedForCampaign: true,
-            UpdatedByUsername: "GeoJason",
-            UpdatedAt: "2026-10-26T15:30:00Z"
+            UpdatedByUsername: "Core Engine SQL",
+            UpdatedAt: "2026-10-26T00:00:00Z",
+            IsCoreEngineRule: true
         )
     ];
 
-    public static IReadOnlyList<CampaignActionRuleDto> GetDefaultRules() => DefaultRules;
+    private static readonly IReadOnlyList<CampaignActionRuleDto> AllCoreEngineRules =
+        [.. PrimaryCoreRules, .. ActionRuleCatalogExtended.GetExtendedCoreRules()];
+
+    public static IReadOnlyList<CampaignActionRuleDto> GetDefaultRules() => AllCoreEngineRules;
+
+    public static IReadOnlyList<CampaignActionRuleDto> GetInitialCampaignCustomRules(int campaignId) =>
+        campaignId switch
+        {
+            1 =>
+            [
+                new(
+                    Id: "rule-fivi-tooth-slingshot",
+                    RuleCode: "Campaign.FiviToothSlingshot",
+                    Name: "Fivi's Tooth Slingshot",
+                    Category: "Actions",
+                    SourceLabel: "Campaign Bypass",
+                    RulesetCode: "dnd5e-2024",
+                    Summary: "Fivi's signature fey-tuned slingshot loaded with an ancient tooth. Bypasses standard Ranged Attack to deal 3d8+5 piercing damage and execute a lethal final-sliver finisher against mythic targets.",
+                    ActionCost: "1 Action",
+                    ActionType: "Ranged Weapon Attack (Campaign Custom)",
+                    RangeLabel: "60 / 120 feet",
+                    TargetLabel: "1 Creature in Line of Sight",
+                    AttackOrSaveLabel: "+9 to Hit vs Target AC",
+                    DamageOrEffectFormula: "3d8 + 5 Piercing + Fey Gold Ricochet",
+                    SaveDc: 16,
+                    AcBonus: 0,
+                    DurationLabel: "Instantaneous",
+                    RequiresConcentration: false,
+                    PrimaryClassName: "MidiCombatAutomationService",
+                    PrimaryMethodName: "executeWorkflow",
+                    SourceFilePath: "frontend/src/app/services/midi-combat-automation.service.ts",
+                    Clauses:
+                    [
+                        new("c-fv-1", "When", ["Ranged Slingshot Attack Declared"], "MidiCombatAutomationService", "executeWorkflow", "Initiates Fivi's ranged attack workflow.", "ANY"),
+                        new("c-fv-2", "Contains", ["Weapon.Properties Contains 'Ranged'", "Action.Tags Contains 'Spell'"], "MidiCombatAutomationService", "evaluateSneakAttackEligibility", "Eligible for Sneak Attack and Fey ricochet.", "ALL"),
+                        new("c-fv-3", "Where", ["Distance(Attacker, Target) <= 60 ft"], "MidiCombatAutomationService", "executeWorkflow", "Normal range 60 ft without disadvantage.", "ALL"),
+                        new("c-fv-4", "If", ["AttackTotal >= TargetAC"], "CombatRuleInterpreter", "ResolveShieldReactionWindow", "Checks hit against target AC.", "ALL"),
+                        new("c-fv-5", "Then", ["Deal 3d8+5 Piercing & Trigger Ricochet Arc"], "MidiCombatAutomationService", "executeWorkflow", "Deals 3d8+5 piercing and spawns fx-projectile-arc.", "ALL")
+                    ],
+                    ScalingTiers:
+                    [
+                        new("1-4", "60 ft", "1d8 + 4 piercing pebble or tooth.", "Scrap Tooth Shot"),
+                        new("5-10", "60 ft", "3d8 + 5 piercing + Fey Gold Ricochet.", "Runic Dragon-Tooth Shot"),
+                        new("11-16", "90 ft", "4d8 + 6 piercing; ignores half/three-quarters cover.", "Feywild Outcast Arc"),
+                        new("17-20", "120 ft", "Guaranteed lethal finisher when target is at its last sliver of HP.", "Mountain-Slayer Slingshot")
+                    ],
+                    WorksWith: ["Sneak Attack", "Dolly Pocket-Maw Ammo Pouch", "Laksis Ember Assist"],
+                    ConflictsWith: ["Wind Wall"],
+                    Tags: ["Campaign Custom", "Fivi", "Ranged", "Slingshot"],
+                    IsCustomizedForCampaign: true,
+                    UpdatedByUsername: "GeoJason",
+                    UpdatedAt: "2026-10-26T15:00:00Z",
+                    IsCoreEngineRule: false,
+                    BypassesCoreRuleId: "rule-attack-action"
+                ),
+                new(
+                    Id: "rule-chokrah-overchannel",
+                    RuleCode: "Campaign.ChokrahOverchannel",
+                    Name: "Chokrah Ritual Overchannel",
+                    Category: "Actions",
+                    SourceLabel: "Campaign Custom",
+                    RulesetCode: "dnd5e-2024",
+                    Summary: "Consumes refined Chokrah ritual reagent during spellcasting to amplify spell damage by +2d8 Radiant/Necrotic and raise Spell Save DC by +2 for the cast.",
+                    ActionCost: "1 Bonus Action",
+                    ActionType: "Bonus Action Augmentation (Shadow of the Mountain)",
+                    RangeLabel: "Self",
+                    TargetLabel: "Self (Augments Active Spell)",
+                    AttackOrSaveLabel: "Increases Spell Save DC by +2",
+                    DamageOrEffectFormula: "+2d8 Radiant/Necrotic & +2 Save DC",
+                    SaveDc: 18,
+                    AcBonus: 0,
+                    DurationLabel: "Until the start of your next turn",
+                    RequiresConcentration: false,
+                    PrimaryClassName: "CharacterCalculationEngine",
+                    PrimaryMethodName: "ComputeSpellSaveDc",
+                    SourceFilePath: "LoomWeaver.GameSystems/Dnd5eSystemRules.cs",
+                    Clauses:
+                    [
+                        new("c-ck-1", "When", ["Chokrah Ritual Overchannel Declared"], "MidiCombatAutomationService", "executeWorkflow", "Declared alongside a leveled spell cast.", "ANY"),
+                        new("c-ck-2", "Contains", ["Inventory.Reagents Contains 'Chokrah'", "Action.Tags Contains 'Spell'"], "CharacterCalculationEngine", "ComputeSpellSaveDc", "Verifies Chokrah reagent in caster inventory.", "ALL"),
+                        new("c-ck-3", "With", ["VFX Preset 'fx-ground-sigil'"], "CharacterCalculationEngine", "ComputeSpellSaveDc", "Triggers hexagonal Anelith ground sigil.", "ALL"),
+                        new("c-ck-4", "Then", ["Apply Chokrah +2d8 Necrotic/Radiant Surge"], "CharacterCalculationEngine", "ComputeSpellSaveDc", "Adds +2d8 damage and +2 Save DC.", "ALL")
+                    ],
+                    ScalingTiers:
+                    [
+                        new("1-4", "Self", "+1d8 damage and +1 Spell Save DC.", "Initiate Chokrah Dose"),
+                        new("5-10", "Self", "+2d8 damage and +2 Spell Save DC.", "Refined Chokrah Dose"),
+                        new("11-16", "Self", "+3d8 damage and +2 Spell Save DC.", "Cinth Guild Distillation"),
+                        new("17-20", "Self", "+4d8 damage and +3 Spell Save DC.", "Prior Overdraw")
+                    ],
+                    WorksWith: ["Kycius Thread-Seer Hex", "Kildrid Anelith Binding Pulse"],
+                    ConflictsWith: ["Antimagic Field"],
+                    Tags: ["Campaign Custom", "Chokrah", "Spell Augmentation"],
+                    IsCustomizedForCampaign: true,
+                    UpdatedByUsername: "GeoJason",
+                    UpdatedAt: "2026-10-26T15:30:00Z",
+                    IsCoreEngineRule: false,
+                    BypassesCoreRuleId: null
+                )
+            ],
+            2 =>
+            [
+                new(
+                    Id: "rule-starstone-reactive-shield",
+                    RuleCode: "Campaign.StarstoneReactiveShield",
+                    Name: "Starstone Aegis Block (Campaign Bypass)",
+                    Category: "Spells",
+                    SourceLabel: "Campaign Bypass",
+                    RulesetCode: "pf2e-remaster",
+                    Summary: "Echoes of the Starstone campaign reaction bypass: raises AC by +4 and absorbs up to 10 physical damage from the triggering strike.",
+                    ActionCost: "1 Reaction",
+                    ActionType: "Starstone Reaction Bypass",
+                    RangeLabel: "Self",
+                    TargetLabel: "Self (Triggering Attack)",
+                    AttackOrSaveLabel: "Interrupts Attack Roll vs AC",
+                    DamageOrEffectFormula: "+4 AC & Reduce Damage by 10",
+                    SaveDc: 0,
+                    AcBonus: 4,
+                    DurationLabel: "Until start of next turn",
+                    RequiresConcentration: false,
+                    PrimaryClassName: "CombatRuleInterpreter",
+                    PrimaryMethodName: "ResolveShieldReactionWindow",
+                    SourceFilePath: "LoomWeaver.Modules/ActionStudio/Engine/CombatRuleEngineInterpreter.cs",
+                    Clauses:
+                    [
+                        new("c-st-1", "When", ["An attack hits you"], "MidiCombatAutomationService", "openReactionWindow", "Triggers on incoming hit.", "ANY"),
+                        new("c-st-2", "Has", ["Reaction available"], "CombatSessionStateService", "consumeActionResource", "Requires unspent reaction.", "ALL"),
+                        new("c-st-3", "Then", ["Spend 1 Reaction", "Grant +4 AC & Reduce Damage by 10"], "CombatRuleInterpreter", "ResolveShieldReactionWindow", "Applies Starstone ward.", "ALL")
+                    ],
+                    ScalingTiers: [new("1-20", "Self", "+4 AC & Hardness 10", "Starstone Aegis")],
+                    WorksWith: ["Raise a Shield"],
+                    ConflictsWith: ["Incapacitated"],
+                    Tags: ["Campaign Custom", "Reaction", "Starstone"],
+                    IsCustomizedForCampaign: true,
+                    UpdatedByUsername: "GeoJason",
+                    UpdatedAt: "2026-10-26T16:00:00Z",
+                    IsCoreEngineRule: false,
+                    BypassesCoreRuleId: "rule-shield-reaction"
+                )
+            ],
+            3 =>
+            [
+                new(
+                    Id: "rule-velvet-blood-parry",
+                    RuleCode: "Campaign.VelvetBloodParry",
+                    Name: "Celerity Blood-Mist Parry (Campaign Bypass)",
+                    Category: "Actions",
+                    SourceLabel: "Campaign Bypass",
+                    RulesetCode: "vtm-v5",
+                    Summary: "Court of Velvet Ash campaign reaction bypass: dissolve partially into crimson mist when struck, adding +6 AC and halving any remaining damage.",
+                    ActionCost: "1 Reaction",
+                    ActionType: "Kindred Discipline Reaction Bypass",
+                    RangeLabel: "Self",
+                    TargetLabel: "Self (Triggering Attack)",
+                    AttackOrSaveLabel: "Interrupts Attack Roll vs AC",
+                    DamageOrEffectFormula: "+6 AC & Halve Remaining Damage",
+                    SaveDc: 0,
+                    AcBonus: 6,
+                    DurationLabel: "Instantaneous",
+                    RequiresConcentration: false,
+                    PrimaryClassName: "CombatRuleInterpreter",
+                    PrimaryMethodName: "ResolveShieldReactionWindow",
+                    SourceFilePath: "LoomWeaver.Modules/ActionStudio/Engine/CombatRuleEngineInterpreter.cs",
+                    Clauses:
+                    [
+                        new("c-vb-1", "When", ["An attack hits you"], "MidiCombatAutomationService", "openReactionWindow", "Triggers on incoming hit.", "ANY"),
+                        new("c-vb-2", "Has", ["Reaction available"], "CombatSessionStateService", "consumeActionResource", "Requires unspent reaction.", "ALL"),
+                        new("c-vb-3", "Then", ["Spend 1 Reaction", "Grant +6 AC & Halve Remaining Damage"], "CombatRuleInterpreter", "ResolveShieldReactionWindow", "Applies Celerity mist evasion.", "ALL")
+                    ],
+                    ScalingTiers: [new("1-20", "Self", "+6 AC & Halve Damage", "Blood-Mist Evasion")],
+                    WorksWith: ["Mist Step"],
+                    ConflictsWith: ["Sunlight"],
+                    Tags: ["Campaign Custom", "Reaction", "Velvet Ash"],
+                    IsCustomizedForCampaign: true,
+                    UpdatedByUsername: "GeoJason",
+                    UpdatedAt: "2026-10-26T16:15:00Z",
+                    IsCoreEngineRule: false,
+                    BypassesCoreRuleId: "rule-parry-reaction"
+                )
+            ],
+            _ => []
+        };
 }

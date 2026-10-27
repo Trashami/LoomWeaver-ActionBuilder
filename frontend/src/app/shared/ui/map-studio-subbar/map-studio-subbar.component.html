@@ -1,0 +1,178 @@
+<section class="lw-map-subbar" role="region" aria-label="Map Studio Subheader">
+  <div class="lw-map-subbar__left">
+    <button
+      ngpButton
+      type="button"
+      class="lw-map-subbar__icon-btn"
+      title="Back to Campaign Maps"
+      aria-label="Back to Campaign Maps"
+      (click)="backRequested.emit()"
+    >
+      <lw-icon name="arrow-left" [size]="16" />
+    </button>
+
+    <div class="lw-map-subbar__identity">
+      <div class="lw-map-subbar__title-row">
+        @if (editingTitle()) {
+          <input
+            type="text"
+            class="lw-map-subbar__title-input"
+            [ngModel]="mapTitle()"
+            (ngModelChange)="titleChanged.emit($event)"
+            (blur)="editingTitle.set(false)"
+            (keydown.enter)="editingTitle.set(false)"
+            aria-label="Map Title"
+          />
+        } @else {
+          <h1 class="lw-map-subbar__title" (click)="toggleTitleEdit()">{{ mapTitle() }}</h1>
+        }
+        <button
+          ngpButton
+          type="button"
+          class="lw-map-subbar__edit-btn"
+          title="Rename Map"
+          aria-label="Rename Map"
+          (click)="toggleTitleEdit()"
+        >
+          <lw-icon name="pen" [size]="13" />
+        </button>
+        <lw-badge [label]="'Rev ' + revision()" tone="emerald" />
+      </div>
+
+      <div class="lw-map-subbar__meta">
+        <span>Map · {{ gridCols() }} x {{ gridRows() }} squares · {{ gridCellFeet() }} ft grid</span>
+        <span class="lw-map-subbar__dot">·</span>
+        <button
+          ngpButton
+          type="button"
+          class="lw-map-subbar__scope-pill"
+          [class.lw-map-subbar__scope-pill--active]="sceneScope() === 'battlemap'"
+          (click)="scopeChanged.emit('battlemap')"
+        >
+          Battle Scene
+        </button>
+        <button
+          ngpButton
+          type="button"
+          class="lw-map-subbar__scope-pill"
+          [class.lw-map-subbar__scope-pill--active]="sceneScope() === 'world_overlay'"
+          (click)="scopeChanged.emit('world_overlay')"
+        >
+          World / Region Overlays
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="lw-map-subbar__modes" role="tablist" aria-label="Map Studio Mode">
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-map-subbar__mode-btn"
+      [class.lw-map-subbar__mode-btn--active]="activeMode() === 'build'"
+      [attr.aria-selected]="activeMode() === 'build'"
+      (click)="modeChanged.emit('build')"
+    >
+      <lw-icon name="wand" [size]="15" />
+      <span>Build</span>
+    </button>
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-map-subbar__mode-btn"
+      [class.lw-map-subbar__mode-btn--active]="activeMode() === 'playtest'"
+      [attr.aria-selected]="activeMode() === 'playtest'"
+      (click)="modeChanged.emit('playtest')"
+    >
+      <lw-icon name="play" [size]="15" />
+      <span>Playtest</span>
+    </button>
+    <button
+      ngpButton
+      type="button"
+      role="tab"
+      class="lw-map-subbar__mode-btn"
+      [class.lw-map-subbar__mode-btn--active]="activeMode() === 'encounter'"
+      [attr.aria-selected]="activeMode() === 'encounter'"
+      (click)="modeChanged.emit('encounter')"
+    >
+      <lw-icon name="swords" [size]="15" />
+      <span>Run Encounter</span>
+    </button>
+  </nav>
+
+  <div class="lw-map-subbar__right">
+    <div class="lw-map-subbar__history">
+      <button
+        ngpButton
+        type="button"
+        class="lw-map-subbar__icon-btn"
+        [disabled]="!canUndo()"
+        title="Undo Last Command"
+        aria-label="Undo Last Command"
+        (click)="undoRequested.emit()"
+      >
+        <lw-icon name="undo" [size]="16" />
+      </button>
+      <button
+        ngpButton
+        type="button"
+        class="lw-map-subbar__icon-btn"
+        [disabled]="!canRedo()"
+        title="Redo Command"
+        aria-label="Redo Command"
+        (click)="redoRequested.emit()"
+      >
+        <lw-icon name="redo" [size]="16" />
+      </button>
+    </div>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-map-subbar__action-btn"
+      [disabled]="saving() || viewerRole() !== 'gm'"
+      (click)="saveRequested.emit()"
+    >
+      <lw-icon name="save" [size]="15" />
+      <span>{{ saving() ? 'Saving...' : 'Save' }}</span>
+    </button>
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-map-subbar__action-btn lw-map-subbar__action-btn--gold"
+      (click)="onExportClick('player-safe')"
+      title="Export Sanitized Player-Safe 2D Map PNG"
+    >
+      <lw-icon name="upload" [size]="15" />
+      <span>Share</span>
+    </button>
+
+    <div class="lw-map-subbar__more-wrap">
+      <button
+        ngpButton
+        type="button"
+        class="lw-map-subbar__icon-btn"
+        title="Export & Scene Options"
+        aria-label="Export and Scene Options"
+        (click)="moreMenuOpen.set(!moreMenuOpen())"
+      >
+        <lw-icon name="more-vertical" [size]="16" />
+      </button>
+
+      @if (moreMenuOpen()) {
+        <div class="lw-map-subbar__dropdown" role="menu">
+          <button ngpButton type="button" class="lw-map-subbar__menu-item" (click)="onExportClick('player-safe')">
+            Export Player-Safe 2D PNG (No Secrets)
+          </button>
+          <button ngpButton type="button" class="lw-map-subbar__menu-item" (click)="onExportClick('gm')">
+            Export Full GM Canonical 2D PNG
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</section>

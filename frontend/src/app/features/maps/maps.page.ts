@@ -9,31 +9,28 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { QualityProfile } from '../../core/models/loomweaver.models';
 import { AdventureGuideService } from '../../core/services/adventure-guide.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import {
-  BrushParameterState,
   ChamberBuildIntent,
-  LwAssetCardComponent,
-  LwBadgeComponent,
-  LwButtonComponent,
-  LwIconComponent,
-  LwMapLayersDrawerComponent,
-  LwMapPresetBrowserComponent,
-  LwMapStudioRibbonComponent,
-  LwMapToolPanelComponent,
-  LwMapWallPathArchitectComponent,
-  LwPanelComponent,
-  LwRulesOptionSelectorComponent,
+  LwMapCameraView,
+  LwMapLayerStatusItem,
+  LwMapMaterialPreset,
+  LwMapPngAssetBrowserComponent,
+  LwMapPngAssetItem,
+  LwMapPropertiesInspectorComponent,
+  LwMapQualityPreset,
+  LwMapStudioSubbarComponent,
+  LwMapToolDockComponent,
+  LwMapViewportBarComponent,
+  LwSelectedSceneNode,
+  MapEditorModeTab,
   PathRibbonBuildIntent,
-  RulesOptionItem,
   WallOpeningInsertIntent,
 } from '../../shared/ui/public-api';
 import { MapHistoryEngineService } from './application/map-history-engine.service';
+import { MapPngAssetApiService } from './application/map-png-asset-api.service';
 import { MapSceneCommandsService } from './application/map-scene-commands.service';
 import { MapStudioStoreService } from './application/map-studio-store.service';
 import {
@@ -43,30 +40,28 @@ import {
 } from './application/map-studio.models';
 import {
   MAP_STUDIO_TOOLS,
-  MapCommandEntry,
   MapRenderMode,
   MapSceneGraphState,
 } from './engine/map-scene-contract';
 import { INITIAL_CINTH_SCENE_GRAPH } from './engine/map-scene-seed';
+import {
+  DEFAULT_EDITOR_DATA_LAYERS,
+  DEFAULT_MAP_MATERIALS,
+  INITIAL_SELECTED_WALL_NODE,
+} from './engine/map-studio-presets';
 import { BabylonMapStageService } from './engine/rendering/babylon-map-stage.service';
+import { Real2dMapRenderer } from './engine/rendering/real-2d-map-renderer';
 
 @Component({
   selector: 'lw-maps-page',
   standalone: true,
   imports: [
     FormsModule,
-    RouterLink,
-    LwPanelComponent,
-    LwBadgeComponent,
-    LwButtonComponent,
-    LwIconComponent,
-    LwAssetCardComponent,
-    LwMapToolPanelComponent,
-    LwMapStudioRibbonComponent,
-    LwMapLayersDrawerComponent,
-    LwMapPresetBrowserComponent,
-    LwMapWallPathArchitectComponent,
-    LwRulesOptionSelectorComponent,
+    LwMapStudioSubbarComponent,
+    LwMapToolDockComponent,
+    LwMapViewportBarComponent,
+    LwMapPngAssetBrowserComponent,
+    LwMapPropertiesInspectorComponent,
   ],
   templateUrl: './maps.page.html',
   styleUrl: './maps.page.scss',
@@ -74,93 +69,282 @@ import { BabylonMapStageService } from './engine/rendering/babylon-map-stage.ser
 })
 export class MapsPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('babylonCanvas') private canvasRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('real2dCanvas') private canvas2dRef?: ElementRef<HTMLCanvasElement>;
 
-  private readonly http = inject(HttpClient);
   private readonly commands = inject(MapSceneCommandsService);
+  private readonly pngApi = inject(MapPngAssetApiService);
   readonly store = inject(LoomWeaverStoreService);
   readonly adventureGuide = inject(AdventureGuideService);
   readonly stage = inject(BabylonMapStageService);
   readonly studio = inject(MapStudioStoreService);
   readonly history = inject(MapHistoryEngineService);
 
+  readonly mapTitle = signal<string>('The Forgotten Crypt');
+  readonly studioMode = signal<MapEditorModeTab>('build');
+  readonly activeDockToolId = signal<string>('wall');
+  readonly cameraView = signal<LwMapCameraView>('isometric');
+  readonly activeTheme = signal<string>('Abandoned Crypt');
+  readonly activeQuality = signal<LwMapQualityPreset>('Balanced 3D');
+  readonly gridSizeLabel = signal<string>('5 ft');
+  readonly snapEnabled = signal<boolean>(true);
+  readonly showPlayerSafeOnly = signal<boolean>(false);
+
+  readonly pngAssets = this.pngApi.pngAssets;
+  readonly batchBusy = this.pngApi.batchBusy;
+  readonly pngPipelineBanner = this.pngApi.pngPipelineBanner;
+  readonly selectedPngAssetId = signal<string>('wall-cracked');
+  readonly materials = signal<readonly LwMapMaterialPreset[]>(DEFAULT_MAP_MATERIALS);
+  readonly editorLayers = signal<readonly LwMapLayerStatusItem[]>(DEFAULT_EDITOR_DATA_LAYERS);
+  readonly selectedNode = signal<LwSelectedSceneNode>(INITIAL_SELECTED_WALL_NODE);
+
+  readonly scatterDensity = signal<number>(68);
+  readonly waterFlowSpeed = signal<number>(1.4);
+  readonly torchIntensity = signal<number>(85);
+
   readonly assignSessionId = signal<string>('session-15');
   readonly assignLocationNodeId = signal<string>('node-loc-ruined-chapel');
-  readonly assignStatusBanner = signal<string>(
-    'Linked to Session 15 — The Ruined Chapel · Site & Keyed Rooms C1, C2, C3.',
-  );
-
-  readonly activePresetId = signal<string>('preset-cinth-ballroom');
   readonly activeCatalogAsset = signal<MapCatalogAssetItem | null>(null);
-  readonly showCatalogSection = signal<boolean>(true);
-
-  readonly biomePresets = [
-    'Gwaedhellain Poisoned Canopy',
-    'Plains of Red Clay & Ruin',
-    'Cinth Marble Ballroom Courtyard',
-    'Runic Subterranean Basalt',
-    'Alpine Limestone Cliffs',
-  ];
-  readonly selectedBiomePreset = signal<string>('Gwaedhellain Poisoned Canopy');
-  readonly elevationDelta = signal<number>(6.5);
-  readonly roughnessOctaves = signal<number>(4);
-  readonly waterLevelMeters = signal<number>(1.8);
-  readonly heightmapBanner = signal<string>(
-    'Multi-octave heightmap & biome brush sculptor synchronized with Babylon.js terrain.',
-  );
-
   readonly tools = MAP_STUDIO_TOOLS;
-  readonly activeToolId = signal<string>('stamps');
+  readonly activeToolId = signal<string>('walls');
   readonly renderMode = signal<MapRenderMode>('Linked 2D <-> 3D');
   readonly selectedSceneKey = signal<string>('scene-cinth-ballroom');
   readonly brushRadius = signal<number>(4);
-  readonly brushIntensity = signal<number>(65);
-  readonly deterministicSeed = signal<number>(1042);
-
-  readonly renderModeOptions: readonly RulesOptionItem[] = [
-    { id: '2D Blueprint', label: '2D Blueprint', badge: 'Top-Down', badgeTone: 'emerald' },
-    { id: '3D Tabletop', label: '3D Tabletop', badge: 'Babylon.js', badgeTone: 'gold' },
-    { id: 'Linked 2D <-> 3D', label: 'Linked 2D <-> 3D', badge: 'Unified Graph', badgeTone: 'gold' },
-  ];
-
-  readonly qualityProfiles: readonly QualityProfile[] = [
-    'Auto',
-    'Cinematic',
-    'Balanced',
-    'Performance 3D',
-    'Classic 2D',
-  ];
 
   readonly sceneGraph = signal<MapSceneGraphState>(INITIAL_CINTH_SCENE_GRAPH);
-
-  readonly commandLog = signal<readonly MapCommandEntry[]>([
-    {
-      id: 'cmd-15',
-      timestamp: 'Rev 15',
-      toolId: 'walls',
-      summary: 'Initialized Cutaway Rotunda Walls, Fitted Portals & Curved Cobblestone Ribbon',
-    },
-  ]);
 
   readonly activeScene = computed(() => {
     const list = this.store.authorizedScenes();
     return list.find((s) => s.sceneKey === this.selectedSceneKey()) ?? list[0];
   });
 
-  readonly mapAssets = computed(() =>
-    this.store.assets().filter((a) => a.category === 'Map Pack' || a.category === 'Audio Pack'),
+  readonly show3dCanvas = computed(() => this.cameraView() !== 'real-2d');
+  readonly show2dCanvas = computed(
+    () => this.cameraView() === 'real-2d' || this.cameraView() === 'split-2d-3d',
   );
 
   ngAfterViewInit(): void {
+    this.studio.mapTitle.set(this.mapTitle());
     const canvas = this.canvasRef?.nativeElement;
     if (canvas) {
       this.stage.mountCanvas(canvas, this.sceneGraph(), (x, z) => {
         this.applyCanvasStrokeAt(x, z);
       });
     }
+    this.render2dViewport();
+    this.pngApi.loadPngAssetManifest();
   }
 
   ngOnDestroy(): void {
     this.stage.dispose();
+  }
+
+  triggerPythonBatchPngSync(): void {
+    this.pngApi.triggerPythonBatchPngSync();
+  }
+
+  onUploadSingleGlb(file: File): void {
+    this.pngApi.uploadSingleGlb(file, (asset) => this.onSelectPngAsset(asset));
+  }
+
+  onDockToolSelected(dockToolId: string): void {
+    this.activeDockToolId.set(dockToolId);
+    const mapToEngineTool: Record<string, string> = {
+      select: 'stamps',
+      room: 'walls',
+      wall: 'walls',
+      door: 'walls',
+      paint: 'terrain',
+      objects: 'stamps',
+      terrain: 'terrain',
+      scatter: 'scatter',
+      water: 'water',
+      lighting: 'lighting',
+      stairs: 'paths',
+      annotate: 'stamps',
+    };
+    this.activeToolId.set(mapToEngineTool[dockToolId] ?? 'stamps');
+  }
+
+  onSelectPngAsset(asset: LwMapPngAssetItem): void {
+    this.selectedPngAssetId.set(asset.id);
+    this.selectedNode.update((cur) => ({
+      ...cur,
+      id: asset.id,
+      name: asset.name,
+      subtitle: `${asset.category} · 5 ft`,
+      thumbnailUrl: asset.thumbnailUrl,
+    }));
+  }
+
+  onPlacePngAssetInScene(asset: LwMapPngAssetItem): void {
+    this.onSelectPngAsset(asset);
+    this.activeDockToolId.set('objects');
+    this.activeToolId.set('stamps');
+    const rx = Math.round((Math.random() * 12 - 6) * 2) / 2;
+    const rz = Math.round((Math.random() * 8 - 4) * 2) / 2;
+    this.recordHistoryBeforeEdit(`Place 3D Asset -> ${asset.name}`);
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      stamps: [
+        ...cur.stamps,
+        {
+          id: `st-${asset.id}-${cur.revision + 1}`,
+          label: asset.name,
+          category:
+            asset.category === 'Tokens'
+              ? 'Token'
+              : asset.category === 'Architecture'
+                ? 'Architecture'
+                : 'Prop',
+          x: rx,
+          z: rz,
+          scale: 1.15,
+          rotationY: 0,
+          colorHex: asset.category === 'Lighting' ? '#ffae52' : '#56b886',
+        },
+      ],
+    }));
+    this.stage.focusGizmoAt(rx, 1.3, rz);
+  }
+
+  onCameraViewChange(view: LwMapCameraView): void {
+    this.cameraView.set(view);
+    this.stage.setCameraMode(view);
+    setTimeout(() => {
+      this.stage.resize();
+      this.render2dViewport();
+    }, 30);
+  }
+
+  onThemeChange(theme: string): void {
+    this.activeTheme.set(theme);
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      biome: theme,
+      revision: cur.revision + 1,
+      scatterSeed: cur.scatterSeed + 11,
+    }));
+  }
+
+  onQualityChange(preset: LwMapQualityPreset): void {
+    this.activeQuality.set(preset);
+    this.stage.setQualityPreset(preset);
+    if (preset === 'Classic 2D') {
+      this.onCameraViewChange('real-2d');
+    }
+  }
+
+  onTogglePlayerSafeView(): void {
+    this.showPlayerSafeOnly.update((v) => !v);
+    this.stage.setPlayerSafeFilter(this.showPlayerSafeOnly(), this.sceneGraph());
+    this.render2dViewport();
+  }
+
+  onExportScenePng(variant: 'gm' | 'player-safe'): void {
+    const hideSecrets = variant === 'player-safe';
+    this.showPlayerSafeOnly.set(hideSecrets);
+    this.stage.setPlayerSafeFilter(hideSecrets, this.sceneGraph());
+    this.render2dViewport();
+    this.pngPipelineBanner.set(
+      variant === 'player-safe'
+        ? 'Exported sanitized Player-Safe 2D PNG (private GM layers & secret doors excluded).'
+        : 'Exported full GM Master 2D PNG with secret overlays.',
+    );
+  }
+
+  on2dCanvasClick(event: MouseEvent): void {
+    const canvas = this.canvas2dRef?.nativeElement;
+    if (!canvas) return;
+    const coords = Real2dMapRenderer.screenToWorld(canvas, event.clientX, event.clientY);
+    this.applyCanvasStrokeAt(coords.x, coords.z);
+  }
+
+  private render2dViewport(): void {
+    const canvas = this.canvas2dRef?.nativeElement;
+    if (!canvas) return;
+    Real2dMapRenderer.renderSceneToCanvas(canvas, this.sceneGraph(), {
+      hideGmSecrets: this.showPlayerSafeOnly(),
+      selectedNodeId: this.selectedNode().id,
+    });
+  }
+
+  onInspectorMaterialChange(materialId: string): void {
+    const found = this.materials().find((m) => m.id === materialId);
+    this.selectedNode.update((cur) => ({ ...cur, materialId }));
+    if (found) {
+      this.commitSceneUpdate((cur) => ({
+        ...cur,
+        revision: cur.revision + 1,
+        walls: (cur.walls ?? []).map((w) => ({ ...w, material: found.name })),
+      }));
+    }
+  }
+
+  onInspectorHeightChange(heightSquares: number): void {
+    this.selectedNode.update((cur) => ({
+      ...cur,
+      heightSquares,
+      subtitle: `Wall · ${heightSquares * 5} ft`,
+    }));
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      walls: (cur.walls ?? []).map((w) => ({ ...w, heightMeters: heightSquares * 1.5 })),
+    }));
+  }
+
+  onInspectorThicknessChange(thickness: number): void {
+    this.selectedNode.update((cur) => ({ ...cur, thickness }));
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      walls: (cur.walls ?? []).map((w) => ({ ...w, thicknessMeters: 0.45 * thickness })),
+    }));
+  }
+
+  onInspectorRotationChange(rotationDeg: number): void {
+    this.selectedNode.update((cur) => ({ ...cur, rotationDeg }));
+    const rad = (rotationDeg * Math.PI) / 180;
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      stamps: cur.stamps.map((s, idx) => (idx === 0 ? { ...s, rotationY: rad } : s)),
+    }));
+  }
+
+  onInspectorScaleChange(scale: number): void {
+    this.selectedNode.update((cur) => ({ ...cur, scale }));
+    this.commitSceneUpdate((cur) => ({
+      ...cur,
+      revision: cur.revision + 1,
+      stamps: cur.stamps.map((s, idx) => (idx === 0 ? { ...s, scale } : s)),
+    }));
+  }
+
+  onInspectorSecretToggle(): void {
+    this.selectedNode.update((cur) => ({ ...cur, gmSecretOnly: !cur.gmSecretOnly }));
+    this.render2dViewport();
+  }
+
+  onApplyToSimilarWalls(): void {
+    const node = this.selectedNode();
+    this.pngPipelineBanner.set(
+      `Applied '${node.materialId}' (${node.heightSquares * 5}ft, ${node.thickness.toFixed(2)}x) to all similar walls in scene.`,
+    );
+    this.commitSceneUpdate((cur) => ({ ...cur, revision: cur.revision + 1 }));
+  }
+
+  onLayerToggleVisible(layerId: string): void {
+    this.editorLayers.update((layers) =>
+      layers.map((l) => (l.id === layerId ? { ...l, visible: !l.visible } : l)),
+    );
+  }
+
+  onLayerToggleSecret(layerId: string): void {
+    this.editorLayers.update((layers) =>
+      layers.map((l) => (l.id === layerId ? { ...l, gmSecretOnly: !l.gmSecretOnly } : l)),
+    );
   }
 
   private captureCurrentSnapshot(label: string): MapStudioSnapshot {
@@ -183,11 +367,13 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       this.stage.syncSceneGraph(updated);
       return updated;
     });
+    this.render2dViewport();
   }
 
   selectScene(sceneKey: string, name: string, biome: string): void {
     this.recordHistoryBeforeEdit(`Switch Scene -> ${name}`);
     this.selectedSceneKey.set(sceneKey);
+    this.mapTitle.set(name);
     this.studio.mapTitle.set(name);
     this.commitSceneUpdate((cur) => ({
       ...cur,
@@ -200,9 +386,8 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
 
   applyPresetTemplate(preset: MapPresetTemplate): void {
     this.recordHistoryBeforeEdit(`Apply Preset -> ${preset.name}`);
-    this.activePresetId.set(preset.id);
+    this.mapTitle.set(preset.name);
     this.studio.mapTitle.set(preset.name);
-    this.studio.gridConfig.update((g) => ({ ...g, mapScope: preset.mapScope }));
     this.commitSceneUpdate((cur) => ({
       ...cur,
       name: preset.name,
@@ -212,14 +397,6 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     }));
   }
 
-  equipCatalogAsset(asset: MapCatalogAssetItem): void {
-    this.activeCatalogAsset.set(asset);
-    this.activeToolId.set('stamps');
-    this.studio.saveStatusBanner.set(
-      `Equipped '${asset.name}' (${asset.assetType}, ${asset.defaultHeightFt}ft). Click map canvas to place.`,
-    );
-  }
-
   setRenderMode(mode: string): void {
     if (mode === '2D Blueprint' || mode === '3D Tabletop' || mode === 'Linked 2D <-> 3D') {
       this.renderMode.set(mode);
@@ -227,34 +404,13 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  onBrushChanged(brush: BrushParameterState): void {
-    this.brushRadius.set(brush.radius);
-    this.brushIntensity.set(brush.intensity);
-    this.deterministicSeed.set(brush.seed);
-    this.commitSceneUpdate((cur) => ({
-      ...cur,
-      scatterSeed: brush.seed,
-      scatterDensity: brush.intensity,
-      terrainRelief: brush.intensity,
-    }));
-  }
-
-  onToolCommand(cmd: string): void {
-    if (cmd === 'undo') {
-      this.undoLastCommand();
-      return;
-    }
-    const rx = Math.round((Math.random() * 14 - 7) * 10) / 10;
-    const rz = Math.round((Math.random() * 10 - 5) * 10) / 10;
-    this.applyCanvasStrokeAt(rx, rz);
-  }
-
   applyCanvasStrokeAt(x: number, z: number): void {
     const tool = this.activeToolId();
-    const snap = this.studio.gridConfig().snapToGrid;
+    const snap = this.snapEnabled();
     const px = snap ? Math.round(x * 2) / 2 : x;
     const pz = snap ? Math.round(z * 2) / 2 : z;
 
+    this.selectedNode.update((cur) => ({ ...cur, gridX: px, gridZ: pz }));
     this.recordHistoryBeforeEdit(`Tool [${tool}] at (${px}, ${pz})`);
     this.commitSceneUpdate((cur) => {
       const { nextGraph, newStampId } = this.commands.applyToolStroke(
@@ -266,21 +422,11 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
         this.activeCatalogAsset(),
       );
       if (newStampId) this.studio.selectedStampId.set(newStampId);
-      this.commandLog.update((logs) => [
-        {
-          id: `cmd-${nextGraph.revision}`,
-          timestamp: `Rev ${nextGraph.revision}`,
-          toolId: tool,
-          summary: `Applied [${tool}] at (${px}, ${pz}) on Level L${this.studio.activeLevelIndex()}`,
-        },
-        ...logs.slice(0, 5),
-      ]);
       return nextGraph;
     });
   }
 
   buildWallChamber(intent: ChamberBuildIntent): void {
-    this.recordHistoryBeforeEdit(`Build Chamber -> ${intent.name}`);
     const picked = this.stage.lastPickedCoords();
     this.commitSceneUpdate((cur) =>
       this.commands.appendWallChamber(
@@ -295,12 +441,10 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   }
 
   insertWallOpening(intent: WallOpeningInsertIntent): void {
-    this.recordHistoryBeforeEdit(`Insert Opening [${intent.openingType}]`);
     this.commitSceneUpdate((cur) => this.commands.appendWallOpening(cur, intent));
   }
 
   buildPathRibbon(intent: PathRibbonBuildIntent): void {
-    this.recordHistoryBeforeEdit(`Trace Path -> ${intent.name}`);
     const picked = this.stage.lastPickedCoords();
     this.commitSceneUpdate((cur) =>
       this.commands.appendPathRibbon(
@@ -314,51 +458,12 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  deleteWallById(wallId: string): void {
-    this.recordHistoryBeforeEdit(`Delete Wall ${wallId}`);
-    this.commitSceneUpdate((cur) => ({
-      ...cur,
-      revision: cur.revision + 1,
-      walls: (cur.walls ?? []).filter((w) => w.id !== wallId),
-    }));
-  }
-
-  deletePathById(pathId: string): void {
-    this.recordHistoryBeforeEdit(`Delete Path ${pathId}`);
-    this.commitSceneUpdate((cur) => ({
-      ...cur,
-      revision: cur.revision + 1,
-      pathRibbons: (cur.pathRibbons ?? []).filter((p) => p.id !== pathId),
-    }));
-  }
-
-  updateStampTransform(change: { stampId: string; scale: number; rotationY: number }): void {
-    this.recordHistoryBeforeEdit(`Transform Stamp ${change.stampId}`);
-    this.commitSceneUpdate((cur) => ({
-      ...cur,
-      revision: cur.revision + 1,
-      stamps: cur.stamps.map((s) =>
-        s.id === change.stampId ? { ...s, scale: change.scale, rotationY: change.rotationY } : s,
-      ),
-    }));
-  }
-
-  deleteStampById(stampId: string): void {
-    this.recordHistoryBeforeEdit(`Delete Stamp ${stampId}`);
-    this.commitSceneUpdate((cur) => ({
-      ...cur,
-      revision: cur.revision + 1,
-      stamps: cur.stamps.filter((s) => s.id !== stampId),
-    }));
-  }
-
   undoLastCommand(): void {
     const prev = this.history.undo(this.captureCurrentSnapshot('Current State'));
     if (prev) {
       this.sceneGraph.set(prev.sceneGraph);
-      this.studio.layers.set(prev.layers);
-      this.studio.activeLevelIndex.set(prev.activeLevelIndex);
       this.stage.syncSceneGraph(prev.sceneGraph);
+      this.render2dViewport();
     }
   }
 
@@ -366,9 +471,8 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     const next = this.history.redo(this.captureCurrentSnapshot('Current State'));
     if (next) {
       this.sceneGraph.set(next.sceneGraph);
-      this.studio.layers.set(next.layers);
-      this.studio.activeLevelIndex.set(next.activeLevelIndex);
       this.stage.syncSceneGraph(next.sceneGraph);
+      this.render2dViewport();
     }
   }
 
@@ -377,54 +481,14 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       this.selectedSceneKey(),
       this.sceneGraph().revision,
       this.store.viewerRole(),
-      (newRev) => {
-        this.sceneGraph.update((cur) => ({ ...cur, revision: newRev }));
-      },
+      (newRev) => this.sceneGraph.update((cur) => ({ ...cur, revision: newRev })),
     );
-    this.assignBattlemapToSessionAndPlace();
-  }
-
-  assignBattlemapToSessionAndPlace(): void {
     const scene = this.activeScene();
-    const mapTitle = this.studio.mapTitle() || scene.name;
-    const sessionId = this.assignSessionId();
-    const locationNodeId = this.assignLocationNodeId();
+    const title = this.mapTitle() || scene.name;
     this.adventureGuide.assignBattlemapToSessionAndPlace({
-      sceneKey: scene.sceneKey,
-      sceneTitle: mapTitle,
-      sessionId,
-      locationNodeId,
-      artworkUrl: '/battlemap-showcase.jpg',
-      biome: scene.biome,
+      sceneKey: scene.sceneKey, sceneTitle: title, sessionId: this.assignSessionId(),
+      locationNodeId: this.assignLocationNodeId(), artworkUrl: '/battlemap-showcase.jpg', biome: scene.biome,
     });
-    this.assignStatusBanner.set(
-      `Assigned '${mapTitle}' (${scene.gridCols}x${scene.gridRows}) to ${sessionId} and place ${locationNodeId} in the Session Guide & Neo4j graph.`,
-    );
-  }
-
-  applyHeightmapBiomeSculpt(): void {
-    const sceneId = this.selectedSceneKey();
-    const payload = {
-      biomePreset: this.selectedBiomePreset(),
-      brushRadiusMeters: this.brushRadius(),
-      elevationDelta: this.elevationDelta(),
-      roughnessOctaves: this.roughnessOctaves(),
-      waterLevelMeters: this.waterLevelMeters(),
-    };
-
-    this.http
-      .post<{ summary: string }>(`/api/v2/campaigns/1/maps/${sceneId}/sculpt-heightmap`, payload)
-      .subscribe({
-        next: (res) => {
-          if (res?.summary) this.heightmapBanner.set(res.summary);
-          this.applyCanvasStrokeAt(0, 0);
-        },
-        error: () => {
-          this.heightmapBanner.set(
-            `Sculpted '${payload.biomePreset}' heightmap (Elevation +${payload.elevationDelta}m, Octaves=${payload.roughnessOctaves}).`,
-          );
-          this.applyCanvasStrokeAt(0, 0);
-        },
-      });
+    this.pngPipelineBanner.set(`Saved '${title}' (Rev ${this.sceneGraph().revision}) to SQL & object storage.`);
   }
 }

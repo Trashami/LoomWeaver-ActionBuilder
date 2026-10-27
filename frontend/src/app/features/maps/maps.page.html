@@ -1,265 +1,138 @@
-<div class="lw-page">
-  <lw-panel
-    eyebrow="Module 2 · LoomMaps Stage 1 Studio Foundation"
-    title="LoomMaps · Multi-Level Battlemap & World Atlas Studio"
-    [subtitle]="studio.saveStatusBanner()"
-    icon="map"
-    [elevated]="true">
-    <div panelActions>
-      <a class="lw-inline-btn" routerLink="/arcane-screen">Push Scene to Arcane Screen</a>
-      <a class="lw-inline-btn" routerLink="/encounters">Bind Encounter</a>
-    </div>
+<div class="lw-maps-studio">
+  <lw-map-studio-subbar
+    [mapTitle]="mapTitle()"
+    [gridCols]="50"
+    [gridRows]="50"
+    [gridCellFeet]="5"
+    [revision]="sceneGraph().revision"
+    [activeMode]="studioMode()"
+    [canUndo]="history.canUndo()"
+    [canRedo]="history.canRedo()"
+    [viewerRole]="store.viewerRole()"
+    (titleChanged)="mapTitle.set($event)"
+    (modeChanged)="studioMode.set($event)"
+    (undoRequested)="undoLastCommand()"
+    (redoRequested)="redoLastCommand()"
+    (saveRequested)="saveSceneRevision()"
+  />
 
-    <lw-map-studio-ribbon
-      [mapTitle]="studio.mapTitle()"
-      [mapScope]="studio.gridConfig().mapScope"
-      [renderMode]="renderMode()"
-      [levels]="studio.levels()"
-      [activeLevelIndex]="studio.activeLevelIndex()"
-      [ghostLowerFloors]="studio.ghostLowerFloors()"
-      [testTokenSandbox]="studio.testTokenSandbox()"
-      [canUndo]="history.canUndo()"
-      [canRedo]="history.canRedo()"
-      [undoCount]="history.undoCount()"
-      [redoCount]="history.redoCount()"
-      [lastHistoryLabel]="history.lastActionLabel()"
-      [saving]="studio.savingRevision()"
-      (titleChanged)="studio.mapTitle.set($event)"
-      (scopeChanged)="studio.gridConfig.update(g => ({ ...g, mapScope: $event }))"
-      (renderModeChanged)="setRenderMode($event)"
-      (levelSelected)="studio.activeLevelIndex.set($event)"
-      (addLevelRequested)="studio.addUpperLevel()"
-      (ghostModeToggled)="studio.ghostLowerFloors.set(!studio.ghostLowerFloors())"
-      (testTokenToggled)="studio.testTokenSandbox.set(!studio.testTokenSandbox())"
-      (undoRequested)="undoLastCommand()"
-      (redoRequested)="redoLastCommand()"
-      (openCatalogRequested)="showCatalogSection.set(!showCatalogSection())"
-      (saveRevisionRequested)="saveSceneRevision()" />
+  <div class="lw-maps-studio__workbench">
+    <lw-map-tool-dock
+      [activeToolId]="activeDockToolId()"
+      (toolSelected)="onDockToolSelected($event)"
+    />
 
-    <div class="lw-top-controls" aria-label="Assign Battlemap to Adventure Session and Place">
-      <div class="lw-scene-tabs">
-        <label class="lw-scene-tab">
-          <strong>Session Guide Target</strong>
-          <select
-            [ngModel]="assignSessionId()"
-            (ngModelChange)="assignSessionId.set($event)"
-            aria-label="Select Adventure Session">
-            <option value="session-15">Session 15 — The Ruined Chapel</option>
-            <option value="session-14">Session 14 — Brass Gears & Velvet Fangs</option>
-          </select>
-        </label>
-        <label class="lw-scene-tab">
-          <strong>Place / Keyed Room</strong>
-          <select
-            [ngModel]="assignLocationNodeId()"
-            (ngModelChange)="assignLocationNodeId.set($event)"
-            aria-label="Select Adventure Place or Keyed Room">
-            <option value="node-loc-ruined-chapel">The Ruined Chapel (Site)</option>
-            <option value="node-room-c1">C1: The Shattered Nave</option>
-            <option value="node-room-c2">C2: Moonlit Cloister Courtyard</option>
-            <option value="node-room-c3">C3: Sealed Altar Crypt</option>
-            <option value="node-loc-cinth">City of Cinth</option>
-          </select>
-        </label>
-      </div>
-      <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
-        <span style="font-size: 0.78rem; color: var(--lw-text-secondary, #a8c7b8);">{{ assignStatusBanner() }}</span>
-        <lw-button variant="primary" size="sm" (pressed)="assignBattlemapToSessionAndPlace()">
-          Assign Map to Session &amp; Place
-        </lw-button>
-      </div>
-    </div>
-
-    <div class="lw-top-controls">
-      <div class="lw-scene-tabs">
-        @for (scene of store.authorizedScenes(); track scene.sceneKey) {
-          <button
-            type="button"
-            class="lw-scene-tab"
-            [class.lw-scene-tab--active]="scene.sceneKey === activeScene().sceneKey"
-            (click)="selectScene(scene.sceneKey, scene.name, scene.biome)">
-            <strong>{{ scene.name }}</strong>
-            <span>{{ scene.regionName }} · {{ scene.gridCols }}x{{ scene.gridRows }}</span>
-          </button>
-        }
-      </div>
-
-      <lw-rules-option-selector
-        [options]="renderModeOptions"
-        [selectedId]="renderMode()"
-        variant="pills"
-        (selectionChanged)="setRenderMode($event)" />
-    </div>
-
-    <div class="lw-studio-layout">
-      <lw-map-tool-panel
-        [tools]="tools"
-        [activeToolId]="activeToolId()"
-        [brushRadius]="brushRadius()"
-        [brushIntensity]="brushIntensity()"
-        [deterministicSeed]="deterministicSeed()"
-        (toolChanged)="activeToolId.set($event)"
-        (brushChanged)="onBrushChanged($event)"
-        (commandRequested)="onToolCommand($event)" />
-
-      <div class="lw-canvas-viewport">
-        <div class="lw-canvas-hud">
-          <lw-badge [label]="renderMode()" tone="gold" />
-          <lw-badge [label]="'Rev ' + sceneGraph().revision" tone="emerald" />
-          <lw-badge [label]="'Level L' + studio.activeLevelIndex()" tone="gold" />
-          <lw-badge [label]="'Grid: ' + studio.gridConfig().gridType + ' (' + studio.gridConfig().gridSizePx + 'px)'" tone="neutral" />
-          <lw-badge [label]="'Babylon Meshes: ' + stage.activeInstanceCount()" tone="neutral" />
-          <lw-badge [label]="stage.fps() + ' FPS · Profile: ' + store.qualityProfile()" tone="neutral" />
-          <lw-badge
-            [label]="'Cursor: (' + stage.lastPickedCoords().x + ', ' + stage.lastPickedCoords().z + ')'"
-            tone="gold" />
-        </div>
-
-        <div class="lw-canvas-wrapper">
+    <section class="lw-maps-studio__stage-column" aria-label="Interactive 2D/3D Map Viewport">
+      <div
+        class="lw-maps-studio__viewport-wrap"
+        [class.lw-maps-studio__viewport-wrap--split]="cameraView() === 'split-2d-3d'"
+      >
+        <div
+          class="lw-maps-studio__canvas-pane"
+          [class.lw-maps-studio__canvas-pane--hidden]="!show3dCanvas()"
+        >
           <canvas
             #babylonCanvas
-            class="lw-babylon-canvas"
-            aria-label="Interactive Babylon.js 2D and 3D Map Canvas"></canvas>
-
-          <div class="lw-canvas-overlay">
-            @for (st of sceneGraph().stamps; track st.id) {
-              @if (st.entityCompositeKey; as entityKey) {
-                <button
-                  type="button"
-                  class="lw-poi-chip"
-                  (click)="store.inspectEntity(entityKey)">
-                  <lw-icon name="map-pin" [size]="14" />
-                  <span>{{ st.label }}</span>
-                </button>
-              }
-            }
+            class="lw-maps-studio__canvas"
+            aria-label="Babylon.js 3D Tactical Scene Canvas"
+          ></canvas>
+          <div class="lw-maps-studio__pane-tag">
+            <span>Babylon.js 3D · {{ activeQuality() }} · Rev {{ sceneGraph().revision }}</span>
           </div>
         </div>
 
-        <div class="lw-bottom-bar">
-          <div class="lw-quality-selector">
-            <span>Adaptive Quality Profile:</span>
-            @for (prof of qualityProfiles; track prof) {
-              <button
-                type="button"
-                class="lw-quality-pill"
-                [class.lw-quality-pill--active]="store.qualityProfile() === prof"
-                (click)="store.qualityProfile.set(prof)">
-                {{ prof }}
-              </button>
-            }
+        <div
+          class="lw-maps-studio__canvas-pane lw-maps-studio__canvas-pane--2d"
+          [class.lw-maps-studio__canvas-pane--hidden]="!show2dCanvas()"
+        >
+          <canvas
+            #real2dCanvas
+            width="960"
+            height="620"
+            class="lw-maps-studio__canvas"
+            aria-label="Authoritative Real 2D Tactical Canvas"
+            (click)="on2dCanvasClick($event)"
+          ></canvas>
+          <div class="lw-maps-studio__pane-tag">
+            <span>Real 2D Canvas Renderer · Instant 2D &lt;-&gt; 3D Sync</span>
           </div>
+        </div>
 
-          <div class="lw-command-feed">
-            @for (cmd of commandLog(); track cmd.id) {
-              <div class="lw-command-item">
-                <code>{{ cmd.timestamp }}</code>
-                <span>{{ cmd.summary }}</span>
-              </div>
-            }
-          </div>
+        <div class="lw-maps-studio__hud-top-left">
+          <span class="lw-maps-studio__hud-pill">
+            Tool: <strong>{{ activeDockToolId().toUpperCase() }}</strong>
+          </span>
+          <span class="lw-maps-studio__hud-pill">
+            Coords: <strong>({{ stage.lastPickedCoords().x }}, {{ stage.lastPickedCoords().z }})</strong>
+          </span>
+          <span class="lw-maps-studio__hud-pill">
+            Instances: <strong>{{ stage.activeInstanceCount() }}</strong>
+          </span>
+        </div>
+
+        <div class="lw-maps-studio__compass" aria-label="Scene Compass">
+          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--n">N</span>
+          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--e">E</span>
+          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--s">S</span>
+          <span class="lw-maps-studio__compass-dir lw-maps-studio__compass-dir--w">W</span>
+          <div class="lw-maps-studio__compass-needle"></div>
         </div>
       </div>
 
-      <lw-map-layers-drawer
-        [layers]="studio.layers()"
-        [activeLayerId]="studio.activeLayerId()"
-        [stamps]="sceneGraph().stamps"
-        [lights]="sceneGraph().lights"
-        [selectedStampId]="studio.selectedStampId()"
-        [selectedOcclusionMode]="studio.selectedOcclusionMode()"
-        [gridConfig]="studio.gridConfig()"
-        (layerSelected)="studio.activeLayerId.set($event)"
-        (layerVisibilityToggled)="studio.toggleLayerVisibility($event)"
-        (layerLockToggled)="studio.toggleLayerLock($event)"
-        (layerOpacityChanged)="studio.updateLayerOpacity($event.layerId, $event.opacityPercent)"
-        (layerBlendChanged)="studio.updateLayerBlendMode($event.layerId, $event.blendMode)"
-        (addCustomLayerRequested)="studio.addCustomLayer()"
-        (stampSelected)="studio.selectedStampId.set($event)"
-        (stampTransformChanged)="updateStampTransform($event)"
-        (stampDeleted)="deleteStampById($event)"
-        (occlusionModeChanged)="studio.selectedOcclusionMode.set($event)"
-        (gridConfigChanged)="studio.gridConfig.set($event)" />
-    </div>
-  </lw-panel>
+      <lw-map-viewport-bar
+        [activeView]="cameraView()"
+        [activeTheme]="activeTheme()"
+        [activeQuality]="activeQuality()"
+        [gridSize]="gridSizeLabel()"
+        [snapEnabled]="snapEnabled()"
+        [showPlayerSafeOnly]="showPlayerSafeOnly()"
+        [fps]="stage.fps()"
+        (viewChange)="onCameraViewChange($event)"
+        (themeChange)="onThemeChange($event)"
+        (qualityChange)="onQualityChange($event)"
+        (gridSizeChange)="gridSizeLabel.set($event)"
+        (snapToggle)="snapEnabled.set(!snapEnabled())"
+        (playerSafeToggle)="onTogglePlayerSafeView()"
+      />
+    </section>
 
-  <lw-panel
-    eyebrow="LoomMaps Stage 2 · Cutaway Walls, Fitted Portals & Curved Path Ribbons"
-    title="Procedural Chamber, Cutaway Wall & Path Ribbon Architect"
-    subtitle="Build multi-shape chambers (Octagon, Hexagon, L-Shape, Chaikin Cave), fit doors/secret portals along wall edges, and trace curved cobblestone roads or limestone cliff ridges."
-    icon="Shield"
-  >
-    <lw-map-wall-path-architect
-      [walls]="sceneGraph().walls ?? []"
-      [paths]="sceneGraph().pathRibbons ?? []"
-      [config]="{
-        variant: 'standard',
-        allowSecretDoors: store.viewerRole() === 'gm',
-        showPathBuilder: true
-      }"
-      (chamberBuildRequested)="buildWallChamber($event)"
-      (openingInsertRequested)="insertWallOpening($event)"
-      (pathRibbonBuildRequested)="buildPathRibbon($event)"
-      (wallDeleted)="deleteWallById($event)"
-      (pathDeleted)="deletePathById($event)" />
-  </lw-panel>
+    <aside class="lw-maps-studio__right-dock" aria-label="Asset Library & Object Properties">
+      <lw-map-png-asset-browser
+        [assets]="pngAssets()"
+        [selectedAssetId]="selectedPngAssetId()"
+        [materials]="materials()"
+        [selectedMaterialId]="selectedNode().materialId"
+        [layers]="editorLayers()"
+        [activeTheme]="activeTheme()"
+        [batchBusy]="batchBusy()"
+        [statusBanner]="pngPipelineBanner()"
+        (assetSelect)="onSelectPngAsset($event)"
+        (assetPlaceInScene)="onPlacePngAssetInScene($event)"
+        (materialSelect)="onInspectorMaterialChange($event.id)"
+        (themeSelect)="onThemeChange($event)"
+        (layerToggleVisible)="onLayerToggleVisible($event)"
+        (layerToggleSecret)="onLayerToggleSecret($event)"
+        (triggerBatchRender)="triggerPythonBatchPngSync()"
+        (uploadSingleGlb)="onUploadSingleGlb($event)"
+      />
 
-  @if (showCatalogSection()) {
-    <lw-panel
-      eyebrow="LoomMaps Stage 1 · Starting Environments & Reorganized /map-assets Library"
-      title="Basemap Presets & 3D Light-Aware Stamp Browser"
-      subtitle="Select a canon starting environment or equip a 2D/3D linked stamp from the reorganized /map-assets library, then click anywhere on the canvas to place it."
-      icon="Layers"
-    >
-      <lw-map-preset-browser
-        [presets]="studio.presets()"
-        [catalogAssets]="studio.catalogAssets()"
-        [activePresetId]="activePresetId()"
-        [activeCatalogAssetId]="activeCatalogAsset()?.id ?? ''"
-        (presetSelected)="applyPresetTemplate($event)"
-        (catalogAssetSelected)="equipCatalogAsset($event)" />
-    </lw-panel>
-  }
-
-  <lw-panel
-    eyebrow="Multi-Octave Terrain & Biome Brush Engine"
-    title="Advanced Heightmap & Water-Table Sculptor"
-    [subtitle]="heightmapBanner()"
-    icon="Map"
-  >
-    <div class="lw-top-controls">
-      <div class="lw-scene-tabs">
-        @for (biome of biomePresets; track biome) {
-          <button
-            type="button"
-            class="lw-scene-tab"
-            [class.lw-scene-tab--active]="selectedBiomePreset() === biome"
-            (click)="selectedBiomePreset.set(biome)"
-          >
-            <strong>{{ biome }}</strong>
-            <span>Elevation +{{ elevationDelta() }}m · {{ roughnessOctaves() }} Octaves · Water {{ waterLevelMeters() }}m</span>
-          </button>
-        }
-      </div>
-      <lw-button variant="primary" size="sm" (pressed)="applyHeightmapBiomeSculpt()">
-        Sculpt Heightmap & Sync Biome
-      </lw-button>
-    </div>
-  </lw-panel>
-
-  <lw-panel
-    eyebrow="Stamp & Biome Catalog"
-    title="Compatible Map & Audio Packs"
-    subtitle="Rendered with the shared lw-asset-card component."
-    icon="layers">
-    <div class="lw-asset-row">
-      @for (asset of mapAssets(); track asset.id) {
-        <lw-asset-card
-          [asset]="asset"
-          [config]="{ variant: 'standard', showPrice: true, showUnlockAction: true }"
-          (assetSelected)="store.unlockAsset($event.id)"
-          (unlockRequested)="store.unlockAsset($event.id)" />
-      }
-    </div>
-  </lw-panel>
+      <lw-map-properties-inspector
+        [selectedNode]="selectedNode()"
+        [materials]="materials()"
+        [scatterDensity]="scatterDensity()"
+        [waterFlowSpeed]="waterFlowSpeed()"
+        [torchIntensity]="torchIntensity()"
+        (materialChange)="onInspectorMaterialChange($event)"
+        (heightSquaresChange)="onInspectorHeightChange($event)"
+        (thicknessChange)="onInspectorThicknessChange($event)"
+        (rotationChange)="onInspectorRotationChange($event)"
+        (scaleChange)="onInspectorScaleChange($event)"
+        (secretToggle)="onInspectorSecretToggle()"
+        (applyToSimilar)="onApplyToSimilarWalls()"
+        (scatterDensityChange)="scatterDensity.set($event)"
+        (waterFlowChange)="waterFlowSpeed.set($event)"
+        (torchIntensityChange)="torchIntensity.set($event)"
+      />
+    </aside>
+  </div>
 </div>

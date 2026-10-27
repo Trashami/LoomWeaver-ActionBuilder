@@ -26,7 +26,11 @@ export function spellLights(def:EffectDefinition,time:number,from:FxPoint,to:FxP
    else {points=[fireballContact(release,target,arc,scale,world.walls).point];gain=(1-local)**.7;}
    points=points.map(q=>({x:q.x+(dx/d*l.offsetX-dy/d*l.offsetY)*scale,y:q.y+(dy/d*l.offsetX+dx/d*l.offsetY)*scale}));
   }
-  else if(l.kind==='projectile'){points=[projectileMaterialPoint(l,f,from,to,scale,Math.max(0,Math.min(1,p*l.motion.speed*1.25/(1+l.motion.drag*p))))];}
+  else if(l.kind==='projectile'){
+   const arc=l.projectileCore?.arc??-35;
+   const u=Math.max(0,Math.min(1,p*l.motion.speed*1.25/(1+l.motion.drag*p)));
+   points=[clippedFireball(from,to,u,arc,scale,world.walls)];
+  }
   else if(l.kind==='whip'){const lash=f.whipPoints??[];points=[.25,.6,1].map(q=>lash[Math.min(lash.length-1,Math.floor(q*(lash.length-1)))]).filter(Boolean).map(q=>({x:from.x+Math.cos(f.angle)*q.x-Math.sin(f.angle)*q.y,y:from.y+Math.sin(f.angle)*q.x+Math.cos(f.angle)*q.y}));}
   else if(['beam','lightning','tether'].includes(l.kind)||l.cinematic?.style==='beam'){points=[.15,.45,.75,1].map(t=>{const u=t*Math.min(1,p*4*l.motion.speed);return{x:from.x+Math.cos(f.angle)*f.length*u,y:from.y+Math.sin(f.angle)*f.length*u};});}
   else if(l.kind==='cone'||l.cinematic?.style==='cone'){const reach=(l.cinematic?.reachFeet??15)/5*66*scale*Math.min(1,p*4);points=[.2,.5,.8].map(u=>({x:from.x+Math.cos(f.angle)*reach*u,y:from.y+Math.sin(f.angle)*reach*u}));}

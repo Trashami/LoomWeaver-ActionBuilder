@@ -11,7 +11,7 @@ const hit=(color:string,element:CinematicSettings['element']='force',delay=650)=
 const bolt=(name:string,color:string,element:CinematicSettings['element'],description:string)=>{
  const pElem:ProjectileElement=element==='force'?'eldritch':element==='ice'?'ice':element==='fire'?'fire':element==='radiant'?'radiant':element==='lightning'?'lightning':element==='acid'?'acid':'shadow';
  const pShape:ProjectileCoreShape=pElem==='ice'?'lance':pElem==='fire'?'comet':pElem==='radiant'?'star':'prism';
- return spell(name,description,[charge(color),proj3d(pElem,pShape,color,'#f2fffb',160,680,18,pElem==='fire'?-30:-12),volume('beam',element,color,'path',200,700),hit(color,element,720)]);
+ return spell(name,description,[charge(color),proj3d(pElem,pShape,color,'#f2fffb',160,680,18,pElem==='fire'?-30:-18),layer('sparks','pushback',color,'caster',140,480,9),hit(color,element,720)]);
 };
 /** Curated first batch: common table spells, not a measured popularity ranking. Rules notes are summaries, not replacement spell text. */
 export function makeSpellTemplates():EffectDefinition[]{

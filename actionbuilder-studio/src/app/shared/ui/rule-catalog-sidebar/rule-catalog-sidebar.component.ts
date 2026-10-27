@@ -20,11 +20,20 @@ export class LwRuleCatalogSidebarComponent {
   readonly externalCategory = input<string>('All');
   readonly globalSearch = input<string>('');
   readonly draftRuleIds = input<string[]>([]);
+  readonly campaignName = input<string>('Shadow of the Mountain');
 
   readonly searchQuery = model<string>('');
   readonly activeSourceFilter = model<'all' | 'custom' | 'srd'>('all');
 
   readonly ruleSelected = output<CampaignActionRule>();
+
+  readonly allCount = computed(() => this.rules().length);
+  readonly customCount = computed(
+    () => this.rules().filter((r) => r.isCustomizedForCampaign && !r.isCoreEngineRule).length
+  );
+  readonly coreCount = computed(
+    () => this.rules().filter((r) => r.isCoreEngineRule !== false && !r.isCustomizedForCampaign).length
+  );
 
   readonly filteredRules = computed(() => {
     const localQ = (this.searchQuery() || '').trim().toLowerCase();
@@ -34,11 +43,13 @@ export class LwRuleCatalogSidebarComponent {
     const cat = this.externalCategory();
 
     return this.rules().filter((r) => {
-      if (src === 'custom' && !r.isCustomizedForCampaign) return false;
-      if (src === 'srd' && r.isCustomizedForCampaign) return false;
+      const isCustom = r.isCustomizedForCampaign && !r.isCoreEngineRule;
+      if (src === 'custom' && !isCustom) return false;
+      if (src === 'srd' && isCustom) return false;
+
       if (cat && cat !== 'All') {
         if (cat === 'Campaign Custom') {
-          if (!r.isCustomizedForCampaign && r.category !== 'Campaign Custom') return false;
+          if (!isCustom && r.category !== 'Campaign Custom') return false;
         } else if (!r.category.toLowerCase().includes(cat.toLowerCase())) {
           return false;
         }
@@ -50,6 +61,7 @@ export class LwRuleCatalogSidebarComponent {
         r.category.toLowerCase().includes(q) ||
         r.actionCost.toLowerCase().includes(q) ||
         r.summary.toLowerCase().includes(q) ||
+        r.ruleCode.toLowerCase().includes(q) ||
         r.tags.some((t) => t.toLowerCase().includes(q))
       );
     });

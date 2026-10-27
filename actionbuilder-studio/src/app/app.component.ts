@@ -338,14 +338,24 @@ export class ActionStudioAppComponent implements OnInit {
             return next;
           });
           this.studioContext.update((ctx) => {
-            const exists = ctx.rules.some((r) => r.id === res.rule.id);
-            const nextRules = exists
-              ? ctx.rules.map((r) => (r.id === res.rule.id ? res.rule : r))
-              : [res.rule, ...ctx.rules];
+            const nextRules =
+              res.rules && res.rules.length > 0
+                ? res.rules
+                : ctx.rules.some((r) => r.id === res.rule.id)
+                  ? ctx.rules.map((r) => (r.id === res.rule.id ? res.rule : r))
+                  : [res.rule, ...ctx.rules];
             const nextActive = ctx.activeCampaign
               ? { ...ctx.activeCampaign, customizedRuleCount: res.customizedRuleCount }
               : null;
-            return { ...ctx, activeCampaign: nextActive, rules: nextRules };
+            const nextDmCampaigns = ctx.dmCampaigns.map((c) =>
+              c.id === res.campaignId ? { ...c, customizedRuleCount: res.customizedRuleCount } : c
+            );
+            return {
+              ...ctx,
+              activeCampaign: nextActive,
+              dmCampaigns: nextDmCampaigns,
+              rules: nextRules,
+            };
           });
         },
         error: (err) => {

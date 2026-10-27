@@ -1,18 +1,63 @@
 <div class="lw-header-stack">
   <header class="lw-topbar" role="banner">
+    <!-- Left Zone: App Switcher + Brand Wordmark + Campaign Selector -->
     <div class="lw-topbar__left">
-      <a class="lw-topbar__brand-tile" href="https://loom-weaver.com" title="Return to LoomWeaver">
-        <div class="lw-topbar__crest" aria-hidden="true">
-          <lw-icon name="shield" [size]="18" tone="gold" />
-        </div>
+      <div class="lw-app-switcher-wrap">
+        <button
+          ngpButton
+          type="button"
+          class="lw-topbar__nav-toggle"
+          aria-label="Open LoomWeaver Studio App Switcher"
+          title="LoomWeaver Studio Apps"
+          (click)="toggleAppSwitcher()"
+        >
+          <lw-icon name="apps" [size]="18" tone="muted" />
+        </button>
+
+        @if (appSwitcherOpen()) {
+          <div class="lw-app-switcher-menu" role="menu">
+            <span class="lw-app-switcher-menu__eyebrow">LoomWeaver Ecosystem</span>
+            <a class="lw-app-switcher-menu__item" href="https://loom-weaver.com/home">
+              <strong>LoomWeaver Core Studio</strong>
+              <span>Campaign Overview, Lore Graph &amp; Characters</span>
+            </a>
+            <a class="lw-app-switcher-menu__item" href="https://loom-weaver.com/arcane-screen">
+              <strong>Arcane Screen (D&amp;D Encounter Runner)</strong>
+              <span>Live VTT Combat, Reaction Prompts &amp; Action Economy</span>
+            </a>
+            <a class="lw-app-switcher-menu__item lw-app-switcher-menu__item--active" href="https://actionbuilder.loom-weaver.com">
+              <strong>ActionBuilder Studio</strong>
+              <span>Guided Rules, Engine Defaults &amp; Campaign Bypasses</span>
+            </a>
+            <a class="lw-app-switcher-menu__item" href="https://effectbuilder.loom-weaver.com">
+              <strong>EffectBuilder Studio</strong>
+              <span>3D Babylon.js Spell &amp; Attack Particle FX</span>
+            </a>
+            <a class="lw-app-switcher-menu__item" href="https://maps.loom-weaver.com">
+              <strong>LoomMaps Builder</strong>
+              <span>2D/3D Battlemaps &amp; World Atlases</span>
+            </a>
+          </div>
+        }
+      </div>
+
+      <a class="lw-topbar__brand-tile" href="https://loom-weaver.com/home" title="LoomWeaver Studio">
+        <img
+          class="lw-topbar__logo-img"
+          src="/landing-assets/brand/logo-wordmark.png"
+          alt="LoomWeaver"
+          width="136"
+          height="42"
+        />
         <div class="lw-topbar__titles">
           <span class="lw-topbar__name">LoomWeaver</span>
           <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
         </div>
       </a>
 
-      <div class="lw-campaign-tile">
-        @if (canAccess() && dmCampaigns().length > 0) {
+      <!-- Campaign Selector Tile (matches Core App header bar) -->
+      @if (canAccess() && dmCampaigns().length > 0) {
+        <div class="lw-campaign-tile">
           <div class="lw-campaign-tile__body">
             <select
               class="lw-campaign-tile__select"
@@ -25,37 +70,82 @@
               }
             </select>
             <span class="lw-campaign-tile__sub">
-              Campaign · {{ activeCampaign()?.rulesetLabel || 'High Fantasy' }} · {{ activeCampaign()?.customizedRuleCount || 0 }} custom rules
+              Campaign · 14 sessions · High Fantasy
             </span>
           </div>
-        } @else {
+          <lw-icon name="chevron-down" [size]="15" tone="muted" />
+        </div>
+      } @else {
+        <div class="lw-campaign-tile">
           <div class="lw-campaign-tile__body">
             <span class="lw-campaign-tile__restricted">Player Session (No DM Campaign)</span>
             <span class="lw-campaign-tile__sub">ActionBuilder is scoped to Dungeon Masters</span>
           </div>
-        }
-      </div>
+        </div>
+      }
     </div>
 
+    <!-- Center Zone: Global Search Input -->
     <div class="lw-topbar__search">
-      <lw-icon name="search" [size]="16" tone="emerald" />
+      <lw-icon name="search" [size]="15" tone="muted" />
       <input
         ngpInput
         type="search"
         class="lw-topbar__search-input"
-        placeholder="Ask The Loom or filter rules... (e.g. Shield, Reaction, AC)"
+        placeholder="Search anything..."
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
-        aria-label="Search campaign rules"
+        aria-label="Search campaign rules and engine defaults"
       />
-      <span class="lw-topbar__search-hint">Rules · Balance · GM Only</span>
+      <kbd class="lw-topbar__search-kbd">Ctrl + K</kbd>
     </div>
 
+    <!-- Right Zone: Music + Dice + GM View + The Loom + Site + Account Profile Tile -->
     <div class="lw-topbar__right">
-      <a class="lw-topbar__rect-btn" href="https://loom-weaver.com/home" title="Open Core Studio">
-        <span>Studio</span>
+      <a
+        class="lw-topbar__square-btn"
+        href="https://loom-weaver.com/arcane-screen"
+        title="Ambient Soundboard in Arcane Screen"
+        aria-label="Ambient Soundboard"
+      >
+        <lw-icon name="music" [size]="17" tone="muted" />
       </a>
 
+      <button
+        ngpButton
+        type="button"
+        class="lw-topbar__square-btn"
+        title="Test Attack &amp; Reaction Roll in Encounter Sandbox"
+        aria-label="Test Roll &amp; Reaction Prompt"
+        (click)="openEncounterRunner.emit()"
+      >
+        <lw-icon name="dices" [size]="17" tone="muted" />
+      </button>
+
+      <button
+        ngpButton
+        type="button"
+        class="lw-topbar__rect-btn lw-topbar__rect-btn--gold"
+        title="Dungeon Master Campaign Rule Scope"
+      >
+        <lw-icon name="shield" [size]="14" tone="gold" />
+        <span>{{ canAccess() ? 'GM View' : 'Player View' }}</span>
+      </button>
+
+      <a
+        class="lw-topbar__rect-btn"
+        href="https://loom-weaver.com/loom"
+        title="Open The Loom Campaign Memory"
+      >
+        <lw-icon name="compass" [size]="15" tone="emerald" />
+        <span>The Loom</span>
+      </a>
+
+      <a class="lw-topbar__rect-btn" href="https://loom-weaver.com" title="Public Landing Page">
+        <span>Site</span>
+      </a>
+
+      <!-- User Profile Tile + Account / Dev Role Switcher -->
       <div class="lw-account-wrap">
         <button
           ngpButton
@@ -64,10 +154,13 @@
           (click)="toggleAccountMenu()"
           [attr.aria-expanded]="accountMenuOpen()"
         >
-          <span class="lw-profile-tile__avatar">{{ initials() }}</span>
+          <span class="lw-profile-tile__avatar">
+            {{ initials() }}
+            <span class="lw-profile-tile__dot"></span>
+          </span>
           <span class="lw-profile-tile__info">
-            <strong>{{ shortDisplayName() }}</strong>
-            <span>{{ canAccess() ? 'Dungeon Master' : 'Player Account' }}</span>
+            <strong>{{ headerDisplayName() }}</strong>
+            <span>ARCHWEAVER</span>
           </span>
           <lw-icon name="chevron-down" [size]="14" tone="muted" />
         </button>
@@ -75,10 +168,12 @@
         @if (accountMenuOpen()) {
           <div class="lw-account-menu" role="menu">
             <div class="lw-account-menu__section">
-              <span class="lw-account-menu__eyebrow">Signed-In Account</span>
+              <span class="lw-account-menu__eyebrow">Signed-In GM Account</span>
               <strong class="lw-account-menu__user">{{ currentDisplayName() }}</strong>
               @if (activeCampaign(); as camp) {
-                <span class="lw-account-menu__camp">Active DM Scope: {{ camp.name }}</span>
+                <span class="lw-account-menu__camp">
+                  Active Campaign: {{ camp.name }} ({{ camp.rulesetLabel }})
+                </span>
               }
             </div>
 
@@ -91,14 +186,14 @@
                 class="lw-account-menu__dev-toggle"
                 (click)="devRoleDrawerOpen.set(!devRoleDrawerOpen())"
               >
-                <span>Developer Tools: Role &amp; Scope Verification</span>
+                <span>Developer Tools: Switch Test Account</span>
                 <lw-icon [name]="devRoleDrawerOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
               </button>
 
               @if (devRoleDrawerOpen()) {
                 <div class="lw-account-menu__dev-body">
                   <p class="lw-account-menu__dev-note">
-                    Verify DM campaign isolation and player access rules across accounts:
+                    Verify GM campaign switching and player isolation across accounts:
                   </p>
                   @for (acc of demoAccounts(); track acc.accountId) {
                     <button
@@ -121,7 +216,7 @@
     </div>
   </header>
 
-  @if (canAccess() && activeCampaign()) {
+  @if (canAccess() && activeCampaign(); as camp) {
     <section class="ab-subbar">
       <div class="ab-subbar__top">
         <div class="ab-subbar__identity">
@@ -129,26 +224,37 @@
             <lw-icon name="gavel" [size]="20" tone="gold" />
           </div>
           <div>
-            <h1 class="ab-subbar__title">Action Builder</h1>
+            <div class="ab-subbar__title-row">
+              <h1 class="ab-subbar__title">Action Builder</h1>
+              <span class="ab-subbar__sql-pill" title="Core Engine rules are read-only in SQL. GMs add Campaign Bypass rules that override core rules for their campaign.">
+                Core SQL Locked · Campaign Bypass Enabled
+              </span>
+            </div>
             <p class="ab-subbar__subtitle">
-              Create and customize actions, spells, reactions, class features, and level progression for your campaign.
+              Create and customize actions, spells, reactions, class features, and level progression for <strong>{{ camp.name }}</strong>.
             </p>
           </div>
         </div>
 
         <div class="ab-subbar__actions">
-          <select
-            class="ab-subbar__ruleset-select"
-            [ngModel]="rulesetEdition()"
-            (ngModelChange)="rulesetEdition.set($event)"
-            aria-label="Ruleset Edition"
-          >
-            <option value="5e (SRD 5.1 / 2024)">5e (SRD 5.1 / 2024)</option>
-            <option value="5e (Icrandor Campaign Canon)">5e (Icrandor Campaign Canon)</option>
-          </select>
+          <label class="ab-subbar__campaign-picker">
+            <span class="ab-subbar__picker-label">GM Campaign &amp; Engine Defaults:</span>
+            <select
+              class="ab-subbar__ruleset-select"
+              [ngModel]="camp.id"
+              (ngModelChange)="onCampaignChange($event)"
+              aria-label="Switch GM Campaign and Engine Defaults"
+            >
+              @for (c of dmCampaigns(); track c.id) {
+                <option [value]="c.id">
+                  {{ c.name }} · {{ c.rulesetLabel }} ({{ c.customizedRuleCount }} bypass/custom)
+                </option>
+              }
+            </select>
+          </label>
 
           <lw-button
-            label="+ New Action"
+            label="+ New Campaign Bypass / Action"
             variant="emerald"
             size="sm"
             (pressed)="createNewRule.emit()"
@@ -172,7 +278,10 @@
             [class.ab-subbar__tab--active]="activeCategory() === cat"
             (click)="categorySelected.emit(cat)"
           >
-            {{ cat }}
+            <span>{{ cat }}</span>
+            @if (cat === 'All' && totalRuleCount() > 0) {
+              <span class="ab-subbar__tab-count">{{ totalRuleCount() }}</span>
+            }
           </button>
         }
       </nav>

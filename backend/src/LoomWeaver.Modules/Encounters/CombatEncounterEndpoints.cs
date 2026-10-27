@@ -1,4 +1,7 @@
 using LoomWeaver.Domain;
+using LoomWeaver.Infrastructure.MySql;
+using LoomWeaver.Modules.ActionStudio.Engine;
+using LoomWeaver.Modules.ActionStudio.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -74,6 +77,19 @@ public static class CombatEncounterEndpoints
                 ParticlePresetId: req.ParticlePresetId,
                 LogMessage: log
             ));
+        });
+
+        group.MapPost("/campaigns/{campaignId:int}/combat/resolve-step", async (
+            int campaignId,
+            EncounterAttackStepRequest req,
+            LoomWeaverMySqlRepository mysql,
+            CancellationToken ct) =>
+        {
+            var repo = new ActionStudioMySqlRepository(mysql);
+            var pipeline = new EncounterReactionPipelineService(repo);
+            var stepReq = req with { CampaignId = campaignId > 0 ? campaignId : req.CampaignId };
+            var result = await pipeline.ExecuteAttackStepAsync(stepReq, ct);
+            return Results.Ok(result);
         });
 
         group.MapPost("/campaigns/{campaignId:int}/encounters/{encounterId}/complete", (

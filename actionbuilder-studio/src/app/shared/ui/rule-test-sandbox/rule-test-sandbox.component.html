@@ -1,8 +1,141 @@
 <section class="ab-test-tab">
+  <!-- LIVE D&D ENCOUNTER RUN ENGINE: ATTACK -> TARGET REACTION PROMPT -> COMPLETE REMAINING RULES -->
+  <div class="ab-encounter-runner">
+    <div class="ab-encounter-runner__head">
+      <div>
+        <span class="ab-test-tab__eyebrow">D&amp;D Encounter Run Engine · Interactive Reaction Pipeline</span>
+        <h3 class="ab-test-tab__title">Live Attack &amp; Target Reaction Prompt Simulator</h3>
+        <p class="ab-test-tab__subtitle">
+          When an attacker hits a target with an available Reaction, the Encounter Run Engine pauses, prompts the target to choose an eligible Reaction (including Campaign Bypasses), applies it to the attack, and completes remaining rules.
+        </p>
+      </div>
+
+      <div class="ab-encounter-runner__controls">
+        <div class="ab-roll-mode-toggle" role="group" aria-label="Dice Roll Mode">
+          <button
+            ngpButton
+            type="button"
+            class="ab-roll-mode-btn"
+            [class.ab-roll-mode-btn--active]="rollMode() === 'auto'"
+            (click)="rollMode.set('auto'); pendingRollConfirm.set(false)"
+          >
+            Auto Roll
+          </button>
+          <button
+            ngpButton
+            type="button"
+            class="ab-roll-mode-btn"
+            [class.ab-roll-mode-btn--active]="rollMode() === 'prompt'"
+            (click)="rollMode.set('prompt')"
+          >
+            Prompt Roll
+          </button>
+        </div>
+
+        <lw-button
+          [label]="runningEncounterStep() ? 'Running...' : 'Make Attack in Encounter'"
+          variant="gold"
+          size="sm"
+          [disabled]="runningEncounterStep()"
+          (pressed)="startEncounterAttackFlow(); triggerSimulation()"
+        />
+      </div>
+    </div>
+
+    @if (pendingRollConfirm()) {
+      <div class="ab-reaction-prompt ab-reaction-prompt--roll">
+        <div class="ab-reaction-prompt__top">
+          <lw-badge label="Prompt Roll Mode Active" tone="gold" />
+          <strong>Confirm Attack &amp; Damage Dice Roll for {{ attackerName() }} -> {{ defenderName() }}</strong>
+        </div>
+        <p class="ab-reaction-prompt__msg">
+          Ready to roll Attack Total ({{ simAttackRoll() }}) vs AC {{ simTargetAc() }} and Base Damage ({{ simDamageRolled() }}). Click to roll and proceed to the Reaction Window check:
+        </p>
+        <div class="ab-reaction-prompt__choices">
+          <lw-button
+            label="Roll Dice &amp; Check Target Reactions"
+            variant="emerald"
+            size="sm"
+            (pressed)="startEncounterAttackFlow()"
+          />
+        </div>
+      </div>
+    }
+
+    @if (encounterStepState(); as enc) {
+      @if (enc.requiresReactionPrompt) {
+        <div class="ab-reaction-prompt" role="region" aria-label="Target Reaction Prompt">
+          <div class="ab-reaction-prompt__top">
+            <lw-badge label="Encounter Paused · Reaction Window Open" tone="gold" />
+            <strong>Target Prompt: {{ defenderName() }} Has 1 Reaction Available</strong>
+          </div>
+          <p class="ab-reaction-prompt__msg">{{ enc.promptMessage }}</p>
+
+          <div class="ab-reaction-prompt__grid">
+            @for (opt of enc.availableReactions; track opt.ruleId) {
+              <button
+                ngpButton
+                type="button"
+                class="ab-reaction-option"
+                [class.ab-reaction-option--miss]="opt.turnsHitIntoMiss"
+                [class.ab-reaction-option--bypass]="opt.isCampaignBypass"
+                (click)="chooseEncounterReaction(opt.ruleId)"
+              >
+                <div class="ab-reaction-option__head">
+                  <strong>{{ opt.name }}</strong>
+                  <lw-badge
+                    [label]="opt.isCampaignBypass ? 'Campaign Bypass' : 'Core Engine'"
+                    [tone]="opt.isCampaignBypass ? 'gold' : 'emerald'"
+                  />
+                </div>
+                <span class="ab-reaction-option__effect">{{ opt.effectPreviewLabel }}</span>
+              </button>
+            }
+
+            <button
+              ngpButton
+              type="button"
+              class="ab-reaction-option ab-reaction-option--decline"
+              (click)="chooseEncounterReaction('decline')"
+            >
+              <div class="ab-reaction-option__head">
+                <strong>Decline Reaction</strong>
+                <lw-badge label="Keep Reaction" tone="neutral" />
+              </div>
+              <span class="ab-reaction-option__effect">
+                Take full {{ simDamageRolled() }} damage &amp; save Reaction for later in the round
+              </span>
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="ab-encounter-complete">
+          <div class="ab-encounter-complete__top">
+            <div>
+              <span class="ab-test-tab__eyebrow">Encounter Attack &amp; Reaction Pipeline Completed</span>
+              <h4 class="ab-encounter-complete__summary">{{ enc.summaryBanner }}</h4>
+            </div>
+            <lw-badge
+              [label]="enc.hitAfterReaction ? 'Final Damage: ' + enc.finalDamage + ' HP' : 'Attack Missed (0 Damage)'"
+              [tone]="enc.hitAfterReaction ? 'gold' : 'emerald'"
+            />
+          </div>
+
+          <ul class="ab-encounter-complete__steps">
+            @for (line of enc.stepByStepLog; track line) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- SINGLE-ABILITY CLAUSE & SCENARIO INSPECTOR -->
   <div class="ab-test-tab__header">
     <div>
-      <span class="ab-test-tab__eyebrow">Authoritative .NET Scenario Verification</span>
-      <h3 class="ab-test-tab__title">Test {{ rule().name }} in a Tabletop Scenario</h3>
+      <span class="ab-test-tab__eyebrow">Single-Rule Clause Inspector</span>
+      <h3 class="ab-test-tab__title">Test {{ rule().name }} Conditions &amp; Resource Verification</h3>
       <p class="ab-test-tab__subtitle">
         Pick a preset tabletop scenario or adjust the inputs below to verify triggers, requirements, AC changes, and resource consumption.
       </p>
@@ -12,7 +145,7 @@
       variant="emerald"
       size="md"
       [disabled]="evaluating()"
-      (pressed)="triggerSimulation()"
+      (pressed)="triggerSimulation(); startEncounterAttackFlow()"
     />
   </div>
 
@@ -93,10 +226,10 @@
       <label class="ab-toggle-pill">
         <input
           type="checkbox"
-          [ngModel]="simIsMagicMissile()"
-          (ngModelChange)="simIsMagicMissile.set($event); activePresetId.set('custom')"
+          [ngModel]="simTargetConcentrating()"
+          (ngModelChange)="simTargetConcentrating.set($event)"
         />
-        <span>Incoming Effect is Magic Missile</span>
+        <span>Target Concentrating (Checks CON Save DC)</span>
       </label>
 
       <label class="ab-toggle-pill ab-toggle-pill--warn">

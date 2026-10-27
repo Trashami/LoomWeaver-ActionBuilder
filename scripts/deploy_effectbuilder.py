@@ -96,7 +96,7 @@ def deploy_to_server() -> None:
     remote_script = r"""#!/usr/bin/env bash
 set -e
 
-RELEASE_DIR="/var/www/effectbuilder/releases/unified-v17"
+RELEASE_DIR="/var/www/effectbuilder/releases/unified-v18"
 echo "1. Extracting EffectBuilder client + Unified .NET backend to $RELEASE_DIR..."
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"

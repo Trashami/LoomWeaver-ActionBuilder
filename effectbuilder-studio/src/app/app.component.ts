@@ -105,6 +105,55 @@ export class AppComponent {
       projectileCore: parseProjectileCore({ ...cur, [key]: value }, l.variant, l.color),
     });
   }
+  readonly hasProjectileArc = computed(() =>
+    this.definition().layers.some(
+      (l) => (l.kind === 'projectile' && !l.mageHand) || !!l.missile || l.fireMaterial?.role === 'projectile'
+    )
+  );
+  readonly spellArc = computed(() => {
+    const sel = this.selected();
+    const targetLayer =
+      sel && ((sel.kind === 'projectile' && !sel.mageHand) || !!sel.missile || sel.fireMaterial?.role === 'projectile')
+        ? sel
+        : this.definition().layers.find(
+            (l) => (l.kind === 'projectile' && !l.mageHand) || !!l.missile || l.fireMaterial?.role === 'projectile'
+          );
+    if (!targetLayer) return 0;
+    if (targetLayer.missile) return targetLayer.missile.curve;
+    if (targetLayer.fireMaterial?.role === 'projectile') return targetLayer.fireMaterial.arc;
+    return this.projectileCoreSettings(targetLayer).arc;
+  });
+  setSpellArc(arcVal: number): void {
+    const clamped = Math.max(-180, Math.min(180, Number(arcVal) || 0));
+    const sel = this.selected();
+    const applyToLayer = (l: EffectLayer): EffectLayer => {
+      if (l.missile) return { ...l, missile: { ...l.missile, curve: Math.max(-160, Math.min(160, clamped)) } };
+      if (l.fireMaterial?.role === 'projectile') return { ...l, fireMaterial: { ...l.fireMaterial, arc: clamped } };
+      if (l.kind === 'projectile' && !l.mageHand) {
+        const cur = this.projectileCoreSettings(l);
+        return { ...l, fireMaterial: undefined, projectileCore: parseProjectileCore({ ...cur, arc: clamped }, l.variant, l.color) };
+      }
+      return l;
+    };
+    if (sel && ((sel.kind === 'projectile' && !sel.mageHand) || !!sel.missile || sel.fireMaterial?.role === 'projectile')) {
+      this.updateLayer(applyToLayer(sel), sel.id);
+    } else {
+      this.update({ layers: this.definition().layers.map(applyToLayer) });
+    }
+  }
+  setTargetMotion(enabled: boolean): void {
+    const scene = this.definition().previewScene;
+    this.update({ previewScene: { ...scene, targetMotion: !!enabled } });
+  }
+  setWallTest(enabled: boolean): void {
+    const scene = this.definition().previewScene;
+    this.update({
+      previewScene: {
+        ...scene,
+        walls: enabled ? (scene.walls?.length ? scene.walls : [{ a: { x: 0.55, y: 0.2 }, b: { x: 0.55, y: 0.8 } }]) : [],
+      },
+    });
+  }
   readonly viewportWidth=signal(window.innerWidth);readonly viewportHeight=signal(window.innerHeight);
   @HostListener('window:resize') viewportChanged():void{this.viewportWidth.set(window.innerWidth);this.viewportHeight.set(window.innerHeight);}
   readonly previewMin=computed(()=>Math.min(45,Math.max(20,190/Math.max(1,this.viewportHeight()-180)*100)));
@@ -150,7 +199,21 @@ export class AppComponent {
     try{const saved=JSON.parse(localStorage.getItem('mw-effectbuilder-layout-v2')??'null');if(saved&&typeof saved==='object'){for(const [key,target,min,max] of [['library',this.libraryWidth,180,440],['inspector',this.inspectorWidth,240,480],['preview',this.previewShare,20,80]] as const){const n=saved[key];if(typeof n==='number'&&Number.isFinite(n))target.set(Math.max(min,Math.min(max,n)));}this.libraryCollapsed.set(saved.libraryCollapsed===true);this.inspectorCollapsed.set(saved.inspectorCollapsed===true);this.previewCollapsed.set(saved.previewCollapsed===true);this.timelineCollapsed.set(saved.timelineCollapsed===true&&!this.previewCollapsed());}}catch{}
     effect(()=>{const layout={library:this.libraryWidth(),inspector:this.inspectorWidth(),preview:this.previewShare(),libraryCollapsed:this.libraryCollapsed(),inspectorCollapsed:this.inspectorCollapsed(),previewCollapsed:this.previewCollapsed(),timelineCollapsed:this.timelineCollapsed()};try{localStorage.setItem('mw-effectbuilder-layout-v2',JSON.stringify(layout));}catch{}});
 
-    try { const raw = localStorage.getItem('mw-effectbuilder-draft-v1'); if (raw) this.open(parseEffect(JSON.parse(raw))); } catch { /* Bad drafts never prevent opening the editor. */ }
+    try {
+      const raw = localStorage.getItem('mw-effectbuilder-draft-v1');
+      if (raw) {
+        const draft = parseEffect(JSON.parse(raw));
+        if (
+          draft.layers.some((l) => l.kind === 'projectile') &&
+          draft.layers.some((l) => l.cinematic?.style === 'beam')
+        ) {
+          draft.layers = draft.layers.filter((l) => l.cinematic?.style !== 'beam');
+        }
+        this.open(draft);
+      }
+    } catch {
+      /* Bad drafts never prevent opening the editor. */
+    }
     if (new URLSearchParams(location.search).get('tab') === 'community') this.tab.set('community');
     effect(() => { const draft = this.definition(); try { localStorage.setItem('mw-effectbuilder-draft-v1', JSON.stringify(draft)); } catch { /* Browser storage may be unavailable. */ } });
     effect(() => { if (this.sessionReady() && this.auth.isAuthenticated()) void this.loadLibrary(); else {this.library.set([]);this.assignments.set([]);this.members.set([]);this.summonNpcs.set([]);this.dialog.set(null);} });
