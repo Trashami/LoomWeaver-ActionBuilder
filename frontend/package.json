@@ -5,7 +5,9 @@
   "scripts": {
     "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
-    "test": "ng test --watch=false"
+    "test": "ng test --watch=false",
+    "prebuild": "python ../scripts/prerender_ssr_routes.py --source",
+    "postbuild": "python ../scripts/prerender_ssr_routes.py"
   },
   "dependencies": {
     "@angular/cdk": "^22.2.4",

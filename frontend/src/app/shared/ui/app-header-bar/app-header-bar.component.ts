@@ -26,9 +26,10 @@ import { LwUserMenuComponent } from '../user-menu/user-menu.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwAppHeaderBarComponent {
-  readonly campaigns = input.required<readonly CampaignVm[]>();
-  readonly activeCampaign = input.required<CampaignVm>();
-  readonly activeCampaignId = input.required<number>();
+  readonly variant = input<'studio' | 'public'>('studio');
+  readonly campaigns = input<readonly CampaignVm[]>([]);
+  readonly activeCampaign = input<CampaignVm | null>(null);
+  readonly activeCampaignId = input<number>(0);
   readonly viewerRole = input<ViewerRole>('gm');
   readonly audioPlaying = input<boolean>(false);
   readonly quickRollBanner = input<string>('1d20 Ready');
@@ -51,7 +52,7 @@ export class LwAppHeaderBarComponent {
   readonly maxHeight = input<string>('62px');
 
   // Logo customization properties (border + width/height + min/max, 100px wider default: 136px)
-  readonly logoSrc = input<string>('/LoomWeaver.png');
+  readonly logoSrc = input<string>('/landing-assets/brand/logo-wordmark.png');
   readonly logoAlt = input<string>('LoomWeaver Crest');
   readonly logoShowBorder = input<boolean>(false);
   readonly logoBorder = input<string>('none');

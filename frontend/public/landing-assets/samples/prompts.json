@@ -1,0 +1,26 @@
+{
+  "generator": "Built-in image_gen",
+  "purpose": "Sample artwork only; not wired into the landing page.",
+  "prompts": [
+    {
+      "name": "campaign-memory",
+      "prompt": "Use case: stylized-concept. Create one standalone wide landscape illustration for a LoomWeaver fantasy tabletop RPG website, about 16:9. Cohesive restrained editorial fantasy illustration, simple broad shapes, subtle paper grain, limited detail, near-black forest green #05100c, muted emerald #49e892 and sparse antique gold #d9b77a. Readable at small banner size. Calm mythic atmosphere, soft mist, strong silhouette, generous dark breathing room around the subject. No text, lettering, numbers, logos, watermark, UI, computer, monitor, screen, interface, dashboard, screenshot, mockup, ornate border, photorealism, busy microdetail or glitter. An open old campaign journal on a dark table, a single raven feather across its blank pages, three simple golden threads emerging from the book and connecting a small castle silhouette, a tree and a faceless traveler silhouette in the surrounding mist. Symbolize remembering a connected world. Pages contain no writing."
+    },
+    {
+      "name": "world-atlas",
+      "prompt": "Use case: stylized-concept. Create one standalone wide landscape illustration for a LoomWeaver fantasy tabletop RPG website, about 16:9. Cohesive restrained editorial fantasy illustration, simple broad shapes, subtle paper grain, limited detail, near-black forest green #05100c, muted emerald #49e892 and sparse antique gold #d9b77a. Readable at small banner size. Calm mythic atmosphere, soft mist, strong silhouette, generous dark breathing room around the subject. No text, lettering, numbers, logos, watermark, UI, computer, monitor, screen, interface, dashboard, screenshot, mockup, ornate border, photorealism, busy microdetail or glitter. An unfurled parchment fantasy map, broad simplified river, three mountain silhouettes, a small forest and a distant stone tower; one emerald route connects three gold waypoints. Slightly elevated tabletop view. An actual illustrated map object, not software. No labels, writing, grid or compass letters."
+    },
+    {
+      "name": "shared-adventure",
+      "prompt": "Use case: stylized-concept. Create one standalone wide landscape illustration for a LoomWeaver fantasy tabletop RPG website, about 16:9. Cohesive restrained editorial fantasy illustration, simple broad shapes, subtle paper grain, limited detail, near-black forest green #05100c, muted emerald #49e892 and sparse antique gold #d9b77a. Readable at small banner size. Calm mythic atmosphere, soft mist, strong silhouette, generous dark breathing room around the subject. No text, lettering, numbers, logos, watermark, UI, computer, monitor, screen, interface, dashboard, screenshot, mockup, ornate border, photorealism, busy microdetail or glitter. Five small distinct adventurer silhouettes standing together on a low ridge, looking toward one ruined stone arch and an emerald-lit valley. A staff, a shield, a bow and a broad-shouldered companion make their shapes distinguishable. Faces and armor are not detailed. Friendship, discovery and shared adventure rather than combat."
+    },
+    {
+      "name": "dice-and-encounters",
+      "prompt": "Use case: stylized-concept. Create one standalone wide landscape illustration for a LoomWeaver fantasy tabletop RPG website, about 16:9. Cohesive restrained editorial fantasy illustration, simple broad shapes, subtle paper grain, limited detail, near-black forest green #05100c, muted emerald #49e892 and sparse antique gold #d9b77a. Readable at small banner size. Calm mythic atmosphere, soft mist, strong silhouette, generous dark breathing room around the subject. No text, lettering, numbers, logos, watermark, UI, computer, monitor, screen, interface, dashboard, screenshot, mockup, ornate border, photorealism, busy microdetail or glitter. One clear gold-edged twenty-sided polyhedral die and two smaller unmarked dice resting beside three simple tabletop pawn miniatures on dark stone, a soft emerald circle of lamplight beneath them. Physical objects, quiet tactical anticipation, restrained geometric composition. Die faces blank, no numerals, no glowing magical explosion."
+    },
+    {
+      "name": "creator-workbench",
+      "prompt": "Use case: stylized-concept. Create one standalone wide landscape illustration for a LoomWeaver fantasy tabletop RPG website, about 16:9. Cohesive restrained editorial fantasy illustration, simple broad shapes, subtle paper grain, limited detail, near-black forest green #05100c, muted emerald #49e892 and sparse antique gold #d9b77a. Readable at small banner size. Calm mythic atmosphere, soft mist, strong silhouette, generous dark breathing room around the subject. No text, lettering, numbers, logos, watermark, UI, computer, monitor, screen, interface, dashboard, screenshot, mockup, ornate border, photorealism, busy microdetail or glitter. A creator's simple fantasy workbench seen slightly from above: a small hand-carved stone tower miniature, an unfinished terrain tile with a single tree, a paintbrush and a rolled blank parchment, arranged with ample empty dark surface. Emerald pigment and soft gold lamplight. Handmade worlds and creative ownership, no hands or digital equipment."
+    }
+  ]
+}

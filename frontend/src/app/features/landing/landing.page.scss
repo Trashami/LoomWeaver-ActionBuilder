@@ -9,7 +9,7 @@
   --panel: #091d16;
   --stroke: #214a38;
   --muted: #9eb8ab;
-  overflow-x: hidden;
+  overflow-x: clip;
   background:
     radial-gradient(ellipse 88% 34% at 50% 0%, rgba(28, 110, 68, 0.34), transparent 82%),
     radial-gradient(ellipse 65% 45% at 85% 18%, rgba(46, 230, 107, 0.12), transparent 72%),
@@ -23,7 +23,7 @@
 #lw-app button { font: inherit; cursor: pointer; }
 #lw-app h1, #lw-app h2, #lw-app h3, #lw-app h4, #lw-app p { margin-top: 0; }
 #lw-app .wrap { max-width: 1380px; margin: 0 auto; padding-left: 34px; padding-right: 34px; }
-#lw-app .landing-main { padding-top: 78px; }
+#lw-app .landing-main { padding-top: 0; }
 
 /* FULL-SCREEN 100VW FIXED TOPBAR */
 #lw-app .topnav {
@@ -73,10 +73,28 @@
 #lw-app .brand-wordmark-img { height: 28px; width: auto; object-fit: contain; object-position: left center; }
 #lw-app .brandsub { font-size: 10px; letter-spacing: 0.35px; color: #9ec2b0; display: block; margin-top: 2px; white-space: nowrap; }
 
-#lw-app .navlinks { display: flex; gap: 20px; align-items: center; color: #c0d4c9; font-size: 13px; font-weight: 500; }
+#lw-app .navlinks { display: flex; gap: 0; align-items: stretch; flex-wrap: wrap; color: #c0d4c9; font-size: 12px; font-weight: 600; }
 #lw-app .navlinks a { transition: color 0.16s ease; white-space: nowrap; padding: 4px 0; border-bottom: 2px solid transparent; }
 #lw-app .navlinks a:hover, #lw-app .navlinks a.active-nav { color: #58f29c; border-bottom-color: #49e892; }
 #lw-app .header-actions { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+#lw-app .navlinks a { padding: 22px 10px; border-right: 1px solid rgba(217,183,122,.12); }
+#lw-app .header-actions { padding: 10px; gap: 6px; }
+#lw-app .header-actions .btn { border-radius: 2px; }
+#lw-app .scenery { object-fit: cover; }
+#lw-app .mini-map lw-section-image { margin: 0; }
+#lw-app .why-section > lw-section-image,
+#lw-app .pricing-section > lw-section-image { max-width: 1312px; margin: 0 auto 24px; padding: 0 34px; }
+#lw-app .section-intro { max-width: 72ch; }
+#lw-app .release-note { color: #d9b77a; padding: 12px; border-left: 2px solid #d9b77a; background: #101b17; font-size: 12px; }
+#lw-app .spotlight-card, #lw-app .feature, #lw-app .plan, #lw-app .engine-card { border-radius: 3px; }
+@media (max-width: 1200px) {
+  #lw-app .navlinks { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  #lw-app .navlinks a { padding: 12px; }
+}
+@media (max-width: 920px) {
+  #lw-app .navlinks { display: none; }
+  #lw-app .navlinks.open { display: flex; flex-wrap: wrap; }
+}
 
 /* BUTTONS */
 #lw-app .btn {

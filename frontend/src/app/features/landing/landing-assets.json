@@ -1,0 +1,19 @@
+{
+  "brandLogoWordmark": "/landing-assets/brand/logo-wordmark.png",
+  "brandRavenEmblem": "/landing-assets/brand/raven-emblem.png",
+  "heroWallpaper": "/landing-assets/hero/hero-wallpaper.png",
+  "heroShowcaseCard": "/landing-assets/hero/hero-showcase-card.png",
+  "heroScene": "/landing-assets/hero/scene.png",
+  "engineVttCombat": "/landing-assets/engines/engine-1-vtt-combat.jpg",
+  "engineLoomWeaveGraph": "/landing-assets/engines/engine-2-loom-weave-graph.jpg",
+  "engineLoomMapsAtlas": "/landing-assets/engines/engine-3-loommaps-atlas.jpg",
+  "engineDiceShaderFx": "/landing-assets/engines/engine-4-dice-shader-fx.jpg",
+  "sectionAtmosphere": "/landing-assets/backgrounds/section-atmosphere.jpg",
+  "whyImage": "/landing-assets/sections/why/image.jpg",
+  "featuresImage": "/landing-assets/sections/features/image.jpg",
+  "experienceImage": "/landing-assets/sections/experience/image.jpg",
+  "pricingImage": "/landing-assets/sections/pricing/image.jpg",
+  "marketplaceImage": "/landing-assets/sections/marketplace/image.jpg",
+  "faqImage": "/landing-assets/sections/faq/image.jpg",
+  "aboutImage": "/landing-assets/sections/about/image.jpg"
+}

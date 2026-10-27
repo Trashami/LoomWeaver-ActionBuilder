@@ -5,6 +5,29 @@
   z-index: 40;
 }
 
+.lw-public-topbar {
+  min-height: 72px;
+  display: flex;
+  align-items: stretch;
+  background: linear-gradient(180deg, #0e1516, #090e10);
+  border-bottom: 1px solid rgba(217, 183, 122, .24);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
+
+  .lw-topbar__brand-tile { min-height: 72px; }
+}
+.lw-public-topbar__navigation { display: flex; align-items: stretch; flex: 1; min-width: 0; }
+.lw-public-topbar__actions { display: flex; align-items: stretch; border-left: 1px solid rgba(217, 183, 122, .18); }
+@media (max-width: 1200px) {
+  .lw-public-topbar { flex-wrap: wrap; }
+  .lw-public-topbar__navigation { order: 3; flex-basis: 100%; }
+  .lw-public-topbar__actions { margin-left: auto; }
+}
+@media (max-width: 540px) {
+  .lw-public-topbar .lw-topbar__titles { display: none; }
+  .lw-public-topbar .lw-topbar__brand-tile { padding: 0 .6rem; }
+  .lw-public-topbar .lw-topbar__logo { width: 105px; }
+}
+
 .lw-topbar {
   height: 62px;
   min-height: 62px;

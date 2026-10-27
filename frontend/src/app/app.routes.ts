@@ -57,6 +57,7 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
+  { path: 'about', data: { seoPage: 'about' }, loadComponent: () => import('./features/landing/landing.page').then(m => m.LandingPageComponent) },
   {
     path: 'welcome',
     data: { seoPage: 'home' },
@@ -71,13 +72,13 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'login',
-    data: { seoPage: 'home' },
+    data: { seoPage: 'login' },
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },
   {
     path: 'register',
-    data: { seoPage: 'home' },
+    data: { seoPage: 'register' },
     loadComponent: () =>
       import('./features/landing/landing.page').then((m) => m.LandingPageComponent),
   },

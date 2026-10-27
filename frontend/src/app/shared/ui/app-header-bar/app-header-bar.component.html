@@ -1,3 +1,16 @@
+@if (variant() === 'public') {
+  <header class="lw-public-topbar">
+    <a class="lw-topbar__brand-tile" routerLink="/" href="/" aria-label="LoomWeaver home">
+      <img class="lw-topbar__logo" [src]="logoSrc()" alt="LoomWeaver" width="136" height="42" />
+      <span class="lw-topbar__titles">
+        <span class="lw-topbar__name">LoomWeaver</span>
+        <span class="lw-topbar__tag">Your Campaign. One Living World.</span>
+      </span>
+    </a>
+    <div class="lw-public-topbar__navigation"><ng-content select="[public-navigation]" /></div>
+    <div class="lw-public-topbar__actions"><ng-content select="[public-actions]" /></div>
+  </header>
+} @else {
 <header
   class="lw-topbar"
   role="banner"
@@ -55,7 +68,7 @@
           }
         </select>
         <span class="lw-campaign-tile__sub">
-          Campaign · {{ activeCampaign().currentSessionNumber }} sessions · High Fantasy
+          Campaign · {{ activeCampaign()?.currentSessionNumber ?? 0 }} sessions · High Fantasy
         </span>
       </div>
     </div>
@@ -151,3 +164,4 @@
     />
   </div>
 </header>
+}

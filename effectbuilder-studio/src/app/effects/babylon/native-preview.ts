@@ -122,7 +122,7 @@ export class BabylonEffectPreview {
       { preserveDrawingBuffer: false, stencil: true, powerPreference: 'high-performance' },
       true
     );
-    this.engine.setHardwareScalingLevel(1 / Math.min(devicePixelRatio, 1.5));
+    this.engine.setHardwareScalingLevel(1 / Math.min(typeof devicePixelRatio === 'number' ? devicePixelRatio : 1, 2));
     this.scene = new Scene(this.engine);
     this.scene.useRightHandedSystem = true;
     this.scene.clearColor = new Color4(0.02, 0.035, 0.048, 1);
@@ -399,6 +399,8 @@ export class BabylonEffectPreview {
     }
 
     const effectTarget = teleport?.enabled ? { x: teleport.destination.x * w, y: teleport.destination.y * h } : allTargets[0];
+    const sourceY = this.surfaceHeight(from.x / 66, from.y / 66);
+    const targetY = this.surfaceHeight(effectTarget.x / 66, effectTarget.y / 66);
     this.runtime.draw(
       def,
       time,
@@ -406,27 +408,35 @@ export class BabylonEffectPreview {
       effectTarget,
       scale,
       teleport?.enabled ? [effectTarget, ...allTargets.slice(1)] : allTargets,
-      world
+      world,
+      sourceY,
+      targetY
     );
 
-    const strongest = this.scene.lights
-      .filter((l): l is PointLight => l instanceof PointLight && l.isEnabled() && l.intensity > 0.5)
-      .sort((a, b) => b.intensity - a.intensity)[0];
-    if (strongest !== this.shadowSource) {
-      this.shadow?.dispose();
-      this.shadow = undefined;
-      this.shadowSource = strongest;
-      if (strongest) {
-        this.shadow = new ShadowGenerator(256, strongest);
-        this.shadow.bias = 0.004;
-        this.shadow.normalBias = 0.03;
-        const map = this.shadow.getShadowMap();
-        if (map) map.refreshRate = 2;
+    if (this.walls.length > 0) {
+      const strongest = this.scene.lights
+        .filter((l): l is PointLight => l instanceof PointLight && l.isEnabled() && l.intensity > 0.5)
+        .sort((a, b) => b.intensity - a.intensity)[0];
+      if (strongest !== this.shadowSource) {
+        this.shadow?.dispose();
+        this.shadow = undefined;
+        this.shadowSource = strongest;
+        if (strongest) {
+          this.shadow = new ShadowGenerator(256, strongest);
+          this.shadow.bias = 0.004;
+          this.shadow.normalBias = 0.03;
+          const map = this.shadow.getShadowMap();
+          if (map) map.refreshRate = 2;
+        }
       }
-    }
-    if (this.shadow) {
-      const map = this.shadow.getShadowMap();
-      if (map) map.renderList = [...this.markers, ...this.walls, ...(modelShadows as Mesh[])];
+      if (this.shadow) {
+        const map = this.shadow.getShadowMap();
+        if (map) map.renderList = [...this.walls];
+      }
+    } else if (this.shadow) {
+      this.shadow.dispose();
+      this.shadow = undefined;
+      this.shadowSource = undefined;
     }
     this.scene.render();
   }

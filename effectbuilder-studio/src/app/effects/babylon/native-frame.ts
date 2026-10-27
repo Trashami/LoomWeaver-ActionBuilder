@@ -62,8 +62,7 @@ export interface NativeLayerFrame {
 const TAU = Math.PI * 2;
 const point = (p: FxPoint, height = 12): NativePoint => ({ ...p, height });
 
-/** Renderer-independent, seeded frame evaluation. 66 design pixels equal one 5-foot grid square.
- * A seek is a pure function: no emission accumulator or frame-history dependency. */
+/** Renderer-independent, seeded frame evaluation. 66 design pixels equal one 5-foot grid square. */
 export function evaluateNativeLayer(
   l: EffectLayer,
   time: number,
@@ -80,10 +79,7 @@ export function evaluateNativeLayer(
     layer: l,
     alpha: Math.max(
       0,
-      l.opacity *
-        l.intensity *
-        opacityAt(l.opacityKeyframes, Math.max(0, Math.min(1, local))) *
-        f.envelope
+      l.opacity * l.intensity * opacityAt(l.opacityKeyframes, Math.max(0, Math.min(1, local))) * f.envelope
     ),
     progress: p,
     clock: f.clock,
@@ -114,16 +110,7 @@ export function evaluateNativeLayer(
     rotation = 0,
     progress = p
   ) =>
-    out.fields.push({
-      point: point(q, height),
-      width,
-      depth,
-      angle: rotation,
-      family,
-      mode,
-      progress,
-      variant,
-    });
+    out.fields.push({ point: point(q, height), width, depth, angle: rotation, family, mode, progress, variant });
   const particle = (
     q: FxPoint,
     r: number,
@@ -161,22 +148,35 @@ export function evaluateNativeLayer(
       };
     const sample = (t: number) =>
       offset(clippedFireball(release, target, t, m?.arc ?? world.flight?.arc ?? -55, scale, world.walls));
+    const hAt = (u: number) => (25 + Math.sin(u * Math.PI) * 20) * scale;
     const anchor =
       role === 'caster' ? offset(from) : role === 'projectile' ? sample(Math.min(1, flight)) : sample(1);
+
+    if (role !== 'projectile' || flight < 1) {
+      field(
+        anchor,
+        size * 5.6,
+        size * 5.6,
+        'fire',
+        role === 'caster' ? 0 : role === 'projectile' ? 1 : 2,
+        role === 'impact' ? size * 1.15 : role === 'projectile' ? hAt(Math.min(1, flight)) : 24 * scale,
+        0,
+        role === 'projectile' ? flight : p
+      );
+    }
     if (role === 'projectile' && flight < 1) {
       const uNow = Math.min(1, flight);
       const uPrev = Math.max(0, uNow - 0.04);
-      const hAt = (u: number) => (25 + Math.sin(u * Math.PI) * 22) * scale;
       out.projectiles.push({
         head: point(sample(uNow), hAt(uNow)),
         prev: point(sample(uPrev), hAt(uPrev)),
-        radius: Math.max(10 * scale, size * 0.85),
+        radius: Math.max(8 * scale, size * 0.72),
         element: 'fire',
         shape: 'comet',
-        coreScale: 1.15,
-        coronaSize: 1.4,
-        spinSpeed: 2.0,
-        orbitCount: 3,
+        coreScale: 1.0,
+        coronaSize: 1.25,
+        spinSpeed: 2.2,
+        orbitCount: 2,
         clock: f.clock,
         progress: uNow,
         color: l.color,
@@ -187,17 +187,6 @@ export function evaluateNativeLayer(
         return point(sample(u), hAt(u));
       }).reverse();
       ribbon(pts, size * 0.9, l.color, true);
-    } else if (role !== 'projectile') {
-      field(
-        anchor,
-        size * 5.2,
-        size * 5.2,
-        'fire',
-        role === 'caster' ? 0 : 2,
-        role === 'impact' ? size * 0.95 : 22 * scale,
-        0,
-        p
-      );
     }
     const count = Math.min(100, l.count),
       smokeLife = (role === 'projectile' ? 1050 : 2000) * (m?.trail ?? 1),
@@ -208,33 +197,34 @@ export function evaluateNativeLayer(
         theta = a * TAU,
         age =
           role === 'projectile'
-            ? (p * l.duration - (i / Math.max(1, count - 1)) * l.duration * FIREBALL_FLIGHT_FRACTION) /
-              smokeLife
+            ? (p * l.duration - (i / Math.max(1, count - 1)) * l.duration * FIREBALL_FLIGHT_FRACTION) / smokeLife
             : p - a * 0.16;
       if (age < 0 || age > 1) continue;
-      const origin = role === 'projectile' ? sample(i / Math.max(1, count - 1)) : anchor,
+      const uSample = i / Math.max(1, count - 1);
+      const origin = role === 'projectile' ? sample(uSample) : anchor,
         r = size * (role === 'caster' ? 0.4 + b * 0.5 : 0.15 + age * (0.8 + b * 1.4));
+      const baseH = role === 'projectile' ? hAt(uSample) : 20 * scale;
       const q = {
         x: origin.x + Math.cos(theta + f.clock * (role === 'caster' ? 1 : 0)) * r,
         y: origin.y + Math.sin(theta + f.clock * (role === 'caster' ? 1 : 0)) * r,
       };
       particle(
         q,
-        size * (0.45 + age * 1.4),
+        size * (0.45 + age * 1.35),
         Math.min(1, age * 8) * (1 - age) ** 1.6 * smoke * 0.45,
         0,
-        (20 + age * size * 1.1) * scale,
+        baseH + age * size * 0.9 * scale,
         theta,
         1,
         l.fireMaterial?.smokeColor ?? l.fireHit?.smokeColor ?? '#4a4149'
       );
-      const d = (1 - Math.exp(-age * 5)) * size * (1 + b * 2.7);
+      const d = (1 - Math.exp(-age * 5)) * size * (1 + b * 2.5);
       particle(
         { x: origin.x + Math.cos(theta) * d, y: origin.y + Math.sin(theta) * d },
-        (1 + b * 2.5) * scale,
+        (1 + b * 2.4) * scale,
         (1 - age) ** 2 * (l.fireMaterial?.embers ?? l.fireHit?.embers ?? 1),
         2,
-        (15 + Math.sin(age * Math.PI) * size * 0.8) * scale,
+        baseH * 0.85 + Math.sin(age * Math.PI) * size * 0.7 * scale,
         theta,
         2 + b
       );
@@ -254,14 +244,15 @@ export function evaluateNativeLayer(
       if (q < 0.8) {
         const head = sample(q);
         const prev = sample(Math.max(0, q - 0.04));
+        field(head, size * 5.2, size * 5.2, 'arcane', 2, height(q));
         out.projectiles.push({
           head: point(head, height(q)),
           prev: point(prev, height(Math.max(0, q - 0.04))),
-          radius: Math.max(6 * scale, size * 0.9),
+          radius: Math.max(5.5 * scale, size * 0.78),
           element: 'eldritch',
           shape: 'prism',
-          coreScale: 0.9,
-          coronaSize: 1.25,
+          coreScale: 0.85,
+          coronaSize: 1.2,
           spinSpeed: 2.4,
           orbitCount: 2,
           clock: f.clock + bolt * 0.7,
@@ -351,21 +342,7 @@ export function evaluateNativeLayer(
   const path = l.kind === 'beam' || l.kind === 'lightning' || l.kind === 'tether';
   if (path) {
     const strands =
-      l.kind === 'beam'
-        ? variant === 2
-          ? 3
-          : variant === 4
-            ? 2
-            : 1
-        : l.kind === 'lightning'
-          ? variant === 2
-            ? 5
-            : variant === 4
-              ? 3
-              : 1
-          : variant === 1
-            ? 3
-            : 2;
+      l.kind === 'beam' ? (variant === 2 ? 3 : variant === 4 ? 2 : 1) : l.kind === 'lightning' ? (variant === 2 ? 5 : variant === 4 ? 3 : 1) : variant === 1 ? 3 : 2;
     for (let strand = 0; strand < strands; strand++) {
       const n = l.kind === 'lightning' ? 64 : 72,
         pts: NativePoint[] = [];
@@ -376,27 +353,19 @@ export function evaluateNativeLayer(
         let bend = 0,
           height = 18 * scale;
         if (l.kind === 'lightning') {
-          bend =
-            (seeded(i + strand * 81 + Math.floor(f.clock * 18) * 137, l.motion.seed) - 0.5) *
-            l.spread *
-            scale *
-            (0.2 + variant * 0.18);
+          bend = (seeded(i + strand * 81 + Math.floor(f.clock * 18) * 137, l.motion.seed) - 0.5) * l.spread * scale * (0.2 + variant * 0.18);
           height += (seeded(i + strand * 5, 92) - 0.5) * size * 2;
         } else if (l.kind === 'beam') {
           bend =
             (variant === 0
               ? Math.sin(u * 65 - f.clock * 13) * 0.4
-              : Math.sin(u * (variant === 4 ? 25 : 14) - f.clock * 8 + (strand * TAU) / strands) *
-                (variant === 1 ? 0.7 : 0.35)) *
+              : Math.sin(u * (variant === 4 ? 25 : 14) - f.clock * 8 + (strand * TAU) / strands) * (variant === 1 ? 0.7 : 0.35)) *
             l.spread *
             scale *
             w;
           height += variant === 4 ? Math.cos(u * 25 - f.clock * 8 + strand * Math.PI) * size * 2 : 0;
         } else {
-          bend =
-            Math.sin(u * (variant === 0 ? 60 : 18) - f.clock * (variant === 3 ? -5 : 4) + strand * Math.PI) *
-            size *
-            (variant === 0 ? 1 : 2);
+          bend = Math.sin(u * (variant === 0 ? 60 : 18) - f.clock * (variant === 3 ? -5 : 4) + strand * Math.PI) * size * (variant === 0 ? 1 : 2);
           height += Math.sin(u * Math.PI) * l.spread * scale * 0.15;
         }
         pts.push(
@@ -419,10 +388,7 @@ export function evaluateNativeLayer(
               { x: start.x + Math.cos(angle + 0.6) * f.length * 0.13, y: start.y + Math.sin(angle + 0.6) * f.length * 0.13 },
               start.height + 10 * scale
             );
-          ribbon(
-            [start, point({ x: (start.x + end.x) / 2 + size, y: (start.y + end.y) / 2 - size }, end.height), end],
-            size * 0.2
-          );
+          ribbon([start, point({ x: (start.x + end.x) / 2 + size, y: (start.y + end.y) / 2 - size }, end.height), end], size * 0.2);
         }
     }
   } else if (l.kind === 'whip') {
@@ -445,16 +411,7 @@ export function evaluateNativeLayer(
       for (let i = 0; i < 18; i++) {
         const a = i * 2.399,
           r = age * (16 + seeded(i, l.motion.seed) * 22) * scale;
-        particle(
-          { x: tip.x + Math.cos(a) * r, y: tip.y + Math.sin(a) * r },
-          (1.5 + seeded(i, 82)) * scale,
-          (1 - age) ** 2,
-          2,
-          (14 + Math.sin(age * Math.PI) * 18) * scale,
-          a,
-          2,
-          l.secondaryColor
-        );
+        particle({ x: tip.x + Math.cos(a) * r, y: tip.y + Math.sin(a) * r }, (1.5 + seeded(i, 82)) * scale, (1 - age) ** 2, 2, (14 + Math.sin(age * Math.PI) * 18) * scale, a, 2, l.secondaryColor);
       }
     }
     const n = l.variant === 'vine' ? 0 : Math.min(40, l.whip.thorns);
@@ -475,10 +432,7 @@ export function evaluateNativeLayer(
     const core = l.projectileCore
       ? {
           ...l.projectileCore,
-          shape:
-            l.projectileCore.shape === 'sphere' && l.variant !== 'orb'
-              ? varDefaults.shape
-              : l.projectileCore.shape,
+          shape: l.projectileCore.shape === 'sphere' && l.variant !== 'orb' ? varDefaults.shape : l.projectileCore.shape,
         }
       : varDefaults;
     const n = l.variant === 'swarm' ? 5 : 1;
@@ -499,10 +453,21 @@ export function evaluateNativeLayer(
       const t = Math.max(0, Math.min(1, (p * l.motion.speed * 1.18) / (1 + l.motion.drag * p) - i * 0.04));
       const head = sample3D(t, i);
       const prev = sample3D(Math.max(0, t - 0.04), i);
+      // Volumetric shader glow field anchored directly at the 3D projectile head
+      field(
+        { x: head.x, y: head.y },
+        size * (core.element === 'fire' ? 4.8 : 5.2) * core.coronaSize,
+        size * (core.element === 'fire' ? 4.8 : 5.2) * core.coronaSize,
+        core.element === 'fire' ? 'fire' : 'arcane',
+        core.element === 'fire' ? 1 : 2,
+        head.height,
+        angle,
+        t
+      );
       out.projectiles.push({
         head,
         prev,
-        radius: Math.max(9 * scale, size * (n > 1 ? 0.58 : 0.85 + variant * 0.06)),
+        radius: Math.max(8 * scale, size * (n > 1 ? 0.55 : 0.8 + variant * 0.05)),
         element: core.element,
         shape: core.shape,
         coreScale: core.coreScale,
@@ -524,7 +489,7 @@ export function evaluateNativeLayer(
           const u = Math.max(0, t - (1 - frac) * wakeLen);
           const centerPt = sample3D(u, i);
           if (c === 0) return centerPt;
-          const helixR = (1 - frac) * Math.max(3 * scale, size * (0.36 + variant * 0.04));
+          const helixR = (1 - frac) * Math.max(2.5 * scale, size * (0.32 + variant * 0.04));
           const theta = frac * (9 + variant) + f.clock * core.spinSpeed * 4 + coilPhase;
           return {
             x: centerPt.x - Math.sin(angle) * Math.cos(theta) * helixR,
@@ -534,12 +499,50 @@ export function evaluateNativeLayer(
         });
         ribbon(
           pts,
-          size * (c === 0 ? 0.78 : 0.38) * (n > 1 ? 0.65 : 1),
+          size * (c === 0 ? 0.75 : 0.36) * (n > 1 ? 0.65 : 1),
           c % 2 === 0 ? l.color : l.secondaryColor,
           true
         );
       }
+
+      // 3D wake particles emitted directly along the 3D projectile path (never detached below!)
+      const pCount = Math.max(6, Math.min(48, Math.round(l.count / n)));
+      const pTile =
+        core.element === 'ice'
+          ? 5
+          : core.element === 'snow'
+            ? 0
+            : core.element === 'fire' || core.element === 'lightning' || core.element === 'eldritch'
+              ? 2
+              : 1;
+      for (let k = 0; k < pCount; k++) {
+        const seedA = seeded(k + i * 71, l.motion.seed);
+        const seedB = seeded(k + i * 71 + 193, l.motion.seed);
+        const age = ((f.clock * 2.2 + seedA) % 1) * Math.min(1, t * 2.5);
+        const uTrail = Math.max(0, t - age * wakeLen * 1.15);
+        const trailPt = sample3D(uTrail, i);
+        const theta = seedA * TAU + f.clock * core.spinSpeed * 2.5;
+        const radialSpread = (0.15 + age * (0.85 + seedB * 0.9)) * Math.max(3 * scale, size * 0.42);
+        const px = trailPt.x - Math.sin(angle) * Math.cos(theta) * radialSpread;
+        const py = trailPt.y + Math.cos(angle) * Math.cos(theta) * radialSpread;
+        const ph = trailPt.height + Math.sin(theta) * radialSpread;
+        const pSize =
+          core.element === 'snow'
+            ? (2.5 + seedB * 4.5) * scale
+            : (1.2 + seedB * 2.4) * scale * Math.max(0.6, core.coreScale);
+        particle(
+          { x: px, y: py },
+          pSize,
+          (1 - age) ** 1.6 * 0.85,
+          pTile,
+          ph,
+          angle + (seedB - 0.5) * 0.5,
+          pTile === 2 ? 2.2 + seedB : 1.1,
+          k % 2 === 0 ? l.secondaryColor : l.color
+        );
+      }
     }
+    return out;
   } else if (l.kind === 'wall') {
     field(f.anchor, extent * 2.8, extent * 1.4, 'barrier', variant, extent * 0.7, angle + Math.PI / 2);
     out.fields[out.fields.length - 1].vertical = true;
@@ -578,7 +581,6 @@ export function evaluateNativeLayer(
       12 * scale
     );
 
-  // Fire mantles carry the same textured smoke and ember vocabulary as Fireball.
   if (l.kind === 'aura' && l.variant === 'flame') {
     for (let i = 0; i < 36; i++) {
       const seed = seeded(i, l.motion.seed),
@@ -591,7 +593,6 @@ export function evaluateNativeLayer(
     }
   }
 
-  // Seeded, editable volumetric energy and fine grounded rune detail.
   if (l.kind === 'aura' && ['vortex', 'orbit', 'halo'].includes(l.variant)) {
     const turns = l.variant === 'vortex' ? 2.3 : 1.1;
     for (let strand = 0; strand < 3; strand++) {
@@ -634,9 +635,8 @@ export function evaluateNativeLayer(
   }
 
   const count = Math.min(100, Math.max(4, l.count));
-  const projElement = l.projectileCore?.element;
   for (let i = 0; i < count; i++) {
-    const mist = l.kind === 'cloud' || l.variant === 'mist' || l.variant === 'smoke' || projElement === 'snow',
+    const mist = l.kind === 'cloud' || l.variant === 'mist' || l.variant === 'smoke',
       q = materialParticle(l, f, i, count, from, to, scale, targets, mist),
       a = seeded(i + 901, l.motion.seed),
       age = ((f.clock * Math.max(0.05, l.motion.speed)) / (l.motion.lifetime + 0.2) + a) % 1;
@@ -657,13 +657,13 @@ export function evaluateNativeLayer(
       alpha *= Math.sin(u * Math.PI);
       height = (8 + u * 30) * scale;
     }
-    const flame = l.variant === 'fire' || l.variant === 'flame' || l.cinematic?.element === 'fire' || projElement === 'fire',
-      ice = l.variant === 'shards' || l.cinematic?.element === 'ice' || projElement === 'ice' || projElement === 'snow';
+    const flame = l.variant === 'fire' || l.variant === 'flame' || l.cinematic?.element === 'fire',
+      ice = l.variant === 'shards' || l.cinematic?.element === 'ice';
     particle(
       at,
-      flame ? Math.max(sz, 8 * scale) : sz,
+      flame ? Math.max(sz, 6 * scale) : sz,
       alpha,
-      mist && !ice ? 0 : flame ? 4 : ice ? 5 : l.variant === 'embers' || l.kind === 'lightning' || projElement === 'lightning' || projElement === 'eldritch' ? 2 : 1,
+      mist ? 0 : flame ? 4 : ice ? 5 : l.variant === 'embers' || l.kind === 'lightning' ? 2 : 1,
       height,
       q.rotation,
       q.stretch,

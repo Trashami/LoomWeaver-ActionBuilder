@@ -1,52 +1,129 @@
 <div id="lw-app" class="lw-raven-landing">
-  <header class="topnav" [class.scrolled]="headerScrolled()" role="banner">
-    <div class="topnav-inner">
-      <a class="brand" routerLink="/" href="/" aria-label="LoomWeaver — Your Campaign. One Living World.">
-        <span class="raven-emblem" aria-hidden="true">
-          <img [src]="assets.brandRavenEmblem" alt="" class="raven-emblem-img" />
-        </span>
-        <span class="brand-identity">
-          <img [src]="assets.brandLogoWordmark" alt="LoomWeaver" class="brand-wordmark-img" />
-          <small class="brandsub">LoomWeaver — Your Campaign. One Living World.</small>
-        </span>
-      </a>
-
-      <nav class="navlinks" [class.open]="mobileMenuOpen()" aria-label="Primary Navigation">
-        <a routerLink="/vtt" href="/vtt" [class.active-nav]="activeSeoPageSlug() === 'vtt'" (click)="mobileMenuOpen.set(false)">LoomWeaver VTT</a>
-        <a routerLink="/campaign-manager" href="/campaign-manager" [class.active-nav]="activeSeoPageSlug() === 'campaign-manager'" (click)="mobileMenuOpen.set(false)">Campaign Manager</a>
-        <a routerLink="/battlemap-builder" href="/battlemap-builder" [class.active-nav]="activeSeoPageSlug() === 'battlemap-builder'" (click)="mobileMenuOpen.set(false)">Battlemap Builder</a>
-        <a routerLink="/effect-builder" href="/effect-builder" [class.active-nav]="activeSeoPageSlug() === 'effect-builder'" (click)="mobileMenuOpen.set(false)">Effect Builder</a>
-        <a routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant" [class.active-nav]="activeSeoPageSlug() === 'ai-campaign-assistant'" (click)="mobileMenuOpen.set(false)">The Loom</a>
-        <a routerLink="/features" href="/features" [class.active-nav]="activeSeoPageSlug() === 'features'" (click)="mobileMenuOpen.set(false)">Features</a>
-        <a href="#pricing" (click)="scrollToSection('pricing', $event)">Pricing</a>
-        <a href="#faq" (click)="scrollToSection('faq', $event)">FAQ</a>
-      </nav>
-
-      <div class="header-actions">
-        @if (auth.isAuthenticated()) {
-          <button ngpButton type="button" class="btn green" (click)="enterStudioOrSignIn('/home')"><span>Enter Studio</span></button>
-        } @else {
-          <a ngpButton class="btn ghost signin" href="/login" (click)="openAuth('login', undefined, $event)"><span>Sign In</span></a>
-          <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', undefined, $event)"><span>Start Free</span></a>
-        }
-        <button ngpButton type="button" class="mobile-menu" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Toggle navigation menu">
-          <lw-icon [name]="mobileMenuOpen() ? 'x' : 'menu'" [size]="18" />
-        </button>
-      </div>
+  <lw-app-header-bar variant="public" [logoSrc]="assets.brandLogoWordmark">
+    <nav
+      public-navigation
+      class="navlinks"
+      [class.open]="mobileMenuOpen()"
+      aria-label="Primary Navigation"
+    >
+      <a
+        routerLink="/vtt"
+        href="/vtt"
+        [class.active-nav]="activeSeoPageSlug() === 'vtt'"
+        (click)="mobileMenuOpen.set(false)"
+        >LoomWeaver VTT</a
+      >
+      <a
+        routerLink="/campaign-manager"
+        href="/campaign-manager"
+        [class.active-nav]="activeSeoPageSlug() === 'campaign-manager'"
+        (click)="mobileMenuOpen.set(false)"
+        >Campaign Manager</a
+      >
+      <a
+        routerLink="/battlemap-builder"
+        href="/battlemap-builder"
+        [class.active-nav]="activeSeoPageSlug() === 'battlemap-builder'"
+        (click)="mobileMenuOpen.set(false)"
+        >Battlemap Builder</a
+      >
+      <a
+        routerLink="/effect-builder"
+        href="/effect-builder"
+        [class.active-nav]="activeSeoPageSlug() === 'effect-builder'"
+        (click)="mobileMenuOpen.set(false)"
+        >Effect Builder</a
+      >
+      <a
+        routerLink="/ai-campaign-assistant"
+        href="/ai-campaign-assistant"
+        [class.active-nav]="activeSeoPageSlug() === 'ai-campaign-assistant'"
+        (click)="mobileMenuOpen.set(false)"
+        >The Loom</a
+      >
+      <a
+        routerLink="/features"
+        href="/features"
+        [class.active-nav]="activeSeoPageSlug() === 'features'"
+        (click)="mobileMenuOpen.set(false)"
+        >Features</a
+      >
+      <a href="#pricing" (click)="scrollToSection('pricing', $event)"
+        >Pricing</a
+      >
+      <a href="#faq" (click)="scrollToSection('faq', $event)">FAQ</a>
+    </nav>
+    <div public-actions class="header-actions">
+      @if (auth.isAuthenticated()) {
+      <button
+        ngpButton
+        type="button"
+        class="btn green"
+        (click)="enterStudioOrSignIn('/home')"
+      >
+        <span>Enter Studio</span>
+      </button>
+      } @else {
+      <a
+        ngpButton
+        class="btn ghost signin"
+        href="/login"
+        (click)="openAuth('login', undefined, $event)"
+        ><span>Sign In</span></a
+      >
+      <a
+        ngpButton
+        class="btn primary"
+        href="/register"
+        (click)="openAuth('register', undefined, $event)"
+        ><span>Start Free</span></a
+      >
+      }
+      <button
+        ngpButton
+        type="button"
+        class="mobile-menu"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen()"
+        aria-label="Toggle navigation menu"
+      >
+        <lw-icon [name]="mobileMenuOpen() ? 'x' : 'menu'" [size]="18" />
+      </button>
     </div>
-  </header>
+  </lw-app-header-bar>
 
   <main id="top" class="landing-main">
     <section class="hero" aria-labelledby="hero-heading">
       <div class="wrap hero-inner">
         <div class="hero-copy">
-          <span class="eyebrow"><span class="light-dot" aria-hidden="true"></span><span>{{ activeSeoPage().eyebrow }}</span></span>
-          <h1 id="hero-heading">{{ activeSeoPage().h1Line1 }}<br /><em>{{ activeSeoPage().h1Highlight }}</em></h1>
+          <span class="eyebrow"
+            ><span class="light-dot" aria-hidden="true"></span
+            ><span>{{ activeSeoPage().eyebrow }}</span></span
+          >
+          <h1 id="hero-heading">
+            {{ activeSeoPage().h1Line1 }}<br /><em
+              >{{ activeSeoPage().h1Highlight }}</em
+            >
+          </h1>
           <p [innerHTML]="activeSeoPage().leadHtml"></p>
           <div class="hero-ctas">
-            <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', activeSeoPage().studioRoute, $event)"><span>{{ activeSeoPage().primaryCtaLabel }}</span></a>
-            <a ngpButton class="btn green" href="/login" (click)="openAuth('login', activeSeoPage().studioRoute, $event)"><span>Sign In to Studio</span></a>
-            <a ngpButton class="btn ghost" routerLink="/vtt" href="/vtt"><span>Explore LoomWeaver VTT</span></a>
+            <a
+              ngpButton
+              class="btn primary"
+              href="/register"
+              (click)="openAuth('register', activeSeoPage().studioRoute, $event)"
+              ><span>{{ activeSeoPage().primaryCtaLabel }}</span></a
+            >
+            <a
+              ngpButton
+              class="btn green"
+              href="/login"
+              (click)="openAuth('login', activeSeoPage().studioRoute, $event)"
+              ><span>Sign In to Studio</span></a
+            >
+            <a ngpButton class="btn ghost" routerLink="/vtt" href="/vtt"
+              ><span>Explore LoomWeaver VTT</span></a
+            >
           </div>
           <div class="trust" role="list" aria-label="Core Platform Guarantees">
             <span role="listitem"><b>Players join 100% free</b></span>
@@ -56,103 +133,99 @@
           </div>
         </div>
 
-        <div class="hero-art" aria-label="Illustrated preview of a LoomWeaver fantasy campaign scene, soaring raven, and interconnected story nodes">
+        <div
+          class="hero-art"
+          aria-label="Illustrated preview of a LoomWeaver fantasy campaign scene, soaring raven, and interconnected story nodes"
+        >
           <div class="artframe">
-            <svg class="scenery" [style.transform]="heroSceneryTransform()" viewBox="0 0 780 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <defs>
-                <linearGradient id="sbg" x1="0" y1="0" x2=".2" y2="1">
-                  <stop offset="0" stop-color="#051611" /><stop offset=".48" stop-color="#113c2a" /><stop offset="1" stop-color="#04100c" />
-                </linearGradient>
-                <radialGradient id="moon">
-                  <stop offset="0" stop-color="#58f29c" stop-opacity=".42" /><stop offset=".55" stop-color="#d9b77a" stop-opacity=".22" /><stop offset="1" stop-color="#082419" stop-opacity="0" />
-                </radialGradient>
-                <linearGradient id="valley" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#143a2b" /><stop offset="1" stop-color="#040f0b" />
-                </linearGradient>
-              </defs>
-              <rect width="780" height="480" fill="url(#sbg)" />
-              <circle cx="572" cy="97" r="155" fill="url(#moon)" />
-              <circle cx="572" cy="97" r="46" fill="#d8c395" opacity=".72" />
-              <path d="M0 245L68 158 104 196 158 104 209 180 276 113 326 174 389 89 464 189 522 121 604 194 667 115 780 214V480H0Z" fill="#133328" />
-              <path d="M0 294L110 195 185 271 251 167 304 222 398 147 453 227 559 186 623 245 711 171 780 218V480H0Z" fill="#0d281f" />
-              <path d="M0 320L86 255 137 312 224 236 307 292 401 211 474 290 576 219 658 300 726 254 780 278V480H0Z" fill="#091f17" />
-              <path d="M0 395Q140 311 232 350T418 352Q546 286 640 347T780 317V480H0Z" fill="url(#valley)" />
-              <g fill="#06140f">
-                <path d="M70 354h157v-79l24-13v-23h-15v-32h-18v32h-14v-82h-16v82h-9v-22h-18v22h-17v-70h-15v70h-11v-26H97v26H82v-20H67v37H56v99z" />
-                <path d="M463 345h190v-70h-10v-74h-17v35h-12v-67h-13v-25h-12v25h-11v67h-17v-99h-12v-26h-13v26h-13v99h-16v-32h-19v32h-25z" />
-              </g>
-              <g stroke="#39d98a" stroke-width="1" opacity=".28">
-                <path d="M-30 390Q185 325 320 375T800 348" fill="none" />
-                <path d="M-30 405Q185 340 320 390T800 363" fill="none" />
-              </g>
-              <path d="M500 481Q511 416 440 388T297 338" stroke="#66e1b3" stroke-width="5" opacity=".28" fill="none" stroke-dasharray="6 9" />
-            </svg>
+            <img
+              class="scenery"
+              [src]="assets.heroScene"
+              alt="Illustrated fantasy campaign landscape"
+              width="780"
+              height="480"
+              fetchpriority="high"
+              [style.transform]="heroSceneryTransform()"
+            />
 
-            <img [src]="assets.brandRavenEmblem" [style.transform]="heroRavenTransform()" alt="LoomWeaver Emerald Raven" class="hero-raven-overlay" />
+            <img
+              [src]="assets.brandRavenEmblem"
+              [style.transform]="heroRavenTransform()"
+              alt="LoomWeaver Emerald Raven"
+              class="hero-raven-overlay"
+            />
             <div class="worldglow"></div>
-
-            <svg class="mapline" viewBox="0 0 780 480" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M250 173Q340 148 465 267T661 189" fill="none" stroke="#39e58c" stroke-width="2" stroke-dasharray="7 7" opacity=".78" />
-              <path d="M250 173Q266 267 465 267" fill="none" stroke="#d9b77a" stroke-width="1.6" opacity=".68" />
-            </svg>
-
-            <a class="node n1" routerLink="/campaign-manager" href="/campaign-manager" title="LoomWeaver Campaign Manager & Lore Graph"><lw-icon name="network" [size]="18" /></a>
-            <a class="node n2" routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant" title="The Loom Campaign Memory"><lw-icon name="book-open" [size]="18" /></a>
-            <a class="node n3" routerLink="/vtt" href="/vtt" title="LoomWeaver VTT Virtual Tabletop"><lw-icon name="landmark" [size]="18" /></a>
 
             <div class="art-bottom">
               <div class="region">
                 The Ashen Vale &amp; Icrandor
-                <small>14 sessions · 5 heroes · LoomWeaver VTT &amp; Lore Graph</small>
+                <small
+                  >14 sessions · 5 heroes · LoomWeaver VTT &amp; Lore
+                  Graph</small
+                >
               </div>
-              <span class="pill"><span class="pill-dot" aria-hidden="true"></span> Living Campaign</span>
+              <span class="pill"
+                ><span class="pill-dot" aria-hidden="true"></span> Living
+                Campaign</span
+              >
             </div>
-          </div>
-
-          <div class="floating-tag float-top">
-            <span class="float-label">The Loom remembers</span>
-            <strong>Every choice matters.</strong>
-            <small>People · Places · Secrets · VTT Scenes</small>
-          </div>
-          <div class="floating-tag float-bottom">
-            <strong><span>The Ruined Chapel</span></strong>
-            <span>Connected to 3 quests, 5 NPCs, 2.5D VTT lighting, and a secret yet to unfold.</span>
           </div>
         </div>
       </div>
     </section>
 
     <!-- DEDICATED PRODUCT LANDING SPOTLIGHT (VTT, CAMPAIGN MANAGER, BATTLEMAP BUILDER, THE LOOM, FEATURES) -->
-    <section class="seo-spotlight-section" id="product-spotlight" aria-labelledby="spotlight-heading">
+    <section
+      class="seo-spotlight-section"
+      id="product-spotlight"
+      aria-labelledby="spotlight-heading"
+    >
       <div class="wrap">
-        <nav class="seo-page-pills" aria-label="Explore LoomWeaver Dedicated Product Pages">
+        <nav
+          class="seo-page-pills"
+          aria-label="Explore LoomWeaver Dedicated Product Pages"
+        >
           @for (tab of seoPageTabs; track tab.slug) {
-            <a class="seo-pill-link" [routerLink]="tab.path" [href]="tab.path" [class.active]="activeSeoPageSlug() === tab.slug">
-              <span>{{ tab.navLabel }}</span>
-            </a>
+          <a
+            class="seo-pill-link"
+            [routerLink]="tab.path"
+            [href]="tab.path"
+            [class.active]="activeSeoPageSlug() === tab.slug"
+          >
+            <span>{{ tab.navLabel }}</span>
+          </a>
           }
         </nav>
 
         <div class="spotlight-card">
           <div class="spotlight-copy">
-            <div class="section-kicker">{{ activeSeoPage().spotlightSubtitle }}</div>
+            <div class="section-kicker">
+              {{ activeSeoPage().spotlightSubtitle }}
+            </div>
             <h2 id="spotlight-heading">{{ activeSeoPage().spotlightTitle }}</h2>
-            <p class="section-intro">{{ activeSeoPage().spotlightDescription }}</p>
+            <p class="section-intro">
+              {{ activeSeoPage().spotlightDescription }}
+            </p>
+            <p class="release-note">
+              V2 is in development. Studio images are illustrative previews.
+              Capabilities below remain subject to verification against the
+              release gates.
+            </p>
 
             <div class="capability-columns">
               <div class="cap-col">
-                <h4>Available Today in LoomWeaver</h4>
+                <h4>Available Today</h4>
                 <ul>
                   @for (item of activeSeoPage().availableToday; track item) {
-                    <li><span>{{ item }}</span></li>
+                  <li><span>{{ item }}</span></li>
                   }
                 </ul>
               </div>
               <div class="cap-col cap-planned">
-                <h4>Planned on the Roadmap</h4>
+                <h4>In Development / Planned</h4>
                 <ul>
                   @for (item of activeSeoPage().plannedNext; track item) {
-                    <li><span>{{ item }}</span></li>
+                  <li><span>{{ item }}</span></li>
                   }
                 </ul>
               </div>
@@ -161,19 +234,34 @@
 
           <div class="spotlight-visual">
             <div class="spotlight-frame">
-              <img [src]="activeSeoPage().screenshot" [alt]="activeSeoPage().screenshotAlt" />
+              <img
+                [src]="activeSeoPage().screenshot"
+                [alt]="activeSeoPage().screenshotAlt"
+              />
               <div class="spotlight-caption">
                 <div>
-                  <strong>{{ activeSeoPage().navLabel }} — Live Studio Preview</strong>
+                  <strong
+                    >{{ activeSeoPage().navLabel }} — Studio
+                    Illustration</strong
+                  >
                   @if (activeSeoPage().subdomainUrl) {
-                    <small style="display:block;margin-top:2px;">
-                      Dedicated Studio Domain:
-                      <a [href]="activeSeoPage().subdomainUrl" style="color:#49e892;text-decoration:underline;">{{ activeSeoPage().subdomainLabel }}</a>
-                    </small>
+                  <small style="display: block; margin-top: 2px">
+                    Dedicated Studio Domain:
+                    <a
+                      [href]="activeSeoPage().subdomainUrl"
+                      style="color: #49e892; text-decoration: underline"
+                      >{{ activeSeoPage().subdomainLabel }}</a
+                    >
+                  </small>
                   }
                 </div>
-                <a class="btn green btn-sm" href="/login" (click)="openAuth('login', activeSeoPage().studioRoute, $event)">
-                  <span>Open in Studio</span><lw-icon name="arrow-right" [size]="13" />
+                <a
+                  class="btn green btn-sm"
+                  href="/login"
+                  (click)="openAuth('login', activeSeoPage().studioRoute, $event)"
+                >
+                  <span>Open in Studio</span
+                  ><lw-icon name="arrow-right" [size]="13" />
                 </a>
               </div>
             </div>
@@ -183,42 +271,83 @@
     </section>
 
     <!-- WHY LOOMWEAVER -->
-    <section class="why-section" id="why-loomweaver" aria-labelledby="why-heading">
+    <section
+      class="why-section"
+      id="why-loomweaver"
+      aria-labelledby="why-heading"
+    >
+      <lw-section-image
+        [src]="assets.whyImage"
+        alt="LoomWeaver why illustration"
+      />
       <div class="wrap why-grid">
         <div>
-          <div class="section-kicker">One connected world. Thoughtful access by design.</div>
-          <h2 id="why-heading">New tools appear every day.<br /><em>Your campaign deserves more.</em></h2>
+          <div class="section-kicker">
+            One connected world. Thoughtful access by design.
+          </div>
+          <h2 id="why-heading">
+            New tools appear every day.<br /><em
+              >Your campaign deserves more.</em
+            >
+          </h2>
           <p class="why-intro">
-            Virtual tabletops (VTT), campaign managers, and mapmakers are everywhere. AI can help launch another
-            polished app in a weekend. But a standalone demo does not solve scattered session notes, a dozen open browser
-            tabs, or the critical question of who can see your campaign’s secrets.
+            Virtual tabletops (VTT), campaign managers, and mapmakers are
+            everywhere. AI can help launch another polished app in a weekend.
+            But a standalone demo does not solve scattered session notes, a
+            dozen open browser tabs, or the critical question of who can see
+            your campaign’s secrets.
           </p>
           <p class="why-quote">LoomWeaver — Your Campaign. One Living World.</p>
-          <p class="why-footer">LoomWeaver unites your 2D &amp; 3D VTT, World Atlas, Character Studio, and Witness-Scoped Memory in one secure engine.</p>
+          <p class="why-footer">
+            LoomWeaver unites your 2D &amp; 3D VTT, World Atlas, Character
+            Studio, and Witness-Scoped Memory in one secure engine.
+          </p>
         </div>
         <div class="why-list">
           <article class="why-card">
-            <span class="why-icon" aria-hidden="true"><lw-icon name="layers" [size]="19" /></span>
+            <span class="why-icon" aria-hidden="true"
+              ><lw-icon name="layers" [size]="19"
+            /></span>
             <div>
               <h3>One place for the whole campaign &amp; VTT</h3>
-              <p>2.5D Virtual Tabletop maps, cutaway scenes, tactical encounters, character sheets, session notes, and multi-step story arcs work together instead of competing for your attention.</p>
+              <p>
+                2.5D Virtual Tabletop maps, cutaway scenes, tactical encounters,
+                character sheets, session notes, and multi-step story arcs work
+                together instead of competing for your attention.
+              </p>
             </div>
           </article>
           <article class="why-card">
-            <span class="why-icon" aria-hidden="true"><lw-icon name="lock" [size]="19" /></span>
+            <span class="why-icon" aria-hidden="true"
+              ><lw-icon name="lock" [size]="19"
+            /></span>
             <div>
               <h3>Secrets need real permission boundaries</h3>
-              <p>The Loom is engineered around strict GM and per-player witness permissions—access is enforced when campaign context is retrieved from the graph, not merely hidden on screen.</p>
+              <p>
+                The Loom is engineered around strict GM and per-player witness
+                permissions—access is enforced when campaign context is
+                retrieved from the graph, not merely hidden on screen.
+              </p>
             </div>
           </article>
           <article class="why-card">
-            <span class="why-icon" aria-hidden="true"><lw-icon name="book-open" [size]="19" /></span>
+            <span class="why-icon" aria-hidden="true"
+              ><lw-icon name="book-open" [size]="19"
+            /></span>
             <div>
               <h3>One Loom, wherever you play—zero forced AI</h3>
               @if (isWeaveEnabled()) {
-                <p>A free, zero-hallucination campaign memory assistant on every page for GMs and players. The Weave’s creative drafting studio remains 100% optional and requires explicit GM review.</p>
+              <p>
+                A campaign memory assistant designed to cite established canon
+                on every page for GMs and players. The Weave’s creative drafting
+                studio remains 100% optional and requires explicit GM review.
+              </p>
               } @else {
-                <p>A free, zero-hallucination campaign memory assistant on every page for GMs and players—grounded strictly in your established canon with generative AI off by default.</p>
+              <p>
+                A campaign memory assistant designed to cite established canon
+                on every page for GMs and players—grounded strictly in your
+                established canon with generative AI off by default.
+              </p>
               }
             </div>
           </article>
@@ -227,64 +356,120 @@
     </section>
 
     <!-- FOUR CORE PILLARS + INTERACTIVE EXPERIENCE -->
-    <section class="sections wrap" id="features" aria-labelledby="features-heading">
+    <section
+      class="sections wrap"
+      id="features"
+      aria-labelledby="features-heading"
+    >
       <div class="section-kicker">Everything connected</div>
       <h2 id="features-heading">Run the story, not the software.</h2>
       <p class="section-intro">
-        From the first spark of a worldbuilding idea to the last roll of 3D physics dice on the Virtual Tabletop,
-        LoomWeaver brings your entire tabletop RPG campaign into one place—so your focus stays at the table.
+        From the first spark of a worldbuilding idea to the last roll of 3D
+        physics dice on the Virtual Tabletop, LoomWeaver brings your entire
+        tabletop RPG campaign into one place—so your focus stays at the table.
       </p>
 
+      <lw-section-image
+        [src]="assets.featuresImage"
+        alt="LoomWeaver features illustration"
+      />
       <div class="features">
         @for (pillar of primaryPillars(); track pillar.id) {
-          <article class="feature" [class.feature-gold]="pillar.accent === 'gold'">
-            @if (pillar.flag) {
-              <span class="flag">{{ pillar.flag }}</span>
+        <article
+          class="feature"
+          [class.feature-gold]="pillar.accent === 'gold'"
+        >
+          @if (pillar.flag) {
+          <span class="flag">{{ pillar.flag }}</span>
+          }
+          <span class="ficon"
+            ><lw-icon [name]="pillar.icon" [size]="20"
+          /></span>
+          <h3>{{ pillar.title }}</h3>
+          <p>{{ pillar.description }}</p>
+          <ul class="feature-bullets">
+            @for (b of pillar.bullets; track b) {
+            <li><span>{{ b }}</span></li>
             }
-            <span class="ficon"><lw-icon [name]="pillar.icon" [size]="20" /></span>
-            <h3>{{ pillar.title }}</h3>
-            <p>{{ pillar.description }}</p>
-            <ul class="feature-bullets">
-              @for (b of pillar.bullets; track b) {
-                <li><span>{{ b }}</span></li>
-              }
-            </ul>
-            <div class="feature-footer">
-              <button ngpButton type="button" class="btn ghost btn-sm" (click)="openAuth('login', pillar.route)">
-                <span>Launch {{ pillar.title }}</span>
-              </button>
-              <a class="seo-deep-link" [routerLink]="pillar.seoPath" [href]="pillar.seoPath">Explore page</a>
-            </div>
-          </article>
+          </ul>
+          <div class="feature-footer">
+            <button
+              ngpButton
+              type="button"
+              class="btn ghost btn-sm"
+              (click)="openAuth('login', pillar.route)"
+            >
+              <span>Launch {{ pillar.title }}</span>
+            </button>
+            <a
+              class="seo-deep-link"
+              [routerLink]="pillar.seoPath"
+              [href]="pillar.seoPath"
+              >Explore page</a
+            >
+          </div>
+        </article>
         }
       </div>
 
       <div class="experience" id="experience" aria-labelledby="exp-heading">
         <div class="exp-text">
           <div class="section-kicker">Less searching. More storytelling.</div>
-          <h2 id="exp-heading">The threads remember<br />what the stone forgets.</h2>
+          <h2 id="exp-heading">
+            The threads remember<br />what the stone forgets.
+          </h2>
           <p>
-            That NPC from three sessions ago. The clue buried in a private player note. The promise a hero made before
-            entering the dungeon. Everything stays within reach—and The Loom is available from every page for both
-            players and Game Masters.
+            That NPC from three sessions ago. The clue buried in a private
+            player note. The promise a hero made before entering the dungeon.
+            Everything stays within reach—and The Loom is available from every
+            page for both players and Game Masters.
           </p>
-          <div class="exp-links" role="tablist" aria-label="Experience Mode Highlights">
-            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'memory'" (click)="activeExperienceMode.set('memory'); activeIntelId.set('ask-the-loom')">
+          <div
+            class="exp-links"
+            role="tablist"
+            aria-label="Experience Mode Highlights"
+          >
+            <button
+              ngpButton
+              type="button"
+              class="exp-pill"
+              [class.active]="activeExperienceMode() === 'memory'"
+              (click)="activeExperienceMode.set('memory'); activeIntelId.set('ask-the-loom')"
+            >
               <span>Living memory</span>
             </button>
-            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'vtt'" (click)="activeExperienceMode.set('vtt'); activeIntelId.set('cult-presence')">
+            <button
+              ngpButton
+              type="button"
+              class="exp-pill"
+              [class.active]="activeExperienceMode() === 'vtt'"
+              (click)="activeExperienceMode.set('vtt'); activeIntelId.set('cult-presence')"
+            >
               <span>2D + 3D VTT</span>
             </button>
-            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'guides'" (click)="activeExperienceMode.set('guides'); activeIntelId.set('brother-malric')">
+            <button
+              ngpButton
+              type="button"
+              class="exp-pill"
+              [class.active]="activeExperienceMode() === 'guides'"
+              (click)="activeExperienceMode.set('guides'); activeIntelId.set('brother-malric')"
+            >
               <span>Adventure guides</span>
             </button>
-            <button ngpButton type="button" class="exp-pill" [class.active]="activeExperienceMode() === 'dice'" (click)="activeExperienceMode.set('dice'); activeIntelId.set('hidden-crypt')">
+            <button
+              ngpButton
+              type="button"
+              class="exp-pill"
+              [class.active]="activeExperienceMode() === 'dice'"
+              (click)="activeExperienceMode.set('dice'); activeIntelId.set('hidden-crypt')"
+            >
               <span>Dice &amp; effects</span>
             </button>
           </div>
           <div class="exp-cta-row">
             <a class="btn green" routerLink="/vtt" href="/vtt">
-              <span>Explore LoomWeaver VTT</span><lw-icon name="arrow-right" [size]="14" />
+              <span>Explore LoomWeaver VTT</span
+              ><lw-icon name="arrow-right" [size]="14" />
             </a>
           </div>
         </div>
@@ -292,39 +477,33 @@
         <div class="exp-screen">
           <div class="miniapp">
             <div class="minihead">
-              <span class="minihead-title"><lw-icon name="compass" [size]="14" /><span>Ruined Chapel · Act I · LoomWeaver VTT</span></span>
+              <span class="minihead-title"
+                ><lw-icon name="compass" [size]="14" /><span
+                  >Ruined Chapel · Act I · LoomWeaver VTT</span
+                ></span
+              >
               <small>GM VIEW · WITNESS ISOLATION ACTIVE</small>
             </div>
             <div class="minicontent">
               <div class="mini-map">
-                <svg viewBox="0 0 400 220" aria-hidden="true">
-                  <defs>
-                    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
-                      <path d="M24 0H0V24" stroke="#66e1b3" stroke-opacity=".18" fill="none" />
-                    </pattern>
-                  </defs>
-                  <rect width="400" height="220" fill="url(#grid)" />
-                  <path d="M34 32H364V176H34z" fill="#183d2c" fill-opacity=".32" stroke="#9ab8a4" stroke-width="10" />
-                  <rect x="157" y="64" width="90" height="45" rx="3" fill="#4b3e2e" stroke="#d9b77a" stroke-width="2" />
-                  <circle cx="202" cy="86" r="52" fill="#39e58c" fill-opacity=".12" stroke="#39e58c" stroke-dasharray="4 4" />
-                  <g fill="#0c3b29" stroke="#48f09b" stroke-width="3">
-                    <circle cx="88" cy="132" r="16" /><circle cx="194" cy="153" r="16" /><circle cx="310" cy="140" r="16" />
-                  </g>
-                  <g fill="#4f1f1d" stroke="#f57665" stroke-width="3">
-                    <circle cx="114" cy="73" r="15" /><circle cx="291" cy="66" r="15" />
-                  </g>
-                  <g fill="#f5e6c8" font-size="10" font-weight="700" text-anchor="middle" font-family="Inter, sans-serif">
-                    <text x="88" y="136">DAL</text><text x="194" y="157">FIVI</text><text x="310" y="144">MUNK</text>
-                    <text x="114" y="77">FOE</text><text x="291" y="70">FOE</text>
-                  </g>
-                </svg>
+                <lw-section-image
+                  [src]="assets.experienceImage"
+                  alt="Illustrative virtual tabletop scene"
+                />
               </div>
               <div class="mini-list">
                 <b>Session Intelligence (Click to Inspect)</b>
                 @for (item of sessionIntelItems; track item.id) {
-                  <button type="button" class="intel-row" [class.active]="activeIntelId() === item.id" (click)="activeIntelId.set(item.id)">
-                    <lw-icon [name]="item.icon" [size]="12" /><span>{{ item.label }}</span>
-                  </button>
+                <button
+                  type="button"
+                  class="intel-row"
+                  [class.active]="activeIntelId() === item.id"
+                  (click)="activeIntelId.set(item.id)"
+                >
+                  <lw-icon [name]="item.icon" [size]="12" /><span
+                    >{{ item.label }}</span
+                  >
+                </button>
                 }
               </div>
             </div>
@@ -333,7 +512,7 @@
                 <strong>{{ currentIntel().scope }}</strong>
                 <div class="mini-citations">
                   @for (cite of currentIntel().citations; track cite) {
-                    <span class="cite-pill">{{ cite }}</span>
+                  <span class="cite-pill">{{ cite }}</span>
                   }
                 </div>
               </div>
@@ -345,122 +524,237 @@
     </section>
 
     <!-- STUDIO ENGINES -->
-    <section class="engines-section" id="engines" aria-labelledby="engines-heading">
+    <section
+      class="engines-section"
+      id="engines"
+      aria-labelledby="engines-heading"
+    >
       <div class="wrap">
-        <div class="section-kicker">Built for D&amp;D 5e &amp; Custom Tabletop Worlds</div>
-        <h2 id="engines-heading">Inside LoomWeaver VTT &amp; TTRPG Campaign Studio.</h2>
+        <div class="section-kicker">
+          Built for D&amp;D 5e &amp; Custom Tabletop Worlds
+        </div>
+        <h2 id="engines-heading">
+          Inside LoomWeaver VTT &amp; TTRPG Campaign Studio.
+        </h2>
         <p class="section-intro">
-          Every LoomWeaver account unlocks a unified suite of specialized tabletop engines sharing the same authentication,
-          character roster, and campaign graph across every subdomain.
+          Every LoomWeaver account unlocks a unified suite of specialized
+          tabletop engines sharing the same authentication, character roster,
+          and campaign graph across every subdomain.
         </p>
         <div class="engine-grid">
           @for (engine of studioEngines(); track engine.id) {
-            <article class="engine-card">
-              <div class="engine-img-wrap">
-                <img [src]="engine.image" [alt]="engine.title" loading="lazy" />
-                <span class="engine-tag">{{ engine.tag }}</span>
+          <article class="engine-card">
+            <div class="engine-img-wrap">
+              <img [src]="engine.image" [alt]="engine.title" loading="lazy" />
+              <span class="engine-tag">{{ engine.tag }}</span>
+            </div>
+            <div class="engine-body">
+              <h3>{{ engine.title }}</h3>
+              <div class="engine-sub">{{ engine.subtitle }}</div>
+              <p>{{ engine.description }}</p>
+              <div class="engine-metrics">
+                @for (m of engine.metrics; track m) {
+                <span>{{ m }}</span>
+                }
               </div>
-              <div class="engine-body">
-                <h3>{{ engine.title }}</h3>
-                <div class="engine-sub">{{ engine.subtitle }}</div>
-                <p>{{ engine.description }}</p>
-                <div class="engine-metrics">
-                  @for (m of engine.metrics; track m) {
-                    <span>{{ m }}</span>
-                  }
-                </div>
-                <div class="feature-footer" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;">
-                  <button ngpButton type="button" class="btn green btn-sm" (click)="openAuth('login', engine.route)">
-                    <span>Open {{ engine.tag }}</span>
-                  </button>
-                  <div style="display:flex;gap:12px;align-items:center;font-size:12px;">
-                    <a class="seo-deep-link" [routerLink]="engine.seoPath" [href]="engine.seoPath">Overview</a>
-                    <a class="seo-deep-link" [href]="engine.subdomainUrl" style="color:#d9b77a;">{{ engine.subdomainHost }}</a>
-                  </div>
+              <div
+                class="feature-footer"
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                  margin-top: 12px;
+                "
+              >
+                <button
+                  ngpButton
+                  type="button"
+                  class="btn green btn-sm"
+                  (click)="openAuth('login', engine.route)"
+                >
+                  <span>Open {{ engine.tag }}</span>
+                </button>
+                <div
+                  style="
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                    font-size: 12px;
+                  "
+                >
+                  <a
+                    class="seo-deep-link"
+                    [routerLink]="engine.seoPath"
+                    [href]="engine.seoPath"
+                    >Overview</a
+                  >
+                  <a
+                    class="seo-deep-link"
+                    [href]="engine.subdomainUrl"
+                    style="color: #d9b77a"
+                    >{{ engine.subdomainHost }}</a
+                  >
                 </div>
               </div>
-            </article>
+            </div>
+          </article>
           }
         </div>
       </div>
     </section>
 
     <!-- PLANS & PRICING -->
-    <section class="pricing-section" id="pricing" aria-labelledby="pricing-heading">
+    <section
+      class="pricing-section"
+      id="pricing"
+      aria-labelledby="pricing-heading"
+    >
       <div class="wrap">
+        <lw-section-image
+          [src]="assets.pricingImage"
+          alt="LoomWeaver pricing illustration"
+        />
         <div class="pricing-top">
           <div>
             <div class="section-kicker">Choose your path</div>
             <h2 id="pricing-heading">A world for every storyteller.</h2>
-            <p class="section-intro">Start with the spark of an idea. Grow your tools as your campaign grows. Players always join your Virtual Tabletop for 100% free.</p>
+            <p class="section-intro">
+              Start with the spark of an idea. Grow your tools as your campaign
+              grows. Players always join your Virtual Tabletop for 100% free.
+            </p>
           </div>
           <div class="billing" role="group" aria-label="Billing period">
-            <button type="button" [class.on]="!billingAnnual()" [attr.aria-pressed]="!billingAnnual()" (click)="setBilling(false)">Monthly</button>
-            <button type="button" [class.on]="billingAnnual()" [attr.aria-pressed]="billingAnnual()" (click)="setBilling(true)">Yearly</button>
+            <button
+              type="button"
+              [class.on]="!billingAnnual()"
+              [attr.aria-pressed]="!billingAnnual()"
+              (click)="setBilling(false)"
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              [class.on]="billingAnnual()"
+              [attr.aria-pressed]="billingAnnual()"
+              (click)="setBilling(true)"
+            >
+              Yearly
+            </button>
             <span>2 months free</span>
           </div>
         </div>
         <div class="plans">
           @for (plan of pricingPlans(); track plan.id) {
-            <article class="plan" [class.popular]="plan.popular">
-              @if (plan.popular && plan.popularLabel) {
-                <span class="popular-label">{{ plan.popularLabel }}</span>
+          <article class="plan" [class.popular]="plan.popular">
+            @if (plan.popular && plan.popularLabel) {
+            <span class="popular-label">{{ plan.popularLabel }}</span>
+            }
+            <div class="tier">{{ plan.tier }}</div>
+            <div class="tier-sub">{{ plan.subtitle }}</div>
+            <div class="cost">
+              <sup>$</sup
+              ><span
+                >{{ billingAnnual() ? plan.yearlyMonthlyEquivalent :
+                plan.monthlyPrice }}</span
+              ><small>/mo</small>
+            </div>
+            <div class="billed">
+              @if (plan.monthlyPrice === 0) { {{ plan.billedDefault }} } @else
+              if (billingAnnual()) { ${{ plan.yearlyTotal }} billed annually (2
+              months free) } @else { Billed monthly · or ${{ plan.yearlyTotal
+              }}/yr }
+            </div>
+            <a
+              ngpButton
+              class="btn"
+              [class.primary]="plan.popular"
+              [class.ghost]="!plan.popular"
+              href="/register"
+              (click)="openAuth('register', '/home', $event)"
+            >
+              <span>{{ plan.ctaLabel }}</span>
+            </a>
+            <ul>
+              @for (feat of plan.features; track feat) {
+              <li><span>{{ feat }}</span></li>
               }
-              <div class="tier">{{ plan.tier }}</div>
-              <div class="tier-sub">{{ plan.subtitle }}</div>
-              <div class="cost"><sup>$</sup><span>{{ billingAnnual() ? plan.yearlyMonthlyEquivalent : plan.monthlyPrice }}</span><small>/mo</small></div>
-              <div class="billed">
-                @if (plan.monthlyPrice === 0) {
-                  {{ plan.billedDefault }}
-                } @else if (billingAnnual()) {
-                  ${{ plan.yearlyTotal }} billed annually (2 months free)
-                } @else {
-                  Billed monthly · or ${{ plan.yearlyTotal }}/yr
-                }
-              </div>
-              <a ngpButton class="btn" [class.primary]="plan.popular" [class.ghost]="!plan.popular" href="/register" (click)="openAuth('register', '/home', $event)">
-                <span>{{ plan.ctaLabel }}</span>
-              </a>
-              <ul>
-                @for (feat of plan.features; track feat) {
-                  <li><span>{{ feat }}</span></li>
-                }
-              </ul>
-            </article>
+            </ul>
+          </article>
           }
         </div>
-        <p class="pricing-note">Every tier includes 100% free player seats via invite links and free access to The Loom campaign memory search.</p>
+        <p class="pricing-note">
+          Every tier includes 100% free player seats via invite links and free
+          access to The Loom campaign memory search.
+        </p>
       </div>
     </section>
 
     <!-- CREATOR MARKETPLACE & FAQ -->
-    <section class="closing wrap" id="marketplace" aria-labelledby="marketplace-heading">
+    <section
+      class="closing wrap"
+      id="marketplace"
+      aria-labelledby="marketplace-heading"
+    >
+      <lw-section-image
+        [src]="assets.marketplaceImage"
+        alt="LoomWeaver marketplace illustration"
+      />
       <div class="section-kicker">Creator-First 85/15 Revenue Split</div>
       <h2 id="marketplace-heading">Your next legend begins here.</h2>
       <p>
-        Discover community-authored campaigns, adventure modules, 3D dice, LoomMaps battlemaps, spell shaders, and
-        miniatures in the LoomWeaver Marketplace—or publish your own creations and keep <strong>85% of every sale</strong>.
+        The planned LoomWeaver Marketplace connects community-authored
+        campaigns, adventure modules, battlemaps, and studio assets. Its
+        creator-first model allocates <strong>85% of each sale</strong> to the
+        creator, subject to the marketplace release gates.
       </p>
       <div class="closing-actions">
-        <a ngpButton class="btn primary" href="/register" (click)="openAuth('register', '/home', $event)"><span>Create Your Free Campaign</span></a>
-        <a ngpButton class="btn ghost" href="/login" (click)="openAuth('login', '/marketplace', $event)"><span>Explore Creator Marketplace</span></a>
+        <a
+          ngpButton
+          class="btn primary"
+          href="/register"
+          (click)="openAuth('register', '/home', $event)"
+          ><span>Create Your Free Campaign</span></a
+        >
+        <a
+          ngpButton
+          class="btn ghost"
+          href="/login"
+          (click)="openAuth('login', '/marketplace', $event)"
+          ><span>Explore Creator Marketplace</span></a
+        >
       </div>
     </section>
 
     <section class="faq-section wrap" id="faq" aria-labelledby="faq-heading">
+      <lw-section-image
+        [src]="assets.faqImage"
+        alt="LoomWeaver faq illustration"
+      />
       <div class="section-kicker">Frequently Asked Questions</div>
-      <h2 id="faq-heading">Everything about LoomWeaver &amp; LoomWeaver VTT.</h2>
+      <h2 id="faq-heading">
+        Everything about LoomWeaver &amp; LoomWeaver VTT.
+      </h2>
       <div class="faq-list">
         @for (item of faqs(); track item.id) {
-          <article class="faq-item" [class.open]="openFaqId() === item.id">
-            <button type="button" class="faq-question" [attr.aria-expanded]="openFaqId() === item.id" (click)="toggleFaq(item.id)">
-              <span>{{ item.question }}</span>
-              <lw-icon [name]="openFaqId() === item.id ? 'chevron-up' : 'chevron-down'" [size]="16" />
-            </button>
-            @if (openFaqId() === item.id) {
-              <div class="faq-answer"><p>{{ item.answer }}</p></div>
-            }
-          </article>
+        <article class="faq-item" [class.open]="openFaqId() === item.id">
+          <button
+            type="button"
+            class="faq-question"
+            [attr.aria-expanded]="openFaqId() === item.id"
+            (click)="toggleFaq(item.id)"
+          >
+            <span>{{ item.question }}</span>
+            <lw-icon
+              [name]="openFaqId() === item.id ? 'chevron-up' : 'chevron-down'"
+              [size]="16"
+            />
+          </button>
+          @if (openFaqId() === item.id) {
+          <div class="faq-answer"><p>{{ item.answer }}</p></div>
+          }
+        </article>
         }
       </div>
     </section>
@@ -471,30 +765,63 @@
       <div class="footer-brand">
         <img [src]="assets.brandRavenEmblem" alt="" class="footer-raven" />
         <div>
-          <span>© 2026 LoomWeaver — Your Campaign. One Living World. (loom-weaver.com)</span>
-          <small style="display:block;font-size:11px;color:#8aa899;margin-top:4px;">
-            LoomWeaver VTT · 2D &amp; 3D Virtual Tabletop (Virtual Table Top) · Fantasy TTRPG · Fantasy Tabletop &amp; Table Top Role Playing Game Campaign Manager
+          <span
+            >© 2026 LoomWeaver — Your Campaign. One Living World.
+            (loom-weaver.com)</span
+          >
+          <small
+            style="
+              display: block;
+              font-size: 11px;
+              color: #8aa899;
+              margin-top: 4px;
+            "
+          >
+            LoomWeaver VTT · 2D &amp; 3D Virtual Tabletop (Virtual Table Top) ·
+            Fantasy TTRPG · Fantasy Tabletop &amp; Table Top Role Playing Game
+            Campaign Manager
           </small>
         </div>
       </div>
       <div class="footer-links">
         <a routerLink="/" href="/">LoomWeaver</a>
         <a routerLink="/vtt" href="/vtt">LoomWeaver VTT</a>
-        <a routerLink="/campaign-manager" href="/campaign-manager">Campaign Manager</a>
-        <a routerLink="/battlemap-builder" href="/battlemap-builder">Battlemap Builder</a>
-        <a routerLink="/effect-builder" href="/effect-builder">Effect Builder</a>
-        <a routerLink="/encounter-builder" href="/encounter-builder">Encounter Builder</a>
+        <a routerLink="/campaign-manager" href="/campaign-manager"
+          >Campaign Manager</a
+        >
+        <a routerLink="/battlemap-builder" href="/battlemap-builder"
+          >Battlemap Builder</a
+        >
+        <a routerLink="/effect-builder" href="/effect-builder"
+          >Effect Builder</a
+        >
+        <a routerLink="/encounter-builder" href="/encounter-builder"
+          >Encounter Builder</a
+        >
         <a routerLink="/3d-assets" href="/3d-assets">3D Assets &amp; Dice</a>
-        <a routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant">The Loom AI</a>
+        <a routerLink="/ai-campaign-assistant" href="/ai-campaign-assistant"
+          >The Loom AI</a
+        >
         <a routerLink="/features" href="/features">Features</a>
+        <a routerLink="/about" href="/about">About LoomWeaver</a>
         <a href="https://maps.loom-weaver.com">maps.loom-weaver.com</a>
-        <a href="https://effectbuilder.loom-weaver.com">effectbuilder.loom-weaver.com</a>
+        <a href="https://effectbuilder.loom-weaver.com"
+          >effectbuilder.loom-weaver.com</a
+        >
         <a href="https://vtt.loom-weaver.com">vtt.loom-weaver.com</a>
-        <a href="https://actionbuilder.loom-weaver.com">actionbuilder.loom-weaver.com</a>
+        <a href="https://actionbuilder.loom-weaver.com"
+          >actionbuilder.loom-weaver.com</a
+        >
         <a href="https://3dassets.loom-weaver.com">3dassets.loom-weaver.com</a>
-        <a href="https://generator.loom-weaver.com">generator.loom-weaver.com</a>
-        <a href="/login" (click)="openAuth('login', undefined, $event)">Sign In</a>
-        <a href="/register" (click)="openAuth('register', undefined, $event)">Create Free Account</a>
+        <a href="https://generator.loom-weaver.com"
+          >generator.loom-weaver.com</a
+        >
+        <a href="/login" (click)="openAuth('login', undefined, $event)"
+          >Sign In</a
+        >
+        <a href="/register" (click)="openAuth('register', undefined, $event)"
+          >Create Free Account</a
+        >
       </div>
     </div>
   </footer>

@@ -2,11 +2,12 @@ import { Constants, Effect, RenderTargetTexture, Scene, ShaderMaterial, Texture,
 import { EffectBlendMode } from '../effect-definition';
 import { ARCANE_FRAGMENT, CINEMATIC_FRAGMENT, FIRE_FRAGMENT } from './native-shaders';
 
-const vertex=`precision highp float;
+const vertex = `precision highp float;
  attribute vec3 position; attribute vec2 uv; attribute vec4 color;
  uniform mat4 worldViewProjection; varying vec2 vUV; varying vec4 vColor;
  void main(){vUV=uv;vColor=color;gl_Position=worldViewProjection*vec4(position,1.0);}`;
-const blend=`
+
+const blend = `
  uniform float uLayerAlpha; uniform float uBlend; uniform sampler2D uBackdrop; uniform vec2 uViewport;
  vec3 blendColor(vec3 b,vec3 s){
   if(uBlend<.5)return s;
@@ -26,22 +27,53 @@ const blend=`
   return c;
  }
 `;
-export const NATIVE_BLEND_FUNCTIONS=blend.replace(/uniform[^;]+;/g,'');
-const particle=`precision highp float; varying vec2 vUV; varying vec4 vColor; uniform vec3 uMain; uniform vec3 uCore; uniform float uClock;
+
+export const NATIVE_BLEND_FUNCTIONS = blend.replace(/uniform[^;]+;/g, '');
+
+const particle = `precision highp float; varying vec2 vUV; varying vec4 vColor; uniform vec3 uMain; uniform vec3 uCore; uniform float uClock;
  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
  float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
- void main(){float tile=floor(vUV.x/2.0);vec2 p=vec2(fract(vUV.x/2.0)*2.0-1.0,vUV.y*2.0-1.0);float r=length(p),a=0.0;
- if(tile<.5){float n=noise(p*4.0+uClock*.1)*.55+noise(p*9.0)*.3+noise(p*19.0)*.15;a=pow(max(0.0,1.0-r*r),1.5)*smoothstep(.12,.75,n);}
- else if(tile<1.5)a=exp(-dot(p,p)*6.0)*max(0.0,1.0-r);
- else if(tile<2.5)a=exp(-(p.x*p.x*38.0+p.y*p.y*5.0))*max(0.0,1.0-r);
- else if(tile<3.5)a=step(r,.5+noise(p*5.0)*.2)*max(0.0,1.0-r);
- else if(tile<4.5){float n=noise(p*5.0+vec2(uClock*1.5,-uClock*5.0))*.65+noise(p*13.0-uClock*2.0)*.35;float body=(1.0-p.y)*.35-abs(p.x+(n-.5)*.45);a=smoothstep(-.08,.18,body)*smoothstep(-1.0,-.7,p.y)*(1.0-smoothstep(.4,1.0,p.y))*(.4+n*.6);}
- else {float crystal=abs(p.x)*.8+abs(p.y)*.45;a=(1.0-smoothstep(.35,.46,crystal))*max(0.0,1.0-r);}
- vec3 tint=tile>3.5&&tile<4.5?mix(vColor.rgb*1.5,uCore*2.0,clamp((1.0-vUV.y)*.7,0.0,1.0)):vColor.rgb*(tile>.5?1.6:1.0);
- gl_FragColor=vec4(tint,a*vColor.a);}`;
-const ribbon=`precision highp float;varying vec2 vUV;varying vec4 vColor;uniform vec3 uMain;uniform vec3 uCore;uniform float uClock;
- void main(){float d=abs(vUV.y*2.0-1.0),edge=pow(max(0.0,1.0-d),1.3),hot=exp(-d*d*85.0);float strands=.7+.3*sin(vUV.x*145.0-uClock*20.0+sin(vUV.x*50.0)*3.0);gl_FragColor=vec4(mix(vColor.rgb*1.3,uCore*2.0,hot),edge*(.6+strands*.4)*vColor.a);}`;
-const barrier=`precision highp float;varying vec2 vUV;uniform vec3 uMain;uniform vec3 uCore;uniform float uClock;uniform float uVariant;
+ void main(){
+  float tile=floor(vUV.x/2.0);
+  vec2 p=vec2(fract(vUV.x/2.0)*2.0-1.0,vUV.y*2.0-1.0);
+  float r=length(p),a=0.0;
+  if(tile<.5){
+   float n=noise(p*3.8+uClock*.15)*.55+noise(p*8.5-uClock*.1)*.3+noise(p*17.0)*.15;
+   a=pow(max(0.0,1.0-r*r),1.65)*smoothstep(.14,.76,n);
+  }
+  else if(tile<1.5)a=exp(-dot(p,p)*6.5)*max(0.0,1.0-r);
+  else if(tile<2.5)a=exp(-(p.x*p.x*36.0+p.y*p.y*5.5))*max(0.0,1.0-r);
+  else if(tile<3.5)a=smoothstep(.65,.35,r+noise(p*5.0)*.22)*max(0.0,1.0-r);
+  else if(tile<4.5){
+   // Radial 3D turbulent plasma/ember wisp (no flat 2D candle cutout!)
+   float n=noise(p*4.2+vec2(uClock*2.4,-uClock*3.2))*.6+noise(p*9.5-uClock*2.5)*.4;
+   float radial=max(0.0,1.0-r*1.12+(n-.5)*.38);
+   a=pow(radial,1.55)*smoothstep(.08,.72,n+radial*.45);
+  }
+  else {
+   float crystal=abs(p.x)*.78+abs(p.y)*.42;
+   a=(1.0-smoothstep(.32,.48,crystal))*max(0.0,1.0-r);
+  }
+  float coreHot=exp(-dot(p,p)*5.2);
+  vec3 tint=tile<.5?vColor.rgb:mix(vColor.rgb,uCore,clamp(coreHot*(tile>3.5&&tile<4.5?.82:.55),0.0,1.0));
+  gl_FragColor=vec4(tint,a*vColor.a);
+ }`;
+
+const ribbon = `precision highp float;varying vec2 vUV;varying vec4 vColor;uniform vec3 uMain;uniform vec3 uCore;uniform float uClock;
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+ void main(){
+  float curl=sin(vUV.x*22.0-uClock*14.0)*.12;
+  float d=abs(vUV.y*2.0-1.0+curl);
+  float n=noise(vec2(vUV.x*16.0-uClock*9.0,vUV.y*8.0));
+  float edge=pow(max(0.0,1.0-d-n*.15),1.35)*smoothstep(0.0,0.08,vUV.x);
+  float hot=exp(-d*d*38.0);
+  float strands=.72+.28*sin(vUV.x*95.0-uClock*18.0+n*4.0);
+  vec3 col=mix(vColor.rgb,uCore,clamp(hot*.85,0.0,1.0));
+  gl_FragColor=vec4(col,edge*(.65+strands*.35)*vColor.a);
+ }`;
+
+const barrier = `precision highp float;varying vec2 vUV;uniform vec3 uMain;uniform vec3 uCore;uniform float uClock;uniform float uVariant;
  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
  void main(){vec2 p=vUV;float n=noise(p*vec2(16.,8.)+vec2(0.,-uClock*2.));float detail=noise(p*40.+n*2.);float edge=smoothstep(0.,.035,p.x)*smoothstep(0.,.035,1.-p.x)*smoothstep(0.,.035,p.y)*smoothstep(0.,.06,1.-p.y);float a=.2+n*.4,hot=pow(detail,5.);
  if(uVariant<.5){vec2 cell=abs(fract(p*vec2(14.,6.))-.5);hot+=pow(max(cell.x,cell.y)*2.,18.);}
@@ -50,23 +82,119 @@ const barrier=`precision highp float;varying vec2 vUV;uniform vec3 uMain;uniform
  else if(uVariant<3.5){a=pow(max(0.,1.-abs(sin(p.x*39.+sin(p.y*9.)*3.))),5.);hot=a*.4;}
  else {vec2 brick=fract(p*vec2(12.,5.)+vec2(step(.5,fract(p.y*5.))*.5,0.));float seam=step(.04,brick.x)*step(.04,brick.y);a=.85;hot=seam*.15+detail*.1;}
  gl_FragColor=vec4(mix(uMain*(.4+detail*.6),uCore,clamp(hot,0.,1.)),a*edge);}`;
-let registered=false;
-function register(){if(registered)return;registered=true;for(const [name,fragment] of Object.entries({fire:FIRE_FRAGMENT,cinematic:CINEMATIC_FRAGMENT,arcane:ARCANE_FRAGMENT,particle,ribbon,barrier})){
- Effect.ShadersStore['lwNative'+name+'VertexShader']=vertex;
- const source=fragment.replace(/gl_FragColor\s*=\s*([^;]+);/g,'gl_FragColor = finishLayer($1);');
- Effect.ShadersStore['lwNative'+name+'FragmentShader']=source.replace('void main()',blend+'\nvoid main()');
-}}
-export const nativeBlendModes:EffectBlendMode[]=['normal','add','screen','multiply','overlay','soft-light','hard-light','darken','lighten','difference'];
-export function createNativeMaterial(scene:Scene,family:'fire'|'arcane'|'cinematic'|'particle'|'ribbon'|'barrier',name:string):ShaderMaterial{
- register();const m=new ShaderMaterial(name,scene,{vertex:'lwNative'+family,fragment:'lwNative'+family},{attributes:['position','uv','color'],uniforms:['worldViewProjection','uLayerAlpha','uBlend','uViewport','uMain','uCore','uClock','uProgress','uMode','uVariant','uStrength','uTime','uStyle','uElement','uTurbulence','uAlpha','uColor','uBloom','uDistortion','uScorch','uSeed','uSmoke','uLight','uShadow','uEmbers','uFlame','uSmokeColor'],samplers:['uBackdrop'],needAlphaBlending:true});
- m.backFaceCulling=false;m.disableDepthWrite=true;m.alphaMode=Constants.ALPHA_COMBINE;m.setFloat('uLayerAlpha',1);m.setFloat('uBlend',0);m.setVector2('uViewport',new Vector2(scene.getEngine().getRenderWidth(),scene.getEngine().getRenderHeight()));
- m.onBindObservable.add(()=>m.getEffect()?.setVector2('uViewport',new Vector2(scene.getEngine().getRenderWidth(),scene.getEngine().getRenderHeight())));return m;
+
+let registered = false;
+function register() {
+  if (registered) return;
+  registered = true;
+  for (const [name, fragment] of Object.entries({
+    fire: FIRE_FRAGMENT,
+    cinematic: CINEMATIC_FRAGMENT,
+    arcane: ARCANE_FRAGMENT,
+    particle,
+    ribbon,
+    barrier,
+  })) {
+    Effect.ShadersStore['lwNative' + name + 'VertexShader'] = vertex;
+    const source = fragment.replace(/gl_FragColor\s*=\s*([^;]+);/g, 'gl_FragColor = finishLayer($1);');
+    Effect.ShadersStore['lwNative' + name + 'FragmentShader'] = source.replace('void main()', blend + '\nvoid main()');
+  }
 }
+
+export const nativeBlendModes: EffectBlendMode[] = [
+  'normal',
+  'add',
+  'screen',
+  'multiply',
+  'overlay',
+  'soft-light',
+  'hard-light',
+  'darken',
+  'lighten',
+  'difference',
+];
+
+export function createNativeMaterial(
+  scene: Scene,
+  family: 'fire' | 'arcane' | 'cinematic' | 'particle' | 'ribbon' | 'barrier',
+  name: string
+): ShaderMaterial {
+  register();
+  const m = new ShaderMaterial(
+    name,
+    scene,
+    { vertex: 'lwNative' + family, fragment: 'lwNative' + family },
+    {
+      attributes: ['position', 'uv', 'color'],
+      uniforms: [
+        'worldViewProjection',
+        'uLayerAlpha',
+        'uBlend',
+        'uViewport',
+        'uMain',
+        'uCore',
+        'uClock',
+        'uProgress',
+        'uMode',
+        'uVariant',
+        'uStrength',
+        'uTime',
+        'uStyle',
+        'uElement',
+        'uTurbulence',
+        'uAlpha',
+        'uColor',
+        'uBloom',
+        'uDistortion',
+        'uScorch',
+        'uSeed',
+        'uSmoke',
+        'uLight',
+        'uShadow',
+        'uEmbers',
+        'uFlame',
+        'uSmokeColor',
+      ],
+      samplers: ['uBackdrop'],
+      needAlphaBlending: true,
+    }
+  );
+  m.backFaceCulling = false;
+  m.disableDepthWrite = true;
+  m.alphaMode = Constants.ALPHA_COMBINE;
+  m.setFloat('uLayerAlpha', 1);
+  m.setFloat('uBlend', 0);
+  m.setVector2('uViewport', new Vector2(scene.getEngine().getRenderWidth(), scene.getEngine().getRenderHeight()));
+  m.onBindObservable.add(() =>
+    m.getEffect()?.setVector2('uViewport', new Vector2(scene.getEngine().getRenderWidth(), scene.getEngine().getRenderHeight()))
+  );
+  return m;
+}
+
 /** Artistic blends snapshot the scene plus preceding effect layers. They retain depth-tested
  * world meshes; no canvas texture or Pixi overlay is used. Allocated only when requested. */
-export function createBlendBackdrop(scene:Scene,id:string,order:number,owner:string):RenderTargetTexture{
- const engine=scene.getEngine(),scale=Math.min(1,1024/Math.max(engine.getRenderWidth(),engine.getRenderHeight()));
- const r=new RenderTargetTexture('lw-blend-'+id,{width:Math.max(1,Math.round(engine.getRenderWidth()*scale)),height:Math.max(1,Math.round(engine.getRenderHeight()*scale))},scene,false,true,Constants.TEXTURETYPE_UNSIGNED_BYTE,false,Texture.BILINEAR_SAMPLINGMODE,true);
- r.renderListPredicate=mesh=>{const meta=mesh.metadata;return meta?.lwNativeOwner!==owner||meta.lwNativeOrder<order;};
- r.ignoreCameraViewport=true;scene.customRenderTargets.push(r);return r;
+export function createBlendBackdrop(scene: Scene, id: string, order: number, owner: string): RenderTargetTexture {
+  const engine = scene.getEngine(),
+    scale = Math.min(1, 1024 / Math.max(engine.getRenderWidth(), engine.getRenderHeight()));
+  const r = new RenderTargetTexture(
+    'lw-blend-' + id,
+    {
+      width: Math.max(1, Math.round(engine.getRenderWidth() * scale)),
+      height: Math.max(1, Math.round(engine.getRenderHeight() * scale)),
+    },
+    scene,
+    false,
+    true,
+    Constants.TEXTURETYPE_UNSIGNED_BYTE,
+    false,
+    Texture.BILINEAR_SAMPLINGMODE,
+    true
+  );
+  r.renderListPredicate = (mesh) => {
+    const meta = mesh.metadata;
+    return meta?.lwNativeOwner !== owner || meta.lwNativeOrder < order;
+  };
+  r.ignoreCameraViewport = true;
+  scene.customRenderTargets.push(r);
+  return r;
 }

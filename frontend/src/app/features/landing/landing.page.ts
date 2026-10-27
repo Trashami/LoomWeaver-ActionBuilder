@@ -14,10 +14,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
 import { AuthSessionService } from '../../core/services/auth-session.service';
 import {
-  isSubdomainHost,
   resolveDefaultStudioRouteForHost,
 } from '../../core/services/cookie-sso.helper';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
+import { LwSectionImageComponent } from '../../shared/ui/section-image/section-image.component';
+import { LwAppHeaderBarComponent } from '../../shared/ui/app-header-bar/app-header-bar.component';
 import { LwIconComponent } from '../../shared/ui/public-api';
 import {
   LANDING_ASSET_PATHS,
@@ -32,7 +33,7 @@ import { SEO_LANDING_PAGES, SeoLandingPageConfig } from './landing-seo-pages.dat
 @Component({
   selector: 'lw-landing-page',
   standalone: true,
-  imports: [RouterLink, NgpButton, LwIconComponent],
+  imports: [RouterLink, NgpButton, LwIconComponent, LwAppHeaderBarComponent, LwSectionImageComponent],
   templateUrl: './landing.page.html',
   styleUrl: './landing.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -153,7 +154,7 @@ export class LandingPageComponent implements OnInit {
         ? {
             ...faq,
             answer:
-              'Never. The Loom has a strict Zero-Generation policy: it only searches and synthesizes your established campaign canon and session history with clickable citations. Generative AI is 100% opt-in and off by default.',
+              faq.answer,
           }
         : faq,
     );
@@ -176,22 +177,12 @@ export class LandingPageComponent implements OnInit {
   }
 
   private syncRouteAndSeoState(): void {
-    const currentPath = this.router.url.split('?')[0];
+    const currentPath = this.router.url.split('?')[0].replace(/\/+$/, '') || '/';
     const queryAuth = this.route.snapshot.queryParamMap.get('auth');
     const returnUrl =
       this.route.snapshot.queryParamMap.get('returnUrl') || resolveDefaultStudioRouteForHost();
 
-    if (isSubdomainHost()) {
-      if (this.auth.isAuthenticated()) {
-        void this.router.navigateByUrl(resolveDefaultStudioRouteForHost());
-        return;
-      }
-      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-      const isCrawler = /bot|crawl|spider|slurp|google|bing|duckduck|baidu|yandex|facebookexternalhit|twitterbot/i.test(ua);
-      if (!isCrawler) {
-        this.auth.openAuthModal('login', resolveDefaultStudioRouteForHost());
-      }
-    } else if (currentPath === '/login' || queryAuth === 'login') {
+    if (currentPath === '/login' || queryAuth === 'login') {
       this.auth.openAuthModal('login', returnUrl);
     } else if (currentPath === '/register' || queryAuth === 'register') {
       this.auth.openAuthModal('register', returnUrl);
@@ -211,6 +202,7 @@ export class LandingPageComponent implements OnInit {
     this.metaSvc.updateTag({ name: 'twitter:title', content: cfg.title });
     this.metaSvc.updateTag({ name: 'twitter:description', content: cfg.description });
     this.updateCanonicalLink(cfg.canonical);
+    this.metaSvc.updateTag({ name: 'robots', content: ['login', 'register'].includes(resolvedKey) ? 'noindex, follow' : 'index, follow, max-image-preview:large' });
   }
 
   private resolveSeoKey(
@@ -228,6 +220,7 @@ export class LandingPageComponent implements OnInit {
         if (host.startsWith('3dassets.') || host.startsWith('generator.')) return '3d-assets';
       }
     } catch {}
+    if (['/login', '/register', '/about'].includes(currentPath)) return currentPath.slice(1);
     if (routeDataSeo && SEO_LANDING_PAGES[routeDataSeo]) {
       return routeDataSeo;
     }

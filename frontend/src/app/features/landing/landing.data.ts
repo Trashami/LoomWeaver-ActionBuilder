@@ -1,14 +1,7 @@
-export const LANDING_ASSET_PATHS = {
-  brandLogoWordmark: '/landing-assets/brand/logo-wordmark.png',
-  brandRavenEmblem: '/landing-assets/brand/raven-emblem.png',
-  heroWallpaper: '/landing-assets/hero/hero-wallpaper.png',
-  heroShowcaseCard: '/landing-assets/hero/hero-showcase-card.png',
-  engineVttCombat: '/landing-assets/engines/engine-1-vtt-combat.jpg',
-  engineLoomWeaveGraph: '/landing-assets/engines/engine-2-loom-weave-graph.jpg',
-  engineLoomMapsAtlas: '/landing-assets/engines/engine-3-loommaps-atlas.jpg',
-  engineDiceShaderFx: '/landing-assets/engines/engine-4-dice-shader-fx.jpg',
-  sectionAtmosphere: '/landing-assets/backgrounds/section-atmosphere.jpg',
-} as const;
+import landingFaqs from './landing-faqs.json';
+import landingAssets from './landing-assets.json';
+
+export const LANDING_ASSET_PATHS = landingAssets;
 
 export interface PillarFeatureCardVm {
   readonly id: string;
@@ -333,47 +326,4 @@ export const LANDING_PRICING_PLANS: readonly PricingPlanVm[] = [
   },
 ];
 
-export const LANDING_FAQS: readonly LandingFaqItemVm[] = [
-  {
-    id: 'faq-what-is-loomweaver-vtt',
-    question: 'What is LoomWeaver VTT and how does it compare to a traditional Virtual Tabletop (Virtual Table Top)?',
-    answer:
-      'LoomWeaver VTT (accessible at loom-weaver.com/vtt and vtt.loom-weaver.com) is an all-in-one 2D, 2.5D, and 3D Virtual Tabletop (VTT / virtual table top) and fantasy tabletop role playing game (TTRPG / table top role playing game) campaign manager. Unlike standalone VTTs that separate your fantasy table top battlemaps from your campaign wiki, LoomWeaver connects your 2D & 3D tactical combat map, 3D physics dice, Character Studio, World Atlas, and living campaign memory (The Loom) into one unified dark-fantasy workspace.',
-  },
-  {
-    id: 'faq-fantasy-ttrpg-systems',
-    question: 'Which fantasy TTRPG and table top role playing game systems work with LoomWeaver VTT?',
-    answer:
-      'LoomWeaver VTT supports D&D 5e (2014 & 2024 SRD), Pathfinder 2e, Vampire: The Masquerade V5, and custom fantasy TTRPG / fantasy tabletop worlds. Game Masters can build custom monster actions, spells, items, and character sheets for any table top role playing game.',
-  },
-  {
-    id: 'faq-gm-authorship',
-    question: 'Does LoomWeaver write my story or replace the Game Master?',
-    answer:
-      'Never. The Loom has a strict Zero-Generation policy: it only searches and synthesizes your established campaign canon and session history with clickable citations. When you optionally enable The Weave to draft NPCs, monsters, quests, or battlemaps, every single output is a draft requiring 100% GM review—edit, re-weave, or reject before anything enters your world.',
-  },
-  {
-    id: 'faq-free-players',
-    question: 'Do my players have to pay for a subscription to join my Virtual Tabletop?',
-    answer:
-      'No. Players join your table for 100% free via frictionless invite links. Players never need a subscription to use Character Studio sheets, move tokens on the 2.5D VTT, roll 3D dice, or query The Loom for memories their character has witnessed.',
-  },
-  {
-    id: 'faq-player-isolation',
-    question: 'How does LoomWeaver protect GM secrets and per-player knowledge?',
-    answer:
-      'Every note, NPC dossier, map POI, and session entry enforces permission boundaries at retrieval time: Private to Player, Shared with GM Only, or Revealed to Party. When a player asks The Loom a question, the engine filters the knowledge graph so unrevealed GM twists stay strictly hidden.',
-  },
-  {
-    id: 'faq-marketplace',
-    question: 'How does the 85/15 Creator Marketplace revenue split work?',
-    answer:
-      'Independent creators keep 85% of revenue on custom campaigns, adventure modules, LoomMaps asset packs, and ready-to-run VTT encounters—with one-click module importing directly into any Game Master account.',
-  },
-  {
-    id: 'faq-ecosystem-domains',
-    question: 'What are the official LoomWeaver TTRPG & VTT domains and studio tools?',
-    answer:
-      'The official LoomWeaver TTRPG & Virtual Tabletop platform is hosted at https://loom-weaver.com and unites specialized web studios under one shared Single Sign-On account: LoomWeaver VTT (vtt.loom-weaver.com), LoomMaps Battlemap & World Atlas Builder (maps.loom-weaver.com), Effect Builder Studio for spell shaders (effectbuilder.loom-weaver.com), Action & Encounter Builder (actionbuilder.loom-weaver.com), and 3D Asset & Miniature Generator Studio (3dassets.loom-weaver.com and generator.loom-weaver.com).',
-  },
-];
+export const LANDING_FAQS: readonly LandingFaqItemVm[] = landingFaqs;

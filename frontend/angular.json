@@ -15,27 +15,53 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": [{ "glob": "**/*", "input": "public" }],
-            "styles": ["src/styles.scss"]
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
-              "optimization": true,
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": false
+              },
               "outputHashing": "all",
               "budgets": [
-                { "type": "initial", "maximumWarning": "4MB", "maximumError": "8MB" },
-                { "type": "anyComponentStyle", "maximumWarning": "64kB", "maximumError": "128kB" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "4MB",
+                  "maximumError": "8MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "64kB",
+                  "maximumError": "128kB"
+                }
               ]
             },
-            "development": { "optimization": false, "sourceMap": true }
+            "development": {
+              "optimization": false,
+              "sourceMap": true
+            }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": { "buildTarget": "loomweaver-v2:build:production" },
-            "development": { "buildTarget": "loomweaver-v2:build:development" }
+            "production": {
+              "buildTarget": "loomweaver-v2:build:production"
+            },
+            "development": {
+              "buildTarget": "loomweaver-v2:build:development"
+            }
           },
           "defaultConfiguration": "development"
         }

@@ -15,7 +15,11 @@
     "target": "ES2022",
     "module": "preserve",
     "skipLibCheck": true,
-    "lib": ["ES2022", "dom"]
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "resolveJsonModule": true
   },
   "angularCompilerOptions": {
     "strictInjectionParameters": true,

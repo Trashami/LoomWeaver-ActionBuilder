@@ -65,8 +65,7 @@ export interface NativeWorldOptions {
 const color = (hex: string) => Color3.FromHexString(hex);
 const ownerId = () => 'eb-native-' + Math.random().toString(36).slice(2);
 
-/** Host-scene runtime. Owns only its meshes, materials, targets and bounded point lights.
- * Does not create an engine, render loop, camera, postprocess, physics, or combat mutations. */
+/** Host-scene runtime. Owns only its meshes, materials, targets and bounded point lights. */
 export class BabylonEffectRuntime {
   readonly owner = ownerId();
   private layers = new Map<string, LayerResources>();
@@ -309,12 +308,7 @@ export class BabylonEffectRuntime {
     return mat;
   }
 
-  private drawVine(
-    r: LayerResources,
-    f: NativeLayerFrame,
-    worldPoint: (p: NativePoint) => Vector3,
-    unit: number
-  ): void {
+  private drawVine(r: LayerResources, f: NativeLayerFrame, worldPoint: (p: NativePoint) => Vector3, unit: number): void {
     if (!f.vine) {
       r.vine?.setEnabled(false);
       r.thorns?.forEach((m) => m.setEnabled(false));
@@ -384,11 +378,7 @@ export class BabylonEffectRuntime {
       if (side.lengthSquared() < 0.01) side.copyFrom(Vector3.Right());
       const normal = Vector3.Cross(side, tangent).normalize(),
         theta = i * 2.399,
-        dir = side
-          .scale(Math.cos(theta))
-          .add(normal.scale(Math.sin(theta)))
-          .add(tangent.scale(-0.35))
-          .normalize(),
+        dir = side.scale(Math.cos(theta)).add(normal.scale(Math.sin(theta))).add(tangent.scale(-0.35)).normalize(),
         height = (l.whip.thornSize / unit) * (0.6 + 0.4 * (1 - u));
       m.position = path[index].add(dir.scale(height * 0.43));
       m.scaling.set(height * 0.55, height, height * 0.55);
@@ -451,6 +441,7 @@ export class BabylonEffectRuntime {
       view = camera?.getWorldMatrix(),
       right = view ? Vector3.TransformNormal(Vector3.Right(), view).normalize() : Vector3.Right(),
       up = view ? Vector3.TransformNormal(Vector3.Up(), view).normalize() : Vector3.Forward();
+
     frames.forEach((f, order) => {
       const r = this.resource(f.layer, order);
       r.root.setEnabled(f.alpha > 0.00001);
@@ -489,39 +480,48 @@ export class BabylonEffectRuntime {
       this.geometry(r.particles, positions, uvs, colors, indices);
       r.particles.material = this.material(r, 'particle', f);
 
+      // 3D Crossed-Ribbon Volume: two orthogonal ribbon strips along each path for 360-degree 3D volume
       const rp: number[] = [],
         ru: number[] = [],
         rc: number[] = [],
         ri: number[] = [];
+      const groundRibbon = f.layer.kind === 'sigil' || f.layer.kind === 'ring';
       for (const ribbon of f.ribbons) {
-        const base = rp.length / 3,
-          tint = color(ribbon.color);
-        for (let i = 0; i < ribbon.points.length; i++) {
-          const center = worldPoint(ribbon.points[i]),
-            before = worldPoint(ribbon.points[Math.max(0, i - 1)]),
-            after = worldPoint(ribbon.points[Math.min(ribbon.points.length - 1, i + 1)]),
-            tangent = after.subtract(before).normalize(),
-            eye = camera?.globalPosition.subtract(center).normalize() ?? Vector3.Up();
-          let side = Vector3.Cross(tangent, eye).normalize();
-          if (side.lengthSquared() < 0.001) side = Vector3.Right();
-          const u = i / Math.max(1, ribbon.points.length - 1),
-            width = (ribbon.width / unit) * (ribbon.taper ? 0.08 + 0.92 * u : 1);
-          for (const sign of [-1, 1]) {
-            const v = center.add(side.scale(sign * width));
-            rp.push(v.x, v.y, v.z);
-            ru.push(u, (sign + 1) / 2);
-            rc.push(tint.r, tint.g, tint.b, 1);
-          }
-          if (i > 0) {
-            const a = base + i * 2;
-            ri.push(a - 2, a - 1, a, a - 1, a + 1, a);
+        const tint = color(ribbon.color);
+        const passes = groundRibbon ? [0] : [0, 1];
+        for (const pass of passes) {
+          const base = rp.length / 3;
+          for (let i = 0; i < ribbon.points.length; i++) {
+            const center = worldPoint(ribbon.points[i]),
+              before = worldPoint(ribbon.points[Math.max(0, i - 1)]),
+              after = worldPoint(ribbon.points[Math.min(ribbon.points.length - 1, i + 1)]),
+              tangent = after.subtract(before).normalize(),
+              eye = camera?.globalPosition.subtract(center).normalize() ?? Vector3.Up();
+            let side = Vector3.Cross(tangent, eye).normalize();
+            if (side.lengthSquared() < 0.001) side = Vector3.Right();
+            if (pass === 1) {
+              side = Vector3.Cross(tangent, side).normalize();
+            }
+            const u = i / Math.max(1, ribbon.points.length - 1),
+              width = (ribbon.width / unit) * (ribbon.taper ? 0.08 + 0.92 * u : 1) * (pass === 1 ? 0.72 : 1);
+            const alphaMult = pass === 1 ? 0.68 : 1;
+            for (const sign of [-1, 1]) {
+              const v = center.add(side.scale(sign * width));
+              rp.push(v.x, v.y, v.z);
+              ru.push(u, (sign + 1) / 2);
+              rc.push(tint.r, tint.g, tint.b, alphaMult);
+            }
+            if (i > 0) {
+              const a = base + i * 2;
+              ri.push(a - 2, a - 1, a, a - 1, a + 1, a);
+            }
           }
         }
       }
       this.geometry(r.ribbons, rp, ru, rc, ri);
       r.ribbons.material = this.material(r, 'ribbon', f);
 
-      // Separate materials per field: three missiles may have independent impact progress.
+      // 3D Multi-Plane Volumetric Fields (ground + crossed 3D volume planes so nothing looks like a flat 2D card)
       f.fields.forEach((field, i) => {
         let mesh = r.fields[i];
         if (!mesh) {
@@ -539,6 +539,7 @@ export class BabylonEffectRuntime {
         material.setFloat('uProgress', field.progress);
         material.setFloat('uVariant', field.variant);
         mesh.material = material;
+
         const center = worldPoint(field.point),
           c = Math.cos(field.angle),
           s = Math.sin(field.angle),
@@ -548,23 +549,51 @@ export class BabylonEffectRuntime {
               f.layer.kind === 'aura' ||
               f.layer.kind === 'ring' ||
               f.layer.kind === 'sigil'),
-          axisX = field.vertical ? new Vector3(c, 0, s) : ground ? new Vector3(c, 0, s) : right,
-          axisY = field.vertical ? Vector3.Up() : ground ? new Vector3(-s, 0, c) : up,
           fp: number[] = [],
           fu: number[] = [],
-          fc: number[] = [];
-        for (const [x, y] of [
-          [-1, -1],
-          [1, -1],
-          [1, 1],
-          [-1, 1],
-        ]) {
-          const v = center.add(axisX.scale((x * field.width) / 2 / unit)).add(axisY.scale((y * field.depth) / 2 / unit));
-          fp.push(v.x, v.y, v.z);
-          fu.push((x + 1) / 2, (y + 1) / 2);
-          fc.push(1, 1, 1, 1);
+          fc: number[] = [],
+          fi: number[] = [];
+
+        const pushQuad = (origin: Vector3, axX: Vector3, axY: Vector3, wScale = 1, dScale = 1, alphaVal = 1) => {
+          const base = fp.length / 3;
+          for (const [x, y] of [
+            [-1, -1],
+            [1, -1],
+            [1, 1],
+            [-1, 1],
+          ]) {
+            const v = origin
+              .add(axX.scale(((x * field.width) / 2 / unit) * wScale))
+              .add(axY.scale(((y * field.depth) / 2 / unit) * dScale));
+            fp.push(v.x, v.y, v.z);
+            fu.push((x + 1) / 2, (y + 1) / 2);
+            fc.push(1, 1, 1, alphaVal);
+          }
+          fi.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        };
+
+        const worldAxisX = new Vector3(c, 0, s);
+        const worldAxisZ = new Vector3(-s, 0, c);
+
+        if (field.vertical) {
+          pushQuad(center, worldAxisX, Vector3.Up(), 1, 1, 1);
+          if (field.family === 'cinematic') {
+            pushQuad(center, worldAxisZ, Vector3.Up(), 1, 1, 0.85);
+          }
+        } else if (ground) {
+          pushQuad(center, worldAxisX, worldAxisZ, 1, 1, 1);
+          if (field.family === 'cinematic' && (field.mode === 0 || field.mode === 1)) {
+            // Add vertical 3D volume plane along cone/beam axis so cones & beams have 3D height
+            pushQuad(center.add(new Vector3(0, 0.18, 0)), worldAxisX, Vector3.Up(), 1, 0.55, 0.72);
+          }
+        } else {
+          // 3D Volumetric Fire/Arcane Sphere/Impact:
+          // 1) Camera-aligned core plane
+          pushQuad(center, right, up, 1, 1, 0.92);
+          // 2) Horizontal 3D cross plane through the volume
+          pushQuad(center, worldAxisX, worldAxisZ, 0.92, 0.92, 0.75);
         }
-        this.geometry(mesh, fp, fu, fc, [0, 1, 2, 0, 2, 3]);
+        this.geometry(mesh, fp, fu, fc, fi);
       });
       for (let i = f.fields.length; i < r.fields.length; i++) r.fields[i].setEnabled(false);
 
@@ -581,7 +610,6 @@ export class BabylonEffectRuntime {
       } else r.hand?.setEnabled(false);
     });
 
-    // Strongest lights win, rather than allowing sixteen layers to flood the forward renderer.
     const sources = spellLights(def, time, from, to, scale, targets, world)
       .sort((a, b) => b.intensity - a.intensity)
       .slice(0, 4);
@@ -621,7 +649,6 @@ export class BabylonEffectRuntime {
   }
 }
 
-/** Normalize the older VTT demo shape at the boundary; saved schema-v1 designs stay unchanged. */
 export function normalizeNativeDefinition(raw: any): EffectDefinition {
   if (raw?.schemaVersion === 1) return parseEffect(raw);
   return parseEffect({

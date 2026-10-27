@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Meta } from '@angular/platform-browser';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
 import { filter } from 'rxjs';
@@ -45,6 +46,7 @@ export class AppComponent {
   readonly auth = inject(AuthSessionService);
   readonly audio = inject(WebAudioAmbienceService);
   private readonly router = inject(Router);
+  private readonly meta = inject(Meta);
 
   readonly currentUrl = signal<string>(this.router.url || '/');
   readonly globalSearchText = signal<string>('');
@@ -53,7 +55,7 @@ export class AppComponent {
   readonly rightGuideCollapsed = signal<boolean>(false);
 
   readonly isLandingSurface = computed(() => {
-    const clean = this.currentUrl().split('?')[0].split('#')[0];
+    const clean = this.currentUrl().split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
     return (
       clean === '' ||
       clean === '/' ||
@@ -64,6 +66,10 @@ export class AppComponent {
       clean === '/battlemap-builder' ||
       clean === '/ai-campaign-assistant' ||
       clean === '/features' ||
+      clean === '/about' ||
+      clean === '/effect-builder' ||
+      clean === '/encounter-builder' ||
+      clean === '/3d-assets' ||
       clean === '/login' ||
       clean === '/register' ||
       clean.startsWith('/features/')
@@ -104,6 +110,9 @@ export class AppComponent {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         this.currentUrl.set(e.urlAfterRedirects || e.url);
+        if (!this.isLandingSurface()) {
+          this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
+        }
       });
   }
 

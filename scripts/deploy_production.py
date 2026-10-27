@@ -296,10 +296,12 @@ server {
     }
 
     location = /maps {
+        add_header X-Robots-Tag "noindex, nofollow" always;
         add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
         try_files /index.html =404;
     }
     location = /maps/ {
+        add_header X-Robots-Tag "noindex, nofollow" always;
         add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
         try_files /index.html =404;
     }
@@ -316,9 +318,22 @@ server {
         try_files $uri =404;
     }
 
+    # Replaceable public artwork must revalidate even when its filename stays the same.
+    location ^~ /landing-assets/ {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    # Only known studio routes receive the client app shell. Unknown URLs are 404s.
+    location ~ ^/(home|campaigns|world-lore|characters|maps|arcane-screen|encounters|dice|effects|assets|loom|weave|marketplace|statistics|dashboard|dm-game|player-game|loom-graph|quests|notes|locations|npcs|monsters|spells|items)(/|$) {
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        add_header Cache-Control "no-store";
+        try_files /index.html =404;
+    }
+
     location / {
         add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
-        try_files $uri $uri/ /index.html;
+        try_files $uri $uri/ =404;
     }
 }
 '''

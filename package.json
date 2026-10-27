@@ -7,7 +7,7 @@
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./start-dev.ps1",
     "start": "powershell -NoProfile -ExecutionPolicy Bypass -File ./start-dev.ps1",
     "build:backend": "dotnet publish backend/src/LoomWeaver.Api/LoomWeaver.Api.csproj -c Release -o backend/publish",
-    "build:frontend": "npm --prefix frontend run build && python scripts/prerender_ssr_routes.py",
+    "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:backend && npm run build:frontend",
     "deploy": "python scripts/deploy_production.py"
   }

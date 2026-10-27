@@ -1,5 +1,11 @@
 # LoomWeaver V2 — Agent Architecture, SEO & Brand Authority Rules
 
+## Required context before implementation
+- Read applicable nested agent instructions, relevant architecture/standards/feature Markdown, and the V2 product vision, goals, and release gates before changing code. Briefly identify those requirements in the task update.
+- Obsidian reference vault: `C:/Users/JTromborg1/Documents/My Life/01 - Me/Geo-Gamers/LoomWeaverV2/LoomWeaver - Complete Obsidian Vault`. Begin with `00 - Start Here.md`, `01 - Product/Product Vision.md`, and `01 - Product/Product Goals and Release Gates.md`, then follow relevant references.
+- Reconcile overlapping V2 and MythWeaver references with the user's current instructions and actual code. Report material conflicts. Archived conversations and design proposals do not prove that a feature has shipped; verify public capability claims.
+- If a reference is unavailable, state that limitation. Do not silently substitute legacy requirements.
+
 ## 1. SEO & Brand Authority Strategy (Outranking `loomweaver.app`)
 - **Preferred Brand Name**: `LoomWeaver`
 - **Brand Tagline**: `LoomWeaver — Your Campaign. One Living World.`
