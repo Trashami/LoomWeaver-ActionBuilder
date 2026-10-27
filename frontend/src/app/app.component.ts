@@ -1,9 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  NavigationEnd,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
 import { filter } from 'rxjs';
 import { AuthSessionService } from './core/services/auth-session.service';
+import {
+  isSubdomainHost,
+  resolveDefaultStudioRouteForHost,
+} from './core/services/cookie-sso.helper';
 import { LoomWeaverStoreService } from './core/services/loomweaver-store.service';
 import { WebAudioAmbienceService } from './features/assets/engine/web-audio-ambience.service';
 import {
@@ -48,7 +59,7 @@ export class AppComponent {
   private readonly router = inject(Router);
   private readonly meta = inject(Meta);
 
-  readonly currentUrl = signal<string>(this.router.url || '/');
+  readonly currentUrl = signal<string>(this.resolveInitialBrowserPath());
   readonly globalSearchText = signal<string>('');
   readonly showAllModules = signal<boolean>(true);
   readonly leftNavCollapsed = signal<boolean>(false);
@@ -56,6 +67,9 @@ export class AppComponent {
 
   readonly isLandingSurface = computed(() => {
     const clean = this.currentUrl().split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
+    if (isSubdomainHost() && this.auth.isAuthenticated() && (clean === '' || clean === '/')) {
+      return false;
+    }
     return (
       clean === '' ||
       clean === '/' ||
@@ -106,14 +120,41 @@ export class AppComponent {
   });
 
   constructor() {
+    if (
+      typeof window !== 'undefined' &&
+      isSubdomainHost() &&
+      this.auth.isAuthenticated() &&
+      (window.location.pathname === '/' || window.location.pathname === '')
+    ) {
+      const target = resolveDefaultStudioRouteForHost();
+      this.currentUrl.set(target);
+      void this.router.navigateByUrl(target, { replaceUrl: true });
+    }
+
     this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .pipe(
+        filter(
+          (e): e is NavigationStart | NavigationEnd =>
+            e instanceof NavigationStart || e instanceof NavigationEnd,
+        ),
+      )
       .subscribe((e) => {
-        this.currentUrl.set(e.urlAfterRedirects || e.url);
+        if (e instanceof NavigationEnd) {
+          this.currentUrl.set(e.urlAfterRedirects || e.url);
+        } else if (e.url && e.url !== '/') {
+          this.currentUrl.set(e.url);
+        }
         if (!this.isLandingSurface()) {
           this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
         }
       });
+  }
+
+  private resolveInitialBrowserPath(): string {
+    if (typeof window !== 'undefined' && window.location?.pathname) {
+      return window.location.pathname + (window.location.search || '');
+    }
+    return this.router.url || '/';
   }
 
   toggleLeftNav(): void {

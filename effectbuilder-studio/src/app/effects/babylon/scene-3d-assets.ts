@@ -18,6 +18,8 @@ export const RIVERBANK_MAP_GLB = '/models-3d/Meshy_AI_Riverbank_Terrain_Mod_1023
 export const SORCERESS_GLB = '/models-3d/Meshy_AI_Eclipse_Abyss_Sorcere_1026221004_texture.glb';
 export const GOBLIN_MALE_GLB = '/models-3d/Meshy_AI_Goblin_Male_1026221232_texture.glb';
 
+export type VisualQualityTier = 'low' | 'med' | 'high';
+
 export interface MapTransformState {
   offsetX: number;
   offsetZ: number;
@@ -45,6 +47,7 @@ export class Scene3dAssetController {
   private disposed = false;
   private loading = false;
   private loaded = false;
+  private quality: VisualQualityTier = 'high';
 
   private lastEnvKey = '';
   private heightGrid = new Float32Array(HEIGHT_GRID_RES * HEIGHT_GRID_RES);
@@ -54,6 +57,8 @@ export class Scene3dAssetController {
   private gridMaxZ = 20;
   private hasHeightGrid = false;
   private fallbackGroundY = 0;
+  private waterLevelY = 0.25;
+  private waterFloorY = 0;
 
   mapTransform: MapTransformState = {
     offsetX: 0,
@@ -72,6 +77,13 @@ export class Scene3dAssetController {
     this.sunLight.intensity = 0.55;
     this.sunLight.diffuse = new Color3(1.0, 0.96, 0.88);
     this.sunLight.specular = new Color3(0.28, 0.28, 0.28);
+  }
+
+  setQuality(quality: VisualQualityTier): void {
+    this.quality = quality;
+    if (this.envModel) this.tuneMaterialQuality(this.envModel.meshes, true);
+    if (this.casterModel) this.tuneMaterialQuality(this.casterModel.meshes, false);
+    for (const g of this.goblinModels) this.tuneMaterialQuality(g.meshes, false);
   }
 
   ensureLoaded(onReady?: () => void): void {
@@ -107,19 +119,26 @@ export class Scene3dAssetController {
   }
 
   private tuneMaterialQuality(meshes: AbstractMesh[], isTerrain: boolean): void {
+    const maxLights = this.quality === 'low' ? 4 : this.quality === 'med' ? 6 : 8;
+    const aniso = this.quality === 'low' ? 2 : this.quality === 'med' ? 8 : 16;
+    const sampling =
+      this.quality === 'low' ? Texture.BILINEAR_SAMPLINGMODE : Texture.TRILINEAR_SAMPLINGMODE;
+    const bumpLevel = this.quality === 'low' ? 0.65 : this.quality === 'med' ? 1.25 : 1.85;
+
     for (const m of meshes) {
       const mat = m.material;
       if (!mat) continue;
       if (mat instanceof PBRMaterial) {
-        // Allow ambient + fill + sun + all 4 dynamic spell PointLights to illuminate 3D GLB models
-        mat.maxSimultaneousLights = 8;
-        // Disable inverse-square glTF physical falloff so PointLight range & intensity light up the 3D terrain & tokens
+        mat.maxSimultaneousLights = maxLights;
         mat.usePhysicalLightFalloff = false;
         if (isTerrain) {
-          mat.roughness = 0.84;
+          mat.roughness = 0.82;
           mat.metallic = 0.02;
           mat.directIntensity = 1.65;
           mat.environmentIntensity = 0.55;
+          if (mat.bumpTexture) {
+            mat.bumpTexture.level = bumpLevel;
+          }
         } else {
           mat.roughness = Math.max(0.5, mat.roughness ?? 0.65);
           mat.metallic = Math.min(0.25, mat.metallic ?? 0.1);
@@ -127,12 +146,12 @@ export class Scene3dAssetController {
           mat.environmentIntensity = 0.65;
         }
       } else if (mat instanceof StandardMaterial) {
-        mat.maxSimultaneousLights = 8;
+        mat.maxSimultaneousLights = maxLights;
       }
       for (const tex of mat.getActiveTextures()) {
         if (tex instanceof Texture) {
-          tex.updateSamplingMode(Texture.TRILINEAR_SAMPLINGMODE);
-          tex.anisotropicFilteringLevel = 16;
+          tex.updateSamplingMode(sampling);
+          tex.anisotropicFilteringLevel = aniso;
         }
       }
     }
@@ -214,7 +233,9 @@ export class Scene3dAssetController {
     }
 
     pivot.computeWorldMatrix(true);
-    activeMeshes.forEach((m) => m.computeWorldMatrix(true));
+    for (const node of pivot.getDescendants(false)) {
+      node.computeWorldMatrix(true);
+    }
     const bounds = pivot.getHierarchyBoundingVectors(true);
     const size = bounds.max.subtract(bounds.min);
     const height = Math.max(0.001, size.y);
@@ -257,14 +278,13 @@ export class Scene3dAssetController {
   }
 
   /**
-   * Rasterizes the world-space triangles of the 3D terrain into a 128x128 heightfield whenever
-   * the terrain loads or moves. Separates walkable ground/riverbank/rock elevation (bottom 58%
-   * of model height) from upper tree foliage canopies so tokens never sink under the floor
-   * AND never jump to the top of tree branches.
+   * Rasterizes world-space walkable terrain and riverbed triangles into a 128x128 heightfield.
+   * Filters out upper tree foliage and vertical trunk walls so tokens stand accurately on the
+   * riverbank slopes and sink all the way down to the water floor when placed in the river.
    */
   private bakeHeightGrid(): void {
     if (!this.envModel) return;
-    this.heightGrid.fill(-999);
+    this.heightGrid.fill(999);
     const bounds = this.envModel.wrapper.getHierarchyBoundingVectors(true);
     this.gridMinX = bounds.min.x - 0.25;
     this.gridMaxX = bounds.max.x + 0.25;
@@ -273,9 +293,10 @@ export class Scene3dAssetController {
     const spanX = Math.max(0.01, this.gridMaxX - this.gridMinX);
     const spanZ = Math.max(0.01, this.gridMaxZ - this.gridMinZ);
     const totalHeight = Math.max(0.1, bounds.max.y - bounds.min.y);
-    // All riverbanks, rocks, and water lie within 0..58% of total height; >58% is north-bank tree canopy
-    const groundCapY = bounds.min.y + totalHeight * 0.58;
-    this.fallbackGroundY = bounds.min.y + totalHeight * 0.32;
+    const groundCapY = bounds.min.y + totalHeight * 0.48;
+    this.waterFloorY = bounds.min.y;
+    this.waterLevelY = bounds.min.y + totalHeight * 0.17;
+    this.fallbackGroundY = bounds.min.y + totalHeight * 0.22;
 
     const v0 = new Vector3();
     const v1 = new Vector3();
@@ -286,55 +307,46 @@ export class Scene3dAssetController {
     for (const m of this.envModel.meshes) {
       const pos = m.getVerticesData('position');
       const indices = m.getIndices();
-      if (!pos || pos.length < 9) continue;
+      if (!pos || pos.length < 9 || !indices || indices.length < 3) continue;
       const wm = m.getWorldMatrix();
 
-      if (indices && indices.length >= 3) {
-        for (let i = 0; i < indices.length; i += 3) {
-          const i0 = indices[i] * 3;
-          const i1 = indices[i + 1] * 3;
-          const i2 = indices[i + 2] * 3;
-          Vector3.TransformCoordinatesFromFloatsToRef(pos[i0], pos[i0 + 1], pos[i0 + 2], wm, v0);
-          Vector3.TransformCoordinatesFromFloatsToRef(pos[i1], pos[i1 + 1], pos[i1 + 2], wm, v1);
-          Vector3.TransformCoordinatesFromFloatsToRef(pos[i2], pos[i2 + 1], pos[i2 + 2], wm, v2);
+      for (let i = 0; i < indices.length; i += 3) {
+        const i0 = indices[i] * 3;
+        const i1 = indices[i + 1] * 3;
+        const i2 = indices[i + 2] * 3;
+        Vector3.TransformCoordinatesFromFloatsToRef(pos[i0], pos[i0 + 1], pos[i0 + 2], wm, v0);
+        Vector3.TransformCoordinatesFromFloatsToRef(pos[i1], pos[i1 + 1], pos[i1 + 2], wm, v1);
+        Vector3.TransformCoordinatesFromFloatsToRef(pos[i2], pos[i2 + 1], pos[i2 + 2], wm, v2);
 
-          // Skip upper tree canopy triangles so ground underneath trees uses bank height
-          const minTriY = Math.min(v0.y, v1.y, v2.y);
-          if (minTriY > groundCapY) continue;
+        const minTriY = Math.min(v0.y, v1.y, v2.y);
+        if (minTriY > groundCapY) continue;
 
-          const gx0 = (v0.x - this.gridMinX) * invSpanX;
-          const gz0 = (v0.z - this.gridMinZ) * invSpanZ;
-          const gx1 = (v1.x - this.gridMinX) * invSpanX;
-          const gz1 = (v1.z - this.gridMinZ) * invSpanZ;
-          const gx2 = (v2.x - this.gridMinX) * invSpanX;
-          const gz2 = (v2.z - this.gridMinZ) * invSpanZ;
+        const gx0 = (v0.x - this.gridMinX) * invSpanX;
+        const gz0 = (v0.z - this.gridMinZ) * invSpanZ;
+        const gx1 = (v1.x - this.gridMinX) * invSpanX;
+        const gz1 = (v1.z - this.gridMinZ) * invSpanZ;
+        const gx2 = (v2.x - this.gridMinX) * invSpanX;
+        const gz2 = (v2.z - this.gridMinZ) * invSpanZ;
 
-          const minX = Math.max(0, Math.floor(Math.min(gx0, gx1, gx2)));
-          const maxX = Math.min(HEIGHT_GRID_RES - 1, Math.ceil(Math.max(gx0, gx1, gx2)));
-          const minZ = Math.max(0, Math.floor(Math.min(gz0, gz1, gz2)));
-          const maxZ = Math.min(HEIGHT_GRID_RES - 1, Math.ceil(Math.max(gz0, gz1, gz2)));
+        const minX = Math.max(0, Math.floor(Math.min(gx0, gx1, gx2)));
+        const maxX = Math.min(HEIGHT_GRID_RES - 1, Math.ceil(Math.max(gx0, gx1, gx2)));
+        const minZ = Math.max(0, Math.floor(Math.min(gz0, gz1, gz2)));
+        const maxZ = Math.min(HEIGHT_GRID_RES - 1, Math.ceil(Math.max(gz0, gz1, gz2)));
 
-          const denom = (gz1 - gz2) * (gx0 - gx2) + (gx2 - gx1) * (gz0 - gz2);
-          if (Math.abs(denom) < 1e-5) {
-            const cx = Math.min(HEIGHT_GRID_RES - 1, Math.max(0, Math.round((gx0 + gx1 + gx2) / 3)));
-            const cz = Math.min(HEIGHT_GRID_RES - 1, Math.max(0, Math.round((gz0 + gz1 + gz2) / 3)));
-            const idx = cz * HEIGHT_GRID_RES + cx;
-            const yVal = Math.min(groundCapY, Math.max(v0.y, v1.y, v2.y));
-            if (yVal > this.heightGrid[idx]) this.heightGrid[idx] = yVal;
-            continue;
-          }
-          const invDenom = 1 / denom;
-          for (let gz = minZ; gz <= maxZ; gz++) {
-            for (let gx = minX; gx <= maxX; gx++) {
-              const w0 = ((gz1 - gz2) * (gx - gx2) + (gx2 - gx1) * (gz - gz2)) * invDenom;
-              const w1 = ((gz2 - gz0) * (gx - gx2) + (gx0 - gx2) * (gz - gz2)) * invDenom;
-              const w2 = 1 - w0 - w1;
-              if (w0 >= -0.05 && w1 >= -0.05 && w2 >= -0.05) {
-                const yVal = Math.min(groundCapY, w0 * v0.y + w1 * v1.y + w2 * v2.y);
-                const idx = gz * HEIGHT_GRID_RES + gx;
-                if (yVal > this.heightGrid[idx]) {
-                  this.heightGrid[idx] = yVal;
-                }
+        const denom = (gz1 - gz2) * (gx0 - gx2) + (gx2 - gx1) * (gz0 - gz2);
+        if (Math.abs(denom) < 1e-5) continue;
+        const invDenom = 1 / denom;
+        for (let gz = minZ; gz <= maxZ; gz++) {
+          for (let gx = minX; gx <= maxX; gx++) {
+            const w0 = ((gz1 - gz2) * (gx - gx2) + (gx2 - gx1) * (gz - gz2)) * invDenom;
+            const w1 = ((gz2 - gz0) * (gx - gx2) + (gx0 - gx2) * (gz - gz2)) * invDenom;
+            const w2 = 1 - w0 - w1;
+            if (w0 >= -0.05 && w1 >= -0.05 && w2 >= -0.05) {
+              const yVal = Math.min(groundCapY, w0 * v0.y + w1 * v1.y + w2 * v2.y);
+              const idx = gz * HEIGHT_GRID_RES + gx;
+              // Record the lowest walkable ground/water floor under any overhanging branches
+              if (yVal < this.heightGrid[idx]) {
+                this.heightGrid[idx] = yVal;
               }
             }
           }
@@ -342,7 +354,6 @@ export class Scene3dAssetController {
       }
     }
 
-    // Multi-pass dilation to smoothly fill any cells directly underneath tall tree canopies
     const work = new Float32Array(this.heightGrid);
     for (let pass = 0; pass < 6; pass++) {
       const src = pass % 2 === 0 ? this.heightGrid : work;
@@ -350,7 +361,7 @@ export class Scene3dAssetController {
       for (let z = 0; z < HEIGHT_GRID_RES; z++) {
         for (let x = 0; x < HEIGHT_GRID_RES; x++) {
           const idx = z * HEIGHT_GRID_RES + x;
-          if (src[idx] > -900) {
+          if (src[idx] < 900) {
             dst[idx] = src[idx];
             continue;
           }
@@ -362,25 +373,25 @@ export class Scene3dAssetController {
               const nz = z + dz;
               if (nx >= 0 && nx < HEIGHT_GRID_RES && nz >= 0 && nz < HEIGHT_GRID_RES) {
                 const v = src[nz * HEIGHT_GRID_RES + nx];
-                if (v > -900) {
+                if (v < 900) {
                   sum += v;
                   count++;
                 }
               }
             }
           }
-          dst[idx] = count > 0 ? sum / count : -999;
+          dst[idx] = count > 0 ? sum / count : 999;
         }
       }
     }
 
     for (let i = 0; i < this.heightGrid.length; i++) {
-      this.heightGrid[i] = this.heightGrid[i] > -900 ? Math.max(0, this.heightGrid[i]) : this.fallbackGroundY;
+      this.heightGrid[i] = this.heightGrid[i] < 900 ? this.heightGrid[i] : this.fallbackGroundY;
     }
     this.hasHeightGrid = true;
   }
 
-  /** O(1) bilinear heightfield lookup (< 0.0001 ms per call, zero runtime triangle raycasts). */
+  /** O(1) bilinear heightfield lookup. */
   terrainElevationAt(x: number, z: number): number {
     if (!this.hasHeightGrid || !this.envModel || !this.envModel.wrapper.isEnabled()) return 0;
     const fx = Math.max(
@@ -408,9 +419,30 @@ export class Scene3dAssetController {
     return h00 * (1 - tx) * (1 - tz) + h10 * tx * (1 - tz) + h01 * (1 - tx) * tz + h11 * tx * tz;
   }
 
-  /** Samples the token's circular footprint so neither the 3D token nor its base ring clips into sloped banks. */
-  tokenElevationAt(x: number, z: number, radius = 0.24): number {
+  /** Returns true when (x, z) is inside the river water channel. */
+  isInWaterAt(x: number, z: number): boolean {
+    if (!this.hasHeightGrid) return false;
+    return this.terrainElevationAt(x, z) <= this.waterLevelY;
+  }
+
+  /**
+   * When a token is in the water channel, lowers the token to the riverbed / water floor
+   * (submerging its sculpted pedestal base beneath the river surface). On dry banks/rocks,
+   * samples the circular footprint so the base sits cleanly on slopes.
+   */
+  tokenElevationAt(x: number, z: number, radius = 0.22): number {
     const hc = this.terrainElevationAt(x, z);
+    if (this.hasHeightGrid && hc <= this.waterLevelY) {
+      const hMin = Math.min(
+        hc,
+        this.terrainElevationAt(x - radius * 0.5, z),
+        this.terrainElevationAt(x + radius * 0.5, z),
+        this.terrainElevationAt(x, z - radius * 0.5),
+        this.terrainElevationAt(x, z + radius * 0.5)
+      );
+      // Sink the miniature's rocky pedestal base below the water floor so feet rest on the riverbed
+      return Math.max(this.waterFloorY - 0.2, hMin - 0.18);
+    }
     const hMax = Math.max(
       hc,
       this.terrainElevationAt(x - radius, z),
@@ -418,7 +450,7 @@ export class Scene3dAssetController {
       this.terrainElevationAt(x, z - radius),
       this.terrainElevationAt(x, z + radius)
     );
-    return hc * 0.3 + hMax * 0.7;
+    return hc * 0.45 + hMax * 0.55;
   }
 
   sync(
@@ -432,8 +464,6 @@ export class Scene3dAssetController {
     options: { showForestMap: boolean; show3dTokens: boolean; proneFirstTarget: boolean; ambient: number }
   ): AbstractMesh[] {
     this.ensureLoaded();
-    // Scale 3D scene lighting directly with the Ambient slider so lowering Ambient darkens the 3D terrain
-    // and allows dynamic spell PointLights to vividly illuminate the riverbank and 3D tokens.
     this.fillLight.intensity = Math.max(0.02, options.ambient * 1.15);
     this.sunLight.intensity = Math.max(0.03, options.ambient * 1.45);
 
@@ -456,14 +486,18 @@ export class Scene3dAssetController {
           this.envModel.wrapper.rotation.y = this.mapTransform.rotationY;
           this.envModel.wrapper.scaling.set(envScaleXZ, envScaleY, envScaleXZ);
           this.envModel.wrapper.computeWorldMatrix(true);
-          this.envModel.meshes.forEach((m) => m.computeWorldMatrix(true));
+          for (const node of this.envModel.wrapper.getDescendants(false)) {
+            node.computeWorldMatrix(true);
+          }
           this.bakeHeightGrid();
         }
       }
     }
 
-    const resolveY = (x: number, z: number) =>
-      options.showForestMap ? this.tokenElevationAt(x, z) + 0.04 : surfaceHeight(x, z) + 0.04;
+    const resolveY = (x: number, z: number) => {
+      if (!options.showForestMap) return surfaceHeight(x, z) + 0.04;
+      return this.isInWaterAt(x, z) ? this.tokenElevationAt(x, z) : this.tokenElevationAt(x, z) + 0.03;
+    };
 
     const primaryTarget = targetPositions[0] ?? { x: casterPos.x + 200, y: casterPos.y };
 
@@ -475,8 +509,7 @@ export class Scene3dAssetController {
         const cz = casterPos.y / 66;
         const tx = primaryTarget.x / 66;
         const tz = primaryTarget.y / 66;
-        const y = resolveY(cx, cz);
-        this.casterModel.wrapper.position.set(cx, y, cz);
+        this.casterModel.wrapper.position.set(cx, resolveY(cx, cz), cz);
         this.casterModel.wrapper.scaling.setAll(Math.max(0.75, scale));
         this.casterModel.wrapper.rotation.y = Math.atan2(tx - cx, tz - cz);
         for (const m of this.casterModel.meshes) {
@@ -495,8 +528,7 @@ export class Scene3dAssetController {
         const gz = pos.y / 66;
         const cx = casterPos.x / 66;
         const cz = casterPos.y / 66;
-        const y = resolveY(gx, gz);
-        goblin.wrapper.position.set(gx, y, gz);
+        goblin.wrapper.position.set(gx, resolveY(gx, gz), gz);
         goblin.wrapper.scaling.setAll(Math.max(0.75, scale));
         const faceAngle = Math.atan2(cx - gx, cz - gz);
         goblin.wrapper.rotation.set(i === 0 && options.proneFirstTarget ? Math.PI / 2 : 0, faceAngle, 0);

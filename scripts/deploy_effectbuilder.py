@@ -96,7 +96,7 @@ def deploy_to_server() -> None:
     remote_script = r"""#!/usr/bin/env bash
 set -e
 
-RELEASE_DIR="/var/www/effectbuilder/releases/unified-v16"
+RELEASE_DIR="/var/www/effectbuilder/releases/unified-v17"
 echo "1. Extracting EffectBuilder client + Unified .NET backend to $RELEASE_DIR..."
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"
@@ -108,6 +108,7 @@ mkdir -p /var/www/loomweaver/assets/models-3d
 mkdir -p /var/www/loomweaver/assets/object-library/models
 if [ -d "$RELEASE_DIR/client/models-3d" ]; then
     cp -f "$RELEASE_DIR/client/models-3d/"*.glb /var/www/loomweaver/assets/models-3d/
+    cp -f "$RELEASE_DIR/client/models-3d/"*.jpg /var/www/loomweaver/assets/models-3d/ || true
     cp -f "$RELEASE_DIR/client/models-3d/"*.json /var/www/loomweaver/assets/models-3d/ || true
 fi
 
@@ -315,7 +316,7 @@ def push_repos() -> None:
             EB_ROOT,
             "commit",
             "-m",
-            "Add 13 new core effect kinds (130 styles), 17 extracted layers, 3D Forest Road Map, and 3D Sorceress + 3 Goblin GLB tokens",
+            "Add water-floor token submersion, camera pan on Move Map, Low/Med/High visuals, 145k normal-mapped 3D terrain, and 2D HD top-down mode",
         )
 
     remotes = subprocess.run(

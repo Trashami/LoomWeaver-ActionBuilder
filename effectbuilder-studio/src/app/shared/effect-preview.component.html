@@ -2,27 +2,60 @@
   <button type="button" (click)="toggleView()" [attr.aria-pressed]="view3d()">
     {{ view3d() ? 'Overhead 2D view' : '3D perspective view' }}
   </button>
-  <label title="Meshy_AI_Riverbank_Terrain_Mod_1023195705_texture.glb">
-    <input type="checkbox" [checked]="forestMap()" (change)="forestMap.set($any($event.target).checked)" />
-    3D Riverbank Terrain
-  </label>
-  <label title="Eclipse Abyss Sorceress &amp; 3 Male Goblins">
-    <input type="checkbox" [checked]="tokens3d()" (change)="tokens3d.set($any($event.target).checked)" />
-    3D Tokens (Sorceress &amp; 3 Goblins)
-  </label>
-  @if (forestMap()) {
+  <div class="quality-group" role="group" aria-label="Visual performance quality">
+    <span class="quality-label">Visuals</span>
     <button
       type="button"
-      [class.active-mode]="moveMapMode()"
-      [attr.aria-pressed]="moveMapMode()"
-      title="Drag the 3D Riverbank Terrain model on the stage (or hold Shift and drag)"
-      (click)="moveMapMode.set(!moveMapMode())"
+      [class.active-mode]="quality() === 'low'"
+      [attr.aria-pressed]="quality() === 'low'"
+      (click)="setQuality('low')"
+      title="Low visual quality — fastest frame rate"
     >
-      {{ moveMapMode() ? 'Moving 3D Map (Drag)' : 'Move 3D Map' }}
+      Low
     </button>
+    <button
+      type="button"
+      [class.active-mode]="quality() === 'med'"
+      [attr.aria-pressed]="quality() === 'med'"
+      (click)="setQuality('med')"
+      title="Medium visual quality — balanced resolution &amp; bloom"
+    >
+      Med
+    </button>
+    <button
+      type="button"
+      [class.active-mode]="quality() === 'high'"
+      [attr.aria-pressed]="quality() === 'high'"
+      (click)="setQuality('high')"
+      title="High visual quality — 4K normal-mapped terrain, 4x MSAA &amp; full HDR bloom"
+    >
+      High
+    </button>
+  </div>
+  <label title="Riverbank Battlemap (3D Terrain in 3D view / 4K Top-Down Map in 2D view)">
+    <input type="checkbox" [checked]="forestMap()" (change)="forestMap.set($any($event.target).checked)" />
+    {{ view3d() ? '3D Riverbank Terrain' : '2D HD Riverbank Map' }}
+  </label>
+  @if (view3d()) {
+    <label title="Eclipse Abyss Sorceress &amp; 3 Male Goblins">
+      <input type="checkbox" [checked]="tokens3d()" (change)="tokens3d.set($any($event.target).checked)" />
+      3D Tokens (Sorceress &amp; 3 Goblins)
+    </label>
+  }
+  <button
+    type="button"
+    [class.active-mode]="moveMapMode()"
+    [attr.aria-pressed]="moveMapMode()"
+    title="Pan the map and tokens together across the scene (or hold Shift and drag)"
+    (click)="moveMapMode.set(!moveMapMode())"
+  >
+    {{ moveMapMode() ? 'Panning Map (Drag)' : 'Move Map' }}
+  </button>
+  @if (forestMap() && view3d()) {
     <button type="button" title="Rotate 3D Terrain 45 degrees" (click)="rotateTerrain(0.785398)">Rotate Map</button>
-    <button type="button" title="Reset 3D Terrain position and rotation" (click)="resetTerrain()">Reset Map</button>
-  } @else {
+  }
+  <button type="button" title="Reset Map pan, zoom, and rotation" (click)="resetTerrain()">Reset Map</button>
+  @if (!forestMap()) {
     <label>
       <input type="checkbox" [checked]="background()" (change)="background.set($any($event.target).checked)" />
       Stone sample
@@ -31,10 +64,12 @@
       Bump
       <input aria-label="Map bump strength" type="range" min="0" max="5" step="0.05" [value]="bump()" (input)="bump.set(+$any($event.target).value)" />
     </label>
-    <label>
-      Height
-      <input aria-label="Map height relief" type="range" min="0" max="0.45" step="0.01" [value]="relief()" (input)="relief.set(+$any($event.target).value)" />
-    </label>
+    @if (view3d()) {
+      <label>
+        Height
+        <input aria-label="Map height relief" type="range" min="0" max="0.45" step="0.01" [value]="relief()" (input)="relief.set(+$any($event.target).value)" />
+      </label>
+    }
   }
   <label>
     Ambient
@@ -43,7 +78,7 @@
 </div>
 @if (view3d()) {
   <details class="camera-tools" open>
-    <summary>Camera</summary>
+    <summary>3D Camera</summary>
     <div>
       <button (click)="inspect(-0.25)" aria-label="Orbit left">Left</button>
       <button (click)="inspect(0.25)" aria-label="Orbit right">Right</button>
@@ -52,6 +87,19 @@
       <button (click)="inspect(0, 0, 0.85)" aria-label="Zoom in">+</button>
       <button (click)="inspect(0, 0, 1.15)" aria-label="Zoom out">-</button>
       <button (click)="resetCamera()">Reset view</button>
+    </div>
+  </details>
+} @else {
+  <details class="camera-tools" open>
+    <summary>2D Top-Down Pan &amp; Zoom</summary>
+    <div>
+      <button (click)="panMap(-1.2, 0)" aria-label="Pan left">Pan Left</button>
+      <button (click)="panMap(1.2, 0)" aria-label="Pan right">Pan Right</button>
+      <button (click)="panMap(0, -1.0)" aria-label="Pan up">Pan Up</button>
+      <button (click)="panMap(0, 1.0)" aria-label="Pan down">Pan Down</button>
+      <button (click)="inspect(0, 0, 0.85)" aria-label="Zoom in">+</button>
+      <button (click)="inspect(0, 0, 1.15)" aria-label="Zoom out">-</button>
+      <button (click)="resetCamera()">Reset 2D View</button>
     </div>
   </details>
 }
@@ -64,13 +112,13 @@
     <button type="button" (click)="reveal()">Reappear now</button>
   </div>
 }
-<span class="renderer-status" role="status" title="Native Babylon meshes, 3D GLB Riverbank Terrain &amp; tokens, shader materials, depth testing and scene lighting.">
-  {{ rendererStatus() }}
+<span class="renderer-status" role="status" title="Native Babylon meshes, 3D GLB Riverbank Terrain &amp; tokens, 4K 2D Top-Down mode, shader materials, depth testing and scene lighting.">
+  {{ rendererStatus() }} ({{ view3d() ? '3D' : '2D HD' }} · {{ quality().toUpperCase() }})
 </span>
 <div
   #surface
   class="surface"
-  [class.map-drag-active]="moveMapMode()"
+  [class.map-drag-active]="moveMapMode() || !view3d()"
   (pointerdown)="onSurfacePointerDown($event)"
   (wheel)="onSurfaceWheel($event)"
   role="img"
@@ -81,6 +129,7 @@
     class="token"
     [class.caster]="token.target < 0"
     [class.destination]="token.target === 3"
+    [class.token-2d]="!view3d() || !tokens3d()"
     [style.opacity]="token.target < 0 ? casterFade : 1"
     [class.prone]="token.target >= 0 && pronePreview"
     [class.active]="multiTarget && boltTargets[activeBolt] === token.target"

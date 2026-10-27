@@ -1,5 +1,6 @@
 import { teleportFrame } from '../effects/teleport-preview';
 import { BabylonEffectPreview } from '../effects/babylon/native-preview';
+import { VisualQualityTier } from '../effects/babylon/scene-3d-assets';
 import { riderPoint } from '../effects/gameplay-preview';
 import { movingTarget } from '../effects/fireball-motion';
 import {
@@ -50,6 +51,7 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   }
 
   readonly view3d = signal(true);
+  readonly quality = signal<VisualQualityTier>('high');
   readonly forestMap = signal(true);
   readonly tokens3d = signal(true);
   readonly moveMapMode = signal(false);
@@ -65,8 +67,21 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   private artworkGeneration = 0;
 
   toggleView(): void {
-    this.view3d.update((v) => !v);
-    this.native?.setView(this.view3d());
+    this.setViewMode(!this.view3d());
+  }
+
+  setViewMode(perspective: boolean): void {
+    this.view3d.set(perspective);
+    this.native?.setView(perspective);
+  }
+
+  setQuality(tier: VisualQualityTier): void {
+    this.quality.set(tier);
+    this.native?.setQuality(tier);
+  }
+
+  panMap(dxUnits: number, dzUnits: number): void {
+    this.native?.panBy(dxUnits, dzUnits);
   }
 
   rotateTerrain(dRad: number): void {
@@ -80,8 +95,8 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   projectPoint(p: { x: number; y: number }) {
     const q = this.native?.project(p) ?? p;
     return {
-      x: Math.max(0.03, Math.min(0.97, Number.isFinite(q.x) ? q.x : p.x)),
-      y: Math.max(0.05, Math.min(0.9, Number.isFinite(q.y) ? q.y : p.y)),
+      x: Math.max(-0.15, Math.min(1.15, Number.isFinite(q.x) ? q.x : p.x)),
+      y: Math.max(-0.15, Math.min(1.15, Number.isFinite(q.y) ? q.y : p.y)),
     };
   }
 
@@ -94,7 +109,6 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   }
 
   onSurfaceWheel(event: WheelEvent): void {
-    // If the browser tab was previously pinch-zoomed in, allow pinch-out (ctrlKey + deltaY > 0) to restore 1x viewport scale
     if (typeof window !== 'undefined' && (window.visualViewport?.scale ?? 1) > 1.03 && event.ctrlKey && event.deltaY > 0) {
       return;
     }
@@ -134,21 +148,22 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
       }
     }
 
-    // 2. If Move 3D Map mode is active (or Shift+drag on terrain), drag the 3D terrain model
-    if (this.moveMapMode() || (event.shiftKey && this.forestMap())) {
+    // 2. If Move Map mode is active, Shift+drag, or dragging empty canvas in 2D mode: pan the scene camera
+    // so the map and all tokens move together in lockstep
+    if (this.moveMapMode() || event.shiftKey || !this.view3d()) {
       event.preventDefault();
       const surfaceEl = this.surface.nativeElement;
-      const startDesign = this.native.designPoint(localX, localY);
-      let lastX = startDesign.x;
-      let lastY = startDesign.y;
+      let prevX = localX;
+      let prevY = localY;
       surfaceEl.setPointerCapture(event.pointerId);
 
       const move = (e: PointerEvent) => {
         if (e.pointerId !== event.pointerId || !this.native) return;
-        const cur = this.native.designPoint(e.clientX - bounds.left, e.clientY - bounds.top);
-        this.native.moveTerrainBy((cur.x - lastX) / 66, (cur.y - lastY) / 66);
-        lastX = cur.x;
-        lastY = cur.y;
+        const curX = e.clientX - bounds.left;
+        const curY = e.clientY - bounds.top;
+        this.native.panScreenPixels(prevX, prevY, curX, curY);
+        prevX = curX;
+        prevY = curY;
       };
       const end = (e: PointerEvent) => {
         if (e.pointerId !== event.pointerId) return;
@@ -362,8 +377,8 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
         y: e.clientY - bounds.top,
       };
       const scene = structuredClone(before);
-      const minBound = this.view3d() ? -0.32 : 0.02;
-      const maxBound = this.view3d() ? 1.32 : 0.98;
+      const minBound = -0.32;
+      const maxBound = 1.32;
       const point = {
         x: Math.max(minBound, Math.min(maxBound, initial.x + (current.x - start.x) / Math.max(1, bounds.width))),
         y: Math.max(minBound, Math.min(maxBound, initial.y + (current.y - start.y) / Math.max(1, bounds.height))),
@@ -395,8 +410,8 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
     const scene = structuredClone(this.definition.previewScene);
     const p = index < 0 ? scene.caster : index === 3 ? scene.teleport!.destination : scene.targets[index];
     const step = event.shiftKey ? 0.05 : 0.015;
-    const minBound = this.view3d() ? -0.32 : 0.02;
-    const maxBound = this.view3d() ? 1.32 : 0.98;
+    const minBound = -0.32;
+    const maxBound = 1.32;
     p.x = Math.max(minBound, Math.min(maxBound, p.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0)));
     p.y = Math.max(minBound, Math.min(maxBound, p.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0)));
     this.sceneChanged.emit(scene);
@@ -410,6 +425,7 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
       surface.appendChild(canvas);
       const native = new BabylonEffectPreview(canvas, () => surface.clientWidth, () => surface.clientHeight);
       native.setView(this.view3d());
+      native.setQuality(this.quality());
       this.native = native;
       this.resizeObserver = new ResizeObserver(() => {
         if (!this.disposed && surface.clientWidth > 0 && surface.clientHeight > 0) native.resize();

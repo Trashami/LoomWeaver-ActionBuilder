@@ -21,7 +21,7 @@ import {
   VertexData,
 } from '@babylonjs/core';
 import { BabylonEffectRuntime } from './native-runtime';
-import { Scene3dAssetController } from './scene-3d-assets';
+import { Scene3dAssetController, VisualQualityTier } from './scene-3d-assets';
 import { EffectDefinition } from '../effect-definition';
 import { EffectWorld, FxPoint } from '../fireball-motion';
 import { riderPoint } from '../gameplay-preview';
@@ -37,7 +37,10 @@ export interface PreviewRenderSettings {
   ground: boolean;
 }
 
-/** Standalone editor host for the exact world-space VTT runtime + 3D Riverbank Terrain & 3D GLB Tokens. */
+const RIVERBANK_2D_ALBEDO = '/models-3d/riverbank_topdown_4k.jpg';
+const RIVERBANK_2D_NORMAL = '/models-3d/riverbank_normal_2k.jpg';
+
+/** Standalone editor host for the world-space VTT runtime + 3D Riverbank Terrain, 2D Top-Down HD Map & 3D GLB Tokens. */
 export class BabylonEffectPreview {
   readonly engine: Engine;
   readonly scene: Scene;
@@ -45,6 +48,8 @@ export class BabylonEffectPreview {
   readonly runtime: BabylonEffectRuntime;
   readonly assets3d: Scene3dAssetController;
 
+  private pipeline: DefaultRenderingPipeline;
+  private quality: VisualQualityTier = 'high';
   private heightPixels?: Uint8ClampedArray;
   private heightWidth = 0;
   private heightDepth = 0.18;
@@ -52,8 +57,14 @@ export class BabylonEffectPreview {
   private azimuth = 0;
   private tilt = 0.62;
   private zoom = 1;
+  private panX = 0;
+  private panZ = 0;
   private floor: Mesh;
   private floorMaterial: PBRMaterial;
+  private paverAlbedo: Texture;
+  private paverNormal: Texture;
+  private river2dAlbedo: Texture;
+  private river2dNormal: Texture;
   private ambientLight: HemisphericLight;
   private grid?: Mesh;
   private markers: Mesh[] = [];
@@ -65,6 +76,7 @@ export class BabylonEffectPreview {
   private using3dTerrain = true;
 
   private surfaceHeight(x: number, z: number): number {
+    if (!this.perspective) return 0;
     if (this.using3dTerrain) {
       return this.assets3d.terrainElevationAt(x, z);
     }
@@ -76,30 +88,100 @@ export class BabylonEffectPreview {
   }
 
   inspect(turn = 0, tilt = 0, zoom = 1): void {
-    this.azimuth += turn;
-    this.tilt = Math.max(0.22, Math.min(1.42, this.tilt + tilt));
-    this.zoom = Math.max(0.45, Math.min(2.6, this.zoom * zoom));
+    // In 2D Top-Down mode, lock out any 3D orbit/tilt/Z camera movements; only allow zoom & X/Y pan
+    if (this.perspective) {
+      this.azimuth += turn;
+      this.tilt = Math.max(0.22, Math.min(1.42, this.tilt + tilt));
+    }
+    this.zoom = Math.max(0.32, Math.min(2.6, this.zoom * zoom));
     this.resize();
+  }
+
+  panBy(dxUnits: number, dzUnits: number): void {
+    this.panX = Math.max(-16, Math.min(16, this.panX + dxUnits));
+    this.panZ = Math.max(-16, Math.min(16, this.panZ + dzUnits));
+    this.resize();
+  }
+
+  panScreenPixels(prevX: number, prevY: number, curX: number, curY: number): void {
+    const a = this.worldGroundPoint(prevX, prevY);
+    const b = this.worldGroundPoint(curX, curY);
+    if (!a || !b) return;
+    this.panBy(a.x - b.x, a.z - b.z);
+  }
+
+  private worldGroundPoint(x: number, y: number): Vector3 | null {
+    const w = Math.max(1, this.width());
+    const h = Math.max(1, this.height());
+    const ray = this.scene.createPickingRay(
+      (x * this.engine.getRenderWidth()) / w,
+      (y * this.engine.getRenderHeight()) / h,
+      Matrix.Identity(),
+      this.camera
+    );
+    const dist = ray.intersectsPlane(new Plane(0, 1, 0, 0));
+    if (dist === null) return null;
+    return ray.origin.add(ray.direction.scale(dist));
   }
 
   resetView(): void {
     this.azimuth = 0;
     this.tilt = 0.62;
     this.zoom = 1;
+    this.panX = 0;
+    this.panZ = 0;
     this.resize();
   }
 
   moveTerrainBy(dxUnits: number, dzUnits: number): void {
-    this.assets3d.mapTransform.offsetX += dxUnits;
-    this.assets3d.mapTransform.offsetZ += dzUnits;
+    // Pan the camera so the map AND all tokens move together in lockstep
+    this.panBy(-dxUnits, -dzUnits);
   }
 
   rotateTerrainBy(dRad: number): void {
+    if (!this.perspective) return;
     this.assets3d.mapTransform.rotationY += dRad;
   }
 
   resetTerrainTransform(): void {
     this.assets3d.mapTransform = { offsetX: 0, offsetZ: 0, rotationY: 0, scale: 1 };
+    this.panX = 0;
+    this.panZ = 0;
+    this.resize();
+  }
+
+  setQuality(tier: VisualQualityTier): void {
+    this.quality = tier;
+    const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
+    if (tier === 'low') {
+      this.engine.setHardwareScalingLevel(1.35);
+      this.pipeline.bloomEnabled = false;
+      this.pipeline.fxaaEnabled = false;
+      this.pipeline.samples = 1;
+      this.floorMaterial.maxSimultaneousLights = 4;
+    } else if (tier === 'med') {
+      this.engine.setHardwareScalingLevel(1.0);
+      this.pipeline.bloomEnabled = true;
+      this.pipeline.bloomScale = 0.45;
+      this.pipeline.fxaaEnabled = true;
+      this.pipeline.samples = 1;
+      this.floorMaterial.maxSimultaneousLights = 6;
+    } else {
+      this.engine.setHardwareScalingLevel(1 / Math.min(dpr, 2));
+      this.pipeline.bloomEnabled = true;
+      this.pipeline.bloomScale = 0.75;
+      this.pipeline.fxaaEnabled = true;
+      this.pipeline.samples = 4;
+      this.floorMaterial.maxSimultaneousLights = 8;
+    }
+    const aniso = tier === 'low' ? 2 : tier === 'med' ? 8 : 16;
+    const sampling = tier === 'low' ? Texture.BILINEAR_SAMPLINGMODE : Texture.TRILINEAR_SAMPLINGMODE;
+    for (const tex of [this.paverAlbedo, this.paverNormal, this.river2dAlbedo, this.river2dNormal]) {
+      tex.updateSamplingMode(sampling);
+      tex.anisotropicFilteringLevel = aniso;
+    }
+    this.assets3d.setQuality(tier);
+    this.resize();
   }
 
   pickDraggableRole(x: number, y: number): string | null {
@@ -140,19 +222,25 @@ export class BabylonEffectPreview {
 
     this.floor = MeshBuilder.CreateGround(
       'editor-normal-mapped-floor',
-      { width: 1, height: 1, subdivisions: 180, updatable: true },
+      { width: 1, height: 1, subdivisions: 120, updatable: true },
       this.scene
     );
     this.floor.receiveShadows = true;
     this.floor.isPickable = false;
 
     this.floorMaterial = new PBRMaterial('editor-pavers', this.scene);
-    const albedo = new Texture('/lighting/dungeon_pavers.png', this.scene);
-    const normal = new Texture('/lighting/dungeon_pavers_normal.png', this.scene);
-    this.floorMaterial.albedoTexture = albedo;
-    this.floorMaterial.bumpTexture = normal;
-    this.floorMaterial.roughness = 0.74;
-    this.floorMaterial.metallic = 0.04;
+    this.paverAlbedo = new Texture('/lighting/dungeon_pavers.png', this.scene);
+    this.paverNormal = new Texture('/lighting/dungeon_pavers_normal.png', this.scene);
+    this.river2dAlbedo = new Texture(RIVERBANK_2D_ALBEDO, this.scene, false, true, Texture.TRILINEAR_SAMPLINGMODE);
+    this.river2dNormal = new Texture(RIVERBANK_2D_NORMAL, this.scene, false, true, Texture.TRILINEAR_SAMPLINGMODE);
+    this.river2dAlbedo.anisotropicFilteringLevel = 16;
+    this.river2dNormal.anisotropicFilteringLevel = 16;
+
+    this.floorMaterial.albedoTexture = this.paverAlbedo;
+    this.floorMaterial.bumpTexture = this.paverNormal;
+    this.floorMaterial.roughness = 0.78;
+    this.floorMaterial.metallic = 0.03;
+    this.floorMaterial.directIntensity = 1.5;
     this.floorMaterial.maxSimultaneousLights = 8;
     this.floorMaterial.usePhysicalLightFalloff = false;
     this.floor.material = this.floorMaterial;
@@ -177,30 +265,31 @@ export class BabylonEffectPreview {
       lightGain: 3.8,
     });
 
-    const pipeline = new DefaultRenderingPipeline('effectbuilder-hdr', true, this.scene, [this.camera]);
-    pipeline.bloomEnabled = true;
-    pipeline.bloomThreshold = 0.88;
-    pipeline.bloomWeight = 0.24;
-    pipeline.bloomKernel = 32;
-    pipeline.bloomScale = 0.5;
-    pipeline.fxaaEnabled = true;
-    pipeline.samples = 1;
+    this.pipeline = new DefaultRenderingPipeline('effectbuilder-hdr', true, this.scene, [this.camera]);
+    this.pipeline.bloomEnabled = true;
+    this.pipeline.bloomThreshold = 0.88;
+    this.pipeline.bloomWeight = 0.24;
+    this.pipeline.bloomKernel = 32;
+    this.pipeline.bloomScale = 0.75;
+    this.pipeline.fxaaEnabled = true;
+    this.pipeline.samples = 4;
     this.resize();
   }
 
   setView(perspective: boolean): void {
     this.perspective = perspective;
+    this.terrainKey = '';
     this.resize();
   }
 
   project(p: FxPoint): FxPoint {
-    if (!this.perspective) return p;
     const w = Math.max(1, this.width());
     const h = Math.max(1, this.height());
     const wx = (p.x * w) / 66;
     const wz = (p.y * h) / 66;
-    const baseElev = this.using3dTerrain ? this.assets3d.tokenElevationAt(wx, wz) : this.surfaceHeight(wx, wz);
-    const wy = baseElev + 0.14;
+    const baseElev =
+      this.perspective && this.using3dTerrain ? this.assets3d.tokenElevationAt(wx, wz) : this.surfaceHeight(wx, wz);
+    const wy = this.perspective ? baseElev + 0.14 : 0.04;
     const q = Vector3.Project(
       new Vector3(wx, wy, wz),
       Matrix.Identity(),
@@ -211,7 +300,6 @@ export class BabylonEffectPreview {
   }
 
   designPoint(x: number, y: number): FxPoint {
-    if (!this.perspective) return { x, y };
     const w = Math.max(1, this.width());
     const h = Math.max(1, this.height());
     const ray = this.scene.createPickingRay(
@@ -220,9 +308,8 @@ export class BabylonEffectPreview {
       Matrix.Identity(),
       this.camera
     );
-    const refY = this.using3dTerrain
-      ? this.assets3d.terrainElevationAt(w / 132, h / 132)
-      : 0;
+    const refY =
+      this.perspective && this.using3dTerrain ? this.assets3d.terrainElevationAt(w / 132, h / 132) : 0;
     const distance = ray.intersectsPlane(new Plane(0, 1, 0, -refY));
     if (distance === null) return { x, y };
     const p = ray.origin.add(ray.direction.scale(distance));
@@ -233,21 +320,24 @@ export class BabylonEffectPreview {
     this.engine.resize();
     const w = this.width() / 66;
     const h = this.height() / 66;
+    const cx = w / 2 + this.panX;
+    const cz = h / 2 + this.panZ;
     if (this.perspective) {
       this.camera.mode = FreeCamera.PERSPECTIVE_CAMERA;
       this.camera.upVector = Vector3.Up();
       const dist = Math.max(w * 0.88, h * 1.45, 9.5) * this.zoom;
       this.camera.position.set(
-        w / 2 + Math.sin(this.azimuth) * dist * Math.cos(this.tilt),
+        cx + Math.sin(this.azimuth) * dist * Math.cos(this.tilt),
         dist * Math.sin(this.tilt),
-        h / 2 + Math.cos(this.azimuth) * dist * Math.cos(this.tilt)
+        cz + Math.cos(this.azimuth) * dist * Math.cos(this.tilt)
       );
-      this.camera.setTarget(new Vector3(w / 2, 0.35, h / 2));
+      this.camera.setTarget(new Vector3(cx, 0.35, cz));
     } else {
+      // Strictly 2D Top-Down Orthographic view: X/Y pan and zoom only, zero Z camera movements
       this.camera.mode = FreeCamera.ORTHOGRAPHIC_CAMERA;
       this.camera.upVector = new Vector3(0, 0, -1);
-      this.camera.position.set(w / 2, 24, h / 2 - 0.0001);
-      this.camera.setTarget(new Vector3(w / 2, 0, h / 2));
+      this.camera.position.set(cx, 24, cz);
+      this.camera.setTarget(new Vector3(cx, 0, cz));
       const pad = this.zoom;
       this.camera.orthoLeft = (-w / 2) * pad;
       this.camera.orthoRight = (w / 2) * pad;
@@ -257,14 +347,6 @@ export class BabylonEffectPreview {
     this.camera.getViewMatrix(true);
     this.camera.getProjectionMatrix(true);
     this.scene.updateTransformMatrix(true);
-    this.floor.position.set(w / 2, 0, h / 2);
-    this.floor.scaling.set(w, 1, h);
-    for (const t of [this.floorMaterial.albedoTexture, this.floorMaterial.bumpTexture]) {
-      if (t instanceof Texture) {
-        t.uScale = w / 4;
-        t.vScale = h / 4;
-      }
-    }
     this.lastLayout = '';
   }
 
@@ -279,25 +361,52 @@ export class BabylonEffectPreview {
   ): void {
     const w = this.width();
     const h = this.height();
+    const wUnits = w / 66;
+    const hUnits = h / 66;
     const showForestMap = settings.forestMap !== false;
-    const show3dTokens = settings.tokens3d !== false;
-    this.using3dTerrain = showForestMap;
-    this.heightDepth = showForestMap ? 0.02 : (settings.height ?? 0.18);
+    const show3dTerrain = showForestMap && this.perspective;
+    const show2dRiverbank = showForestMap && !this.perspective;
+    const show3dTokens = settings.tokens3d !== false && this.perspective;
+    this.using3dTerrain = show3dTerrain;
+    this.heightDepth = showForestMap || !this.perspective ? 0 : (settings.height ?? 0.18);
 
-    const terrainKey = JSON.stringify([w, h, this.heightDepth, !!this.heightPixels, showForestMap]);
+    const terrainKey = JSON.stringify([w, h, this.heightDepth, !!this.heightPixels, showForestMap, this.perspective]);
     if (terrainKey !== this.terrainKey) {
       this.terrainKey = terrainKey;
       const positions = this.floor.getVerticesData('position')!;
       for (let i = 0; i < positions.length; i += 3) {
-        positions[i + 1] = showForestMap
-          ? 0
-          : this.surfaceHeight(((positions[i] + 0.5) * w) / 66, ((positions[i + 2] + 0.5) * h) / 66);
+        positions[i + 1] =
+          showForestMap || !this.perspective
+            ? 0
+            : this.surfaceHeight(((positions[i] + 0.5) * w) / 66, ((positions[i + 2] + 0.5) * h) / 66);
       }
       const normals: number[] = [];
       VertexData.ComputeNormals(positions, this.floor.getIndices()!, normals);
       this.floor.updateVerticesData('position', positions);
       this.floor.updateVerticesData('normal', normals);
       this.floor.refreshBoundingInfo();
+
+      if (show2dRiverbank) {
+        const spanX = Math.max(wUnits * 1.18, 11.5);
+        const spanZ = Math.max(hUnits * 1.25, 6.8);
+        this.floor.position.set(wUnits / 2, 0, hUnits / 2);
+        this.floor.scaling.set(spanX, 1, spanZ);
+        this.floorMaterial.albedoTexture = this.river2dAlbedo;
+        this.floorMaterial.bumpTexture = this.river2dNormal;
+        this.river2dAlbedo.uScale = 1;
+        this.river2dAlbedo.vScale = 1;
+        this.river2dNormal.uScale = 1;
+        this.river2dNormal.vScale = 1;
+      } else {
+        this.floor.position.set(wUnits / 2, 0, hUnits / 2);
+        this.floor.scaling.set(wUnits, 1, hUnits);
+        this.floorMaterial.albedoTexture = this.paverAlbedo;
+        this.floorMaterial.bumpTexture = this.paverNormal;
+        this.paverAlbedo.uScale = wUnits / 4;
+        this.paverAlbedo.vScale = hUnits / 4;
+        this.paverNormal.uScale = wUnits / 4;
+        this.paverNormal.vScale = hUnits / 4;
+      }
       this.lastLayout = '';
     }
 
@@ -309,16 +418,16 @@ export class BabylonEffectPreview {
     );
 
     const proneFirstTarget = !!def.gameplay?.enabled && !!def.gameplay.prone && time >= def.gameplay.impactMs;
-    const modelShadows = this.assets3d.sync(
-      w / 66,
-      h / 66,
+    this.assets3d.sync(
+      wUnits,
+      hUnits,
       pose.point,
       pose.alpha,
       allTargets,
       scale,
       (x, z) => this.surfaceHeight(x, z),
       {
-        showForestMap,
+        showForestMap: show3dTerrain,
         show3dTokens,
         proneFirstTarget,
         ambient: settings.ambient,
@@ -326,10 +435,10 @@ export class BabylonEffectPreview {
     );
 
     const key = JSON.stringify([w, h, settings.grid, world.walls, this.terrainKey]);
-    this.ambientLight.intensity = settings.ambient;
-    this.floorMaterial.bumpTexture!.level = settings.bump;
-    this.floor.setEnabled(!showForestMap && (settings.background || settings.ground));
-    this.floorMaterial.albedoTexture!.level = settings.background ? 1 : 0;
+    this.ambientLight.intensity = this.perspective ? settings.ambient : Math.max(0.58, settings.ambient * 1.45);
+    this.floorMaterial.bumpTexture!.level = show2dRiverbank ? Math.min(1.35, settings.bump * 0.65) : settings.bump;
+    this.floor.setEnabled(!show3dTerrain && (show2dRiverbank || settings.background || settings.ground));
+    this.floorMaterial.albedoTexture!.level = show2dRiverbank || settings.background ? 1 : 0;
 
     if (key !== this.lastLayout) {
       this.lastLayout = key;
@@ -340,20 +449,10 @@ export class BabylonEffectPreview {
         const cell = 66 * scale;
         const lines: Vector3[][] = [];
         for (let x = (w / 2) % cell; x < w; x += cell) {
-          lines.push(
-            Array.from(
-              { length: 61 },
-              (_, i) => new Vector3(x / 66, 0.025, ((h / 66) * i) / 60)
-            )
-          );
+          lines.push(Array.from({ length: 61 }, (_, i) => new Vector3(x / 66, 0.025, (hUnits * i) / 60)));
         }
         for (let y = (h / 2) % cell; y < h; y += cell) {
-          lines.push(
-            Array.from(
-              { length: 61 },
-              (_, i) => new Vector3(((w / 66) * i) / 60, 0.025, y / 66)
-            )
-          );
+          lines.push(Array.from({ length: 61 }, (_, i) => new Vector3((wUnits * i) / 60, 0.025, y / 66)));
         }
         this.grid = MeshBuilder.CreateLineSystem('editor-grid', { lines }, this.scene);
         (this.grid as any).color = new Color3(0.16, 0.28, 0.26);
@@ -395,12 +494,12 @@ export class BabylonEffectPreview {
         m.metadata = { ebDragRole: i === 0 ? 'caster' : `target-${i - 1}` };
         this.markers.push(m);
       }
-      (m.material as StandardMaterial).alpha = (i ? 1 : pose.alpha) * (show3dTokens ? 0.55 : 1);
+      (m.material as StandardMaterial).alpha = (i ? 1 : pose.alpha) * (show3dTokens ? 0.55 : 0.92);
       m.setEnabled(i > 0 || pose.alpha > 0.001);
       const wx = p.x / 66;
       const wz = p.y / 66;
-      const markerY = showForestMap
-        ? this.assets3d.tokenElevationAt(wx, wz) + 0.04
+      const markerY = show3dTerrain
+        ? this.assets3d.terrainElevationAt(wx, wz) + 0.03
         : this.surfaceHeight(wx, wz) + 0.03;
       m.position.set(wx, markerY, wz);
       m.scaling.setAll(scale);
@@ -410,11 +509,11 @@ export class BabylonEffectPreview {
     }
 
     const effectTarget = teleport?.enabled ? { x: teleport.destination.x * w, y: teleport.destination.y * h } : allTargets[0];
-    const sourceY = showForestMap
-      ? this.assets3d.tokenElevationAt(from.x / 66, from.y / 66)
+    const sourceY = show3dTerrain
+      ? this.assets3d.terrainElevationAt(from.x / 66, from.y / 66)
       : this.surfaceHeight(from.x / 66, from.y / 66);
-    const targetY = showForestMap
-      ? this.assets3d.tokenElevationAt(effectTarget.x / 66, effectTarget.y / 66)
+    const targetY = show3dTerrain
+      ? this.assets3d.terrainElevationAt(effectTarget.x / 66, effectTarget.y / 66)
       : this.surfaceHeight(effectTarget.x / 66, effectTarget.y / 66);
     try {
       this.runtime.draw(

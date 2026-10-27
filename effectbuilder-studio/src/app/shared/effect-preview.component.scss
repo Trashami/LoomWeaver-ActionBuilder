@@ -4,7 +4,7 @@
 
 :host,.surface{min-height:0;height:100%}
 
-.token{z-index:4;background:radial-gradient(circle,rgba(12,32,26,.22) 0%,transparent 70%);border-color:rgba(99,212,170,.28)}.token.caster{border-color:rgba(73,232,146,.42)}.token mw-icon{opacity:0}.token.active{border-color:#00df9e}
+.token{z-index:4;background:radial-gradient(circle,rgba(12,32,26,.22) 0%,transparent 70%);border-color:rgba(99,212,170,.28)}.token.caster{border-color:rgba(73,232,146,.42)}.token mw-icon{opacity:0}.token.token-2d{background:#0b1a1fdd;border:2px solid #d46a7e;box-shadow:0 2px 8px #000a}.token.token-2d.caster{border-color:#49e892}.token.token-2d mw-icon{opacity:.92;color:#d6f5ea}.token.active{border-color:#00df9e}
 
 .summon-artwork{position:absolute;z-index:5;object-fit:contain;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 3px 5px #0009)}
 
@@ -12,10 +12,12 @@
 
 .token.prone mw-icon{transform:rotate(90deg)}.token.prone::after{content:"PRONE";position:absolute;top:-18px;font-size:9px;color:#efc48a}
 
-.surface-controls{position:absolute;left:10px;bottom:8px;z-index:8;display:flex;flex-wrap:wrap;gap:10px;padding:6px 9px;border:1px solid #34504d;background:#091217e8;border-radius:5px;font-size:11px;color:#b9d4d0;max-width:calc(100% - 20px)}.surface-controls label{display:flex;align-items:center;gap:5px}.surface-controls input[type=range]{width:72px;accent-color:#00c995}
+.surface-controls{position:absolute;left:10px;bottom:8px;z-index:8;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 9px;border:1px solid #34504d;background:#091217e8;border-radius:5px;font-size:11px;color:#b9d4d0;max-width:calc(100% - 20px)}.surface-controls label{display:flex;align-items:center;gap:5px}.surface-controls input[type=range]{width:72px;accent-color:#00c995}
 
-.surface-controls button{min-height:28px;padding:3px 8px;border:1px solid #286454;border-radius:4px;background:#0b3027;color:#c7f8e8;cursor:pointer}.surface-controls button:hover{background:#14533f}.surface-controls button.active-mode{background:#00684a;border-color:#00e5a3;color:#fff}.surface-controls button:focus-visible{outline:2px solid #00d69e;outline-offset:2px}@media(max-width:600px){.surface-controls{gap:5px;font-size:10px}.surface-controls input[type=range]{width:48px}}
+.quality-group{display:inline-flex;align-items:center;gap:3px;padding:2px 4px;border:1px solid #23493f;border-radius:4px;background:#061a16}.quality-label{padding:0 4px;font-weight:600;color:#8abdb0;font-size:10px;text-transform:uppercase;letter-spacing:.6px}
 
-.camera-tools{position:absolute;right:10px;top:10px;z-index:9;color:#c7f8e8;font-size:11px}.camera-tools summary{cursor:pointer;padding:6px 10px;border:1px solid #286454;border-radius:4px;background:#0b3027}.camera-tools>div{display:flex;gap:5px;flex-wrap:wrap;max-width:250px;margin-top:4px;padding:8px;background:#091217f5;border:1px solid #286454;border-radius:4px}.camera-tools button{padding:5px 8px;color:#c7f8e8;background:#0b3027;border:1px solid #286454;border-radius:4px;cursor:pointer}
+.surface-controls button{min-height:26px;padding:3px 8px;border:1px solid #286454;border-radius:4px;background:#0b3027;color:#c7f8e8;cursor:pointer}.surface-controls button:hover{background:#14533f}.surface-controls button.active-mode{background:#00684a;border-color:#00e5a3;color:#fff}.surface-controls button:focus-visible{outline:2px solid #00d69e;outline-offset:2px}@media(max-width:600px){.surface-controls{gap:5px;font-size:10px}.surface-controls input[type=range]{width:48px}}
+
+.camera-tools{position:absolute;right:10px;top:10px;z-index:9;color:#c7f8e8;font-size:11px}.camera-tools summary{cursor:pointer;padding:6px 10px;border:1px solid #286454;border-radius:4px;background:#0b3027}.camera-tools>div{display:flex;gap:5px;flex-wrap:wrap;max-width:265px;margin-top:4px;padding:8px;background:#091217f5;border:1px solid #286454;border-radius:4px}.camera-tools button{padding:5px 8px;color:#c7f8e8;background:#0b3027;border:1px solid #286454;border-radius:4px;cursor:pointer}
 
 .teleport-tools{position:absolute;left:10px;top:34px;z-index:9;display:flex;gap:8px;align-items:center;padding:5px 8px;background:#091217ed;border:1px solid #286454;border-radius:4px;color:#c7f8e8;font-size:11px}.teleport-tools button{background:#0b3027;color:#c7f8e8;border:1px solid #286454;border-radius:4px;padding:4px 8px}.token.destination{border:1px dashed #89dfd6;border-radius:50%;background:#153b3340}.token.destination mw-icon{opacity:.35}

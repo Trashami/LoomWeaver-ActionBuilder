@@ -78,6 +78,8 @@ def schema():
 
 
 STYLE = '''<style id="public-prerender-style">
+html,body{margin:0;background:#05100c;color:#dce8e1}
+html.lw-studio-boot .ssr-lw-shell{display:none!important}
 .ssr-lw-shell{background:#05100c;color:#dce8e1;font:15px/1.65 Inter,system-ui,sans-serif;min-height:100vh}
 .ssr-lw-shell *{box-sizing:border-box}.ssr-lw-shell a{color:#d9b77a;text-decoration:none}
 .ssr-wrap{max-width:1380px;margin:auto;padding:28px}.ssr-topnav{display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:#0c1313;border-bottom:1px solid #514733;padding:14px 24px}
@@ -87,11 +89,12 @@ STYLE = '''<style id="public-prerender-style">
 .ssr-card{margin:24px 0;padding:28px;border:1px solid #514733;background:#0b1814;border-radius:3px}.ssr-card>img{display:block;width:100%;max-height:320px;object-fit:cover}
 .ssr-btn{display:inline-block;padding:12px 22px;border:1px solid #d9b77a}.ssr-lw-shell details{padding:12px;border-bottom:1px solid #294335}.ssr-lw-shell summary{cursor:pointer}
 @media(max-width:760px){.ssr-hero-grid{grid-template-columns:1fr}.ssr-wrap{padding:16px}.ssr-topnav{gap:12px}.ssr-topnav nav{flex-basis:100%;order:3}}
-</style>'''
+</style><script id="lw-boot-guard">(function(){try{var p=(location.pathname||'/').replace(/\\/+$/,'')||'/';var h=(location.hostname||'').toLowerCase();var sub=/^(maps|vtt|vtt3d|actionbuilder|effectbuilder|3dassets|generator)\\./.test(h);var tok=(window.localStorage&&localStorage.getItem('mw_auth_token'))||document.cookie.indexOf('mw_auth_token=')!==-1;var pub={'/':'1','/vtt':'1','/campaign-manager':'1','/battlemap-builder':'1','/effect-builder':'1','/encounter-builder':'1','/3d-assets':'1','/ai-campaign-assistant':'1','/features':'1','/about':'1','/welcome':'1','/marketing':'1','/login':'1','/register':'1'};if((!pub[p]&&p.indexOf('/features/')!==0)||(sub&&tok)){document.documentElement.classList.add('lw-studio-boot');}}catch(e){}})();</script>'''
 
 
 def render(base, page):
     html = re.sub(r'<script type="application/ld\+json">[\s\S]*?</script>', '', base)
+    html = re.sub(r'<script id="lw-boot-guard">[\s\S]*?</script>', '', html)
     html = re.sub(r'<style[\s\S]*?</style>', '', html)
     html = re.sub(r'<title>.*?</title>', '<title>'+escape(page['title'])+'</title>', html)
     for key, value in [('description', page['description']), ('robots', 'noindex, follow' if page['slug'] in AUTH else 'index, follow, max-image-preview:large'), ('twitter:title', page['title']), ('twitter:description', page['description'])]:
