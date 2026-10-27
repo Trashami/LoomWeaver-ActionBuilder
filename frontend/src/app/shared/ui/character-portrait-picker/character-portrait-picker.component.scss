@@ -1,0 +1,209 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.lw-portrait-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(217, 183, 122, 0.32);
+  background: radial-gradient(circle at 50% 25%, rgba(73, 232, 146, 0.1), #040b08 78%);
+}
+
+.lw-portrait-stage__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.lw-portrait-stage__edit-btn {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.34rem 0.68rem;
+  border-radius: 7px;
+  border: 1px solid rgba(73, 232, 146, 0.55);
+  background: rgba(6, 18, 13, 0.9);
+  color: #e9fff4;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+
+  &:hover,
+  &--active {
+    border-color: #49e892;
+    background: rgba(20, 68, 46, 0.95);
+    color: #ffffff;
+  }
+}
+
+.lw-portrait-stage__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: 2.8rem 0.75rem 0.75rem;
+  background: rgba(4, 12, 9, 0.96);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.lw-portrait-stage__overlay-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  h3 {
+    margin: 0;
+    font-family: var(--lw-font-display, Georgia, serif);
+    font-size: 0.94rem;
+    color: #f5ebd5;
+  }
+
+  p {
+    margin: 0.12rem 0 0;
+    font-size: 0.7rem;
+    color: #95aba0;
+  }
+}
+
+.lw-portrait-stage__upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.34rem 0.62rem;
+  border-radius: 7px;
+  border: 1px solid rgba(217, 183, 122, 0.55);
+  background: rgba(217, 183, 122, 0.14);
+  color: #f6e3b4;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: #49e892;
+    color: #ffffff;
+  }
+}
+
+.lw-portrait-stage__file-input {
+  display: none;
+}
+
+.lw-portrait-stage__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lw-portrait-stage__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.lw-portrait-stage__tab {
+  padding: 0.32rem 0.5rem;
+  border-radius: 7px;
+  border: 1px solid rgba(55, 110, 84, 0.38);
+  background: rgba(8, 20, 15, 0.85);
+  color: #9eb3a8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--active {
+    border-color: #49e892;
+    background: rgba(20, 68, 46, 0.88);
+    color: #effff6;
+  }
+}
+
+.lw-portrait-stage__search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.34rem 0.55rem;
+  border-radius: 7px;
+  border: 1px solid rgba(55, 110, 84, 0.4);
+  background: rgba(6, 15, 11, 0.92);
+
+  input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: #e9f2ed;
+    font-size: 0.75rem;
+    outline: none;
+  }
+}
+
+.lw-portrait-stage__grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  padding-right: 0.2rem;
+}
+
+.lw-portrait-stage__card {
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem;
+  border-radius: 8px;
+  border: 1px solid rgba(55, 110, 84, 0.32);
+  background: rgba(9, 22, 17, 0.88);
+  text-align: left;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 92px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: rgba(4, 10, 8, 0.9);
+  }
+
+  &:hover {
+    border-color: rgba(73, 232, 146, 0.55);
+  }
+
+  &--selected {
+    border-color: #49e892;
+    box-shadow: 0 0 12px rgba(73, 232, 146, 0.28);
+  }
+}
+
+.lw-portrait-stage__card-meta {
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.28rem;
+
+  strong {
+    font-size: 0.74rem;
+    color: #f4ead4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  small {
+    font-size: 0.65rem;
+    color: #93aa9e;
+  }
+}

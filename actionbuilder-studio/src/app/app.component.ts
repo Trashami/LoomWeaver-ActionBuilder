@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { NgpButton } from 'ng-primitives/button';
 import {
   ActionStudioContext,
@@ -16,10 +9,7 @@ import {
   RuleLogicClause,
   WorkspaceTabMode,
 } from './core/models/action-studio.models';
-import {
-  FALLBACK_RULES,
-  FALLBACK_STUDIO_CONTEXT,
-} from './core/models/action-studio.fallback';
+import { FALLBACK_RULES, FALLBACK_STUDIO_CONTEXT } from './core/models/action-studio.fallback';
 import { ActionStudioApiService } from './core/services/action-studio-api.service';
 import { LwActionTopNavbarComponent } from './shared/ui/action-top-navbar/action-top-navbar.component';
 import { LwBadgeComponent } from './shared/ui/badge/badge.component';
@@ -79,52 +69,35 @@ export class ActionStudioAppComponent implements OnInit {
   readonly rules = computed(() => this.studioContext().rules);
   readonly draftRuleIds = computed(() => Object.keys(this.savedDrafts()));
   readonly hasDraftForCurrent = computed(() => Boolean(this.savedDrafts()[this.activeRule().id]));
+  readonly canDeleteActiveRule = computed(() =>
+    Boolean(this.activeRule()?.isCustomizedForCampaign && !this.activeRule()?.isCoreEngineRule)
+  );
 
   readonly draftDiffs = computed<RuleDraftDiffItem[]>(() => {
     const base = this.baselineRule();
     const cur = this.activeRule();
     if (!base || !cur) return [];
     const diffs: RuleDraftDiffItem[] = [];
-
-    if (base.name !== cur.name) {
-      diffs.push({ label: 'Name', before: base.name, after: cur.name });
-    }
-    if (base.actionCost !== cur.actionCost) {
-      diffs.push({ label: 'Action Cost', before: base.actionCost, after: cur.actionCost });
-    }
-    if (base.acBonus !== cur.acBonus) {
-      diffs.push({ label: 'AC Bonus', before: `+${base.acBonus}`, after: `+${cur.acBonus}` });
-    }
-    if (base.saveDc !== cur.saveDc) {
-      diffs.push({ label: 'Save DC', before: `DC ${base.saveDc}`, after: `DC ${cur.saveDc}` });
-    }
-    if (base.rangeLabel !== cur.rangeLabel) {
-      diffs.push({ label: 'Range', before: base.rangeLabel, after: cur.rangeLabel });
-    }
-    if (base.durationLabel !== cur.durationLabel) {
-      diffs.push({ label: 'Duration', before: base.durationLabel, after: cur.durationLabel });
-    }
+    if (base.name !== cur.name) diffs.push({ label: 'Name', before: base.name, after: cur.name });
+    if (base.actionCost !== cur.actionCost) diffs.push({ label: 'Action Cost', before: base.actionCost, after: cur.actionCost });
+    if (base.acBonus !== cur.acBonus) diffs.push({ label: 'AC Bonus', before: `+${base.acBonus}`, after: `+${cur.acBonus}` });
+    if (base.saveDc !== cur.saveDc) diffs.push({ label: 'Save DC', before: `DC ${base.saveDc}`, after: `DC ${cur.saveDc}` });
+    if (base.rangeLabel !== cur.rangeLabel) diffs.push({ label: 'Range', before: base.rangeLabel, after: cur.rangeLabel });
+    if (base.durationLabel !== cur.durationLabel) diffs.push({ label: 'Duration', before: base.durationLabel, after: cur.durationLabel });
     if (base.damageOrEffectFormula !== cur.damageOrEffectFormula) {
       diffs.push({ label: 'Outcome Formula', before: base.damageOrEffectFormula, after: cur.damageOrEffectFormula });
     }
-
     const baseTrigger = this.summarizeClauseType(base, 'when');
     const curTrigger = this.summarizeClauseType(cur, 'when');
-    if (baseTrigger !== curTrigger) {
-      diffs.push({ label: 'Trigger', before: baseTrigger, after: curTrigger });
-    }
+    if (baseTrigger !== curTrigger) diffs.push({ label: 'Trigger', before: baseTrigger, after: curTrigger });
 
     const baseReq = this.summarizeRequirements(base);
     const curReq = this.summarizeRequirements(cur);
-    if (baseReq !== curReq) {
-      diffs.push({ label: 'Requirements', before: baseReq, after: curReq });
-    }
+    if (baseReq !== curReq) diffs.push({ label: 'Requirements', before: baseReq, after: curReq });
 
     const baseEff = this.summarizeClauseType(base, 'then');
     const curEff = this.summarizeClauseType(cur, 'then');
-    if (baseEff !== curEff) {
-      diffs.push({ label: 'Effects', before: baseEff, after: curEff });
-    }
+    if (baseEff !== curEff) diffs.push({ label: 'Effects', before: baseEff, after: curEff });
 
     return diffs;
   });
@@ -138,9 +111,7 @@ export class ActionStudioAppComponent implements OnInit {
       }
       const params = new URLSearchParams(window.location.search);
       const cidParam = params.get('campaignId');
-      if (cidParam && !Number.isNaN(Number(cidParam))) {
-        initialCampaignId = Number(cidParam);
-      }
+      if (cidParam && !Number.isNaN(Number(cidParam))) initialCampaignId = Number(cidParam);
       const accParam = params.get('accountId');
       if (accParam) {
         initialAccount = accParam;
@@ -190,11 +161,7 @@ export class ActionStudioAppComponent implements OnInit {
     this.hasUnsavedChanges.set(true);
   }
 
-  onPrimaryBindingChanged(binding: {
-    primaryClassName: string;
-    primaryMethodName: string;
-    sourceFilePath: string;
-  }): void {
+  onPrimaryBindingChanged(binding: { primaryClassName: string; primaryMethodName: string; sourceFilePath: string }): void {
     this.activeRule.update((curr) => ({
       ...curr,
       primaryClassName: binding.primaryClassName,
@@ -233,12 +200,13 @@ export class ActionStudioAppComponent implements OnInit {
       name: `${base.name} (Campaign Variant)`,
       sourceLabel: 'Custom Action',
       isCustomizedForCampaign: true,
+      isCoreEngineRule: false,
     };
     this.baselineRule.set(this.cloneRule(base));
     this.activeRule.set(copy);
     this.hasUnsavedChanges.set(true);
     this.secondaryMenuOpen.set(false);
-    this.statusBanner.set(`Duplicated '${base.name}' as a new draft.`);
+    this.statusBanner.set(`Duplicated '${base.name}' as a new custom action draft.`);
   }
 
   onCreateNewRule(): void {
@@ -297,18 +265,12 @@ export class ActionStudioAppComponent implements OnInit {
           notes: 'Effects',
         },
       ],
-      scalingTiers: [
-        {
-          levelRange: '1-4',
-          diceOrValue: 'Self',
-          label: 'Base Tier',
-          summary: '+5 AC until start of your next turn.',
-        },
-      ],
+      scalingTiers: [{ levelRange: '1-4', diceOrValue: 'Self', label: 'Base Tier', summary: '+5 AC until start of your next turn.' }],
       worksWith: ['Mage Armor'],
       conflictsWith: ['Incapacitated'],
       tags: ['Reaction', 'Custom'],
       isCustomizedForCampaign: true,
+      isCoreEngineRule: false,
       updatedByUsername: this.studioContext().username,
       updatedAt: new Date().toISOString(),
     };
@@ -316,72 +278,87 @@ export class ActionStudioAppComponent implements OnInit {
     this.activeRule.set(customRule);
     this.workspaceTab.set('build');
     this.hasUnsavedChanges.set(true);
-    this.statusBanner.set(`Drafting new ability for ${campName}.`);
+    this.statusBanner.set(`Drafting new custom action for ${campName}.`);
   }
 
   onApplyRuleToCampaign(): void {
     const camp = this.activeCampaign();
     if (!camp) return;
     this.saving.set(true);
-    this.api
-      .applyRuleToCampaign(camp.id, this.activeRule(), this.selectedAccountId())
-      .subscribe({
-        next: (res) => {
-          this.saving.set(false);
-          this.hasUnsavedChanges.set(false);
-          this.statusBanner.set(res.message);
-          this.baselineRule.set(this.cloneRule(res.rule));
-          this.activeRule.set(this.cloneRule(res.rule));
-          this.savedDrafts.update((map) => {
-            const next = { ...map };
-            delete next[res.rule.id];
-            return next;
-          });
-          this.studioContext.update((ctx) => {
-            const nextRules =
-              res.rules && res.rules.length > 0
-                ? res.rules
-                : ctx.rules.some((r) => r.id === res.rule.id)
-                  ? ctx.rules.map((r) => (r.id === res.rule.id ? res.rule : r))
-                  : [res.rule, ...ctx.rules];
-            const nextActive = ctx.activeCampaign
-              ? { ...ctx.activeCampaign, customizedRuleCount: res.customizedRuleCount }
-              : null;
-            const nextDmCampaigns = ctx.dmCampaigns.map((c) =>
-              c.id === res.campaignId ? { ...c, customizedRuleCount: res.customizedRuleCount } : c
-            );
-            return {
-              ...ctx,
-              activeCampaign: nextActive,
-              dmCampaigns: nextDmCampaigns,
-              rules: nextRules,
-            };
-          });
-        },
-        error: (err) => {
-          this.saving.set(false);
-          this.statusBanner.set(
-            err?.error?.error || 'Only the Dungeon Master of this campaign can apply rules.'
-          );
-        },
-      });
+    this.api.applyRuleToCampaign(camp.id, this.activeRule(), this.selectedAccountId()).subscribe({
+      next: (res) => {
+        this.saving.set(false);
+        this.hasUnsavedChanges.set(false);
+        this.statusBanner.set(res.message);
+        this.baselineRule.set(this.cloneRule(res.rule));
+        this.activeRule.set(this.cloneRule(res.rule));
+        this.savedDrafts.update((map) => {
+          const next = { ...map };
+          delete next[res.rule.id];
+          return next;
+        });
+        this.studioContext.update((ctx) => {
+          const nextRules =
+            res.rules && res.rules.length > 0
+              ? res.rules
+              : ctx.rules.some((r) => r.id === res.rule.id)
+                ? ctx.rules.map((r) => (r.id === res.rule.id ? res.rule : r))
+                : [res.rule, ...ctx.rules];
+          return {
+            ...ctx,
+            activeCampaign: ctx.activeCampaign ? { ...ctx.activeCampaign, customizedRuleCount: res.customizedRuleCount } : null,
+            dmCampaigns: ctx.dmCampaigns.map((c) => (c.id === res.campaignId ? { ...c, customizedRuleCount: res.customizedRuleCount } : c)),
+            rules: nextRules,
+          };
+        });
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.statusBanner.set(err?.error?.error || 'Only the Dungeon Master of this campaign can apply rules.');
+      },
+    });
   }
 
-  onResetCurrentRule(): void {
+  onDeleteCustomRule(ruleToDelete?: CampaignActionRule): void {
     const camp = this.activeCampaign();
-    if (!camp) return;
-    const ruleId = this.activeRule().id;
+    const target = ruleToDelete ?? this.activeRule();
+    if (!camp || !target) return;
+    if (!target.isCustomizedForCampaign || target.isCoreEngineRule) {
+      this.statusBanner.set('Core Engine SQL actions cannot be deleted. Only custom campaign actions can be deleted.');
+      return;
+    }
+
+    const ruleId = target.id;
+    const ruleName = target.name;
+    const bypassedCoreId = target.bypassesCoreRuleId;
     this.secondaryMenuOpen.set(false);
-    this.api.resetRuleToDefault(camp.id, ruleId, this.selectedAccountId()).subscribe({
+
+    this.savedDrafts.update((map) => {
+      const next = { ...map };
+      delete next[ruleId];
+      return next;
+    });
+
+    this.api.deleteCustomRule(camp.id, ruleId, this.selectedAccountId()).subscribe({
       next: (res) => {
-        this.statusBanner.set(res.message);
-        this.studioContext.update((ctx) => ({ ...ctx, rules: res.rules }));
-        const match = res.rules.find((r) => r.id === ruleId) || res.rules[0];
-        if (match) {
-          this.baselineRule.set(this.cloneRule(match));
-          this.activeRule.set(this.cloneRule(match));
+        const nextRules = res.rules.filter((r) => r.id !== ruleId);
+        const customCount = nextRules.filter((r) => r.isCustomizedForCampaign && !r.isCoreEngineRule).length;
+        this.statusBanner.set(`Deleted custom action '${ruleName}' from ${camp.name}.`);
+        this.studioContext.update((ctx) => ({
+          ...ctx,
+          activeCampaign: ctx.activeCampaign ? { ...ctx.activeCampaign, customizedRuleCount: customCount } : null,
+          dmCampaigns: ctx.dmCampaigns.map((c) => (c.id === camp.id ? { ...c, customizedRuleCount: customCount } : c)),
+          rules: nextRules,
+        }));
+        const fallback = (bypassedCoreId && nextRules.find((r) => r.id === bypassedCoreId)) || nextRules[0];
+        if (fallback && this.activeRule().id === ruleId) {
+          this.baselineRule.set(this.cloneRule(fallback));
+          this.activeRule.set(this.cloneRule(fallback));
         }
         this.hasUnsavedChanges.set(false);
+      },
+      error: (err) => {
+        this.statusBanner.set(err?.error?.error || 'Only custom campaign actions can be deleted.');
       },
     });
   }
@@ -401,20 +378,16 @@ export class ActionStudioAppComponent implements OnInit {
 
   onCreateOwnDmCampaign(payload: { name: string; rulesetLabel: string }): void {
     this.creatingCampaign.set(true);
-    this.api
-      .createQuickDmCampaign(payload.name, payload.rulesetLabel, this.selectedAccountId())
-      .subscribe({
-        next: (ctx) => {
-          this.creatingCampaign.set(false);
-          this.applyLoadedContext(ctx);
-          this.statusBanner.set(
-            `Created your DM campaign '${ctx.activeCampaign?.name}' and defaulted ActionBuilder to it.`
-          );
-        },
-        error: () => {
-          this.creatingCampaign.set(false);
-        },
-      });
+    this.api.createQuickDmCampaign(payload.name, payload.rulesetLabel, this.selectedAccountId()).subscribe({
+      next: (ctx) => {
+        this.creatingCampaign.set(false);
+        this.applyLoadedContext(ctx);
+        this.statusBanner.set(`Created your DM campaign '${ctx.activeCampaign?.name}' and defaulted ActionBuilder to it.`);
+      },
+      error: () => {
+        this.creatingCampaign.set(false);
+      },
+    });
   }
 
   onRunSimulation(req: EvaluateRuleLogicRequest): void {
@@ -474,9 +447,7 @@ export class ActionStudioAppComponent implements OnInit {
   }
 
   private summarizeRequirements(rule: CampaignActionRule): string {
-    const reqs = rule.clauses.filter((c) =>
-      ['has', 'contains', 'where', 'if', 'has not'].includes(c.keyword.toLowerCase())
-    );
+    const reqs = rule.clauses.filter((c) => ['has', 'contains', 'where', 'if', 'has not'].includes(c.keyword.toLowerCase()));
     if (reqs.length === 0) return 'None';
     const combiner = (reqs[0].combiner || 'ALL') === 'ANY' ? ' OR ' : ' AND ';
     return reqs.flatMap((c) => c.tokens).join(combiner);

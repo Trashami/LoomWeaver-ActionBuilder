@@ -98,13 +98,48 @@ public static class ActionStudioEndpoints
             try
             {
                 var targetCid = campaignId > 0 ? campaignId : req.CampaignId;
-                var updatedRules = await repo.ResetRuleToDefaultAsync(user, targetCid, req.RuleId, ct);
+                var updatedRules = await repo.DeleteCustomRuleAsync(user, targetCid, req.RuleId, ct);
                 return Results.Ok(new
                 {
                     success = true,
-                    message = $"Reset rule '{req.RuleId}' to Core SRD defaults for campaign #{targetCid}.",
+                    message = $"Deleted custom action '{req.RuleId}' from campaign #{targetCid}.",
                     rules = updatedRules
                 });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status400BadRequest);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+        });
+
+        api.MapPost("/actions/campaigns/{campaignId:int}/delete-custom-rule", async (
+            int campaignId,
+            ResetCampaignRuleRequest req,
+            string? accountId,
+            HttpContext httpCtx,
+            LoomWeaverMySqlRepository mysql,
+            CancellationToken ct) =>
+        {
+            var user = ResolveStudioUser(httpCtx, accountId);
+            var repo = new ActionStudioMySqlRepository(mysql);
+            try
+            {
+                var targetCid = campaignId > 0 ? campaignId : req.CampaignId;
+                var updatedRules = await repo.DeleteCustomRuleAsync(user, targetCid, req.RuleId, ct);
+                return Results.Ok(new
+                {
+                    success = true,
+                    message = $"Deleted custom action '{req.RuleId}' from campaign #{targetCid}.",
+                    rules = updatedRules
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status400BadRequest);
             }
             catch (UnauthorizedAccessException ex)
             {

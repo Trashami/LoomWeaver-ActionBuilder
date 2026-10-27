@@ -1,5 +1,14 @@
+:host {
+  display: block;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
 .ab-shell {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background:
     radial-gradient(circle at 18% 12%, rgba(36, 98, 68, 0.16), transparent 42%),
     radial-gradient(circle at 85% 8%, rgba(217, 183, 122, 0.1), transparent 36%),
@@ -10,8 +19,9 @@
 }
 
 .ab-notice {
-  margin: 0.55rem 1.25rem 0;
-  padding: 0.5rem 0.85rem;
+  flex-shrink: 0;
+  margin: 0.45rem 1.25rem 0;
+  padding: 0.45rem 0.85rem;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -33,32 +43,48 @@
 
 .ab-workbench {
   flex: 1;
-  padding: 0.85rem 1.25rem 1.5rem;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0.75rem 1.25rem;
   display: grid;
-  grid-template-columns: 270px minmax(0, 1fr) 360px;
+  grid-template-columns: 285px minmax(0, 1fr) 365px;
   gap: 0.9rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 .ab-workbench__left {
-  position: sticky;
-  top: 148px;
-  max-height: calc(100vh - 164px);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .ab-workbench__center {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   min-width: 0;
+  padding-right: 0.35rem;
+  padding-bottom: 1.5rem;
 }
 
 .ab-workbench__right {
-  position: sticky;
-  top: 148px;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+  padding-bottom: 1.5rem;
 }
 
 .ab-ability-header {
+  flex-shrink: 0;
   padding: 0.8rem 0.95rem;
   border-radius: 8px;
   border: 1px solid rgba(217, 183, 122, 0.24);
@@ -114,6 +140,26 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.ab-delete-custom-btn {
+  height: 32px;
+  padding: 0 0.7rem;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 93, 114, 0.52);
+  background: rgba(88, 20, 30, 0.72);
+  color: #ffc2cb;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+
+  &:hover {
+    border-color: #ef5d72;
+    background: rgba(132, 28, 42, 0.9);
+    color: #ffffff;
+  }
 }
 
 .ab-more-wrap {
@@ -185,6 +231,7 @@
 }
 
 .ab-mode-tabs {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.45rem;
@@ -231,21 +278,29 @@
 
 @media (max-width: 1280px) {
   .ab-workbench {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
-  .ab-workbench__right {
-    grid-column: 1 / -1;
-    position: static;
+    grid-template-columns: 250px minmax(0, 1fr) 320px;
   }
 }
 
 @media (max-width: 900px) {
+  :host,
+  .ab-shell {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
   .ab-workbench {
+    height: auto;
+    overflow: visible;
     grid-template-columns: 1fr;
   }
   .ab-workbench__left {
-    position: static;
-    max-height: 320px;
+    max-height: 360px;
+  }
+  .ab-workbench__center,
+  .ab-workbench__right {
+    height: auto;
+    overflow: visible;
   }
   .ab-mode-tabs {
     grid-template-columns: 1fr;

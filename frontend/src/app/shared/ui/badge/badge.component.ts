@@ -24,7 +24,7 @@ export type LwBadgeTone =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwBadgeComponent {
-  readonly label = input.required<string>();
+  readonly label = input<string>('');
   readonly tone = input<LwBadgeTone>('neutral');
   readonly icon = input<string | null>(null);
 }

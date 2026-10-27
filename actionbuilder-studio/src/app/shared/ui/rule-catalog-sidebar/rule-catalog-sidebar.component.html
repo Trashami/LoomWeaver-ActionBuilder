@@ -11,10 +11,10 @@
         ngpInput
         type="search"
         class="ab-sidebar__search-input"
-        placeholder="Search 5e actions, reactions, spells..."
+        placeholder="Search spells, source books, schools, actions..."
         [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
-        aria-label="Search actions"
+        (ngModelChange)="onSearchChange($event)"
+        aria-label="Search actions and spells"
       />
     </div>
 
@@ -24,7 +24,7 @@
         type="button"
         class="ab-sidebar__filter-btn"
         [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'all'"
-        (click)="activeSourceFilter.set('all')"
+        (click)="onFilterChange('all')"
       >
         All ({{ allCount() }})
       </button>
@@ -33,32 +33,33 @@
         type="button"
         class="ab-sidebar__filter-btn"
         [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'custom'"
-        (click)="activeSourceFilter.set('custom')"
+        (click)="onFilterChange('custom')"
       >
-        Bypass ({{ customCount() }})
+        Custom ({{ customCount() }})
       </button>
       <button
         ngpButton
         type="button"
         class="ab-sidebar__filter-btn"
         [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'srd'"
-        (click)="activeSourceFilter.set('srd')"
+        (click)="onFilterChange('srd')"
       >
         Core ({{ coreCount() }})
       </button>
     </div>
   </div>
 
-  <div class="ab-sidebar__list">
-    @for (rule of filteredRules(); track rule.id) {
-      <button
-        ngpButton
-        type="button"
+  <div class="ab-sidebar__list" (scroll)="onListScroll($event)">
+    @for (rule of visibleRules(); track rule.id) {
+      <div
         class="ab-rule-card"
+        role="button"
+        tabindex="0"
         [class.ab-rule-card--active]="rule.id === selectedRuleId()"
         [class.ab-rule-card--modified]="rule.isCustomizedForCampaign"
         [class.ab-rule-card--bypassed]="!!rule.bypassedByRuleId"
         (click)="ruleSelected.emit(rule)"
+        (keydown.enter)="ruleSelected.emit(rule)"
       >
         <div class="ab-rule-card__avatar" [attr.data-custom]="rule.isCustomizedForCampaign">
           <span>{{ rule.name.slice(0, 2).toUpperCase() }}</span>
@@ -67,13 +68,26 @@
         <div class="ab-rule-card__body">
           <div class="ab-rule-card__top">
             <strong class="ab-rule-card__name">{{ rule.name }}</strong>
-            @if (hasDraft(rule.id)) {
-              <lw-badge label="Draft" tone="gold" />
-            } @else if (rule.bypassedByRuleId) {
-              <lw-badge label="Bypassed" tone="gold" />
-            } @else if (rule.bypassesCoreRuleId) {
-              <lw-badge label="Overrides Core" tone="gold" />
-            }
+            <div class="ab-rule-card__badges">
+              @if (hasDraft(rule.id)) {
+                <lw-badge label="Draft" tone="gold" />
+              } @else if (rule.bypassedByRuleId) {
+                <lw-badge label="Bypassed" tone="gold" />
+              } @else if (rule.bypassesCoreRuleId) {
+                <lw-badge label="Overrides Core" tone="gold" />
+              }
+              @if (rule.isCustomizedForCampaign && !rule.isCoreEngineRule) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="ab-rule-card__delete-btn"
+                  title="Delete custom action"
+                  (click)="onDeleteCustomClick($event, rule)"
+                >
+                  Delete
+                </button>
+              }
+            </div>
           </div>
           <div class="ab-rule-card__meta">
             <span
@@ -82,22 +96,28 @@
               [class.ab-rule-card__source--muted]="!!rule.bypassedByRuleId"
             >
               @if (rule.isCustomizedForCampaign) {
-                {{ rule.bypassesCoreRuleId ? 'Campaign Bypass' : 'Campaign Custom' }}
+                {{ rule.bypassesCoreRuleId ? 'Campaign Bypass' : 'Custom Action' }}
               } @else if (rule.bypassedByRuleId) {
                 Core SQL (Bypassed)
               } @else {
-                Core SQL
+                {{ rule.sourceLabel || 'Core SQL' }}
               }
             </span>
             <span class="ab-rule-card__sep">·</span>
             <span class="ab-rule-card__cost">{{ rule.actionCost }}</span>
           </div>
         </div>
-      </button>
+      </div>
     } @empty {
       <div class="ab-sidebar__empty">
-        <p>No abilities match your search filter.</p>
+        <p>No abilities or spells match your search filter.</p>
       </div>
+    }
+
+    @if (hasMoreRules()) {
+      <button ngpButton type="button" class="ab-sidebar__more-btn" (click)="showMore()">
+        Show More ({{ visibleRules().length }} of {{ filteredRules().length }})
+      </button>
     }
   </div>
 </aside>

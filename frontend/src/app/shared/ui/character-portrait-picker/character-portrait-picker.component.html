@@ -1,0 +1,95 @@
+<div class="lw-portrait-stage" [style.min-height]="minHeight()">
+  <img
+    [src]="portraitUrl()"
+    [alt]="characterName()"
+    class="lw-portrait-stage__img"
+    [style.min-height]="minHeight()"
+  />
+
+  <!-- Top-Right Edit Button -->
+  <button
+    ngpButton
+    type="button"
+    class="lw-portrait-stage__edit-btn"
+    [class.lw-portrait-stage__edit-btn--active]="pickerOpen()"
+    title="Edit character image (Upload, 5e-Tools, or 3D Character Assets)"
+    (click)="togglePicker()"
+  >
+    <lw-icon [name]="pickerOpen() ? 'x' : 'pen'" [size]="13" />
+    <span>{{ pickerOpen() ? 'Close' : 'Edit' }}</span>
+  </button>
+
+  @if (pickerOpen()) {
+    <div class="lw-portrait-stage__overlay" role="dialog" aria-label="Select or Upload Character Image">
+      <div class="lw-portrait-stage__overlay-head">
+        <div>
+          <h3>Character Image</h3>
+          <p>Upload your own portrait or select from 5e-Tools and 3D character assets.</p>
+        </div>
+        <label class="lw-portrait-stage__upload-btn">
+          <input
+            type="file"
+            accept="image/*"
+            class="lw-portrait-stage__file-input"
+            (change)="onFileSelected($event)"
+          />
+          <lw-icon name="upload" [size]="13" />
+          <span>Upload Image</span>
+        </label>
+      </div>
+
+      <div class="lw-portrait-stage__controls">
+        <div class="lw-portrait-stage__tabs" role="tablist">
+          <button
+            ngpButton
+            type="button"
+            role="tab"
+            class="lw-portrait-stage__tab"
+            [class.lw-portrait-stage__tab--active]="activeTab() === '5e-tools'"
+            (click)="activeTab.set('5e-tools')"
+          >
+            5e-Tools ({{ 33 }})
+          </button>
+          <button
+            ngpButton
+            type="button"
+            role="tab"
+            class="lw-portrait-stage__tab"
+            [class.lw-portrait-stage__tab--active]="activeTab() === '3d-character'"
+            (click)="activeTab.set('3d-character')"
+          >
+            3D Characters ({{ 28 }})
+          </button>
+        </div>
+
+        <div class="lw-portrait-stage__search">
+          <lw-icon name="search" [size]="13" />
+          <input
+            type="search"
+            placeholder="Filter portraits..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+        </div>
+      </div>
+
+      <div class="lw-portrait-stage__grid">
+        @for (item of filteredPresets(); track item.id) {
+          <button
+            ngpButton
+            type="button"
+            class="lw-portrait-stage__card"
+            [class.lw-portrait-stage__card--selected]="portraitUrl() === item.imageUrl"
+            (click)="selectPreset(item)"
+          >
+            <img [src]="item.imageUrl" [alt]="item.label" loading="lazy" />
+            <div class="lw-portrait-stage__card-meta">
+              <strong>{{ item.label }}</strong>
+              <small>{{ item.subtitle }}</small>
+            </div>
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>

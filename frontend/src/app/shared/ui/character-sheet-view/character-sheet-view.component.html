@@ -1,0 +1,584 @@
+@let s = sheet();
+<article ngpTabset [ngpTabsetValue]="activeTab()" class="lw-char-sheet" aria-label="Character Sheet Viewer">
+  <!-- Top Breadcrumb & Party Switcher Strip -->
+  <div class="lw-char-sheet__crumb-bar">
+    <div class="lw-char-sheet__crumbs">
+      <button ngpButton type="button" class="lw-char-sheet__crumb-link" (click)="studioRosterRequested.emit()">
+        Characters
+      </button>
+      <span class="lw-char-sheet__crumb-sep">/</span>
+      <span class="lw-char-sheet__crumb-current">{{ s.name }}</span>
+    </div>
+
+    <div class="lw-char-sheet__switcher">
+      @for (member of partyRoster(); track member.characterKey) {
+        <button
+          ngpButton
+          type="button"
+          class="lw-char-sheet__member-pill"
+          [class.lw-char-sheet__member-pill--active]="member.characterKey === s.characterKey"
+          (click)="characterSelected.emit(member.characterKey)"
+        >
+          {{ member.name }}
+        </button>
+      }
+      <lw-button variant="guide-action" size="xs" icon="plus" label="New Character" (pressed)="createCharacterRequested.emit()" />
+    </div>
+  </div>
+
+  <!-- Hero Identity Header Banner -->
+  <header class="lw-char-sheet__hero-banner">
+    <div class="lw-char-sheet__hero-left">
+      <div class="lw-char-sheet__crest" aria-hidden="true">
+        <lw-icon name="compass" [size]="26" tone="gold" />
+      </div>
+      <div class="lw-char-sheet__identity">
+        <div class="lw-char-sheet__title-row">
+          <h1>{{ s.name }}</h1>
+          <span class="lw-char-sheet__role-badge">
+            <lw-icon name="user" [size]="12" />
+            {{ s.roleBadge }}
+          </span>
+        </div>
+        <p class="lw-char-sheet__subtitle">
+          Level {{ s.level }} · {{ s.ancestryOrClan }} · {{ s.classOrArchetype }} · {{ s.subclass }}
+        </p>
+        <div class="lw-char-sheet__tags">
+          @for (tag of s.tags; track tag) {
+            <span class="lw-char-sheet__tag">{{ tag }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="lw-char-sheet__hero-right">
+      <div class="lw-char-sheet__action-row">
+        @if (s.levelUpEligible) {
+          <button ngpButton type="button" class="lw-char-sheet__levelup-btn" (click)="activeTab.set('abilities')">
+            <lw-icon name="arrow-up" [size]="15" />
+            <span>Level Up Available</span>
+          </button>
+        }
+        <button ngpButton type="button" class="lw-char-sheet__edit-btn" (click)="editCharacterRequested.emit(s)">
+          <lw-icon name="pen" [size]="14" />
+          <span>Edit Character</span>
+        </button>
+        <button
+          ngpButton
+          type="button"
+          class="lw-char-sheet__more-btn"
+          title="Open Character Studio Roster & Rules Engine"
+          (click)="studioRosterRequested.emit()"
+        >
+          <lw-icon name="more-horizontal" [size]="16" />
+        </button>
+      </div>
+      <blockquote class="lw-char-sheet__quote">{{ s.quote }}</blockquote>
+    </div>
+  </header>
+
+  <!-- 11-Tab Navigation Bar -->
+  <nav ngpTabList class="lw-char-sheet__tabs" role="tablist" aria-label="Character Sheet Sections">
+    @for (tab of tabs; track tab.id) {
+      <button
+        ngpButton
+        ngpTabButton
+        [ngpTabButtonValue]="tab.id"
+        type="button"
+        role="tab"
+        class="lw-char-sheet__tab"
+        [class.lw-char-sheet__tab--active]="activeTab() === tab.id"
+        [attr.aria-selected]="activeTab() === tab.id"
+        (click)="activeTab.set(tab.id)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  @switch (activeTab()) {
+    <!-- 1. OVERVIEW TAB (Large Portrait + Core Details + Ability Scores & Saving Throws) -->
+    @case ('overview') {
+      <div class="lw-char-sheet__top-grid">
+        <div class="lw-char-sheet__portrait-card">
+          <lw-character-portrait-picker
+            [portraitUrl]="s.portraitUrl"
+            [characterName]="s.name"
+            minHeight="520px"
+            (portraitSelected)="portraitSelected.emit($event)"
+          />
+        </div>
+
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Core Details</h2>
+            <lw-button variant="guide-action" size="xs" label="Edit" (pressed)="editCharacterRequested.emit(s)" />
+          </header>
+
+          <div class="lw-char-sheet__core-summary">
+            <h3>{{ s.name }}</h3>
+            <p>Level {{ s.level }} · {{ s.classOrArchetype }} ({{ s.subclass }})</p>
+            <p>{{ s.subrace }} · {{ s.pronouns }}</p>
+            <p>{{ s.backgroundName }} · {{ s.alignment }}</p>
+          </div>
+
+          <div ngpProgress [ngpProgressValue]="s.currentXp" [ngpProgressMax]="s.nextLevelXp" class="lw-char-sheet__xp-block">
+            <div class="lw-char-sheet__xp-head">
+              <span>Experience</span>
+              <strong>{{ s.currentXp.toLocaleString() }} / {{ s.nextLevelXp.toLocaleString() }}</strong>
+            </div>
+            <div ngpProgressTrack class="lw-char-sheet__xp-track">
+              <div ngpProgressIndicator class="lw-char-sheet__xp-fill" [style.width.%]="xpProgressPercent()"></div>
+            </div>
+            <span class="lw-char-sheet__xp-pct">{{ xpProgressPercent() }}%</span>
+          </div>
+
+          <div class="lw-char-sheet__stat-rows">
+            <div class="lw-char-sheet__stat-row"><span>Proficiency Bonus</span><strong>+{{ s.proficiencyBonus }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Armor Class</span><strong>{{ s.armorClass }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Hit Points</span><strong>{{ s.currentHp }} / {{ s.maxHp }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Speed</span><strong>{{ s.speedFeet }} ft</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Initiative Bonus</span><strong>{{ formatMod(s.initiativeBonus) }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Primary Attack Bonus</span><strong>+{{ s.primaryAttackBonus }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Action Economy</span><strong>{{ s.actionEconomySummary }}</strong></div>
+          </div>
+        </section>
+
+        <div class="lw-char-sheet__abilities-stack">
+          <section class="lw-char-sheet__card">
+            <header class="lw-char-sheet__card-head">
+              <h2>Ability Scores</h2>
+              <lw-button
+                variant="guide-action"
+                size="xs"
+                [label]="editingAbilities() ? 'Done' : 'Edit'"
+                (pressed)="editingAbilities.set(!editingAbilities())"
+              />
+            </header>
+
+            <div class="lw-char-sheet__ability-boxes">
+              @for (ab of s.abilities; track ab.code) {
+                <div class="lw-char-sheet__ability-box" [class.lw-char-sheet__ability-box--primary]="ab.code === primaryAbilityCode()">
+                  <span class="lw-char-sheet__ability-code">{{ ab.code }}</span>
+                  <strong class="lw-char-sheet__ability-score">{{ ab.score }}</strong>
+                  <span class="lw-char-sheet__ability-mod">{{ formatMod(ab.modifier, true) }}</span>
+                  @if (editingAbilities()) {
+                    <div class="lw-char-sheet__ability-adjust">
+                      <button ngpButton type="button" (click)="abilityAdjusted.emit({ code: ab.code, delta: -1 })">-</button>
+                      <button ngpButton type="button" (click)="abilityAdjusted.emit({ code: ab.code, delta: 1 })">+</button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="lw-char-sheet__card">
+            <header class="lw-char-sheet__card-head">
+              <h2>Saving Throws</h2>
+              <span class="lw-char-sheet__prof-legend">
+                <span class="lw-char-sheet__prof-dot lw-char-sheet__prof-dot--active"></span>
+                Proficiency
+              </span>
+            </header>
+
+            <div class="lw-char-sheet__saves-grid">
+              @for (sv of s.savingThrows; track sv.code) {
+                <div class="lw-char-sheet__save-item">
+                  <span class="lw-char-sheet__prof-dot" [class.lw-char-sheet__prof-dot--active]="sv.proficient"></span>
+                  <span class="lw-char-sheet__save-label">{{ sv.label }}</span>
+                  <strong class="lw-char-sheet__save-val">{{ formatMod(sv.bonus) }}</strong>
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+
+    <!-- 2. ABILITIES TAB (Creation & Level-Up Ability Scores + Class/Ancestry/Level-Up Abilities) -->
+    @case ('abilities') {
+      <div class="lw-char-sheet__two-col">
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>{{ s.name }} · Ability Scores & Saving Throws</h2>
+            <span class="lw-char-sheet__prof-legend">Primary Ability: {{ primaryAbilityCode() }} ({{ formatMod(primaryAbilityMod()) }})</span>
+          </header>
+
+          <div class="lw-char-sheet__equip-list">
+            @for (ab of s.abilities; track ab.code) {
+              @let sv = saveForAbility(ab.code);
+              <div class="lw-char-sheet__equip-item">
+                <div class="lw-char-sheet__ability-box" [class.lw-char-sheet__ability-box--primary]="ab.code === primaryAbilityCode()">
+                  <span class="lw-char-sheet__ability-code">{{ ab.code }}</span>
+                  <strong class="lw-char-sheet__ability-score">{{ ab.score }}</strong>
+                </div>
+                <div class="lw-char-sheet__equip-copy">
+                  <strong>{{ ab.label }} · Modifier {{ formatMod(ab.modifier) }}</strong>
+                  <small>
+                    Saving Throw: {{ formatMod(sv?.bonus ?? ab.modifier) }}
+                    · {{ sv?.proficient ? 'Proficient (+' + s.proficiencyBonus + ')' : 'Standard' }}
+                  </small>
+                </div>
+                <div class="lw-char-sheet__ability-adjust">
+                  <button ngpButton type="button" (click)="abilityAdjusted.emit({ code: ab.code, delta: -1 })">-</button>
+                  <button ngpButton type="button" (click)="abilityAdjusted.emit({ code: ab.code, delta: 1 })">+</button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="lw-char-sheet__levelup-panel">
+            <div class="lw-char-sheet__card-head">
+              <h2>Level-Up Ability & Perk Selection (Lv.{{ s.level }} -> Lv.{{ s.level + 1 }})</h2>
+              <button ngpButton type="button" class="lw-char-sheet__levelup-btn" (click)="triggerLevelUp()">
+                <lw-icon name="arrow-up" [size]="14" />
+                <span>Apply Level-Up (+1 {{ levelUpAbilityCode() }})</span>
+              </button>
+            </div>
+            <div class="lw-char-sheet__conn-chips">
+              @for (ab of s.abilities; track ab.code) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="lw-char-sheet__member-pill"
+                  [class.lw-char-sheet__member-pill--active]="levelUpAbilityCode() === ab.code"
+                  (click)="levelUpAbilityCode.set(ab.code)"
+                >
+                  +1 {{ ab.code }} ({{ ab.score }} -> {{ ab.score + 1 }})
+                </button>
+              }
+            </div>
+            <div class="lw-char-sheet__conn-chips">
+              @for (perk of levelUpPerkChoices; track perk) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="lw-char-sheet__member-pill"
+                  [class.lw-char-sheet__member-pill--active]="levelUpPerkName() === perk"
+                  (click)="levelUpPerkName.set(perk)"
+                >
+                  {{ perk }}
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Selected Creation & Level-Up Abilities</h2>
+            <lw-button variant="guide-action" size="xs" label="Edit in Creator" (pressed)="editCharacterRequested.emit(s)" />
+          </header>
+
+          <div class="lw-char-sheet__stat-rows">
+            <div class="lw-char-sheet__stat-row"><span>Ancestry & Subrace</span><strong>{{ s.ancestryOrClan }} · {{ s.subrace }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Class & Specialization</span><strong>{{ s.classOrArchetype }} · {{ s.subclass }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Action Economy</span><strong>{{ s.actionEconomySummary }}</strong></div>
+          </div>
+
+          <div class="lw-char-sheet__feat-section">
+            <span class="lw-char-sheet__subhead">Active Character & Level-Up Abilities ({{ s.featureCards.length }})</span>
+            @for (feat of s.featureCards; track feat.id) {
+              <div class="lw-char-sheet__feat-item">
+                <span class="lw-char-sheet__feat-icon" [attr.data-tone]="feat.tone" aria-hidden="true">
+                  <lw-icon [name]="feat.icon" [size]="15" />
+                </span>
+                <div class="lw-char-sheet__feat-copy">
+                  <strong>{{ feat.title }}</strong>
+                  <small>{{ feat.summary }}</small>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    }
+
+    <!-- 3. SKILLS TAB -->
+    @case ('skills') {
+      <section class="lw-char-sheet__card">
+        <header class="lw-char-sheet__card-head">
+          <h2>{{ s.name }} · Skills & Proficiencies ({{ proficientSkillsCount() }} Proficient · +{{ s.proficiencyBonus }} Bonus)</h2>
+          <span class="lw-char-sheet__prof-legend">
+            <span class="lw-char-sheet__prof-dot lw-char-sheet__prof-dot--active"></span>
+            Selected in Character Creation
+          </span>
+        </header>
+        <div class="lw-char-sheet__saves-grid">
+          @for (sk of s.skills; track sk.id) {
+            <div class="lw-char-sheet__equip-item">
+              <span class="lw-char-sheet__prof-dot" [class.lw-char-sheet__prof-dot--active]="sk.proficient"></span>
+              <div class="lw-char-sheet__equip-copy">
+                <strong>{{ sk.label }} ({{ sk.abilityCode }})</strong>
+                <small>{{ sk.proficient ? 'Proficient Skill' : 'Unproficient' }} · Passive {{ 10 + sk.bonus }}</small>
+              </div>
+              <strong class="lw-char-sheet__save-val">{{ formatMod(sk.bonus) }}</strong>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- 4. FEATS & FEATURES TAB -->
+    @case ('feats') {
+      <div class="lw-char-sheet__two-col">
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Class & Subclass Features ({{ s.classOrArchetype }} · {{ s.subclass }})</h2>
+          </header>
+          <div class="lw-char-sheet__feat-section">
+            @for (feat of classFeatures(); track feat.id) {
+              <div class="lw-char-sheet__feat-item">
+                <span class="lw-char-sheet__feat-icon" [attr.data-tone]="feat.tone"><lw-icon [name]="feat.icon" [size]="15" /></span>
+                <div class="lw-char-sheet__feat-copy"><strong>{{ feat.title }}</strong><small>{{ feat.summary }}</small></div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Selected Feats, Ancestry Traits & Level-Up Perks</h2>
+          </header>
+          <div class="lw-char-sheet__feat-section">
+            @for (feat of featFeatures(); track feat.id) {
+              <div class="lw-char-sheet__feat-item">
+                <span class="lw-char-sheet__feat-icon" [attr.data-tone]="feat.tone"><lw-icon [name]="feat.icon" [size]="15" /></span>
+                <div class="lw-char-sheet__feat-copy"><strong>{{ feat.title }}</strong><small>{{ feat.summary }}</small></div>
+              </div>
+            }
+          </div>
+          <div class="lw-char-sheet__tags">
+            @for (tag of s.features; track tag) {
+              <span class="lw-char-sheet__tag">{{ tag }}</span>
+            }
+          </div>
+        </section>
+      </div>
+    }
+
+    <!-- 5. SPELLS TAB -->
+    @case ('spells') {
+      <section class="lw-char-sheet__card">
+        <header class="lw-char-sheet__card-head">
+          <h2>{{ s.name }} · Spells & Arcane Grimoire</h2>
+          <div class="lw-char-sheet__tags">
+            <span class="lw-char-sheet__tag">Spellcasting Ability: {{ primaryAbilityCode() }}</span>
+            <span class="lw-char-sheet__tag">Spell Save DC {{ spellSaveDc() }}</span>
+            <span class="lw-char-sheet__tag">Spell Attack +{{ s.primaryAttackBonus }}</span>
+          </div>
+        </header>
+
+        @if (s.spellGroups.length === 0) {
+          <p class="lw-char-sheet__muted">
+            {{ s.name }} ({{ s.classOrArchetype }}) is a martial vanguard who relies on weapon mastery (+{{ s.primaryAttackBonus }} Attack) and frontline maneuvers ({{ s.actionEconomySummary }}) rather than spell slots.
+          </p>
+        } @else {
+          <div class="lw-char-sheet__two-col">
+            @for (grp of s.spellGroups; track grp.groupId) {
+              <div class="lw-char-sheet__card">
+                <div class="lw-char-sheet__spell-group-head">
+                  <strong>{{ grp.label }}</strong>
+                  <span>{{ grp.isCantrip ? grp.slotsMax + ' Known' : grp.slotsRemaining + ' / ' + grp.slotsMax + ' Slots' }}</span>
+                </div>
+                <div class="lw-char-sheet__spell-list">
+                  @for (sp of grp.spells; track sp.id) {
+                    <div class="lw-char-sheet__equip-item">
+                      <span class="lw-char-sheet__spell-icon" [attr.data-tone]="sp.tone"><lw-icon [name]="sp.icon" [size]="14" /></span>
+                      <div class="lw-char-sheet__equip-copy">
+                        <strong>{{ sp.name }}</strong>
+                        <small>{{ grp.label }} · {{ s.subclass }}</small>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- 6. EQUIPMENT TAB -->
+    @case ('equipment') {
+      <section class="lw-char-sheet__card">
+        <header class="lw-char-sheet__card-head">
+          <h2>{{ s.name }} · Combat Equipment & Loadout</h2>
+          <div class="lw-char-sheet__tags">
+            <span class="lw-char-sheet__tag">Armor Class: {{ s.armorClass }}</span>
+            <span class="lw-char-sheet__tag">Primary Attack: +{{ s.primaryAttackBonus }}</span>
+            <span class="lw-char-sheet__tag">Speed: {{ s.speedFeet }} ft</span>
+          </div>
+        </header>
+        <div class="lw-char-sheet__equip-list">
+          @for (eq of s.equipment; track eq.id) {
+            <div class="lw-char-sheet__equip-item">
+              <span class="lw-char-sheet__equip-icon"><lw-icon [name]="eq.icon || 'shield'" [size]="16" tone="gold" /></span>
+              <div class="lw-char-sheet__equip-copy">
+                <strong>{{ eq.name }} · <span class="lw-char-sheet__muted">{{ eq.slot }}</span></strong>
+                <small>{{ eq.summary }} · {{ eq.bonusLabel }}</small>
+              </div>
+              <button
+                ngpButton
+                type="button"
+                class="lw-char-sheet__equip-badge"
+                [class.lw-char-sheet__equip-badge--active]="eq.equipped"
+                (click)="toggleEquipmentItem(eq)"
+              >
+                {{ eq.equipped ? 'Equipped' : 'Equip' }}
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- 7. INVENTORY TAB -->
+    @case ('inventory') {
+      <div class="lw-char-sheet__two-col">
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Carried Gear & Adventuring Pack ({{ s.equipment.length }} Items)</h2>
+          </header>
+          <div class="lw-char-sheet__equip-list">
+            @for (eq of s.equipment; track eq.id) {
+              <div class="lw-char-sheet__equip-item">
+                <span class="lw-char-sheet__equip-icon"><lw-icon [name]="eq.icon || 'layers'" [size]="15" tone="gold" /></span>
+                <div class="lw-char-sheet__equip-copy">
+                  <strong>{{ eq.name }}</strong>
+                  <small>{{ eq.slot }} · {{ eq.summary }} ({{ eq.bonusLabel }})</small>
+                </div>
+                <span class="lw-char-sheet__tag">{{ eq.equipped ? 'Active' : 'Stowed' }}</span>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Currency Pouch & Encumbrance</h2>
+          </header>
+          <div class="lw-char-sheet__stat-rows">
+            <div class="lw-char-sheet__stat-row"><span>Gold Sovereign (GP)</span><strong>{{ s.level * 45 }} GP</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Cinth Silver Marks (SP)</span><strong>{{ s.level * 12 }} SP</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Vandia Copper Trade (CP)</span><strong>{{ s.level * 20 }} CP</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Carrying Capacity (STR × 15)</span><strong>{{ carryingCapacityLbs() }} lbs</strong></div>
+          </div>
+        </section>
+      </div>
+    }
+
+    <!-- 8. BACKGROUND TAB -->
+    @case ('background') {
+      <div class="lw-char-sheet__two-col">
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Background · {{ s.backgroundName }}</h2>
+            <lw-button variant="guide-action" size="xs" label="Edit" (pressed)="editCharacterRequested.emit(s)" />
+          </header>
+          <p class="lw-char-sheet__muted">{{ s.backgroundSummary }}</p>
+          <div class="lw-char-sheet__stat-rows">
+            <div class="lw-char-sheet__stat-row"><span>Ancestry</span><strong>{{ s.ancestryOrClan }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Subrace / Lineage</span><strong>{{ s.subrace }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Pronouns</span><strong>{{ s.pronouns }}</strong></div>
+            <div class="lw-char-sheet__stat-row"><span>Alignment</span><strong>{{ s.alignment }}</strong></div>
+          </div>
+        </section>
+
+        <section class="lw-char-sheet__card">
+          <header class="lw-char-sheet__card-head">
+            <h2>Personality & Roleplay</h2>
+          </header>
+          <dl class="lw-char-sheet__traits-dl">
+            <div><dt>Personality:</dt><dd>{{ s.personality.personality }}</dd></div>
+            <div><dt>Ideals:</dt><dd>{{ s.personality.ideals }}</dd></div>
+            <div><dt>Bonds:</dt><dd>{{ s.personality.bonds }}</dd></div>
+            <div><dt>Flaws:</dt><dd>{{ s.personality.flaws }}</dd></div>
+          </dl>
+        </section>
+      </div>
+    }
+
+    <!-- 9. NOTES TAB -->
+    @case ('notes') {
+      <section class="lw-char-sheet__card">
+        <header class="lw-char-sheet__card-head">
+          <h2>{{ s.name }} · Character Notes ({{ s.notes.length }})</h2>
+        </header>
+        <div class="lw-char-sheet__note-composer">
+          <input
+            type="text"
+            class="lw-char-sheet__note-input"
+            placeholder="Write a new character note or session observation..."
+            [ngModel]="newNoteText()"
+            (ngModelChange)="newNoteText.set($event)"
+            (keydown.enter)="submitNote()"
+          />
+          <lw-button variant="emerald" size="xs" icon="plus" label="Add Note" (pressed)="submitNote()" />
+        </div>
+        <div class="lw-char-sheet__equip-list">
+          @for (note of s.notes; track note) {
+            <div class="lw-char-sheet__equip-item">
+              <span class="lw-char-sheet__equip-icon"><lw-icon name="note" [size]="15" tone="gold" /></span>
+              <div class="lw-char-sheet__equip-copy"><strong>Character Journal Entry</strong><small>{{ note }}</small></div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- 10. CONNECTIONS TAB -->
+    @case ('connections') {
+      <section class="lw-char-sheet__card">
+        <header class="lw-char-sheet__card-head">
+          <h2>{{ s.name }} · World & Lore Connections</h2>
+        </header>
+        <div class="lw-char-sheet__conn-rows">
+          <div class="lw-char-sheet__conn-row">
+            <span class="lw-char-sheet__conn-label">Locations</span>
+            <div class="lw-char-sheet__conn-chips">
+              @for (loc of s.connections.locations; track loc.id) {
+                <button ngpButton type="button" class="lw-char-sheet__conn-chip" (click)="connectionSelected.emit(loc)">{{ loc.label }}</button>
+              }
+            </div>
+          </div>
+          <div class="lw-char-sheet__conn-row">
+            <span class="lw-char-sheet__conn-label">NPCs</span>
+            <div class="lw-char-sheet__conn-chips">
+              @for (npc of s.connections.npcs; track npc.id) {
+                <button ngpButton type="button" class="lw-char-sheet__conn-chip" (click)="connectionSelected.emit(npc)">{{ npc.label }}</button>
+              }
+            </div>
+          </div>
+          <div class="lw-char-sheet__conn-row">
+            <span class="lw-char-sheet__conn-label">Factions</span>
+            <div class="lw-char-sheet__conn-chips">
+              @for (fac of s.connections.factions; track fac.id) {
+                <button ngpButton type="button" class="lw-char-sheet__conn-chip" (click)="connectionSelected.emit(fac)">{{ fac.label }}</button>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- 11. HISTORY TAB -->
+    @case ('history') {
+      <section class="lw-char-sheet__card">
+        <header class="lw-char-sheet__card-head">
+          <h2>{{ s.name }} · Chronicle & Advancement History</h2>
+          <span class="lw-char-sheet__tag">Level {{ s.level }} · {{ s.currentXp.toLocaleString() }} XP</span>
+        </header>
+        <div class="lw-char-sheet__equip-list">
+          @for (ev of s.historyEvents; track ev) {
+            <div class="lw-char-sheet__equip-item">
+              <span class="lw-char-sheet__equip-icon"><lw-icon name="clock" [size]="15" tone="gold" /></span>
+              <div class="lw-char-sheet__equip-copy"><strong>Campaign Chronicle Milestone</strong><small>{{ ev }}</small></div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  }
+</article>

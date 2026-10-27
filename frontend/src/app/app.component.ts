@@ -63,7 +63,7 @@ export class AppComponent {
   readonly globalSearchText = signal<string>('');
   readonly showAllModules = signal<boolean>(true);
   readonly leftNavCollapsed = signal<boolean>(false);
-  readonly rightGuideCollapsed = signal<boolean>(false);
+  readonly rightGuideCollapsed = signal<boolean>(true);
 
   readonly isLandingSurface = computed(() => {
     const clean = this.currentUrl().split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
@@ -140,7 +140,11 @@ export class AppComponent {
       )
       .subscribe((e) => {
         if (e instanceof NavigationEnd) {
-          this.currentUrl.set(e.urlAfterRedirects || e.url);
+          const nextUrl = e.urlAfterRedirects || e.url;
+          this.currentUrl.set(nextUrl);
+          if (nextUrl.startsWith('/characters')) {
+            this.rightGuideCollapsed.set(true);
+          }
         } else if (e.url && e.url !== '/') {
           this.currentUrl.set(e.url);
         }

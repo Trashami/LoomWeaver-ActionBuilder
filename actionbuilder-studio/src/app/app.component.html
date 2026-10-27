@@ -35,7 +35,7 @@
 
   @if (canAccess() && activeCampaign(); as camp) {
     <main class="ab-workbench">
-      <!-- LEFT COLUMN: Searchable Ability Library -->
+      <!-- LEFT COLUMN: Independently Scrollable Searchable Ability & Spell Library -->
       <div class="ab-workbench__left">
         <lw-rule-catalog-sidebar
           [rules]="rules()"
@@ -45,10 +45,11 @@
           [draftRuleIds]="draftRuleIds()"
           [campaignName]="camp.name"
           (ruleSelected)="onRuleSelected($event)"
+          (deleteCustomRule)="onDeleteCustomRule($event)"
         />
       </div>
 
-      <!-- CENTER COLUMN: Ability Header + 3 Workspace Tabs (Build / Test / Advanced) -->
+      <!-- CENTER COLUMN: Independently Scrollable Ability Header + 3 Workspace Tabs -->
       <div class="ab-workbench__center">
         <section class="ab-ability-header">
           <div class="ab-ability-header__left">
@@ -59,7 +60,7 @@
               <div class="ab-ability-header__title-row">
                 <h2 class="ab-ability-header__name">{{ activeRule().name }}</h2>
                 <lw-badge
-                  [label]="activeRule().isCustomizedForCampaign ? (activeRule().bypassesCoreRuleId ? 'Campaign Bypass' : 'Campaign Custom') : (activeRule().bypassedByRuleId ? 'Core SQL (Bypassed)' : 'Core Engine (SQL Locked)')"
+                  [label]="activeRule().isCustomizedForCampaign ? (activeRule().bypassesCoreRuleId ? 'Campaign Bypass' : 'Custom Action') : (activeRule().bypassedByRuleId ? 'Core SQL (Bypassed)' : 'Core Engine (SQL Locked)')"
                   [tone]="activeRule().isCustomizedForCampaign ? 'gold' : 'emerald'"
                 />
                 @if (draftDiffs().length > 0) {
@@ -67,7 +68,7 @@
                 }
               </div>
               <span class="ab-ability-header__sub">
-                {{ activeRule().actionType }} · Scoped to {{ camp.name }}
+                {{ activeRule().actionType }} · {{ activeRule().sourceLabel }} · Scoped to {{ camp.name }}
                 @if (activeRule().bypassedByRuleName; as bypassName) {
                   · Overridden in {{ camp.name }} by "{{ bypassName }}"
                 }
@@ -76,6 +77,18 @@
           </div>
 
           <div class="ab-ability-header__actions">
+            @if (canDeleteActiveRule()) {
+              <button
+                ngpButton
+                type="button"
+                class="ab-delete-custom-btn"
+                title="Delete this custom action from your campaign"
+                (click)="onDeleteCustomRule()"
+              >
+                Delete Custom Action
+              </button>
+            }
+
             <lw-button
               label="Test in Encounter"
               variant="secondary"
@@ -94,7 +107,7 @@
                 ngpButton
                 type="button"
                 class="ab-more-btn"
-                title="Secondary actions (Duplicate, Reset, Export)"
+                title="Secondary actions (Duplicate, Export, Delete Custom)"
                 (click)="secondaryMenuOpen.set(!secondaryMenuOpen())"
               >
                 <span>...</span>
@@ -111,15 +124,17 @@
                   <button ngpButton type="button" class="ab-more-menu__item" (click)="onExportRuleJson()">
                     Copy Rule JSON
                   </button>
-                  <div class="ab-more-menu__sep"></div>
-                  <button
-                    ngpButton
-                    type="button"
-                    class="ab-more-menu__item ab-more-menu__item--danger"
-                    (click)="onResetCurrentRule()"
-                  >
-                    Reset to Core SRD Default
-                  </button>
+                  @if (canDeleteActiveRule()) {
+                    <div class="ab-more-menu__sep"></div>
+                    <button
+                      ngpButton
+                      type="button"
+                      class="ab-more-menu__item ab-more-menu__item--danger"
+                      (click)="onDeleteCustomRule()"
+                    >
+                      Delete Custom Action
+                    </button>
+                  }
                 </div>
               }
             </div>
@@ -199,7 +214,7 @@
         }
       </div>
 
-      <!-- RIGHT COLUMN: Concise Player Card + Draft Change Summary + Scaling & Tags -->
+      <!-- RIGHT COLUMN: Independently Scrollable Player Card + Draft Summary + Scaling & Tags -->
       <div class="ab-workbench__right">
         <lw-rule-preview-inspector
           [rule]="activeRule()"

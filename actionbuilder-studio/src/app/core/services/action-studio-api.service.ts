@@ -56,7 +56,7 @@ export class ActionStudioApiService {
     );
   }
 
-  resetRuleToDefault(
+  deleteCustomRule(
     campaignId: number,
     ruleId: string,
     accountId?: string | null
@@ -67,7 +67,7 @@ export class ActionStudioApiService {
     }
 
     return this.http.post<{ success: boolean; message: string; rules: CampaignActionRule[] }>(
-      `${this.apiBase}/campaigns/${campaignId}/reset-rule`,
+      `${this.apiBase}/campaigns/${campaignId}/delete-custom-rule`,
       { campaignId, ruleId },
       {
         params,
@@ -75,6 +75,14 @@ export class ActionStudioApiService {
         withCredentials: true,
       }
     );
+  }
+
+  resetRuleToDefault(
+    campaignId: number,
+    ruleId: string,
+    accountId?: string | null
+  ): Observable<{ success: boolean; message: string; rules: CampaignActionRule[] }> {
+    return this.deleteCustomRule(campaignId, ruleId, accountId);
   }
 
   createQuickDmCampaign(

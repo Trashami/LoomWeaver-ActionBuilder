@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import {
   LwAssetPickerComponent,
   LwBadgeComponent,
   LwButtonComponent,
+  LwCharacterCreatorWizardComponent,
+  LwCharacterSheetViewComponent,
   LwCompendiumEntryItem,
   LwCompendiumImporterComponent,
   LwPanelComponent,
@@ -15,6 +17,7 @@ import {
   PickableAssetItem,
   RulesOptionItem,
 } from '../../shared/ui/public-api';
+import { CharacterConnectionChipVm } from './models/character-studio.models';
 import { CharacterStudioService } from './services/character-studio.service';
 
 const DEFAULT_COMPENDIUM: readonly LwCompendiumEntryItem[] = [
@@ -99,6 +102,8 @@ const DEFAULT_COMPENDIUM: readonly LwCompendiumEntryItem[] = [
     LwAssetPickerComponent,
     LwStatRadarComponent,
     LwCompendiumImporterComponent,
+    LwCharacterCreatorWizardComponent,
+    LwCharacterSheetViewComponent,
   ],
   templateUrl: './characters.page.html',
   styleUrl: './characters.page.scss',
@@ -106,10 +111,14 @@ const DEFAULT_COMPENDIUM: readonly LwCompendiumEntryItem[] = [
 })
 export class CharactersPageComponent {
   private readonly http = inject(HttpClient);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly store = inject(LoomWeaverStoreService);
   readonly studio = inject(CharacterStudioService);
   readonly compendiumEntries = signal<readonly LwCompendiumEntryItem[]>(DEFAULT_COMPENDIUM);
-  readonly compendiumStatus = signal<string>('5e SRD + Icrandor Canon Compendium ready for one-click sheet import.');
+  readonly compendiumStatus = signal<string>(
+    '5e SRD + Icrandor Canon Compendium ready for one-click sheet import.',
+  );
 
   readonly newCharName = signal<string>('');
   readonly newCharAncestry = signal<string>('Cinth Artificer Guildborn');
@@ -179,6 +188,21 @@ export class CharactersPageComponent {
     })),
   );
 
+  constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      const mode = params.get('mode');
+      const focus = params.get('focus');
+      this.studio.syncDefaultViewForSignedInUser(mode, focus);
+    });
+
+    this.http.get<readonly LwCompendiumEntryItem[]>('/api/v2/compendium/search').subscribe({
+      next: (res) => {
+        if (res?.length) this.compendiumEntries.set(res);
+      },
+      error: () => {},
+    });
+  }
+
   onSystemSelected(sysId: string): void {
     if (sysId === 'dnd5e' || sysId === 'pf2e' || sysId === 'vampire_v5') {
       this.studio.activeSystem.set(sysId);
@@ -194,13 +218,9 @@ export class CharactersPageComponent {
     this.newCharName.set('');
   }
 
-  constructor() {
-    this.http.get<readonly LwCompendiumEntryItem[]>('/api/v2/compendium/search').subscribe({
-      next: (res) => {
-        if (res?.length) this.compendiumEntries.set(res);
-      },
-      error: () => {},
-    });
+  onConnectionClicked(chip: CharacterConnectionChipVm): void {
+    this.store.inspectEntity(chip.compositeKey);
+    void this.router.navigateByUrl(chip.routeLink);
   }
 
   importCompendiumEntry(entry: LwCompendiumEntryItem): void {

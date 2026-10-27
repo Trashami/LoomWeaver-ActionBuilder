@@ -1,7 +1,16 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .ab-sidebar {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   background: rgba(8, 15, 13, 0.94);
   border: 1px solid rgba(217, 183, 122, 0.2);
   border-radius: 8px;
@@ -9,6 +18,7 @@
 }
 
 .ab-sidebar__header {
+  flex-shrink: 0;
   padding: 0.7rem 0.75rem;
   border-bottom: 1px solid rgba(217, 183, 122, 0.15);
   display: flex;
@@ -91,7 +101,9 @@
 
 .ab-sidebar__list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.55rem;
   display: flex;
   flex-direction: column;
@@ -169,6 +181,30 @@
   gap: 0.35rem;
 }
 
+.ab-rule-card__badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex-shrink: 0;
+}
+
+.ab-rule-card__delete-btn {
+  padding: 0.12rem 0.38rem;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 93, 114, 0.42);
+  background: rgba(84, 20, 28, 0.65);
+  color: #ffb8c3;
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #ef5d72;
+    background: rgba(124, 28, 40, 0.85);
+    color: #ffffff;
+  }
+}
+
 .ab-rule-card__name {
   font-size: 0.79rem;
   font-weight: 600;
@@ -189,6 +225,10 @@
 .ab-rule-card__source {
   color: #49e892;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 115px;
 
   &--gold {
     color: #d9b77a;
@@ -196,6 +236,23 @@
 
   &--muted {
     color: #96a89e;
+  }
+}
+
+.ab-sidebar__more-btn {
+  margin-top: 0.25rem;
+  padding: 0.45rem;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 183, 122, 0.28);
+  background: rgba(14, 28, 23, 0.85);
+  color: #e9d7b5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #49e892;
+    color: #49e892;
   }
 }
 

@@ -73,6 +73,7 @@ done
 
 ln -sfn /var/www/shared-uploads /var/www/loomweaver/assets/uploads
 ln -sfn /var/www/jane-assets/5etools /var/www/loomweaver/assets/5etools
+ln -sfn /var/www/jane-assets/5etools/img /var/www/loomweaver/assets/5e-tools
 
 echo "3. Cleaning previous LoomWeaver app files..."
 rm -rf /var/www/vtt3d /var/www/generator /var/www/loommaps /var/www/loom-weaver /var/www/mythweaver
@@ -81,6 +82,7 @@ rm -rf /var/www/loomweaver/client/* /var/www/loomweaver/server/*
 echo "4. Extracting new LoomWeaver V2 client and server..."
 tar -xzf /tmp/loomweaver_client.tar.gz -C /var/www/loomweaver/client
 tar -xzf /tmp/loomweaver_server.tar.gz -C /var/www/loomweaver/server
+rm -rf /var/www/loomweaver/client/assets
 ln -sfn /var/www/loomweaver/assets /var/www/loomweaver/client/assets
 ln -sfn /var/www/loomweaver/assets /var/www/loomweaver/map-assets
 

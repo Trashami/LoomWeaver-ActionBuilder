@@ -8,6 +8,13 @@
   gap: 1.25rem;
 }
 
+.lw-panel-action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
 .lw-action-link {
   padding: 0.4rem 0.75rem;
   border-radius: var(--lw-radius-md);

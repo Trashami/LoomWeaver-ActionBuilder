@@ -52,7 +52,9 @@ html,
 body {
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background-color: var(--lw-color-bg);
   background-image:
     radial-gradient(circle at 82% 8%, rgba(73, 232, 146, 0.08), transparent 36rem),
@@ -63,6 +65,15 @@ body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 900px) {
+  html,
+  body {
+    height: auto;
+    max-height: none;
+    overflow-y: auto;
+  }
 }
 
 a {

@@ -28,6 +28,10 @@ import { LwBadgeComponent } from '../badge/badge.component';
 import { LwButtonComponent } from '../button/button.component';
 import { LwIconComponent } from '../icon/icon.component';
 import { LwLocationInspectorComponent } from '../location-inspector/location-inspector.component';
+import {
+  LwPartyMemberStatusVm,
+  LwPartyRosterCardComponent,
+} from '../party-roster-card/party-roster-card.component';
 import { LwScrollAreaComponent } from '../scroll-area/scroll-area.component';
 import { LwWorldOverviewComponent } from '../world-overview/world-overview.component';
 
@@ -50,6 +54,7 @@ export type LwInspectorTab = 'guide' | 'notes' | 'npcs' | 'places' | 'lore';
     LwIconComponent,
     LwScrollAreaComponent,
     LwLocationInspectorComponent,
+    LwPartyRosterCardComponent,
     LwWorldOverviewComponent,
   ],
   templateUrl: './inspector-drawer.component.html',
@@ -66,7 +71,7 @@ export class LwInspectorDrawerComponent {
   readonly generativeAiEnabled = input<boolean>(false);
   readonly expandedWidth = input<string>('356px');
   readonly collapsedWidth = input<string>('16px');
-  readonly collapsed = model<boolean>(false);
+  readonly collapsed = model<boolean>(true);
   readonly zoomPercent = model<number>(100);
 
   readonly isWeaveEnabled = computed(
@@ -254,5 +259,14 @@ export class LwInspectorDrawerComponent {
     } else {
       this.store.inspectEntity(rel.compositeKey);
     }
+  }
+
+  onPartyMemberSelected(member: LwPartyMemberStatusVm): void {
+    this.store.inspectEntity(member.compositeKey);
+    void this.router.navigateByUrl(member.routeLink || '/characters?mode=viewer');
+  }
+
+  openNewCharacterWizard(): void {
+    void this.router.navigateByUrl('/characters?mode=creator');
   }
 }

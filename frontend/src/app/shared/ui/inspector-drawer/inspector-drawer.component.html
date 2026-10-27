@@ -300,6 +300,18 @@
               </section>
 
               <section class="lw-inspector__section">
+                <lw-party-roster-card
+                  [title]="'ACTIVE PARTY (' + store.campaignDashboard().partyMembers.length + ')'"
+                  [members]="store.campaignDashboard().partyMembers"
+                  [selectedKey]="store.inspectedEntityKey() ?? ''"
+                  healthTitle=""
+                  healthSubtitle=""
+                  (memberSelected)="onPartyMemberSelected($event)"
+                  (addMemberRequested)="openNewCharacterWizard()"
+                />
+              </section>
+
+              <section class="lw-inspector__section">
                 <lw-button variant="guide-header" size="sm" [fullWidth]="true" label="ENCOUNTERS, CLUES & REWARDS" [trailingIcon]="encountersExpanded() ? 'chevron-down' : 'chevron-right'" iconTone="gold" (pressed)="encountersExpanded.set(!encountersExpanded())" />
                 @if (encountersExpanded()) {
                   @for (enc of advGuide.filteredEncounters(); track enc.nodeId) {
