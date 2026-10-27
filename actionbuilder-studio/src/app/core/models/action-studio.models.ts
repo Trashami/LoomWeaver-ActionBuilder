@@ -11,6 +11,10 @@ export type RuleLogicClauseKeyword =
   | 'Then'
   | 'Else';
 
+export type ClauseCombiner = 'ALL' | 'ANY';
+
+export type WorkspaceTabMode = 'build' | 'test' | 'advanced';
+
 export interface RuleEngineMethodDescriptor {
   methodName: string;
   signature: string;
@@ -34,6 +38,7 @@ export interface RuleLogicClause {
   boundClass: string;
   boundMethod: string;
   notes: string;
+  combiner?: ClauseCombiner | string;
 }
 
 export interface ActionScalingTier {
@@ -73,6 +78,12 @@ export interface CampaignActionRule {
   isCustomizedForCampaign: boolean;
   updatedByUsername: string;
   updatedAt: string;
+}
+
+export interface RuleDraftDiffItem {
+  label: string;
+  before: string;
+  after: string;
 }
 
 export interface DmCampaignOption {
@@ -132,6 +143,9 @@ export interface RuleClauseTraceStep {
   boundSymbol: string;
   passed: boolean;
   outcomeDetail: string;
+  combiner?: string;
+  evaluationStatus?: 'Passed' | 'Failed' | 'NotEvaluated' | 'Skipped' | string;
+  tokenOutcomes?: string[];
 }
 
 export interface EvaluateRuleLogicRequest {
@@ -153,6 +167,7 @@ export interface EvaluateRuleLogicRequest {
   reactionAvailable: boolean;
   hasSpellSlot: boolean;
   damageRolled: number;
+  isMagicMissile?: boolean;
 }
 
 export interface EvaluateRuleLogicResponse {
@@ -166,4 +181,10 @@ export interface EvaluateRuleLogicResponse {
   computedDamageAfterRule: number;
   traceSteps: RuleClauseTraceStep[];
   timestamp: string;
+  tabletopHeadline?: string;
+  attackOutcomeLabel?: string;
+  reactionConsumed?: boolean;
+  spellSlotConsumed?: boolean;
+  resourceVerificationSummary?: string;
+  notEvaluatedCount?: number;
 }

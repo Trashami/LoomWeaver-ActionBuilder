@@ -22,7 +22,8 @@ public sealed record RuleLogicClauseDto(
     IReadOnlyList<string> Tokens,
     string BoundClass,
     string BoundMethod,
-    string Notes
+    string Notes,
+    string Combiner = "ALL"
 );
 
 public sealed record ActionScalingTierDto(
@@ -146,7 +147,8 @@ public sealed record EvaluateRuleLogicRequest(
     int DistanceFeet,
     bool ReactionAvailable,
     bool HasSpellSlot,
-    int DamageRolled
+    int DamageRolled,
+    bool IsMagicMissile = false
 );
 
 public sealed record RuleClauseTraceStepDto(
@@ -155,7 +157,10 @@ public sealed record RuleClauseTraceStepDto(
     string ExpressionText,
     string BoundSymbol,
     bool Passed,
-    string OutcomeDetail
+    string OutcomeDetail,
+    string Combiner = "ALL",
+    string EvaluationStatus = "Passed",
+    IReadOnlyList<string>? TokenOutcomes = null
 );
 
 public sealed record EvaluateRuleLogicResponse(
@@ -168,5 +173,11 @@ public sealed record EvaluateRuleLogicResponse(
     int ComputedAcAfterRule,
     int ComputedDamageAfterRule,
     IReadOnlyList<RuleClauseTraceStepDto> TraceSteps,
-    string Timestamp
+    string Timestamp,
+    string TabletopHeadline = "",
+    string AttackOutcomeLabel = "",
+    bool ReactionConsumed = false,
+    bool SpellSlotConsumed = false,
+    string ResourceVerificationSummary = "",
+    int NotEvaluatedCount = 0
 );

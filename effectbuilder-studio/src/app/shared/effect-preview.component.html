@@ -89,6 +89,7 @@
     [attr.aria-label]="token.label + ' token'"
     [title]="'Drag to move ' + token.label + (multiTarget && token.target >= 0 ? '; click to assign selected bolt' : '')"
     (pointerdown)="drag($event, token.target)"
+    (wheel)="onSurfaceWheel($event)"
     (click)="pick($event, token.target)"
     (keydown)="nudge($event, token.target)"
   >

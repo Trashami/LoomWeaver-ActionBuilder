@@ -78,7 +78,11 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   }
 
   projectPoint(p: { x: number; y: number }) {
-    return this.native?.project(p) ?? p;
+    const q = this.native?.project(p) ?? p;
+    return {
+      x: Math.max(0.03, Math.min(0.97, Number.isFinite(q.x) ? q.x : p.x)),
+      y: Math.max(0.05, Math.min(0.9, Number.isFinite(q.y) ? q.y : p.y)),
+    };
   }
 
   inspect(turn = 0, tilt = 0, zoom = 1): void {
@@ -90,6 +94,10 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
   }
 
   onSurfaceWheel(event: WheelEvent): void {
+    // If the browser tab was previously pinch-zoomed in, allow pinch-out (ctrlKey + deltaY > 0) to restore 1x viewport scale
+    if (typeof window !== 'undefined' && (window.visualViewport?.scale ?? 1) > 1.03 && event.ctrlKey && event.deltaY > 0) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     const factor = event.deltaY > 0 ? 1.1 : 0.9;
@@ -302,7 +310,7 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
     const h = el?.clientHeight || 360;
     const a = this.definition.previewScene.caster;
     const q = riderPoint(this.definition.gameplay, this.previewTime(), { x: a.x * w, y: a.y * h }, { x: p.x * w, y: p.y * h }, 66 * Math.min(1, w / 700, h / 360));
-    return { x: Math.max(0.03, Math.min(0.97, q.x / w)), y: Math.max(0.08, Math.min(0.92, q.y / h)) };
+    return { x: Math.max(-0.35, Math.min(1.35, q.x / w)), y: Math.max(-0.35, Math.min(1.35, q.y / h)) };
   }
 
   boltsFor(slot: number): string {
@@ -354,9 +362,11 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
         y: e.clientY - bounds.top,
       };
       const scene = structuredClone(before);
+      const minBound = this.view3d() ? -0.32 : 0.02;
+      const maxBound = this.view3d() ? 1.32 : 0.98;
       const point = {
-        x: Math.max(0.05, Math.min(0.95, initial.x + (current.x - start.x) / bounds.width)),
-        y: Math.max(0.12, Math.min(0.88, initial.y + (current.y - start.y) / bounds.height)),
+        x: Math.max(minBound, Math.min(maxBound, initial.x + (current.x - start.x) / Math.max(1, bounds.width))),
+        y: Math.max(minBound, Math.min(maxBound, initial.y + (current.y - start.y) / Math.max(1, bounds.height))),
       };
       if (targetIndex < 0) scene.caster = point;
       else if (targetIndex === 3) scene.teleport!.destination = point;
@@ -384,9 +394,11 @@ export class EffectPreviewComponent implements AfterViewInit, OnDestroy, OnChang
     this.editStarted.emit();
     const scene = structuredClone(this.definition.previewScene);
     const p = index < 0 ? scene.caster : index === 3 ? scene.teleport!.destination : scene.targets[index];
-    const step = event.shiftKey ? 0.05 : 0.01;
-    p.x = Math.max(0.05, Math.min(0.95, p.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0)));
-    p.y = Math.max(0.12, Math.min(0.88, p.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0)));
+    const step = event.shiftKey ? 0.05 : 0.015;
+    const minBound = this.view3d() ? -0.32 : 0.02;
+    const maxBound = this.view3d() ? 1.32 : 0.98;
+    p.x = Math.max(minBound, Math.min(maxBound, p.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0)));
+    p.y = Math.max(minBound, Math.min(maxBound, p.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0)));
     this.sceneChanged.emit(scene);
   }
 

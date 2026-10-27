@@ -620,10 +620,15 @@ export class BabylonEffectRuntime {
         light.metadata = { lwNativeOwner: this.owner };
         this.lights.push(light);
       }
-      light.position = this.toWorld({ ...s, height: s.elevationZ ?? 20 }, from, to, sourceY, targetY);
-      light.diffuse = color(s.color);
-      light.intensity = s.intensity * (this.options.lightGain ?? 2.4);
-      light.range = s.radius / (this.options.pixelsPerUnit ?? 66);
+      const unit = this.options.pixelsPerUnit ?? 66;
+      const groundPos = this.toWorld({ ...s, height: 0 }, from, to, sourceY, targetY);
+      const lift = Math.max(0.55, (s.elevationZ ?? 28) / unit);
+      light.position.set(groundPos.x, groundPos.y + lift, groundPos.z);
+      const c = color(s.color);
+      light.diffuse = c;
+      light.specular = c;
+      light.intensity = s.intensity * (this.options.lightGain ?? 3.6);
+      light.range = Math.max(2.8, (s.radius / unit) * 1.65);
       light.setEnabled(true);
     });
     for (let i = sources.length; i < this.lights.length; i++) this.lights[i].setEnabled(false);

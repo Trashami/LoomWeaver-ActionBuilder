@@ -153,7 +153,8 @@ export class BabylonEffectPreview {
     this.floorMaterial.bumpTexture = normal;
     this.floorMaterial.roughness = 0.74;
     this.floorMaterial.metallic = 0.04;
-    this.floorMaterial.maxSimultaneousLights = 4;
+    this.floorMaterial.maxSimultaneousLights = 8;
+    this.floorMaterial.usePhysicalLightFalloff = false;
     this.floor.material = this.floorMaterial;
 
     const image = new Image();
@@ -173,6 +174,7 @@ export class BabylonEffectPreview {
     this.assets3d = new Scene3dAssetController(this.scene);
     this.runtime = new BabylonEffectRuntime(this.scene, {
       elevationAt: (x, z) => this.surfaceHeight(x, z),
+      lightGain: 3.8,
     });
 
     const pipeline = new DefaultRenderingPipeline('effectbuilder-hdr', true, this.scene, [this.camera]);
@@ -193,11 +195,12 @@ export class BabylonEffectPreview {
 
   project(p: FxPoint): FxPoint {
     if (!this.perspective) return p;
-    const w = this.width();
-    const h = this.height();
+    const w = Math.max(1, this.width());
+    const h = Math.max(1, this.height());
     const wx = (p.x * w) / 66;
     const wz = (p.y * h) / 66;
-    const wy = this.surfaceHeight(wx, wz) + 0.14;
+    const baseElev = this.using3dTerrain ? this.assets3d.tokenElevationAt(wx, wz) : this.surfaceHeight(wx, wz);
+    const wy = baseElev + 0.14;
     const q = Vector3.Project(
       new Vector3(wx, wy, wz),
       Matrix.Identity(),
@@ -209,13 +212,18 @@ export class BabylonEffectPreview {
 
   designPoint(x: number, y: number): FxPoint {
     if (!this.perspective) return { x, y };
+    const w = Math.max(1, this.width());
+    const h = Math.max(1, this.height());
     const ray = this.scene.createPickingRay(
-      (x * this.engine.getRenderWidth()) / Math.max(1, this.width()),
-      (y * this.engine.getRenderHeight()) / Math.max(1, this.height()),
+      (x * this.engine.getRenderWidth()) / w,
+      (y * this.engine.getRenderHeight()) / h,
       Matrix.Identity(),
       this.camera
     );
-    const distance = ray.intersectsPlane(new Plane(0, 1, 0, 0));
+    const refY = this.using3dTerrain
+      ? this.assets3d.terrainElevationAt(w / 132, h / 132)
+      : 0;
+    const distance = ray.intersectsPlane(new Plane(0, 1, 0, -refY));
     if (distance === null) return { x, y };
     const p = ray.origin.add(ray.direction.scale(distance));
     return { x: p.x * 66, y: p.z * 66 };
@@ -391,7 +399,10 @@ export class BabylonEffectPreview {
       m.setEnabled(i > 0 || pose.alpha > 0.001);
       const wx = p.x / 66;
       const wz = p.y / 66;
-      m.position.set(wx, this.surfaceHeight(wx, wz) + 0.03, wz);
+      const markerY = showForestMap
+        ? this.assets3d.tokenElevationAt(wx, wz) + 0.04
+        : this.surfaceHeight(wx, wz) + 0.03;
+      m.position.set(wx, markerY, wz);
       m.scaling.setAll(scale);
     });
     for (let i = points.length; i < this.markers.length; i++) {
@@ -399,19 +410,27 @@ export class BabylonEffectPreview {
     }
 
     const effectTarget = teleport?.enabled ? { x: teleport.destination.x * w, y: teleport.destination.y * h } : allTargets[0];
-    const sourceY = this.surfaceHeight(from.x / 66, from.y / 66);
-    const targetY = this.surfaceHeight(effectTarget.x / 66, effectTarget.y / 66);
-    this.runtime.draw(
-      def,
-      time,
-      from,
-      effectTarget,
-      scale,
-      teleport?.enabled ? [effectTarget, ...allTargets.slice(1)] : allTargets,
-      world,
-      sourceY,
-      targetY
-    );
+    const sourceY = showForestMap
+      ? this.assets3d.tokenElevationAt(from.x / 66, from.y / 66)
+      : this.surfaceHeight(from.x / 66, from.y / 66);
+    const targetY = showForestMap
+      ? this.assets3d.tokenElevationAt(effectTarget.x / 66, effectTarget.y / 66)
+      : this.surfaceHeight(effectTarget.x / 66, effectTarget.y / 66);
+    try {
+      this.runtime.draw(
+        def,
+        time,
+        from,
+        effectTarget,
+        scale,
+        teleport?.enabled ? [effectTarget, ...allTargets.slice(1)] : allTargets,
+        world,
+        sourceY,
+        targetY
+      );
+    } catch (err) {
+      console.warn('Effect runtime frame error:', err);
+    }
 
     if (this.walls.length > 0) {
       const strongest = this.scene.lights

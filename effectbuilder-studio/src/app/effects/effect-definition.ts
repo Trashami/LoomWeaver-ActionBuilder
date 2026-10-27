@@ -197,7 +197,7 @@ export function parseEffect(value: unknown): EffectDefinition {
     throw new Error('Use a version 1 effect with a name and at most 16 layers.');
   const color = (v: unknown) => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : '#62e5ad';
   const defaultsScene=defaultScene();
-  const scenePoint=(p: any, fallback: PreviewPoint): PreviewPoint => ({x:bounded(p?.x,.05,.95,fallback.x),y:bounded(p?.y,.12,.88,fallback.y)});
+  const scenePoint=(p: any, fallback: PreviewPoint): PreviewPoint => ({x:bounded(p?.x,-.35,1.35,fallback.x),y:bounded(p?.y,-.35,1.35,fallback.y)});
   const rawScene=e['previewScene'] as any;
   const previewScene:PreviewScene={...(rawScene?.teleport?{teleport:{enabled:rawScene.teleport.enabled===true,vanishMs:bounded(rawScene.teleport.vanishMs,100,2500,650),hiddenMs:bounded(rawScene.teleport.hiddenMs,100,2500,700),appearMs:bounded(rawScene.teleport.appearMs,100,2500,650),destination:scenePoint(rawScene.teleport.destination,TELEPORT_DEFAULTS.destination)}}:{}),targetMotion:rawScene?.targetMotion===true,walls:Array.isArray(rawScene?.walls)?rawScene.walls.slice(0,8).map((w:any)=>({a:scenePoint(w.a,{x:.55,y:.25}),b:scenePoint(w.b,{x:.55,y:.75})})):[],caster:scenePoint(rawScene?.caster,defaultsScene.caster),targets:defaultsScene.targets.map((p,i)=>scenePoint(rawScene?.targets?.[i],p))};
   const layers = e['layers'].map((v: unknown): EffectLayer => {
