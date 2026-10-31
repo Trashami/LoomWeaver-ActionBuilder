@@ -302,7 +302,7 @@ export const LANDING_PRICING_PLANS: readonly PricingPlanVm[] = [
     features: [
       'Everything in Threadkeeper',
       'Full 2.5D/3D VTT dynamic lighting & cutaway walls',
-      'The Weave optional AI companion (100% GM authorship)',
+      'Connected World & Lore Atlas + Faction Graph',
       'Advanced World Atlas travel paths & quest chains',
       'Custom spell shader FX & ambience soundscapes',
     ],
@@ -319,7 +319,7 @@ export const LANDING_PRICING_PLANS: readonly PricingPlanVm[] = [
     features: [
       'Everything in The Weaver',
       'Maximum worldbuilding, asset, and 3D model capacity',
-      'Priority Weave synthesis & multi-campaign universe linking',
+      'Multi-campaign universe linking & lore indexing',
       'Creator Marketplace publishing with 85/15 revenue split',
       'One-click adventure module packaging & export tools',
     ],

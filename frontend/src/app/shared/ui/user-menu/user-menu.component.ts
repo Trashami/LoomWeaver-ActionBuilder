@@ -63,9 +63,10 @@ export class LwUserMenuComponent {
 
   readonly tierBadgeLabel = computed(() => {
     const code = (this.userTierCode() || '').toLowerCase();
-    if (code === 'archweaver' || code === 'legendary') return 'ARCHWEAVER';
-    if (code === 'weaver' || code === 'worldsmith') return 'WORLDSMITH';
-    if (code === 'threadkeeper' || code === 'adventurer') return 'THREADKEEPER';
+    if (code === 'archweaver') return 'ARCHWEAVER';
+    if (code === 'weaver') return 'WEAVER';
+    if (code === 'threadkeeper') return 'THREADKEEPER';
+    if (code === 'spark') return 'SPARK';
     return this.isGm() ? 'DUNGEON MASTER' : 'PLAYER';
   });
 

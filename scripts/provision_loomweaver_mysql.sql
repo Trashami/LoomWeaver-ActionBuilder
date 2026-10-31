@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `lw_users` (
   `username` VARCHAR(64) NOT NULL UNIQUE,
   `display_name` VARCHAR(128) NOT NULL,
   `role` ENUM('gm', 'player', 'creator', 'admin') NOT NULL DEFAULT 'gm',
-  `tier_code` VARCHAR(32) NOT NULL DEFAULT 'archweaver',
+  `tier_code` VARCHAR(32) NOT NULL DEFAULT 'spark',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT `fk_lw_users_tier` FOREIGN KEY (`tier_code`) REFERENCES `lw_subscription_tiers` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -162,10 +162,10 @@ CREATE TABLE IF NOT EXISTS `lw_outbox_messages` (
 -- =============================================================================
 
 INSERT INTO `lw_subscription_tiers` (`code`, `name`, `monthly_cents`, `annual_cents`, `max_active_campaigns`, `storage_limit_mb`, `includes_weave_ai`, `creator_royalty_pct`, `summary`) VALUES
-('spark', 'Spark Free', 0, 0, 1, 250, 0, 85, 'Free forever player seat, The Loom campaign memory, 2D map export, and core character sheets.'),
-('threadkeeper', 'Threadkeeper', 600, 6000, 3, 2048, 1, 85, 'GM campaign hosting, 2D/3D Map Studio, custom stamps, and The Loom deep-link memory.'),
-('weaver', 'Weaver', 1200, 12000, 10, 10240, 1, 85, 'Full 3D VTT lighting & weather, Action/Effect Builder, The Weave AI draft companion, and Neo4j World Graph.'),
-('archweaver', 'Archweaver', 2400, 24000, 999, 51200, 1, 85, 'Unlimited campaigns, creator marketplace publishing with 85/15 split, and priority 3D asset packs.')
+('spark', 'The Spark', 0, 0, 1, 250, 0, 85, 'Create your first living campaign world, The Loom campaign memory search, and free invite-link player seats.'),
+('threadkeeper', 'The Threadkeeper', 600, 6000, 3, 2048, 1, 85, 'Expanded campaign worlds, Neo4j lore graph, LoomMaps battlemap studio, and unlimited free player seats.'),
+('weaver', 'The Weaver', 1200, 12000, 10, 10240, 1, 85, 'Full 2.5D/3D VTT dynamic lighting, connected world and lore atlas with faction graph, and custom spell shader FX.'),
+('archweaver', 'The Archweaver', 2400, 24000, 999, 51200, 1, 85, 'Maximum worldbuilding and 3D model capacity, multi-campaign universe linking, creator marketplace publishing, and adventure module export.')
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `summary`=VALUES(`summary`);
 
 INSERT INTO `lw_users` (`id`, `email`, `username`, `display_name`, `role`, `tier_code`) VALUES

@@ -123,7 +123,7 @@ public static class JwtTokenHelper
                 fallbackUser,
                 fallbackName,
                 "", "", normRole,
-                GetClaim(root, "tier") ?? "adventurer",
+                GetClaim(root, "tier") ?? "spark",
                 GetClaim(root, "witness") ?? "None",
                 Array.Empty<string>(), 0.0);
         }

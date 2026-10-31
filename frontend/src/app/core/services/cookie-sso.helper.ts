@@ -99,7 +99,7 @@ export function profileFromJwtPayload(token: string): UserAccountProfileVm | nul
     displayName: String(payload['name'] || username || email),
     email,
     role,
-    tierCode: String(payload['tier'] || 'adventurer'),
+    tierCode: String(payload['tier'] || 'spark'),
     boundCharacter: String(payload['witness'] || (role === 'gm' ? 'GM' : 'Dal')),
     ownedAssetIds: ['asset-map-starter', 'asset-dice-runed-obsidian'],
     creatorBalanceUsd: 0,

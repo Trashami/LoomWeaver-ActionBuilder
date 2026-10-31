@@ -38,33 +38,33 @@ public static class MySqlUserAuthStore
 
         return new List<StoredUserRecord>
         {
-            new(1, "acc-gm-geojason", "jtromborg1@gmail.com", "GeoJason", "Jason (GeoJason)", adminHash, adminSalt, "gm", "legendary", "GM",
+            new(1, "acc-gm-geojason", "jtromborg1@gmail.com", "GeoJason", "Jason (GeoJason)", adminHash, adminSalt, "gm", "archweaver", "GM",
                 new[] { "asset-map-starter", "asset-dice-runed-obsidian", "mod-starter-pack", "mod-raid-pack" }, 1842.50),
-            new(2, "acc-gm-trashami", "gm@loom-weaver.com", "trashami", "Trashami · Master GM & Creator", adminHash, adminSalt, "gm", "legendary", "GM",
+            new(2, "acc-gm-trashami", "gm@loom-weaver.com", "trashami", "Trashami · Master GM & Creator", adminHash, adminSalt, "gm", "archweaver", "GM",
                 new[] { "asset-map-starter", "asset-dice-runed-obsidian", "mod-starter-pack", "mod-raid-pack" }, 1842.50),
-            new(3, "acc-player-dal", "scott.brogan@loomweaver.com", "ScottBrogan", "Scott Brogan", testerHash, testerSalt, "gm", "legendary", "Aldric",
+            new(3, "acc-player-dal", "scott.brogan@loomweaver.com", "ScottBrogan", "Scott Brogan", testerHash, testerSalt, "gm", "archweaver", "Aldric",
                 new[] { "asset-map-starter" }, 0.00),
-            new(4, "acc-player-kycius", "stick.hazen@loomweaver.com", "StickHazen", "Stick Hazen", testerHash, testerSalt, "gm", "worldsmith", "Sera",
+            new(4, "acc-player-kycius", "stick.hazen@loomweaver.com", "StickHazen", "Stick Hazen", testerHash, testerSalt, "gm", "weaver", "Sera",
                 Array.Empty<string>(), 0.00),
-            new(4522, "acc-gm-greg", "gregmeinert@loomweaver.com", "GregMeinert", "Greg Meinert", testerHash, testerSalt, "gm", "legendary", "GM",
+            new(4522, "acc-gm-greg", "gregmeinert@loomweaver.com", "GregMeinert", "Greg Meinert", testerHash, testerSalt, "gm", "archweaver", "GM",
                 new[] { "asset-map-starter", "asset-dice-runed-obsidian" }, 0.00),
-            new(5359, "acc-player-kildrid", "ryan.issak@loomweaver.com", "RyanIssak", "Ryan Issak", testerHash, testerSalt, "players", "worldsmith", "Brenna",
+            new(5359, "acc-player-kildrid", "ryan.issak@loomweaver.com", "RyanIssak", "Ryan Issak", testerHash, testerSalt, "players", "weaver", "Brenna",
                 Array.Empty<string>(), 0.00),
-            new(5360, "acc-player-fivi", "dallas.crow@loomweaver.com", "DallasCrow", "Dallas Crow", testerHash, testerSalt, "players", "adventurer", "Tomas",
+            new(5360, "acc-player-fivi", "dallas.crow@loomweaver.com", "DallasCrow", "Dallas Crow", testerHash, testerSalt, "players", "spark", "Tomas",
                 new[] { "asset-dice-runed-obsidian" }, 0.00),
-            new(5362, "acc-player-munk", "pete.higano@loomweaver.com", "PeteHigano", "Pete Higano", testerHash, testerSalt, "players", "adventurer", "Osric",
+            new(5362, "acc-player-munk", "pete.higano@loomweaver.com", "PeteHigano", "Pete Higano", testerHash, testerSalt, "players", "spark", "Osric",
                 Array.Empty<string>(), 0.00),
-            new(5361, "acc-player-josh", "josh.tromborg@loomweaver.com", "JoshTromborg", "Josh Tromborg", testerHash, testerSalt, "players", "worldsmith", "Aldric",
+            new(5361, "acc-player-josh", "josh.tromborg@loomweaver.com", "JoshTromborg", "Josh Tromborg", testerHash, testerSalt, "players", "weaver", "Aldric",
                 Array.Empty<string>(), 0.00),
-            new(5363, "acc-gm-kenneth", "kenneth.alexander@loomweaver.com", "KennethAlexander", "Kenneth Alexander", testerHash, testerSalt, "gm", "legendary", "GM",
+            new(5363, "acc-gm-kenneth", "kenneth.alexander@loomweaver.com", "KennethAlexander", "Kenneth Alexander", testerHash, testerSalt, "gm", "archweaver", "GM",
                 Array.Empty<string>(), 0.00),
-            new(5364, "acc-player-christine", "christine.richey@loomweaver.com", "ChristineRichey", "Christine Richey", testerHash, testerSalt, "players", "worldsmith", "Tomas",
+            new(5364, "acc-player-christine", "christine.richey@loomweaver.com", "ChristineRichey", "Christine Richey", testerHash, testerSalt, "players", "weaver", "Tomas",
                 Array.Empty<string>(), 0.00),
-            new(5365, "acc-player-michael", "michael.aguilar@loomweaver.com", "MichaelAguilar", "Michael Aguilar", testerHash, testerSalt, "players", "adventurer", "Sera",
+            new(5365, "acc-player-michael", "michael.aguilar@loomweaver.com", "MichaelAguilar", "Michael Aguilar", testerHash, testerSalt, "players", "spark", "Sera",
                 Array.Empty<string>(), 0.00),
-            new(5366, "acc-player-juno", "juno@loomweaver.com", "Juno", "Juno", testerHash, testerSalt, "players", "worldsmith", "Tomas",
+            new(5366, "acc-player-juno", "juno@loomweaver.com", "Juno", "Juno", testerHash, testerSalt, "players", "weaver", "Tomas",
                 Array.Empty<string>(), 0.00),
-            new(5367, "acc-player-candice", "candice.freymond@loomweaver.com", "CandiceFreymond", "Candice Freymond", testerHash, testerSalt, "players", "adventurer", "Aldric",
+            new(5367, "acc-player-candice", "candice.freymond@loomweaver.com", "CandiceFreymond", "Candice Freymond", testerHash, testerSalt, "players", "spark", "Aldric",
                 Array.Empty<string>(), 0.00)
         };
     }
@@ -116,7 +116,7 @@ public static class MySqlUserAuthStore
                     password_salt VARCHAR(255) NOT NULL,
                     google_id VARCHAR(128) NULL,
                     role VARCHAR(32) NOT NULL DEFAULT 'gm',
-                    tier VARCHAR(32) NOT NULL DEFAULT 'adventurer',
+                    tier VARCHAR(32) NOT NULL DEFAULT 'spark',
                     bound_character VARCHAR(64) NOT NULL DEFAULT 'GM',
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     last_login_at DATETIME NULL
@@ -214,7 +214,7 @@ public static class MySqlUserAuthStore
             await using var tx = await conn.BeginTransactionAsync(ct);
             await using (var insert = new MySqlCommand("""
                 INSERT INTO lw_auth_users (account_id, email, username, display_name, password_hash, password_salt, role, tier, bound_character)
-                VALUES (@aid, @email, @uname, @dname, @hash, @salt, 'players', 'adventurer', 'none')
+                VALUES (@aid, @email, @uname, @dname, @hash, @salt, 'players', 'spark', 'none')
                 """, conn, tx))
             {
                 insert.Parameters.AddWithValue("@aid", accountId);
@@ -229,7 +229,7 @@ public static class MySqlUserAuthStore
 
             await using (var canonical = new MySqlCommand("""
                 INSERT INTO lw_users (email, username, display_name, role, tier_code)
-                VALUES (@email, @uname, @dname, 'player', 'adventurer')
+                VALUES (@email, @uname, @dname, 'player', 'spark')
                 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name)
                 """, conn, tx))
             {
@@ -247,7 +247,7 @@ public static class MySqlUserAuthStore
 
         var record = new StoredUserRecord(
             newId, accountId, cleanEmail, cleanUser, cleanDisplay, hash, salt,
-            "players", "adventurer", "none", Array.Empty<string>(), 0.0);
+            "players", "spark", "none", Array.Empty<string>(), 0.0);
         MemoryUsers.Insert(0, record);
         return record;
     }
