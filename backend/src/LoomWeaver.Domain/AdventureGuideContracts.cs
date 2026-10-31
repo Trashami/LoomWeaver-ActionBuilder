@@ -219,3 +219,35 @@ public sealed record AssignBattlemapToAdventureRequest(
     string? ArtworkUrl,
     string? Biome
 );
+
+public sealed record SessionAttachmentItemDto(
+    string Id,
+    string SessionId,
+    string ElementKind,
+    string TargetKey,
+    string Title,
+    string Subtitle,
+    string Summary,
+    string RouteLink,
+    string Visibility,
+    string? QuestKind = null,
+    string? ArtworkUrl = null
+);
+
+public sealed record AttachSessionElementRequest(
+    string SessionId,
+    string ElementKind,
+    string TargetKey,
+    string Title,
+    string? Subtitle,
+    string? Summary,
+    string? RouteLink,
+    string? Visibility,
+    string? QuestKind = null,
+    string? ArtworkUrl = null
+);
+
+public sealed record SetActiveSessionRequest(
+    string SessionId
+);
+

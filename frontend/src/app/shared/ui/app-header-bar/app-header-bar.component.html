@@ -75,6 +75,32 @@
         </span>
       </div>
     </div>
+
+    @if (store) {
+      <div class="lw-campaign-tile lw-session-tile">
+        <div class="lw-campaign-tile__body">
+          <span class="lw-campaign-tile__sub lw-session-tile__kicker">
+            CURRENT SESSION ({{ store.activeSession()?.statusLabel || 'Active' }})
+          </span>
+          <span class="lw-campaign-tile__name">
+            {{ store.activeSession()?.title || 'Session 15 — The Ruined Chapel' }}
+            <span class="lw-campaign-tile__chev" aria-hidden="true">▾</span>
+          </span>
+          <select
+            class="lw-campaign-tile__select"
+            [ngModel]="store.activeSessionId()"
+            (ngModelChange)="store.setActiveSession($event)"
+            aria-label="Current Active Session"
+          >
+            @for (sess of store.sessions(); track sess.sessionId) {
+              <option [ngValue]="sess.sessionId">
+                Session {{ sess.sessionNumber }} — {{ sess.title }} ({{ sess.statusLabel }})
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+    }
   </div>
 
   <form class="lw-topbar__search" (ngSubmit)="onSubmitSearch()">
@@ -130,6 +156,18 @@
     >
       <span>{{ isCampaignGm() ? (viewerRole() === 'gm' ? 'GM View' : 'Player View (Preview)') : 'Player View' }}</span>
     </button>
+
+    @if (store) {
+      <button
+        ngpButton
+        type="button"
+        class="lw-topbar__rect-btn lw-topbar__rect-btn--emerald"
+        (click)="store.openAdventureGuideModal('session')"
+        title="Open Adventure & Session Guide (Current Session or Whole Guide)"
+      >
+        <span>Adventure Guide</span>
+      </button>
+    }
 
     <button
       ngpButton

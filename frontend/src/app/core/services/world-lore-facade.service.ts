@@ -51,6 +51,8 @@ export class WorldLoreFacadeService {
   readonly loreSearchQuery = signal<string>('');
   readonly loreCategoryFilter = signal<string>('All');
   readonly loreTagFilter = signal<string>('All');
+  readonly loreSessionFilter = signal<string>('All');
+  readonly loreQuestFilter = signal<string>('All');
   readonly loreSortBy = signal<'updated' | 'created' | 'name'>('updated');
   readonly lorePresentationMode = signal<'cards' | 'list'>('cards');
   readonly historyCategoryFilter = signal<string>('All');
@@ -154,7 +156,7 @@ export class WorldLoreFacadeService {
   });
 
   readonly filteredLoreEntries = computed(() =>
-    filterLoreEntriesList(this.workspace().loreEntries, this.isGm(), this.loreSearchQuery(), this.loreCategoryFilter(), this.loreTagFilter(), this.loreSortBy()),
+    filterLoreEntriesList(this.workspace().loreEntries, this.isGm(), this.loreSearchQuery(), this.loreCategoryFilter(), this.loreTagFilter(), this.loreSortBy(), this.loreSessionFilter(), this.store.activeSessionId(), this.loreQuestFilter()),
   );
 
   readonly filteredHistoryEvents = computed<readonly WorldHistoryChronicleEventVm[]>(() => {
@@ -338,84 +340,34 @@ export class WorldLoreFacadeService {
     });
   }
 
-  saveRegionOverlay(
-    req: {
-      id?: string;
-      name: string;
-      overlayType: 'region' | 'territory';
-      subtitle?: string;
-      factionKey?: string | null;
-      colorHex: string;
-      labelX: number;
-      labelY: number;
-      points: readonly RegionPolygonPointVm[];
-      description?: string;
-      governanceAndRealm?: string;
-      linkedLoreId?: string | null;
-      loreContent?: string;
-      visibility: 'players' | 'gm' | 'public';
-      silent?: boolean;
-    },
-  ): void {
+  saveRegionOverlay(req: { id?: string; name: string; overlayType: 'region' | 'territory'; subtitle?: string; factionKey?: string | null; colorHex: string; labelX: number; labelY: number; points: readonly RegionPolygonPointVm[]; description?: string; governanceAndRealm?: string; linkedLoreId?: string | null; loreContent?: string; visibility: 'players' | 'gm' | 'public'; silent?: boolean }): void {
     const cid = this.store.activeCampaignId();
     const mapId = this.activeMap()?.mapId ?? 'map-icrandor-world';
     const optimistic = buildOptimisticRegionOverlay(mapId, req);
-    this.workspace.update((cur) => ({
-      ...cur,
-      regionOverlays: cur.regionOverlays.some((o) => o.id === optimistic.id)
-        ? cur.regionOverlays.map((o) => (o.id === optimistic.id ? optimistic : o))
-        : [...cur.regionOverlays, optimistic],
-    }));
-    const regionLoc = buildFallbackLocationVm(cid, mapId, {
-      locationKey: optimistic.id,
-      name: req.name,
-      locationType: optimistic.subtitle || 'Charted Region',
-      hierarchyLevel: 'Region',
-      xPercent: optimistic.labelX,
-      yPercent: optimistic.labelY,
-      discoveryStatus: 'known',
-      visibility: req.visibility,
-      description: optimistic.description || '',
-      historicalBackground: optimistic.governanceAndRealm,
-    });
-    this.locationsState.update((list) =>
-      list.some((l) => l.locationKey === regionLoc.locationKey) ? list.map((l) => (l.locationKey === regionLoc.locationKey ? regionLoc : l)) : [regionLoc, ...list],
-    );
+    this.workspace.update((cur) => ({ ...cur, regionOverlays: cur.regionOverlays.some((o) => o.id === optimistic.id) ? cur.regionOverlays.map((o) => (o.id === optimistic.id ? optimistic : o)) : [...cur.regionOverlays, optimistic] }));
+    const regionLoc = buildFallbackLocationVm(cid, mapId, { locationKey: optimistic.id, name: req.name, locationType: optimistic.subtitle || 'Charted Region', hierarchyLevel: 'Region', xPercent: optimistic.labelX, yPercent: optimistic.labelY, discoveryStatus: 'known', visibility: req.visibility, description: optimistic.description || '', historicalBackground: optimistic.governanceAndRealm });
+    this.locationsState.update((list) => list.some((l) => l.locationKey === regionLoc.locationKey) ? list.map((l) => (l.locationKey === regionLoc.locationKey ? regionLoc : l)) : [regionLoc, ...list]);
     if (!req.silent) {
-      this.upsertLoreLocally(
-        buildFallbackLoreEntryVm(cid, {
-          id: optimistic.linkedLoreId || `lore-${optimistic.id}`,
-          title: req.name,
-          category: 'Worlds & Regions',
-          subtitle: optimistic.subtitle,
-          excerpt: optimistic.description,
-          content: req.loreContent || `${optimistic.description}\n\n${optimistic.governanceAndRealm}`,
-          tags: ['Regions', req.name],
-          linkedEntityKeys: [`${cid}:Region:${optimistic.id}`],
-          visibility: req.visibility,
-        }),
-      );
+      this.upsertLoreLocally(buildFallbackLoreEntryVm(cid, { id: optimistic.linkedLoreId || `lore-${optimistic.id}`, title: req.name, category: 'Worlds & Regions', subtitle: optimistic.subtitle, excerpt: optimistic.description, content: req.loreContent || `${optimistic.description}\n\n${optimistic.governanceAndRealm}`, tags: ['Regions', req.name], linkedEntityKeys: [`${cid}:Region:${optimistic.id}`], visibility: req.visibility }));
       this.statusBanner.set(`Saved region "${req.name}" & synced regional lore.`);
     }
     this.http.post<WorldMapRegionOverlayVm>(`/api/v2/campaigns/${cid}/world-lore/regions?role=gm`, { ...req, mapId, svgPath: optimistic.svgPath }).subscribe({
-      next: (saved) => {
-        this.workspace.update((cur) => ({
-          ...cur,
-          regionOverlays: cur.regionOverlays.map((o) => (o.id === saved.id ? { ...optimistic, ...saved } : o)),
-        }));
-      },
-      error: () => {
-        this.errorBanner.set(`Region "${req.name}" was not saved. Refresh to see the stored state.`);
-      },
+      next: (saved) => this.workspace.update((cur) => ({ ...cur, regionOverlays: cur.regionOverlays.map((o) => (o.id === saved.id ? { ...optimistic, ...saved } : o)) })),
+      error: () => this.errorBanner.set(`Region "${req.name}" was not saved. Refresh to see the stored state.`),
     });
   }
 
-  saveLoreEntry(req: { id?: string; title: string; category: string; subtitle?: string; excerpt?: string; content?: string; artworkUrl?: string; tags?: readonly string[]; linkedEntityKeys?: readonly string[]; visibility: 'players' | 'gm' | 'public'; archived?: boolean }): void {
+  saveLoreEntry(req: { id?: string; title: string; category: string; subtitle?: string; excerpt?: string; content?: string; artworkUrl?: string; tags?: readonly string[]; linkedEntityKeys?: readonly string[]; visibility: 'players' | 'gm' | 'public'; archived?: boolean; sessionId?: string | null; sessionLabel?: string | null; questId?: string | null; questTitle?: string | null; questKind?: string | null }): void {
     if (!this.isGm()) return;
     const cid = this.store.activeCampaignId();
+    const optimistic = buildFallbackLoreEntryVm(cid, req);
+    this.upsertLoreLocally(optimistic);
+    if (req.sessionId && !req.archived) {
+      this.store.attachElementToSession({ sessionId: req.sessionId, elementKind: 'Lore', elementId: optimistic.id, title: req.title, subtitle: `${req.category}${req.questTitle ? ' · ' + req.questTitle : ''}`, routeLink: '/world-lore', visibility: req.visibility === 'gm' ? 'gm' : 'players' });
+    }
     this.http.post<LoreEntryVm>(`/api/v2/campaigns/${cid}/world-lore/lore?role=gm`, req).subscribe({
-      next: (saved) => this.upsertLoreLocally(saved),
-      error: () => this.errorBanner.set('Lore entry was not saved. Please try again.'),
+      next: (saved) => this.upsertLoreLocally({ ...optimistic, ...saved, sessionId: req.sessionId ?? saved.sessionId, sessionLabel: req.sessionLabel ?? saved.sessionLabel, questId: req.questId ?? saved.questId, questTitle: req.questTitle ?? saved.questTitle, questKind: req.questKind ?? saved.questKind }),
+      error: () => this.errorBanner.set('Lore entry was not saved to server. Saved locally for this session.'),
     });
   }
 

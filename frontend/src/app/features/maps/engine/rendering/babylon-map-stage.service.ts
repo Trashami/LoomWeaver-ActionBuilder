@@ -946,6 +946,15 @@ export class BabylonMapStageService {
     if (this.scene) LightFixtureBuilder.setHandlesVisible(this.scene, handlesVisible);
   }
 
+  captureViewportDataUrl(): string | null {
+    try {
+      this.scene?.render();
+      return this.engine?.getRenderingCanvas()?.toDataURL('image/jpeg', 0.85) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   resize(): void {
     this.engine?.resize();
   }

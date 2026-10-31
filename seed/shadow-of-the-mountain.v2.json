@@ -1,0 +1,299 @@
+{
+  "seed_version": "shadow-of-the-mountain.v2",
+  "source": {
+    "manuscript": "Shadow of the Mountain chapters 1-9 (Chapter Rewrites 1-7, Drafts 8-9) and the Grand Illusion transition",
+    "provenance_default": "manuscript",
+    "notes": "Manuscript-derived facts are GM canon in draft. Invented mock content (PC builds, NPC stats, encounters, secondary NPCs, locations, lore) is tagged generated_draft in metadata. Every GM-only secret is visibility gm, not revealed, and has no knowledge grant."
+  },
+  "campaign": {
+    "id": 900029,
+    "slug": "shadow-of-the-mountain-seed-test",
+    "name": "Shadow of the Mountain (Test Campaign)",
+    "subtitle": "Seeded from the manuscript for platform testing",
+    "system_code": "dnd5e",
+    "gm_user_id": 1,
+    "world_name": "Edhellain and Dal Riata",
+    "current_act": "Act II: The Well",
+    "current_session_number": 3,
+    "current_location_name": "Plains of Red"
+  },
+  "members": [
+    { "user_id": 1, "member_role": "gm", "assigned_character_key": null }
+  ],
+  "adventure": {
+    "id": "adv-sotm-seed-v2",
+    "slug": "shadow-of-the-mountain-seed-v2",
+    "title": "The Shadow of the Mountain",
+    "subtitle": "Test campaign adventure",
+    "system_code": "dnd5e",
+    "adventure_format": "full-campaign",
+    "expected_duration_minutes": 2400,
+    "recommended_level_range": "1-10",
+    "author_user_id": 1,
+    "author_handle": "LoomWeaver",
+    "premise": "Dal Riata, a trained killer of the Edhellain council, is pulled from the shadow of the mountain into a web of lineage, politics, and a stolen book.",
+    "background_truth": "The Riata royal line was altered in the Priory tower records. The lineage book Dal stole can prove it. Halvern and the Cinth Artificers are moving Chokrah cargo for a purpose the party does not yet know."
+  },
+  "adventure_version": {
+    "id": "adv-ver-sotm-seed-v2",
+    "version_tag": "seed-v2",
+    "schema_version": "loomweaver.adventure/1",
+    "changelog_summary": "Full mock campaign: nodes, blocks, links, sessions, characters, NPCs, locations, lore, claims, encounters. Draft content, secrets not revealed.",
+    "is_immutable_published": 0
+  },
+  "nodes": [
+    { "id": "sotm-seed-root", "parent_node_id": null, "node_kind": "adventure", "location_type": "none", "title": "The Shadow of the Mountain", "summary": "Full campaign seeded from the manuscript for testing.", "visibility": "players", "default_state": "unresolved", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch01", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "Chapter One", "summary": "The birth of Emrys, the Council of Nine, and the withdrawal of the gods.", "visibility": "gm", "default_state": "completed", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch02", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "Shadows Above the Throne", "summary": "Dal in Dal Riata's palace. Thalen trains him. Dal stops an assassin aiming a poisoned knife at the High Lord's cup.", "visibility": "players", "default_state": "completed", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch03", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "Edhellain", "summary": "Dal's years in the noble house and his council-ordered kills. He leaves before dawn, reaches Vandia, meets Fivi, and enters the Knot & Knife.", "visibility": "players", "default_state": "completed", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch04", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "Vandia", "summary": "Tavern meeting in Vandia with Kildrid, Munk, Bastion Cael, and Kycius. A Priory-marked seal strip. An ambush of eight assassins. Camp on the beach.", "visibility": "players", "default_state": "completed", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch05", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "The Privateer Estate", "summary": "Road bandits. A privateer estate glamour over a cellar with a hidden ship and Chokrah crates. A children's ledger. Bastion steals the ship. The party enters the Study Tower.", "visibility": "players", "default_state": "completed", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch06", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "The Tower", "summary": "Prior Nymor in the Priors' tower. The Moonlight Room and Luminary models. Kildrid's stone responds to the Lodestone. Altered Riata genealogy records. A summons from Lord Decland DuCarth.", "visibility": "players", "default_state": "completed", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch07", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "The Well", "summary": "Decland's wagons to Cinth across the Plains of Red. Jackal-like cultists and a black sack. Halvern's Glass Hall reception and a vampire attack. Katarina Vey is dead. The Sealhouse holds her opened packet.", "visibility": "players", "default_state": "completed", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch08", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "The Plains of Red", "summary": "The journey to Cinth, the cultist encounter, the vampire infiltration of the Glass Hall, and the Sealhouse with Katarina's packet. Emrys is present.", "visibility": "players", "default_state": "discovered", "provenance": "manuscript" },
+    { "id": "sotm-seed-ch09", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "The Guild of Scars", "summary": "Sealhouse underlevel with Mera and Arlen Saye. Escape through a service tunnel. Grey-cloaked agents, Laksis, and the Cinth Artificers Guild. Chokrah shipments rise from 12 to 30 casks.", "visibility": "gm", "default_state": "unresolved", "provenance": "manuscript" },
+    { "id": "sotm-seed-grand-illusion", "parent_node_id": "sotm-seed-root", "node_kind": "chapter", "location_type": "none", "title": "The Grand Illusion", "summary": "The Edhellain king tasks the party with protecting a sacred grove. Dal has taken a lineage book. The party is discovered and escapes to an airship waiting in the forest.", "visibility": "gm", "default_state": "unresolved", "provenance": "manuscript" },
+    { "id": "sotm-seed-loc-grove", "parent_node_id": "sotm-seed-grand-illusion", "node_kind": "location", "location_type": "site", "title": "The Sacred Grove", "summary": "The grove the king assigned the party to guard. The ambush suspicion lives here.", "visibility": "gm", "default_state": "unresolved", "provenance": "generated_draft" }
+  ],
+  "blocks": [
+    { "id": "sotm-seed-blk-ch02-read", "node_id": "sotm-seed-ch02", "sort_order": 1, "block_kind": "readAloud", "audience": "players", "shareable": 1, "title": "The High Lord's Hall", "content": "Lamps burn low over the Riata palace. Silver cups wait on the long table, and the High Lord laughs at something no one else heard." },
+    { "id": "sotm-seed-blk-ch02-gm", "node_id": "sotm-seed-ch02", "sort_order": 2, "block_kind": "gmNote", "audience": "gm", "shareable": 0, "title": "Thalen's Test", "content": "Thalen watches for hesitation. A clean save on the poisoned-knife assassin raises his trust in Dal." },
+    { "id": "sotm-seed-blk-ch04-read", "node_id": "sotm-seed-ch04", "sort_order": 1, "block_kind": "readAloud", "audience": "players", "shareable": 1, "title": "The Knot & Knife", "content": "Smoke and brine fill the tavern. A Priory seal strip sits on the table between Kildrid's cup and Munk's dice." },
+    { "id": "sotm-seed-blk-ch04-gm", "node_id": "sotm-seed-ch04", "sort_order": 2, "block_kind": "gmNote", "audience": "gm", "shareable": 0, "title": "The Eight-Assassin Ambush", "content": "Eight assassins wait on the beach road. Two carry Riata crest tokens. Tactics: they spread out, try to isolate Dal, and retreat at half strength." },
+    { "id": "sotm-seed-blk-ch06-gm", "node_id": "sotm-seed-ch06", "sort_order": 1, "block_kind": "gmNote", "audience": "gm", "shareable": 0, "title": "Altered Genealogy", "content": "The Riata records in the tower were edited. The original ink is still under the new ink under UV light. Prior Nymor knows and is not telling." },
+    { "id": "sotm-seed-blk-ch06-check", "node_id": "sotm-seed-ch06", "sort_order": 2, "block_kind": "check", "audience": "players", "shareable": 1, "title": "Read the Ledger", "content": "DC 14 Investigation to notice the ink lines do not match the seal dates." },
+    { "id": "sotm-seed-blk-ch07-read", "node_id": "sotm-seed-ch07", "sort_order": 1, "block_kind": "readAloud", "audience": "players", "shareable": 1, "title": "The Plains of Red", "content": "Red grass rolls toward the horizon. Decland's wagons creak ahead, and a black sack bounces on the last cart." },
+    { "id": "sotm-seed-blk-ch07-tactics", "node_id": "sotm-seed-ch07", "sort_order": 2, "block_kind": "tactics", "audience": "gm", "shareable": 0, "title": "Jackal Cultists", "content": "Four jackal-like cultists rush from the grass at initiative 2. They target the wagon drivers first, then the closest caster." },
+    { "id": "sotm-seed-blk-ch08-read", "node_id": "sotm-seed-ch08", "sort_order": 1, "block_kind": "readAloud", "audience": "players", "shareable": 1, "title": "The Glass Hall", "content": "Glass walls catch the moonlight and throw it back in a thousand shards. Halvern smiles, and the guests do not notice the pale hands at the doors." },
+    { "id": "sotm-seed-blk-ch08-gm", "node_id": "sotm-seed-ch08", "sort_order": 2, "block_kind": "gmNote", "audience": "gm", "shareable": 0, "title": "Katarina's Packet", "content": "Katarina Vey is dead. Her opened packet is in the Sealhouse. It names the Cinth buyer, which the party has not seen yet." },
+    { "id": "sotm-seed-blk-ch09-gm", "node_id": "sotm-seed-ch09", "sort_order": 1, "block_kind": "gmNote", "audience": "gm", "shareable": 0, "title": "Service Tunnel", "content": "Mera and Arlen Saye hold the lower gate. The tunnel exit is watched by grey-cloaked agents led by Laksis." },
+    { "id": "sotm-seed-blk-gi-read", "node_id": "sotm-seed-grand-illusion", "sort_order": 1, "block_kind": "readAloud", "audience": "players", "shareable": 1, "title": "The Sacred Grove", "content": "The Edhellain king's voice carries over the grove. Silver light falls through old oaks, and an airship waits just beyond the trees." },
+    { "id": "sotm-seed-blk-gi-clue", "node_id": "sotm-seed-grand-illusion", "sort_order": 2, "block_kind": "gmNote", "audience": "gm", "shareable": 0, "title": "The Lineage Book", "content": "The book called to Dal. It may prove the Riata royal line. Dhreg Riata does not know what it contains." }
+  ],
+  "links": [
+    { "from": "sotm-seed-ch04", "to": "sotm-seed-ch05", "type": "LEADS_TO", "label": "Bastion steals the ship", "sort_order": 1, "visibility": "players" },
+    { "from": "sotm-seed-ch05", "to": "sotm-seed-ch06", "type": "LEADS_TO", "label": "The party enters the Study Tower", "sort_order": 1, "visibility": "players" },
+    { "from": "sotm-seed-ch06", "to": "sotm-seed-ch07", "type": "LEADS_TO", "label": "Decland's summons", "sort_order": 1, "visibility": "players" },
+    { "from": "sotm-seed-ch07", "to": "sotm-seed-ch08", "type": "LEADS_TO", "label": "Wagons cross the Plains of Red", "sort_order": 1, "visibility": "players" },
+    { "from": "sotm-seed-ch08", "to": "sotm-seed-ch09", "type": "LEADS_TO", "label": "Escape the Sealhouse", "sort_order": 1, "visibility": "gm" },
+    { "from": "sotm-seed-ch09", "to": "sotm-seed-grand-illusion", "type": "LEADS_TO", "label": "Airship in the forest", "sort_order": 1, "visibility": "gm" },
+    { "from": "sotm-seed-ch06", "to": "sotm-seed-ch07", "type": "HAS_CLUE", "label": "Altered genealogy", "sort_order": 2, "visibility": "gm" },
+    { "from": "sotm-seed-ch07", "to": "sotm-seed-ch08", "type": "HAS_HAZARD", "label": "Jackal cultist ambush", "sort_order": 2, "visibility": "gm" },
+    { "from": "sotm-seed-ch08", "to": "sotm-seed-ch09", "type": "HAS_TREASURE", "label": "Katarina's opened packet", "sort_order": 2, "visibility": "gm" },
+    { "from": "sotm-seed-grand-illusion", "to": "sotm-seed-loc-grove", "type": "OCCURS_AT", "label": "Sacred grove assignment", "sort_order": 1, "visibility": "gm" }
+  ],
+  "sessions": [
+    { "session_id": "sotm-seed-sess-01", "session_number": 1, "title": "Shadows Above the Throne", "chapter_node_id": "sotm-seed-ch02", "primary_location_node_id": "sotm-seed-ch03", "assigned_scene_key": "sotm-seed-scene-edhellain-palace", "session_state": "completed", "scheduled_date_label": "Session 1", "epigraph": "The cup is always poisoned in the palace.", "summary": "The party serves the High Lord and stops the assassin. Dal leaves before dawn for Vandia.", "objectives_json": ["Survive the banquet", "Reach Vandia"], "stopping_points_json": ["After the assassin falls"] },
+    { "session_id": "sotm-seed-sess-02", "session_number": 2, "title": "The Knot & Knife", "chapter_node_id": "sotm-seed-ch04", "primary_location_node_id": "sotm-seed-ch04", "assigned_scene_key": "sotm-seed-scene-vandia-tavern", "session_state": "completed", "scheduled_date_label": "Session 2", "epigraph": "Every seal has a second strip.", "summary": "The tavern meeting, the eight-assassin ambush, and the privateer estate cellar.", "objectives_json": ["Learn the seal's origin", "Survive the beach ambush"], "stopping_points_json": ["Camp on the beach"] },
+    { "session_id": "sotm-seed-sess-03", "session_number": 3, "title": "The Plains of Red", "chapter_node_id": "sotm-seed-ch08", "primary_location_node_id": "sotm-seed-ch07", "assigned_scene_key": "sotm-seed-scene-plains-of-red", "session_state": "live", "scheduled_date_label": "Session 3", "epigraph": "The road to Cinth is red for a reason.", "summary": "Decland's wagons cross the Plains of Red. Jackal cultists attack from the grass. The Glass Hall waits ahead.", "objectives_json": ["Protect the wagons", "Reach Cinth"], "stopping_points_json": ["Before the Glass Hall doors"] },
+    { "session_id": "sotm-seed-sess-04", "session_number": 4, "title": "The Guild of Scars", "chapter_node_id": "sotm-seed-ch09", "primary_location_node_id": "sotm-seed-ch09", "assigned_scene_key": "sotm-seed-scene-sealhouse", "session_state": "planned", "scheduled_date_label": "Session 4", "epigraph": "Nothing leaves the Sealhouse without a ledger.", "summary": "The Sealhouse underlevel, the Saye siblings, and the service tunnel escape.", "objectives_json": ["Find Katarina's packet", "Escape the Sealhouse"], "stopping_points_json": [] },
+    { "session_id": "sotm-seed-sess-05", "session_number": 5, "title": "The Grand Illusion", "chapter_node_id": "sotm-seed-grand-illusion", "primary_location_node_id": "sotm-seed-loc-grove", "assigned_scene_key": "sotm-seed-scene-grand-illusion-grove", "session_state": "planned", "scheduled_date_label": "Session 5", "epigraph": "Protect the grove, and do not ask why.", "summary": "The sacred grove assignment. The lineage book. The party is discovered and escapes to the airship.", "objectives_json": ["Guard the grove", "Escape to the airship"], "stopping_points_json": [] }
+  ],
+  "session_content": [
+    { "session_id": "sotm-seed-sess-01", "node_id": "sotm-seed-ch02", "content_role": "scene", "sort_order": 1, "why_included_label": "Opening banquet", "is_optional": 0 },
+    { "session_id": "sotm-seed-sess-02", "node_id": "sotm-seed-ch04", "content_role": "scene", "sort_order": 1, "why_included_label": "Tavern meeting and ambush", "is_optional": 0 },
+    { "session_id": "sotm-seed-sess-02", "node_id": "sotm-seed-ch05", "content_role": "location", "sort_order": 2, "why_included_label": "Privateer estate cellar", "is_optional": 0 },
+    { "session_id": "sotm-seed-sess-03", "node_id": "sotm-seed-ch08", "content_role": "scene", "sort_order": 1, "why_included_label": "Plains and Glass Hall", "is_optional": 0 },
+    { "session_id": "sotm-seed-sess-03", "node_id": "sotm-seed-ch07", "content_role": "encounter", "sort_order": 2, "why_included_label": "Jackal cultist ambush", "is_optional": 0 },
+    { "session_id": "sotm-seed-sess-04", "node_id": "sotm-seed-ch09", "content_role": "location", "sort_order": 1, "why_included_label": "Sealhouse underlevel", "is_optional": 0 },
+    { "session_id": "sotm-seed-sess-05", "node_id": "sotm-seed-loc-grove", "content_role": "location", "sort_order": 1, "why_included_label": "Sacred grove", "is_optional": 0 },
+    { "session_id": "sotm-seed-sess-05", "node_id": "sotm-seed-grand-illusion", "content_role": "scene", "sort_order": 2, "why_included_label": "Grand Illusion transition", "is_optional": 0 }
+  ],
+  "progress": [
+    { "beat_key": "beat-s1-banquet-assassin", "session_id": "sotm-seed-sess-01", "node_id": "sotm-seed-ch02", "label": "Stop the poisoned knife", "progress_state": "completed", "is_done": 1, "outcome_notes": "Dal caught the assassin's wrist before the cup was lifted." },
+    { "beat_key": "beat-s2-beach-ambush", "session_id": "sotm-seed-sess-02", "node_id": "sotm-seed-ch04", "label": "Survive the beach ambush", "progress_state": "completed", "is_done": 1, "outcome_notes": "Eight assassins engaged; two fled." },
+    { "beat_key": "beat-s3-glass-hall", "session_id": "sotm-seed-sess-03", "node_id": "sotm-seed-ch08", "label": "Reach the Glass Hall", "progress_state": "discovered", "is_done": 0, "outcome_notes": "" },
+    { "beat_key": "beat-s5-grove-ambush", "session_id": "sotm-seed-sess-05", "node_id": "sotm-seed-loc-grove", "label": "Grove ambush suspicion", "progress_state": "unresolved", "is_done": 0, "outcome_notes": "" }
+  ],
+  "play_events": [
+    { "session_id": "sotm-seed-sess-01", "node_id": "sotm-seed-ch02", "event_kind": "session.completed", "actor_label": "GM", "summary": "Session 1 completed: the banquet and the assassin.", "payload": { "session_number": 1 } },
+    { "session_id": "sotm-seed-sess-02", "node_id": "sotm-seed-ch04", "event_kind": "combat.ended", "actor_label": "Party", "summary": "Beach ambush ended: eight assassins engaged.", "payload": { "rounds": 5 } },
+    { "session_id": "sotm-seed-sess-02", "node_id": "sotm-seed-ch05", "event_kind": "session.completed", "actor_label": "GM", "summary": "Session 2 completed: privateer estate cellar.", "payload": { "session_number": 2 } },
+    { "session_id": "sotm-seed-sess-03", "node_id": "sotm-seed-ch08", "event_kind": "session.started", "actor_label": "GM", "summary": "Session 3 started on the Plains of Red.", "payload": { "session_number": 3 } }
+  ],
+  "characters": [
+    {
+      "character_key": "pc-dal", "name": "Dal Riata", "ancestry": "Human", "class_name": "Rogue (Assassin)", "level": 6, "current_xp": 6500, "next_level_xp": 14000,
+      "max_hp": 42, "current_hp": 42, "armor_class": 15, "initiative_bonus": 4, "speed_feet": 30, "proficiency_bonus": 3,
+      "abilities": { "STR": 10, "DEX": 18, "CON": 14, "INT": 12, "WIS": 13, "CHA": 14 },
+      "equipment": [
+        { "item_id": "shortsword-1", "name": "Shortsword", "slot": "main hand", "bonus_summary": "+7 to hit, 1d6+4 piercing, finesse", "ac_bonus": 0, "attack_bonus": 7, "equipped": 1 },
+        { "item_id": "shortbow-1", "name": "Shortbow", "slot": "ranged", "bonus_summary": "+7 to hit, 1d6+4 piercing, range 80/320", "ac_bonus": 0, "attack_bonus": 7, "equipped": 1 },
+        { "item_id": "studded-leather-1", "name": "Studded Leather", "slot": "armor", "bonus_summary": "AC 12 + DEX", "ac_bonus": 12, "attack_bonus": 0, "equipped": 1 },
+        { "item_id": "poisoners-kit-1", "name": "Poisoner's Kit", "slot": "tools", "bonus_summary": "Assassin's tools", "ac_bonus": 0, "attack_bonus": 0, "equipped": 0 }
+      ],
+      "features": [
+        "Attack: Shortsword +7, 1d6+4 piercing (finesse)",
+        "Attack: Shortbow +7, 1d6+4 piercing (range 80/320)",
+        "Sneak Attack 3d6 once per turn",
+        "Cunning Action: Dash, Disengage, Hide as a bonus action",
+        "Assassinate: advantage on surprised targets, crits on surprise",
+        "Uncanny Dodge: halve damage from one attack per round",
+        "Expertise: Stealth, Sleight of Hand",
+        "Evasion and Reliable Talent"
+      ]
+    },
+    {
+      "character_key": "pc-aldric", "name": "Aldric Vossen", "ancestry": "Human", "class_name": "Fighter (Champion)", "level": 6, "current_xp": 6500, "next_level_xp": 14000,
+      "max_hp": 58, "current_hp": 58, "armor_class": 18, "initiative_bonus": 1, "speed_feet": 30, "proficiency_bonus": 3,
+      "abilities": { "STR": 17, "DEX": 12, "CON": 16, "INT": 10, "WIS": 12, "CHA": 13 },
+      "equipment": [
+        { "item_id": "longsword-1", "name": "Longsword", "slot": "main hand", "bonus_summary": "+6 to hit, 1d8+3 slashing", "ac_bonus": 0, "attack_bonus": 6, "equipped": 1 },
+        { "item_id": "shield-1", "name": "Shield", "slot": "off hand", "bonus_summary": "+2 AC", "ac_bonus": 2, "attack_bonus": 0, "equipped": 1 },
+        { "item_id": "chain-mail-1", "name": "Chain Mail", "slot": "armor", "bonus_summary": "AC 16", "ac_bonus": 16, "attack_bonus": 0, "equipped": 1 },
+        { "item_id": "javelin-1", "name": "Javelins", "slot": "thrown", "bonus_summary": "+6 to hit, 1d6+3 piercing, range 30/120", "ac_bonus": 0, "attack_bonus": 6, "equipped": 0 }
+      ],
+      "features": [
+        "Attack: Longsword +6, 1d8+3 slashing (two attacks per Attack action)",
+        "Attack: Javelin +6, 1d6+3 piercing (range 30/120)",
+        "Action Surge: one extra action, once per short rest",
+        "Second Wind: 1d10+6 healing as a bonus action",
+        "Improved Critical: crits on 19-20",
+        "Remarkable Athlete: half proficiency on STR, DEX, CON checks"
+      ]
+    },
+    {
+      "character_key": "pc-mireth", "name": "Mireth Lowen", "ancestry": "High Elf", "class_name": "Wizard (Evocation)", "level": 6, "current_xp": 6500, "next_level_xp": 14000,
+      "max_hp": 28, "current_hp": 28, "armor_class": 12, "initiative_bonus": 2, "speed_feet": 30, "proficiency_bonus": 3,
+      "abilities": { "STR": 8, "DEX": 14, "CON": 13, "INT": 17, "WIS": 12, "CHA": 10 },
+      "equipment": [
+        { "item_id": "arcane-focus-1", "name": "Arcane Focus (Staff)", "slot": "main hand", "bonus_summary": "Spell focus", "ac_bonus": 0, "attack_bonus": 0, "equipped": 1 },
+        { "item_id": "spellbook-1", "name": "Spellbook", "slot": "tools", "bonus_summary": "Holds 14 spells", "ac_bonus": 0, "attack_bonus": 0, "equipped": 1 },
+        { "item_id": "component-pouch-1", "name": "Component Pouch", "slot": "tools", "bonus_summary": "Material components", "ac_bonus": 0, "attack_bonus": 0, "equipped": 1 }
+      ],
+      "features": [
+        "Spell save DC 14, spell attack +6",
+        "Cantrip Fire Bolt: +6 to hit, 2d10 fire (range 120 ft)",
+        "Cantrips: Light, Mage Hand, Shocking Grasp",
+        "1st level: Magic Missile, Shield, Mage Armor, Detect Magic, Thunderwave",
+        "2nd level: Misty Step, Scorching Ray, Mirror Image",
+        "3rd level: Fireball (8d6 fire, DEX save DC 14), Counterspell, Fly",
+        "Sculpt Spells: protect allies from your own Evocation spells",
+        "Potent Cantrip: allies take half damage from cantrips on a save"
+      ]
+    },
+    {
+      "character_key": "pc-tobin", "name": "Tobin Hask", "ancestry": "Human", "class_name": "Ranger (Hunter)", "level": 6, "current_xp": 6500, "next_level_xp": 14000,
+      "max_hp": 48, "current_hp": 48, "armor_class": 15, "initiative_bonus": 3, "speed_feet": 30, "proficiency_bonus": 3,
+      "abilities": { "STR": 12, "DEX": 17, "CON": 14, "INT": 10, "WIS": 15, "CHA": 11 },
+      "equipment": [
+        { "item_id": "longbow-1", "name": "Longbow", "slot": "ranged", "bonus_summary": "+6 to hit, 1d8+3 piercing, range 150/600", "ac_bonus": 0, "attack_bonus": 6, "equipped": 1 },
+        { "item_id": "shortsword-2", "name": "Shortsword", "slot": "main hand", "bonus_summary": "+6 to hit, 1d6+3 piercing", "ac_bonus": 0, "attack_bonus": 6, "equipped": 1 },
+        { "item_id": "studded-leather-2", "name": "Studded Leather", "slot": "armor", "bonus_summary": "AC 12 + DEX", "ac_bonus": 12, "attack_bonus": 0, "equipped": 1 },
+        { "item_id": "hunters-pack-1", "name": "Explorer's Pack", "slot": "pack", "bonus_summary": "Rations, rope, torches", "ac_bonus": 0, "attack_bonus": 0, "equipped": 0 }
+      ],
+      "features": [
+        "Attack: Longbow +6, 1d8+3 piercing, two attacks (Extra Attack)",
+        "Attack: Shortsword +6, 1d6+3 piercing",
+        "Hunter's Mark: 1d6 extra damage, 1st-level spell, concentration",
+        "Colossus Slayer: +1d8 damage once per turn to wounded targets",
+        "Spells 1st (4 slots): Ensnaring Strike, Goodberry, Hunter's Mark, Cure Wounds",
+        "Spells 2nd (2 slots): Pass without Trace, Lesser Restoration",
+        "Favored Enemy: Humanoids, Beasts",
+        "Natural Explorer: Forest, Mountain"
+      ]
+    }
+  ],
+  "combat": {
+    "state": { "campaign_id": 900029, "round_number": 1, "active_token_key": "pc-dal" },
+    "tokens": [
+      { "token_key": "pc-dal", "name": "Dal Riata", "role_label": "Rogue 6", "faction": "party", "initiative": 19, "current_hp": 42, "max_hp": 42, "armor_class": 15, "pos_x": 3, "pos_z": 4, "color_hex": "#49e892", "movement_feet": 30, "speed_feet": 30 },
+      { "token_key": "pc-aldric", "name": "Aldric Vossen", "role_label": "Fighter 6", "faction": "party", "initiative": 14, "current_hp": 58, "max_hp": 58, "armor_class": 18, "pos_x": 2, "pos_z": 5, "color_hex": "#d9b77a", "movement_feet": 30, "speed_feet": 30 },
+      { "token_key": "pc-mireth", "name": "Mireth Lowen", "role_label": "Wizard 6", "faction": "party", "initiative": 11, "current_hp": 28, "max_hp": 28, "armor_class": 12, "pos_x": 1, "pos_z": 3, "color_hex": "#6ea8ff", "movement_feet": 30, "speed_feet": 30 },
+      { "token_key": "pc-tobin", "name": "Tobin Hask", "role_label": "Ranger 6", "faction": "party", "initiative": 16, "current_hp": 48, "max_hp": 48, "armor_class": 15, "pos_x": 1, "pos_z": 6, "color_hex": "#2ee66b", "movement_feet": 30, "speed_feet": 30 },
+      { "token_key": "npc-jackal-1", "name": "Jackal Cultist", "role_label": "Cultist", "faction": "enemy", "initiative": 12, "current_hp": 22, "max_hp": 22, "armor_class": 13, "pos_x": 12, "pos_z": 4, "color_hex": "#c94a4a", "movement_feet": 30, "speed_feet": 30 },
+      { "token_key": "npc-jackal-2", "name": "Jackal Cultist", "role_label": "Cultist", "faction": "enemy", "initiative": 9, "current_hp": 22, "max_hp": 22, "armor_class": 13, "pos_x": 13, "pos_z": 5, "color_hex": "#c94a4a", "movement_feet": 30, "speed_feet": 30 },
+      { "token_key": "npc-jackal-3", "name": "Jackal Cultist", "role_label": "Cultist", "faction": "enemy", "initiative": 7, "current_hp": 22, "max_hp": 22, "armor_class": 13, "pos_x": 13, "pos_z": 3, "color_hex": "#c94a4a", "movement_feet": 30, "speed_feet": 30 }
+    ]
+  },
+  "saved_encounters": [
+    { "encounter_id": "enc-plains-cultists", "name": "Jackal Cultists on the Plains of Red", "payload": { "difficulty": "medium", "scene_key": "sotm-seed-scene-plains-of-red", "enemies": [ { "name": "Jackal Cultist", "count": 3, "cr": "1/2" } ], "notes": "Cultists rise from the red grass. Use wagons as cover." } },
+    { "encounter_id": "enc-vandia-assassins", "name": "Eight Assassins at the Beach", "payload": { "difficulty": "hard", "scene_key": "sotm-seed-scene-vandia-tavern", "enemies": [ { "name": "Riata Assassin", "count": 8, "cr": "2" } ], "notes": "Two assassins carry Riata crest tokens. Two flee at half strength." } },
+    { "encounter_id": "enc-glass-hall-vampire", "name": "Vampire Spawn in the Glass Hall", "payload": { "difficulty": "deadly", "scene_key": "sotm-seed-scene-glass-hall", "enemies": [ { "name": "Vampire Spawn", "count": 2, "cr": "5" } ], "notes": "Spawn attack from the glass walls. Sunlight is not an option indoors." } }
+  ],
+  "scenes": [
+    { "scene_key": "sotm-seed-scene-edhellain-palace", "name": "Edhellain Palace Hall", "region_name": "Edhellain", "biome": "Urban Palace", "weather_preset": "Clear Night", "lighting_profile": "Candlelit Hall", "visibility": "players" },
+    { "scene_key": "sotm-seed-scene-vandia-tavern", "name": "Knot & Knife Beach Road", "region_name": "Vandia", "biome": "Coastal", "weather_preset": "Sea Mist", "lighting_profile": "Torchlit Dynamic", "visibility": "players" },
+    { "scene_key": "sotm-seed-scene-plains-of-red", "name": "Plains of Red", "region_name": "Plains of Red", "biome": "Red Grassland", "weather_preset": "Dusk Mist", "lighting_profile": "Dusk Dynamic", "visibility": "players" },
+    { "scene_key": "sotm-seed-scene-glass-hall", "name": "Halvern's Glass Hall", "region_name": "Cinth", "biome": "Urban Palace", "weather_preset": "Moonlit", "lighting_profile": "Crystal Reflection", "visibility": "gm" },
+    { "scene_key": "sotm-seed-scene-sealhouse", "name": "Sealhouse Underlevel", "region_name": "Cinth", "biome": "Underground", "weather_preset": "Still Air", "lighting_profile": "Torchlit Dynamic", "visibility": "gm" },
+    { "scene_key": "sotm-seed-scene-grand-illusion-grove", "name": "The Sacred Grove", "region_name": "Edhellain Forest", "biome": "Ancient Forest", "weather_preset": "Silver Mist", "lighting_profile": "Moonlit Forest", "visibility": "gm" }
+  ],
+  "locations": [
+    { "location_key": "sotm-seed-loc-edhellain", "composite_key": "900029:Location:sotm-seed-loc-edhellain", "name": "Edhellain", "location_type": "city", "hierarchy_level": "Settlement", "parent_location_key": null, "discovery_status": "visited", "visibility": "players", "description": "The noble city of the Edhellain council, built in pale stone.", "historical_background": "Founded by the Council of Nine after the withdrawal of the gods.", "culture_and_traditions": "Silver cups at every banquet and a strict hierarchy of houses.", "local_myths": "The palace cup is never poisoned, or so the servants say." },
+    { "location_key": "sotm-seed-loc-riata-palace", "composite_key": "900029:Location:sotm-seed-loc-riata-palace", "name": "Riata Palace", "location_type": "building", "hierarchy_level": "Building", "parent_location_key": "sotm-seed-loc-edhellain", "discovery_status": "visited", "visibility": "players", "description": "The Riata family seat, where Dal trained and killed for the council.", "historical_background": "Built by the Riata line during the second council.", "culture_and_traditions": "The High Lord's table is set before every feast.", "local_myths": "A lineage book is said to sleep in the east wing." },
+    { "location_key": "sotm-seed-loc-vandia", "composite_key": "900029:Location:sotm-seed-loc-vandia", "name": "Vandia", "location_type": "city", "hierarchy_level": "Settlement", "parent_location_key": null, "discovery_status": "visited", "visibility": "players", "description": "A harbor town on the coast road south of Edhellain.", "historical_background": "Grew rich on sea trade and smuggling.", "culture_and_traditions": "Fishermen sing when the boats come in.", "local_myths": "Drowned bells ring under the harbor at low tide." },
+    { "location_key": "sotm-seed-loc-knot-knife", "composite_key": "900029:Location:sotm-seed-loc-knot-knife", "name": "Knot & Knife", "location_type": "site", "hierarchy_level": "Building", "parent_location_key": "sotm-seed-loc-vandia", "discovery_status": "visited", "visibility": "players", "description": "A tavern on the harbor where the Priory's seal strips change hands.", "historical_background": "Built from the hull of a wrecked privateer.", "culture_and_traditions": "Dice are thrown for the first round.", "local_myths": "The owner never sleeps in the same room twice." },
+    { "location_key": "sotm-seed-loc-priory-tower", "composite_key": "900029:Location:sotm-seed-loc-priory-tower", "name": "Priory Study Tower", "location_type": "site", "hierarchy_level": "Building", "parent_location_key": "sotm-seed-loc-edhellain", "discovery_status": "known", "visibility": "gm", "description": "The Priors' tower with the Moonlight Room and the Luminary models.", "historical_background": "The Priory records every Riata marriage.", "culture_and_traditions": "Priors speak only in written notes.", "local_myths": "The Luminary models glow when a lie is spoken near them." },
+    { "location_key": "sotm-seed-loc-plains-red", "composite_key": "900029:Location:sotm-seed-loc-plains-red", "name": "Plains of Red", "location_type": "wilderness_area", "hierarchy_level": "WildernessArea", "parent_location_key": null, "discovery_status": "visited", "visibility": "players", "description": "A grassland of red stalks between Edhellain and Cinth.", "historical_background": "An old battlefield. The grass never fully grew back.", "culture_and_traditions": "Caravans travel only in daylight.", "local_myths": "Jackal-headed shadows walk the grass after dusk." },
+    { "location_key": "sotm-seed-loc-cinth", "composite_key": "900029:Location:sotm-seed-loc-cinth", "name": "Cinth", "location_type": "city", "hierarchy_level": "Settlement", "parent_location_key": null, "discovery_status": "known", "visibility": "players", "description": "A river city of guilds and glass halls.", "historical_background": "The Artificers Guild built the city's bridges.", "culture_and_traditions": "Every guild keeps a ledger of its debts.", "local_myths": "Nothing leaves Cinth without a ledger entry." },
+    { "location_key": "sotm-seed-loc-glass-hall", "composite_key": "900029:Location:sotm-seed-loc-glass-hall", "name": "Halvern's Glass Hall", "location_type": "site", "hierarchy_level": "Building", "parent_location_key": "sotm-seed-loc-cinth", "discovery_status": "rumor", "visibility": "gm", "description": "Halvern's reception hall of mirrored glass, where the vampire attack began.", "historical_background": "Halvern bought the hall from a bankrupt glassmaker.", "culture_and_traditions": "Guests are announced by name at the door.", "local_myths": "The walls remember every face that enters." },
+    { "location_key": "sotm-seed-loc-sealhouse", "composite_key": "900029:Location:sotm-seed-loc-sealhouse", "name": "The Sealhouse", "location_type": "site", "hierarchy_level": "Building", "parent_location_key": "sotm-seed-loc-cinth", "discovery_status": "undiscovered", "visibility": "gm", "description": "The Cinth vault that holds sealed packets and the underlevel tunnels.", "historical_background": "Built over an older cistern.", "culture_and_traditions": "Seals are broken only in front of two witnesses.", "local_myths": "Katarina's packet was opened before it arrived." },
+    { "location_key": "sotm-seed-loc-grove", "composite_key": "900029:Location:sotm-seed-loc-grove", "name": "The Sacred Grove", "location_type": "wilderness_area", "hierarchy_level": "WildernessArea", "parent_location_key": null, "discovery_status": "undiscovered", "visibility": "gm", "description": "The Edhellain king's grove, guarded by the party in the Grand Illusion.", "historical_background": "The king's ancestors planted the oaks.", "culture_and_traditions": "No blade is drawn inside the grove.", "local_myths": "The grove is said to hide an airship dock." }
+  ],
+  "history_events": [
+    { "id": "sotm-seed-hist-01", "title": "The Council of Nine", "era_name": "Age of Councils", "world_date_label": "Year 1", "sort_order": 1, "session_number": null, "category": "history", "summary": "The Council of Nine forms after the gods withdraw from Edhellain.", "location_key": "sotm-seed-loc-edhellain", "visibility": "players" },
+    { "id": "sotm-seed-hist-02", "title": "The Riata Genealogy Is Edited", "era_name": "Age of Councils", "world_date_label": "Year 412", "sort_order": 2, "session_number": null, "category": "secret", "summary": "The Priory edits the Riata records in its tower. The change is hidden from the house.", "location_key": "sotm-seed-loc-priory-tower", "visibility": "gm" },
+    { "id": "sotm-seed-hist-03", "title": "Session 2: The Knot & Knife", "era_name": "Present", "world_date_label": "Present", "sort_order": 3, "session_number": 2, "category": "session", "summary": "The party meets Kildrid, Munk, Bastion Cael, and Kycius, and survives the beach ambush.", "location_key": "sotm-seed-loc-knot-knife", "visibility": "players" },
+    { "id": "sotm-seed-hist-04", "title": "Session 3: The Plains of Red", "era_name": "Present", "world_date_label": "Present", "sort_order": 4, "session_number": 3, "category": "session", "summary": "Decland's wagons cross the red grass under cultist attack.", "location_key": "sotm-seed-loc-plains-red", "visibility": "players" }
+  ],
+  "entities": [
+    { "entity_type": "NPC", "entity_key": "thalen", "name": "Thalen", "subtitle": "Trainer in the Riata palace", "summary": "Trains Dal in the palace yards and watches for hesitation.", "visibility": "players", "canon_status": "draft", "route_link": "/npcs/thalen" },
+    { "entity_type": "NPC", "entity_key": "fivi", "name": "Fivi", "subtitle": "Vandia contact", "summary": "Meets Dal on the road to Vandia and guides him to the Knot & Knife.", "visibility": "players", "canon_status": "draft", "route_link": "/npcs/fivi" },
+    { "entity_type": "NPC", "entity_key": "kildrid", "name": "Kildrid", "subtitle": "Tavern negotiator", "summary": "Holds a stone that responds to the Lodestone. Hides his true allegiance.", "visibility": "players", "canon_status": "draft", "route_link": "/npcs/kildrid" },
+    { "entity_type": "NPC", "entity_key": "munk", "name": "Munk", "subtitle": "Dice player", "summary": "A gambler at the Knot & Knife who knows the harbor's tide tables.", "visibility": "players", "canon_status": "draft", "route_link": "/npcs/munk" },
+    { "entity_type": "NPC", "entity_key": "bastion-cael", "name": "Bastion Cael", "subtitle": "Privateer", "summary": "Steals the privateer ship from the hidden cellar.", "visibility": "players", "canon_status": "draft", "route_link": "/npcs/bastion-cael" },
+    { "entity_type": "NPC", "entity_key": "kycius", "name": "Kycius", "subtitle": "Seal runner", "summary": "Carries Priory seal strips between Vandia and Edhellain.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/kycius" },
+    { "entity_type": "NPC", "entity_key": "prior-nymor", "name": "Prior Nymor", "subtitle": "Priory keeper", "summary": "Keeps the altered Riata records and knows the ink was changed.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/prior-nymor" },
+    { "entity_type": "NPC", "entity_key": "lord-decland", "name": "Lord Decland DuCarth", "subtitle": "Cinth patron", "summary": "Sends wagons to Cinth and summons the party from the tower.", "visibility": "players", "canon_status": "draft", "route_link": "/npcs/lord-decland" },
+    { "entity_type": "NPC", "entity_key": "katarina-vey", "name": "Katarina Vey", "subtitle": "Deceased courier", "summary": "Dead before the party arrives. Her opened packet is in the Sealhouse.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/katarina-vey" },
+    { "entity_type": "NPC", "entity_key": "halvern", "name": "Halvern", "subtitle": "Glass Hall host", "summary": "Hosts the reception in the glass hall. Vampires work his door.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/halvern" },
+    { "entity_type": "NPC", "entity_key": "mera-saye", "name": "Mera Saye", "subtitle": "Sealhouse guard", "summary": "Holds the lower gate with her brother Arlen.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/mera-saye" },
+    { "entity_type": "NPC", "entity_key": "arlen-saye", "name": "Arlen Saye", "subtitle": "Sealhouse guard", "summary": "Mera's brother. Knows the service tunnel map.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/arlen-saye" },
+    { "entity_type": "NPC", "entity_key": "laksis", "name": "Laksis", "subtitle": "Grey-cloak agent", "summary": "Leads the grey-cloaked agents hunting the party in Cinth.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/laksis" },
+    { "entity_type": "NPC", "entity_key": "dhreg-riata", "name": "Dhreg Riata", "subtitle": "Riata kinsman", "summary": "Dal's kinsman. Unaware of the book's significance.", "visibility": "players", "canon_status": "draft", "route_link": "/npcs/dhreg-riata" },
+    { "entity_type": "NPC", "entity_key": "emrys", "name": "Emrys", "subtitle": "Ancient figure", "summary": "Present at the Sealhouse. His role in the lineage is still unresolved.", "visibility": "gm", "canon_status": "draft", "route_link": "/npcs/emrys" },
+    { "entity_type": "Monster", "entity_key": "jackal-cultist", "name": "Jackal Cultist", "subtitle": "Plains of Red", "summary": "Jackal-headed cultist. 22 HP, AC 13, bite 1d6+2, spear 1d8+2.", "visibility": "players", "canon_status": "draft", "route_link": "/monsters/jackal-cultist" },
+    { "entity_type": "Monster", "entity_key": "vampire-spawn", "name": "Vampire Spawn", "subtitle": "Glass Hall", "summary": "Pale vampire spawn with claws. 82 HP, AC 15, claws 2d6+3 necrotic.", "visibility": "gm", "canon_status": "draft", "route_link": "/monsters/vampire-spawn" },
+    { "entity_type": "Monster", "entity_key": "riata-assassin", "name": "Riata Assassin", "subtitle": "Beach ambush", "summary": "Hooded killer with poisoned knives. 27 HP, AC 15, shortsword 1d6+4 poison.", "visibility": "players", "canon_status": "draft", "route_link": "/monsters/riata-assassin" },
+    { "entity_type": "Faction", "entity_key": "riata-house", "name": "House Riata", "subtitle": "Royal house", "summary": "The noble house whose lineage the book may prove.", "visibility": "players", "canon_status": "draft", "route_link": "/factions/riata-house" },
+    { "entity_type": "Faction", "entity_key": "priory", "name": "The Priory", "subtitle": "Record keepers", "summary": "Keeps the registers of houses and seals. Some of its records were altered.", "visibility": "players", "canon_status": "draft", "route_link": "/factions/priory" },
+    { "entity_type": "Faction", "entity_key": "cinth-artificers", "name": "Cinth Artificers Guild", "subtitle": "Guild of Cinth", "summary": "Builds Cinth's bridges and moves Chokrah casks along the river.", "visibility": "gm", "canon_status": "draft", "route_link": "/factions/cinth-artificers" },
+    { "entity_type": "Item", "entity_key": "lineage-book", "name": "Lineage Book", "subtitle": "Stolen from the museum", "summary": "A bound book that calls to Dal. It may reveal the Riata royal line.", "visibility": "gm", "canon_status": "draft", "route_link": "/items/lineage-book" },
+    { "entity_type": "Item", "entity_key": "lodestone", "name": "Lodestone", "subtitle": "Priory relic", "summary": "A dark stone that pulls on Kildrid's stone.", "visibility": "gm", "canon_status": "draft", "route_link": "/items/lodestone" },
+    { "entity_type": "Item", "entity_key": "chokrah-casks", "name": "Chokrah Casks", "subtitle": "Cargo", "summary": "Sealed casks of Chokrah moved on the river. Shipments rose from 12 to 30.", "visibility": "gm", "canon_status": "draft", "route_link": "/items/chokrah-casks" }
+  ],
+  "relationships": [
+    { "from": "900029:NPC:thalen", "type": "TRAINS", "to": "900029:NPC:fivi", "visibility": "gm", "label": "Thalen's school is linked to Vandia's smugglers" },
+    { "from": "900029:NPC:kildrid", "type": "REFERENCES", "to": "900029:Item:lodestone", "visibility": "gm", "label": "Kildrid's stone responds to the Lodestone" },
+    { "from": "900029:NPC:prior-nymor", "type": "PLANS", "to": "900029:Faction:priory", "visibility": "gm", "label": "Nymor keeps the altered records" },
+    { "from": "900029:NPC:lord-decland", "type": "USES", "to": "900029:Item:chokrah-casks", "visibility": "gm", "label": "Decland's wagons carry the casks" },
+    { "from": "900029:NPC:halvern", "type": "FEATURES", "to": "900029:Monster:vampire-spawn", "visibility": "gm", "label": "Vampire spawn at Halvern's door" },
+    { "from": "900029:NPC:katarina-vey", "type": "HAS_CLUE", "to": "900029:Lore:katarina-packet", "visibility": "gm", "label": "Her packet names the Cinth buyer" },
+    { "from": "900029:NPC:laksis", "type": "PLANS", "to": "900029:Faction:cinth-artificers", "visibility": "gm", "label": "Laksis reports to the guild" },
+    { "from": "900029:NPC:dhreg-riata", "type": "REFERENCES", "to": "900029:Faction:riata-house", "visibility": "players", "label": "Dhreg is a Riata kinsman" },
+    { "from": "900029:Faction:riata-house", "type": "REVEALS", "to": "900029:Item:lineage-book", "visibility": "gm", "label": "The book may prove the royal line" },
+    { "from": "900029:Faction:priory", "type": "CONTAINS", "to": "900029:Location:sotm-seed-loc-priory-tower", "visibility": "players", "label": "The Priory keeps its records in the tower" },
+    { "from": "900029:Monster:riata-assassin", "type": "REFERENCES", "to": "900029:Faction:riata-house", "visibility": "gm", "label": "Assassins carry Riata crest tokens" },
+    { "from": "900029:NPC:emrys", "type": "PLANS", "to": "900029:Location:sotm-seed-loc-sealhouse", "visibility": "gm", "label": "Emrys is present at the Sealhouse" }
+  ],
+  "claims": [
+    { "id": "sotm-seed-claim-lineage", "composite_key": "900029:Claim:riata-lineage-altered", "title": "The Riata lineage was altered", "statement": "The Priory altered the Riata genealogy records in its tower.", "truth_assessment": "unverified", "gm_canonical_truth": "The Priory altered the records in year 412. The ink under the new ink is the original.", "visibility": "gm", "implicated_entity_key": "900029:Faction:priory" },
+    { "id": "sotm-seed-claim-book", "composite_key": "900029:Claim:book-proves-royal-line", "title": "The lineage book proves the royal line", "statement": "The stolen lineage book may reveal the Riata family as the true royal line.", "truth_assessment": "unverified", "gm_canonical_truth": "The book does prove the royal line. Dhreg does not know.", "visibility": "gm", "implicated_entity_key": "900029:Item:lineage-book" },
+    { "id": "sotm-seed-claim-grove-ambush", "composite_key": "900029:Claim:grove-is-ambush", "title": "The grove assignment is an ambush", "statement": "The king's grove assignment may be an ambush.", "truth_assessment": "unverified", "gm_canonical_truth": "Suspicion only. The king did not plan an ambush. Halvern's guild does.", "visibility": "gm", "implicated_entity_key": "900029:Location:sotm-seed-loc-grove" },
+    { "id": "sotm-seed-claim-casks", "composite_key": "900029:Claim:chokrah-casks-rise", "title": "Chokrah shipments are rising", "statement": "Chokrah shipments rose from 12 to 30 casks.", "truth_assessment": "confirmed", "gm_canonical_truth": "Confirmed in the Cinth ledgers. The Artificers Guild moves the cargo.", "visibility": "gm", "implicated_entity_key": "900029:Faction:cinth-artificers" }
+  ],
+  "lore": [
+    { "composite_key": "900029:Lore:council-of-nine", "title": "The Council of Nine", "subtitle": "Founding history", "category": "History", "excerpt": "After the gods withdrew, nine councillors founded Edhellain.", "content": "The Council of Nine governed Edhellain from its founding. Each councillor held one house seat, and the houses still hold them.", "visibility": "players" },
+    { "composite_key": "900029:Lore:riata-house", "title": "House Riata", "subtitle": "Royal pretenders", "category": "Houses", "excerpt": "A house with a contested claim to the throne.", "content": "House Riata has served the council for generations. Its claim to the royal line is not accepted by all.", "visibility": "players" },
+    { "composite_key": "900029:Lore:chokrah", "title": "Chokrah", "subtitle": "Trade cargo", "category": "Trade", "excerpt": "A cargo of unknown purpose that moves along the river.", "content": "Chokrah is shipped in sealed casks. The Cinth ledgers record the counts but not the contents.", "visibility": "gm" },
+    { "composite_key": "900029:Lore:katarina-packet", "title": "Katarina's Packet", "subtitle": "Sealhouse evidence", "category": "Evidence", "excerpt": "An opened packet that names a buyer in Cinth.", "content": "The packet was opened before it reached the Sealhouse. The buyer's name is written in Priory script.", "visibility": "gm" },
+    { "composite_key": "900029:Lore:grand-illusion", "title": "The Grand Illusion", "subtitle": "Sacred grove", "category": "Places", "excerpt": "The grove is protected by old oaks and a king's word.", "content": "The grove is planted by the first king and guarded by silver mist. Few have seen the airship dock beneath it.", "visibility": "players" }
+  ],
+  "knowledge_grants": [],
+  "scenes_note": "Scene configs are not populated. Maps and battle maps are added manually by the GM.",
+  "tags": {
+    "mock_content": "All PCs, NPC stats, monsters, encounters, and locations beyond the manuscript are invented for testing.",
+    "not_revealed": "Every GM-only secret is visibility gm, audience gm, shareable 0, and has no knowledge grant."
+  }
+}

@@ -1,0 +1,240 @@
+<lw-modal
+  [open]="store.adventureGuideModalOpen()"
+  (openChange)="$event ? null : store.closeAdventureGuideModal()"
+  [title]="isGm() ? 'GM Adventure & Session Guide' : 'Player Adventure & Session Guide'"
+  [subtitle]="
+    activeScope() === 'session'
+      ? 'Filtered to Current Session: ' + (store.activeSession()?.title || 'Active Session')
+      : 'Whole Campaign Adventure Guide · All Sessions & Canon'
+  "
+  size="xl"
+  [draggable]="true">
+  <div class="lw-agm">
+    <div class="lw-agm__toolbar">
+      <div class="lw-agm__scope-toggle" role="group" aria-label="Adventure Guide Scope">
+        <button
+          type="button"
+          class="lw-agm__toggle-btn"
+          [class.lw-agm__toggle-btn--active]="activeScope() === 'session'"
+          (click)="setGuideScope('session')">
+          <lw-icon name="event" [size]="15"></lw-icon>
+          <span>Current Session</span>
+        </button>
+        <button
+          type="button"
+          class="lw-agm__toggle-btn"
+          [class.lw-agm__toggle-btn--active]="activeScope() === 'adventure'"
+          (click)="setGuideScope('adventure')">
+          <lw-icon name="menu_book" [size]="15"></lw-icon>
+          <span>Whole Guide</span>
+        </button>
+      </div>
+
+      <div class="lw-agm__session-picker">
+        <span class="lw-agm__picker-label">CURRENT SESSION:</span>
+        <select
+          class="lw-agm__select"
+          [ngModel]="store.activeSessionId()"
+          (ngModelChange)="onSessionSelectChange($event)"
+          aria-label="Select Current Session">
+          @for (sess of store.sessions(); track sess.sessionId) {
+            <option [value]="sess.sessionId">
+              Session {{ sess.sessionNumber }} · {{ sess.title }} ({{ sess.statusLabel }})
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="lw-agm__role-pill">
+        <lw-badge [tone]="isGm() ? 'gold' : 'emerald'">
+          {{ isGm() ? 'GM Run Guide' : 'Player Chronicle Guide' }}
+        </lw-badge>
+      </div>
+    </div>
+
+    <div class="lw-agm__hero">
+      <div class="lw-agm__hero-copy">
+        <span class="lw-agm__kicker">
+          {{ activeScope() === 'session' ? 'ACTIVE SESSION BRIEFING' : 'COMPLETE CAMPAIGN BRIEFING' }}
+        </span>
+        <h4>{{ guide().headerTitle }}</h4>
+        <p>{{ guide().summary }}</p>
+      </div>
+      <div class="lw-agm__hero-actions">
+        <lw-button variant="primary" size="sm" (pressed)="openBattlemapInArcaneScreen()">
+          Launch Arcane Screen VTT
+        </lw-button>
+        <lw-button variant="secondary" size="sm" (pressed)="openRoute('/sessions')">
+          Open Sessions Planner
+        </lw-button>
+      </div>
+    </div>
+
+    <div class="lw-agm__grid">
+      @if (guide().assignedBattlemap; as bmap) {
+        <section class="lw-agm__card lw-agm__card--map">
+          <header class="lw-agm__card-head">
+            <h5>ASSIGNED SESSION BATTLEMAP</h5>
+            <lw-badge tone="emerald">{{ bmap.sessionTitle }}</lw-badge>
+          </header>
+          <div class="lw-agm__map-row">
+            <img [src]="bmap.artworkUrl" [alt]="bmap.title" class="lw-agm__map-thumb" />
+            <div class="lw-agm__map-info">
+              <strong>{{ bmap.title }}</strong>
+              <span>{{ bmap.locationTitle }} · {{ bmap.sessionTitle }}</span>
+              <div class="lw-agm__map-btns">
+                <lw-button variant="primary" size="sm" (pressed)="openBattlemapInArcaneScreen(bmap.sceneKey)">
+                  Open Map in Arcane Screen
+                </lw-button>
+                @if (isGm()) {
+                  <lw-button variant="ghost" size="sm" (pressed)="openRoute(bmap.routeLink)">
+                    Edit in Map Studio
+                  </lw-button>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="lw-agm__card">
+        <header class="lw-agm__card-head">
+          <h5>{{ activeScope() === 'session' ? 'SESSION BEATS & OBJECTIVES' : 'CAMPAIGN STORY BEATS' }}</h5>
+          <lw-badge tone="gold">{{ guide().beats.length }} Beats</lw-badge>
+        </header>
+        <div class="lw-agm__list">
+          @for (beat of guide().beats; track beat.id) {
+            <div class="lw-agm__item" [class.lw-agm__item--done]="beat.done">
+              @if (isGm()) {
+                <input
+                  type="checkbox"
+                  [checked]="beat.done"
+                  (change)="adventureGuide.toggleBeat(beat.id)"
+                  aria-label="Toggle session beat" />
+              }
+              <div class="lw-agm__item-body">
+                <strong>{{ beat.label }}</strong>
+                <span>{{ beat.outcomeNotes || beat.progressState }}</span>
+              </div>
+              <lw-badge [tone]="beat.done ? 'emerald' : 'neutral'">
+                {{ beat.done ? 'Done' : 'Active' }}
+              </lw-badge>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="lw-agm__card">
+        <header class="lw-agm__card-head">
+          <h5>QUESTS, SIDE QUESTS & CLUES</h5>
+          <lw-badge tone="emerald">
+            {{ filteredQuestsForGuide().guideQuests.length + filteredQuestsForGuide().attachedQuests.length }} Active
+          </lw-badge>
+        </header>
+        <div class="lw-agm__list">
+          @for (q of filteredQuestsForGuide().guideQuests; track q.nodeId) {
+            <div class="lw-agm__item">
+              <div class="lw-agm__item-body">
+                <strong>{{ q.title }}</strong>
+                <span>{{ q.summary }} ({{ q.subtitle }})</span>
+              </div>
+              <lw-badge tone="gold">{{ q.elementKind }}</lw-badge>
+            </div>
+          }
+          @for (aq of filteredQuestsForGuide().attachedQuests; track aq.id) {
+            <div class="lw-agm__item">
+              <div class="lw-agm__item-body">
+                <strong>{{ aq.title }}</strong>
+                <span>{{ aq.subtitle }}</span>
+              </div>
+              <lw-badge [tone]="aq.elementKind === 'SideQuest' ? 'neutral' : 'gold'">
+                {{ aq.elementKind === 'SideQuest' ? 'Side Quest' : 'Main Quest' }}
+              </lw-badge>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="lw-agm__card">
+        <header class="lw-agm__card-head">
+          <h5>WORLD & LORE ({{ activeScope() === 'session' ? 'CURRENT SESSION' : 'ALL CANON' }})</h5>
+          <lw-badge tone="gold">{{ filteredLoreForGuide().length }} Entries</lw-badge>
+        </header>
+        <div class="lw-agm__list">
+          @for (lore of filteredLoreForGuide().slice(0, 6); track lore.id) {
+            <div class="lw-agm__item" (click)="openRoute('/world-lore')" style="cursor: pointer;">
+              <div class="lw-agm__item-body">
+                <strong>{{ lore.title }}</strong>
+                <span>{{ lore.category }}{{ lore.questTitle ? ' · ' + lore.questTitle : '' }} — {{ lore.excerpt }}</span>
+              </div>
+              @if (lore.sessionLabel) {
+                <lw-badge tone="emerald">{{ lore.sessionLabel }}</lw-badge>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="lw-agm__card">
+        <header class="lw-agm__card-head">
+          <h5>KEY NPCS & CHARACTERS</h5>
+          <lw-badge tone="emerald">{{ guide().keyNpcs.length }} Linked</lw-badge>
+        </header>
+        <div class="lw-agm__list">
+          @for (npc of guide().keyNpcs; track npc.nodeId) {
+            <div class="lw-agm__item">
+              <div class="lw-agm__item-body">
+                <strong>{{ npc.name }} · {{ npc.role }}</strong>
+                <span>{{ npc.motive }}</span>
+              </div>
+              <lw-badge [tone]="npc.dispositionTone">{{ npc.dispositionLabel }}</lw-badge>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="lw-agm__card">
+        <header class="lw-agm__card-head">
+          <h5>ATTACHED SESSION ELEMENTS & ENCOUNTERS</h5>
+          <lw-badge tone="gold">{{ filteredAttachments().length + guide().encounters.length }}</lw-badge>
+        </header>
+        <div class="lw-agm__list">
+          @for (enc of guide().encounters; track enc.nodeId) {
+            <div class="lw-agm__item">
+              <div class="lw-agm__item-body">
+                <strong>{{ enc.title }} ({{ enc.difficulty }})</strong>
+                <span>{{ enc.tacticsSummary }} · {{ enc.xpReward }} XP</span>
+              </div>
+              <lw-button variant="ghost" size="sm" (pressed)="openBattlemapInArcaneScreen()">
+                Run VTT
+              </lw-button>
+            </div>
+          }
+          @for (att of filteredAttachments(); track att.id) {
+            <div class="lw-agm__item">
+              <div class="lw-agm__item-body">
+                <strong>{{ att.title }}</strong>
+                <span>{{ att.elementKind }} · {{ att.subtitle }}</span>
+              </div>
+              <lw-button variant="ghost" size="sm" (pressed)="openRoute(att.routeLink)">
+                Open
+              </lw-button>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div lwModalFooter class="lw-agm__footer">
+    <span class="lw-agm__footer-hint">Tip: Drag this guide header anywhere on screen while planning or playing.</span>
+    <div class="lw-agm__footer-btns">
+      <lw-button variant="ghost" size="sm" (pressed)="openRoute('/sessions')">
+        Manage Session Attachments
+      </lw-button>
+      <lw-button variant="primary" size="sm" (pressed)="store.closeAdventureGuideModal()">
+        Done
+      </lw-button>
+    </div>
+  </div>
+</lw-modal>

@@ -5,6 +5,7 @@ import { AuthSessionService } from '../../../frontend/src/app/core/services/auth
 import { LoomWeaverStoreService } from '../../../frontend/src/app/core/services/loomweaver-store.service';
 import { MapsPageComponent } from '../../../frontend/src/app/features/maps/maps.page';
 import { LwAppHeaderBarComponent } from '../../../frontend/src/app/shared/ui/app-header-bar/app-header-bar.component';
+import { LwAdventureGuideModalComponent } from '../../../frontend/src/app/shared/ui/adventure-guide-modal/adventure-guide-modal.component';
 import { LwLoomLauncherComponent } from '../../../frontend/src/app/shared/ui/loom-launcher/loom-launcher.component';
 
 @Component({
@@ -12,6 +13,7 @@ import { LwLoomLauncherComponent } from '../../../frontend/src/app/shared/ui/loo
   standalone: true,
   imports: [
     LwAppHeaderBarComponent,
+    LwAdventureGuideModalComponent,
     LwLoomLauncherComponent,
     MapsPageComponent,
     AtlasPageComponent, NgpButton,

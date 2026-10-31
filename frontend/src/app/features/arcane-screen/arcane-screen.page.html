@@ -13,10 +13,24 @@
       </span>
 
       <div class="top-bar-session-status">
+        <select
+          class="btn-top-action"
+          [ngModel]="store.activeSessionId()"
+          (ngModelChange)="store.setActiveSession($event)"
+          aria-label="Current Active Session"
+          title="Switch Current Session (Loads Assigned Session Battlemap & Guide)"
+          style="max-width: 220px;">
+          @for (sess of store.sessions(); track sess.sessionId) {
+            <option [ngValue]="sess.sessionId">Session {{ sess.sessionNumber }} · {{ sess.title }}</option>
+          }
+        </select>
+
         <span class="session-status-pill live" [title]="'Battle Encounter is LIVE for all players'">
           <span class="live-pulse"></span>
-          <span>{{ vtt.activeLiveEncounter()?.name || 'Battlefield' }} · Rnd {{ vtt.activeRound() }}</span>
+          <span>{{ activeBattlemapTitle() }} · Rnd {{ vtt.activeRound() }}</span>
         </span>
+
+        <button ngpButton type="button" class="btn-top-action" (click)="store.openAdventureGuideModal('session')" title="Open Adventure Guide (Current Session or Whole Guide)"><lw-icon name="book-open" [size]="12" /> <span>Adventure Guide</span></button>
 
         <button ngpButton type="button" class="btn-top-action" (click)="timer.toggle()" [title]="timer.running() ? 'Pause Stopwatch' : 'Resume Stopwatch'"> <lw-icon [name]="timer.running() ? 'pause' : 'play'" [size]="12" /> <span>{{ timer.formatted() }}</span></button>
 
@@ -64,7 +78,7 @@
       <canvas #vttCanvas class="lw-vtt-babylon-canvas" [class.lw-vtt-babylon-canvas--active]="battle.mapMode3D()"></canvas>
 
       <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="battle.mapMode3D()" [style.transform]="'scale(' + (zoomLevel() / 100) + ')'" [style.transformOrigin]="'center center'">
-        <div class="lw-vtt-map-backdrop" [style.backgroundImage]="'url(' + vttDisplay.backdropUrl(vtt.activeLiveEncounter()?.thumbnailUrl) + ')'"></div>
+        <div class="lw-vtt-map-backdrop" [style.backgroundImage]="'url(' + activeBattlemapBackdropUrl() + ')'"></div>
 
         <svg #battleSvg class="lw-vtt-svg" viewBox="0 0 1200 800" preserveAspectRatio="none" (mousemove)="onBattleMapPointerMove($event)" (mouseup)="onBattleMapMouseUp()" (click)="onBattleMapClick($event)">
         @if (gridEnabled()) {
@@ -277,36 +291,19 @@
 
       <!-- Centered Bottom Action Dock -->
       <lw-vtt-action-dock
-        [activeDisplayToken]="dockActiveToken()"
-        [activeInitiativeTokenId]="dockInitiativeTokenId()"
-        [turnActionUsed]="battle.activeObserverToken().actionUsed"
-        [turnBonusActionUsed]="battle.activeObserverToken().bonusUsed"
-        [turnReactionUsed]="battle.activeObserverToken().reactionUsed"
-        [turnMovementRemainingFeet]="battle.remainingMovementFeet()"
-        [turnMovementMaxFeet]="battle.activeObserverToken().movementFeet"
-        [canEndTurn]="isObserverActiveTurn() || store.viewerRole() === 'gm'"
-        [isGm]="store.viewerRole() === 'gm'"
-        [isMeasuring]="battle.measureEnabled()"
-        [pendingAction]="battle.pendingAbility()?.name ?? null"
-        [tokenActions]="dockTokenActions()"
-        [skin]="battle.actionBarSettings().skin"
-        [zoom]="zoomLevel()"
-        [getTokenHp]="dockHp"
-        [getTokenAc]="dockAc"
-        (chooseAction)="selectDockAction($event)"
-        (endTurn)="nextTurn()"
-        (toggleMeasure)="dockToggleMeasure()"
-        (standardAction)="dockStandardAction($event)"
-        (skillCheck)="dockCheck($event.skill.name, $event.token)"
-        (saveCheck)="dockCheck($event.save.name, $event.token)"
-        (abilityCheck)="dockCheck($event.stat, $event.token)"
-        (savingThrow)="dockCheck($event.stat + ' save', $event.token)"
-        (openSheet)="dmToolReadout.set('Opening sheet for ' + $event.name + '.')"
-        (cancelPendingAction)="battle.pendingAbility.set(null)"
-        (endActionTest)="battle.pendingAbility.set(null)"
-        (editToken)="dmToolReadout.set('Editing ' + $event.name + '.')"
-        (changeZoom)="changeZoom($event)"
-        (resetZoom)="resetZoom()"
+        [activeDisplayToken]="dockActiveToken()" [activeInitiativeTokenId]="dockInitiativeTokenId()"
+        [turnActionUsed]="battle.activeObserverToken().actionUsed" [turnBonusActionUsed]="battle.activeObserverToken().bonusUsed"
+        [turnReactionUsed]="battle.activeObserverToken().reactionUsed" [turnMovementRemainingFeet]="battle.remainingMovementFeet()"
+        [turnMovementMaxFeet]="battle.activeObserverToken().movementFeet" [canEndTurn]="isObserverActiveTurn() || store.viewerRole() === 'gm'"
+        [isGm]="store.viewerRole() === 'gm'" [isMeasuring]="battle.measureEnabled()"
+        [pendingAction]="battle.pendingAbility()?.name ?? null" [tokenActions]="dockTokenActions()"
+        [skin]="battle.actionBarSettings().skin" [zoom]="zoomLevel()" [getTokenHp]="dockHp" [getTokenAc]="dockAc"
+        (chooseAction)="selectDockAction($event)" (endTurn)="nextTurn()" (toggleMeasure)="dockToggleMeasure()"
+        (standardAction)="dockStandardAction($event)" (skillCheck)="dockCheck($event.skill.name, $event.token)"
+        (saveCheck)="dockCheck($event.save.name, $event.token)" (abilityCheck)="dockCheck($event.stat, $event.token)"
+        (savingThrow)="dockCheck($event.stat + ' save', $event.token)" (openSheet)="dmToolReadout.set('Opening sheet for ' + $event.name + '.')"
+        (cancelPendingAction)="battle.pendingAbility.set(null)" (endActionTest)="battle.pendingAbility.set(null)"
+        (editToken)="dmToolReadout.set('Editing ' + $event.name + '.')" (changeZoom)="changeZoom($event)" (resetZoom)="resetZoom()"
       />
     </section>
     <!-- RIGHTMOST MENU (Foundry VTT / MythWeaver Style) -->

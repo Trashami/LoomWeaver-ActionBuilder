@@ -119,3 +119,33 @@ export interface NavDestination {
   readonly group: 'Core' | 'Play & Engines' | 'Platform';
   readonly requiresWeave?: boolean;
 }
+
+export interface CampaignSessionVm {
+  readonly sessionId: string;
+  readonly sessionNumber: number;
+  readonly title: string;
+  readonly label: string;
+  readonly locationName: string;
+  readonly locationLabel: string;
+  readonly dateLabel: string;
+  readonly statusLabel: string;
+  readonly xpAwarded: number;
+  readonly summary: string;
+  readonly highlights: readonly string[];
+  readonly status?: 'upcoming' | 'active' | 'completed';
+}
+
+export interface SessionAttachmentVm {
+  readonly id: string;
+  readonly sessionId: string;
+  readonly elementKind: 'Map' | 'Lore' | 'Quest' | 'SideQuest' | 'Encounter' | 'NPC' | 'Character' | 'Monster' | 'Item' | 'Handout';
+  readonly targetKey: string;
+  readonly elementId: string;
+  readonly title: string;
+  readonly subtitle: string;
+  readonly summary: string;
+  readonly routeLink: string;
+  readonly visibility: AudienceVisibility;
+  readonly questKind?: 'main' | 'side' | null;
+  readonly artworkUrl?: string | null;
+}

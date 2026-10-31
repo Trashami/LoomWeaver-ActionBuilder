@@ -213,6 +213,13 @@ export const APP_ROUTES: Routes = [
       import('./features/create/create.page').then((m) => m.CreatePageComponent),
   },
   {
+    path: 'sessions',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/sessions/sessions.page').then((m) => m.SessionsPageComponent),
+  },
+  { path: 'sessions-chronicles', redirectTo: 'sessions', pathMatch: 'full' },
+  {
     path: 'loom',
     canActivate: [authGuard],
     loadComponent: () =>

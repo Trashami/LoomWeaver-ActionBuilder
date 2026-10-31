@@ -1,7 +1,8 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AdventureGuideService } from '../../core/services/adventure-guide.service';
 import { VttReturnRouteService } from '../../core/services/vtt-return-route.service';
 import { NgpButton } from 'ng-primitives/button';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
@@ -49,15 +50,36 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('battleSvg') private battleSvgRef?: ElementRef<SVGSVGElement>;
 
   readonly store = inject(LoomWeaverStoreService); readonly vtt = inject(VttCombatService);
+  readonly adventureGuide = inject(AdventureGuideService); private readonly route = inject(ActivatedRoute);
   readonly battle = inject(VttBattleStateService); readonly fog = inject(VttFogService);
   readonly stage = inject(BabylonEffectStageService); readonly audio = inject(WebAudioAmbienceService);
   readonly fullscreenDice = inject(FullscreenDiceOverlayService); private readonly router = inject(Router);
   readonly serverSync = inject(VttServerSyncService); readonly vttReturn = inject(VttReturnRouteService);
   readonly vttDisplay = inject(VttDisplaySettingsService); readonly timer = inject(VttEncounterTimerService);
   readonly handouts = inject(VttHandoutService); readonly showShortcuts = signal<boolean>(false);
+  private lastLoadedSceneKey = '';
+
+  readonly activeBattlemapBackdropUrl = computed(() => {
+    const bmap = this.adventureGuide.guide().assignedBattlemap;
+    const raw = bmap?.artworkUrl || this.vtt.activeLiveEncounter()?.thumbnailUrl || '/battlemap-showcase.jpg';
+    return this.vttDisplay.backdropUrl(raw);
+  });
+
+  readonly activeBattlemapTitle = computed(
+    () => this.adventureGuide.guide().assignedBattlemap?.title || this.vtt.activeLiveEncounter()?.name || 'Battlefield',
+  );
 
   constructor() {
     effect(() => { this.vtt.tokens(); this.fog.layer(); untracked(() => this.sync3dStage()); });
+    effect(() => {
+      const sceneFromQuery = this.route.snapshot.queryParamMap.get('scene');
+      const assignedScene = this.adventureGuide.guide().assignedBattlemap?.sceneKey;
+      const targetScene = sceneFromQuery || assignedScene || '';
+      if (targetScene && targetScene !== this.lastLoadedSceneKey) {
+        this.lastLoadedSceneKey = targetScene;
+        untracked(() => void this.serverSync.loadScene(targetScene));
+      }
+    });
     this.stage.tokenDropped.pipe(takeUntilDestroyed()).subscribe((p) => {
       this.vtt.applyRemoteTokenMove(p.key, p.x, p.z);
       this.sync3dStage();
@@ -392,63 +414,32 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
     this.dmToolReadout.set('Added NPC to Encounter & Battle Map.');
   }
 
-  rollQuickDcCheck(dc: number, label: string): void {
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const total = d20 + 4;
-    this.fullscreenDice.triggerFullScreenRoll({ label: `DC ${dc} ${label} Check`, actorName: this.vtt.selectedAttacker()?.name ?? "Combatant", expression: '1d20 + 4', diceValues: [d20], modifier: 4, total, outcomeBadge: total >= dc ? 'SUCCESS' : 'FAILURE', isNat20: d20 === 20, isCritFail: d20 === 1 });
-  }
-
+  rollQuickDcCheck(dc: number, label: string): void {
+
+    const d20 = Math.floor(Math.random() * 20) + 1;
+
+    const total = d20 + 4;
+
+    this.fullscreenDice.triggerFullScreenRoll({ label: `DC ${dc} ${label} Check`, actorName: this.vtt.selectedAttacker()?.name ?? "Combatant", expression: '1d20 + 4', diceValues: [d20], modifier: 4, total, outcomeBadge: total >= dc ? 'SUCCESS' : 'FAILURE', isNat20: d20 === 20, isCritFail: d20 === 1 });
+
+  }
+
+
+
   rollSelectedDice(): void {
     const f = this.selectedDiceFormula();
     const [countStr, sidesStr] = f.toLowerCase().split('d');
     const count = Math.max(1, Number(countStr) || 1);
     const sides = Math.max(4, Number(sidesStr) || 20);
-    let sum = 0;
-    const rolls: number[] = [];
-    for (let i = 0; i < count; i++) {
-      const r = Math.floor(Math.random() * sides) + 1;
-      rolls.push(r);
-      sum += r;
-    }
+    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+    const sum = rolls.reduce((a, b) => a + b, 0);
     const actor = this.vtt.selectedAttacker()?.name ?? 'Combatant';
     const isNat20 = sides === 20 && rolls.includes(20);
     const isCritFail = sides === 20 && rolls.includes(1);
-    this.vtt.combatLogs.update((logs) => [
-      {
-        id: `dice-${Date.now()}`,
-        round: this.vtt.activeRound(),
-        attackerName: actor,
-        targetName: 'Battlefield',
-        actionName: `Dice Roll (${f})`,
-        distanceFeet: 0,
-        hit: isNat20 ? true : isCritFail ? false : !rolls.includes(1),
-        isCritical: isNat20,
-        damageDealt: 0,
-        message: `${actor} rolled ${f}: [${rolls.join(', ')}] = ${sum}${isNat20 ? ' (CRITICAL HIT!)' : isCritFail ? ' (CRITICAL FAIL!)' : ''}`,
-      },
-      ...logs,
-    ]);
-    this.battle.chatMessages.update((msgs) => [
-      ...msgs,
-      {
-        id: `dice-chat-${Date.now()}`,
-        senderName: actor,
-        senderRole: 'player',
-        text: `Rolled ${f}: [${rolls.join(', ')}] = ${sum}${isNat20 ? ' (Natural 20!)' : isCritFail ? ' (Natural 1!)' : ''}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        revealedToPlayers: true,
-      },
-    ]);
-    this.fullscreenDice.triggerFullScreenRoll({
-      label: 'Battlefield Roll',
-      actorName: actor,
-      expression: f,
-      diceValues: rolls,
-      modifier: 0,
-      total: sum,
-      isNat20,
-      isCritFail,
-    });
+    const suffix = isNat20 ? ' (CRITICAL HIT!)' : isCritFail ? ' (CRITICAL FAIL!)' : '';
+    this.vtt.combatLogs.update((logs) => [{ id: `dice-${Date.now()}`, round: this.vtt.activeRound(), attackerName: actor, targetName: 'Battlefield', actionName: `Dice Roll (${f})`, distanceFeet: 0, hit: isNat20 ? true : isCritFail ? false : !rolls.includes(1), isCritical: isNat20, damageDealt: 0, message: `${actor} rolled ${f}: [${rolls.join(', ')}] = ${sum}${suffix}` }, ...logs]);
+    this.battle.chatMessages.update((msgs) => [...msgs, { id: `dice-chat-${Date.now()}`, senderName: actor, senderRole: 'player', text: `Rolled ${f}: [${rolls.join(', ')}] = ${sum}${suffix}`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), revealedToPlayers: true }]);
+    this.fullscreenDice.triggerFullScreenRoll({ label: 'Battlefield Roll', actorName: actor, expression: f, diceValues: rolls, modifier: 0, total: sum, isNat20, isCritFail });
   }
 
   submitChat(): void {

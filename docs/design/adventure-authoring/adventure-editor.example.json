@@ -1,0 +1,1704 @@
+{
+  "schemaVersion": "loomweaver.authoring-example/1-proposal",
+  "status": "Illustrative original draft, not a complete balanced published adventure. No purchased adventure text is included.",
+  "moduleDefinition": {
+    "manifest": {
+      "moduleId": "chapel-below-rain",
+      "version": "0.1.0-draft",
+      "title": "The Chapel Below the Rain",
+      "rootRef": {
+        "ref": "module-chapel"
+      },
+      "sessionTemplateRefs": [
+        {
+          "ref": "plan-1"
+        },
+        {
+          "ref": "plan-2"
+        }
+      ],
+      "rights": {
+        "permission": "creatorOwned",
+        "attribution": "Original specification example"
+      }
+    },
+    "nodes": [
+      {
+        "id": "module-chapel",
+        "kind": "adventure",
+        "title": "The Chapel Below the Rain",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "premise": "Recover a missing ledger before rising water reaches a sealed crypt.",
+          "hooks": [
+            "A missing courier carried the ledger."
+          ],
+          "system": {
+            "code": "dnd5e",
+            "version": "campaign-selected-version"
+          },
+          "party": {
+            "minPlayers": 3,
+            "maxPlayers": 5,
+            "levelMin": 3,
+            "levelMax": 4,
+            "notes": "Illustrative balance only."
+          },
+          "format": "weekend",
+          "durationMinutes": 480,
+          "startingLocation": {
+            "ref": "site-chapel"
+          },
+          "startingSituation": "The keeper waits beside a broken bell.",
+          "chapterRefs": [
+            {
+              "ref": "chapter-1"
+            }
+          ],
+          "essentialBeatRefs": [
+            {
+              "ref": "beat-ledger"
+            }
+          ],
+          "endings": [
+            {
+              "id": "ending-recovered",
+              "when": {
+                "op": "manual"
+              },
+              "description": "The ledger survives; the party chooses who receives it.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ],
+          "pacing": {
+            "durationMinutes": 480,
+            "segments": [
+              {
+                "label": "Arrival and upper floor",
+                "minutes": 240
+              },
+              {
+                "label": "Crypt and consequences",
+                "minutes": 240
+              }
+            ],
+            "breakAfterSceneRefs": [
+              "scene-courtyard"
+            ],
+            "optionalCutRefs": [],
+            "shortcuts": [
+              "Keeper can point to the stair."
+            ],
+            "stoppingPoints": [
+              "Before entering the sealed crypt"
+            ]
+          }
+        }
+      },
+      {
+        "id": "chapter-1",
+        "kind": "chapter",
+        "title": "The Ruined Chapel",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "purpose": "Trace the courier to the flooded archive.",
+          "locationRefs": [
+            {
+              "ref": "site-chapel"
+            }
+          ],
+          "essentialSceneRefs": [
+            {
+              "ref": "scene-arrival"
+            },
+            {
+              "ref": "scene-courtyard"
+            },
+            {
+              "ref": "scene-crypt"
+            }
+          ],
+          "exitOutcomes": [
+            {
+              "id": "chapter-exit",
+              "when": {
+                "op": "manual"
+              },
+              "description": "The party leaves with evidence or abandons the archive.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "site-chapel",
+        "kind": "location",
+        "title": "Ruined Chapel",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "locationType": "site",
+          "description": "A roofless chapel above a two-level archive.",
+          "exits": [
+            {
+              "id": "site-exit",
+              "label": "Forest road",
+              "destination": {
+                "ref": "road"
+              },
+              "classification": "players",
+              "oneWay": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "road",
+        "kind": "location",
+        "title": "Forest Road",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "locationType": "wildernessArea",
+          "description": "The road returns to the nearby settlement.",
+          "exits": []
+        }
+      },
+      {
+        "id": "level-upper",
+        "kind": "dungeon_level",
+        "title": "Upper Chapel",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "areaPrefix": "C",
+          "theme": "Broken public worship above a concealed archive.",
+          "generalFeatures": {
+            "light": "Overcast daylight",
+            "sound": "Rain on stone",
+            "smell": "Wet ash",
+            "terrain": "Broken flagstones"
+          },
+          "roomRefs": [
+            {
+              "ref": "room-c1"
+            },
+            {
+              "ref": "room-c2"
+            }
+          ],
+          "connections": [
+            {
+              "id": "down-stair",
+              "label": "Stair to lower archive",
+              "destination": {
+                "ref": "level-lower"
+              },
+              "classification": "gm",
+              "oneWay": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "level-lower",
+        "kind": "dungeon_level",
+        "title": "Lower Archive",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "areaPrefix": "B",
+          "theme": "Water and records behind sealed doors.",
+          "generalFeatures": {
+            "light": "Dark",
+            "sound": "Water behind masonry",
+            "smell": "Damp parchment",
+            "terrain": "Submerged lower steps"
+          },
+          "roomRefs": [
+            {
+              "ref": "room-b1"
+            }
+          ],
+          "connections": [
+            {
+              "id": "up-stair",
+              "label": "Stair to upper chapel",
+              "destination": {
+                "ref": "room-c2"
+              },
+              "classification": "gm",
+              "oneWay": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "room-c1",
+        "kind": "location",
+        "title": "Shattered Nave",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [
+          {
+            "id": "read-nave",
+            "kind": "readAloud",
+            "title": "",
+            "sortOrder": 10,
+            "audience": {
+              "classification": "gm",
+              "sharePolicy": "manual"
+            },
+            "text": "Rain strikes the broken bell. Beneath it, a man has laid three dry pages under a pane of glass.",
+            "data": {},
+            "mentionRefs": [],
+            "sourceRefs": []
+          }
+        ],
+        "details": {
+          "locationType": "room",
+          "parentRef": {
+            "ref": "level-upper"
+          },
+          "areaKey": "C1",
+          "description": "Rain falls through the absent roof.",
+          "occupantRefs": [
+            {
+              "ref": "npc-malric"
+            }
+          ],
+          "exits": [
+            {
+              "id": "east",
+              "label": "East arch",
+              "destination": {
+                "ref": "room-c2"
+              },
+              "classification": "players",
+              "oneWay": false
+            }
+          ],
+          "loreRefs": [
+            {
+              "ref": "lore-archive"
+            }
+          ]
+        }
+      },
+      {
+        "id": "room-c2",
+        "kind": "location",
+        "title": "Courtyard Stair",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "locationType": "room",
+          "parentRef": {
+            "ref": "level-upper"
+          },
+          "areaKey": "C2",
+          "description": "A stone stair descends beside the courtyard wall.",
+          "exits": [
+            {
+              "id": "west",
+              "label": "Nave arch",
+              "destination": {
+                "ref": "room-c1"
+              },
+              "classification": "players",
+              "oneWay": false
+            },
+            {
+              "id": "down",
+              "label": "Sealed lower stair",
+              "destination": {
+                "ref": "room-b1"
+              },
+              "classification": "gm",
+              "oneWay": false
+            }
+          ],
+          "clueRefs": [
+            {
+              "ref": "clue-tracks"
+            }
+          ]
+        }
+      },
+      {
+        "id": "room-b1",
+        "kind": "location",
+        "title": "Sealed Archive",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "locationType": "room",
+          "parentRef": {
+            "ref": "level-lower"
+          },
+          "areaKey": "B1",
+          "description": "Shelves stand above the waterline.",
+          "exits": [
+            {
+              "id": "up",
+              "label": "Upper stair",
+              "destination": {
+                "ref": "room-c2"
+              },
+              "classification": "players",
+              "oneWay": false
+            }
+          ],
+          "clueRefs": [
+            {
+              "ref": "clue-ledger"
+            }
+          ],
+          "hazardRefs": [
+            {
+              "ref": "hazard-water"
+            }
+          ],
+          "treasureRefs": [
+            {
+              "ref": "reward-cache"
+            }
+          ]
+        }
+      },
+      {
+        "id": "npc-malric",
+        "kind": "npc",
+        "title": "Brother Malric",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "role": "Chapel keeper",
+          "motive": "Keep the archive from being destroyed.",
+          "voice": "Practical, cautious; answers a question only after drying his hands.",
+          "homeRef": {
+            "ref": "room-c1"
+          },
+          "knowledgeRefs": [
+            {
+              "ref": "claim-courier"
+            }
+          ],
+          "leverage": "He needs help lowering the water."
+        }
+      },
+      {
+        "id": "lore-archive",
+        "kind": "lore",
+        "title": "The Chapel Archive",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "category": "Local History",
+          "article": {
+            "format": "portableMarkdown",
+            "text": "The archive stored ordinary deliveries alongside ritual accounts."
+          },
+          "subjectRefs": [
+            {
+              "ref": "site-chapel"
+            }
+          ],
+          "claimRefs": [
+            {
+              "ref": "claim-courier"
+            }
+          ],
+          "sourceRefs": [
+            {
+              "ref": "source-gm"
+            }
+          ],
+          "playUses": [
+            {
+              "contextRef": {
+                "ref": "scene-arrival"
+              },
+              "whyRelevant": "Explains why the missing delivery matters.",
+              "clueRefs": [
+                {
+                  "ref": "clue-ledger"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "source-gm",
+        "kind": "source_record",
+        "title": "Author notes: archive",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "origin": "gmStatement",
+          "locator": "Original example authored for this specification",
+          "excerpt": "The lower archive contains a Chokrah delivery manifest.",
+          "rights": {
+            "permission": "creatorOwned",
+            "licenseLabel": "Illustrative original example",
+            "redistributionAllowed": true,
+            "attribution": "Specification example"
+          }
+        }
+      },
+      {
+        "id": "claim-courier",
+        "kind": "claim",
+        "title": "The courier reached the chapel",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "statement": "The missing courier reached the chapel before the rain.",
+          "assessment": "confirmed",
+          "subjectRefs": [
+            {
+              "ref": "site-chapel"
+            }
+          ],
+          "speakerRef": {
+            "ref": "npc-malric"
+          },
+          "sourceRefs": [
+            {
+              "ref": "source-gm"
+            }
+          ]
+        }
+      },
+      {
+        "id": "secret-delivery",
+        "kind": "secret",
+        "title": "The hidden delivery record",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [
+          {
+            "id": "safe-delivery",
+            "kind": "prose",
+            "title": "",
+            "sortOrder": 10,
+            "audience": {
+              "classification": "gm",
+              "sharePolicy": "manual"
+            },
+            "text": "The recovered manifest records a Chokrah delivery to this chapel.",
+            "data": {},
+            "mentionRefs": [],
+            "sourceRefs": []
+          }
+        ],
+        "details": {
+          "canonicalTruth": "A Chokrah delivery was recorded in the lower archive.",
+          "subjectRefs": [
+            {
+              "ref": "site-chapel"
+            }
+          ],
+          "sourceRefs": [
+            {
+              "ref": "source-gm"
+            }
+          ],
+          "discoveryRefs": [
+            {
+              "ref": "clue-ledger"
+            }
+          ],
+          "safeBlockRefs": [
+            "safe-delivery"
+          ]
+        }
+      },
+      {
+        "id": "clue-tracks",
+        "kind": "clue",
+        "title": "Tracks at the stair",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [
+          {
+            "id": "safe-tracks",
+            "kind": "prose",
+            "title": "",
+            "sortOrder": 10,
+            "audience": {
+              "classification": "gm",
+              "sharePolicy": "manual"
+            },
+            "text": "The footprints lead down the stair.",
+            "data": {},
+            "mentionRefs": [],
+            "sourceRefs": []
+          }
+        ],
+        "details": {
+          "observation": "Wet footprints descend beneath the courtyard.",
+          "locationRef": {
+            "ref": "room-c2"
+          },
+          "discovery": {
+            "mode": "automatic",
+            "trigger": "Inspect the stair",
+            "check": null
+          },
+          "leadsToRefs": [
+            {
+              "ref": "room-b1"
+            }
+          ],
+          "safeBlockRef": "safe-tracks"
+        }
+      },
+      {
+        "id": "clue-ledger",
+        "kind": "clue",
+        "title": "Chokrah manifest",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [
+          {
+            "id": "safe-ledger",
+            "kind": "prose",
+            "title": "",
+            "sortOrder": 10,
+            "audience": {
+              "classification": "gm",
+              "sharePolicy": "manual"
+            },
+            "text": "A dated manifest lists Chokrah among the deliveries.",
+            "data": {},
+            "mentionRefs": [],
+            "sourceRefs": []
+          }
+        ],
+        "details": {
+          "observation": "An intact ledger names a Chokrah delivery.",
+          "locationRef": {
+            "ref": "room-b1"
+          },
+          "discovery": {
+            "mode": "automatic",
+            "trigger": "Open the dry ledger case",
+            "check": null
+          },
+          "supportsRefs": [
+            {
+              "ref": "secret-delivery"
+            }
+          ],
+          "sourceRef": {
+            "ref": "source-gm"
+          },
+          "safeBlockRef": "safe-ledger"
+        }
+      },
+      {
+        "id": "hazard-water",
+        "kind": "hazard",
+        "title": "Rising archive water",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "warningSigns": "Water rises against a white tide mark.",
+          "trigger": "The lower sluice remains blocked.",
+          "effect": "Loose pages become waterlogged.",
+          "countermeasures": [
+            {
+              "id": "clear-sluice",
+              "approach": "Clear debris from the sluice",
+              "requirements": null,
+              "check": null,
+              "outcomeRefs": [
+                "water-falls"
+              ]
+            }
+          ],
+          "outcomes": [
+            {
+              "id": "water-falls",
+              "when": {
+                "op": "manual"
+              },
+              "description": "Water recedes; records remain recoverable.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "reward-cache",
+        "kind": "treasure",
+        "title": "Keeper cache",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "contents": [
+            {
+              "kind": "currency",
+              "amount": 25,
+              "unit": "gp",
+              "itemDependencyRef": null,
+              "advancementRuleRef": null
+            }
+          ],
+          "acquisition": "Malric offers it if the ledger is recovered."
+        }
+      },
+      {
+        "id": "enc-guardian",
+        "kind": "encounter",
+        "title": "Guardian at the Stair",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "encounterType": "social",
+          "locationRef": {
+            "ref": "room-c2"
+          },
+          "trigger": "The party approaches the lower door.",
+          "stakes": "Access to the archive.",
+          "objectives": [
+            {
+              "side": "party",
+              "goal": "Pass the stair",
+              "stoppingCondition": "Permission granted"
+            },
+            {
+              "side": "guardian",
+              "goal": "Protect the records",
+              "stoppingCondition": "Party promises to preserve them"
+            }
+          ],
+          "participants": [
+            {
+              "id": "guardian",
+              "templateDependencyRef": null,
+              "npcRef": {
+                "ref": "npc-malric"
+              },
+              "count": 1,
+              "side": "guardian",
+              "objective": "Protect the records",
+              "start": {
+                "zone": "Stair landing"
+              },
+              "hidden": false
+            }
+          ],
+          "checks": [],
+          "resolutions": [
+            {
+              "id": "permission",
+              "when": {
+                "op": "manual"
+              },
+              "description": "A promise to preserve the records wins passage.",
+              "effects": [],
+              "nextRefs": []
+            },
+            {
+              "id": "refusal",
+              "when": {
+                "op": "manual"
+              },
+              "description": "Malric refuses; another approach is needed.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ],
+          "aftermath": [
+            {
+              "id": "trust",
+              "when": {
+                "op": "manual"
+              },
+              "description": "Malric remembers whether the party kept its promise.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "scene-arrival",
+        "kind": "scene",
+        "title": "Arrival at the Chapel",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "locationRef": {
+            "ref": "room-c1"
+          },
+          "situation": "Malric is drying pages beneath the bell.",
+          "purpose": "Establish the missing delivery and the route below.",
+          "npcRefs": [
+            {
+              "ref": "npc-malric"
+            }
+          ],
+          "outcomes": [
+            {
+              "id": "arrival-done",
+              "when": {
+                "op": "manual"
+              },
+              "description": "The party has a lead to the courtyard.",
+              "effects": [],
+              "nextRefs": [
+                {
+                  "ref": "scene-courtyard"
+                }
+              ]
+            }
+          ],
+          "durationMinutes": 30
+        }
+      },
+      {
+        "id": "scene-courtyard",
+        "kind": "scene",
+        "title": "The Courtyard Stair",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "locationRef": {
+            "ref": "room-c2"
+          },
+          "situation": "Malric waits at the lower door.",
+          "purpose": "Decide how to obtain access.",
+          "npcRefs": [
+            {
+              "ref": "npc-malric"
+            }
+          ],
+          "encounterRefs": [
+            {
+              "ref": "enc-guardian"
+            }
+          ],
+          "outcomes": [
+            {
+              "id": "stair-open",
+              "when": {
+                "op": "manual"
+              },
+              "description": "The lower archive becomes accessible.",
+              "effects": [],
+              "nextRefs": [
+                {
+                  "ref": "scene-crypt"
+                }
+              ]
+            }
+          ],
+          "durationMinutes": 45
+        }
+      },
+      {
+        "id": "scene-crypt",
+        "kind": "scene",
+        "title": "Recovering the Manifest",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "locationRef": {
+            "ref": "room-b1"
+          },
+          "situation": "Water threatens the ledger case.",
+          "purpose": "Find evidence and decide how to protect the records.",
+          "outcomes": [
+            {
+              "id": "manifest-found",
+              "when": {
+                "op": "manual"
+              },
+              "description": "The party recovers the manifest.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ],
+          "durationMinutes": 60
+        }
+      },
+      {
+        "id": "beat-ledger",
+        "kind": "story_beat",
+        "title": "Recover evidence before the flood",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "purpose": "The party can learn what was delivered.",
+          "sceneRefs": [
+            {
+              "ref": "scene-crypt"
+            }
+          ],
+          "outcomes": [
+            {
+              "id": "evidence-saved",
+              "when": {
+                "op": "manual"
+              },
+              "description": "The manifest becomes available to examine.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ],
+          "essential": true
+        }
+      },
+      {
+        "id": "arc-records",
+        "kind": "story_arc",
+        "title": "Who Used the Archive?",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "centralQuestion": "Why was Chokrah delivered to an ordinary chapel?",
+          "stakes": "The archive may be destroyed before anyone can examine it.",
+          "backgroundLoreRefs": [
+            {
+              "ref": "lore-archive"
+            }
+          ],
+          "beatRefs": [
+            {
+              "ref": "beat-ledger"
+            }
+          ],
+          "resolutions": [
+            {
+              "id": "arc-open",
+              "when": {
+                "op": "manual"
+              },
+              "description": "Recovered evidence opens a future investigation; this example does not invent its answer.",
+              "effects": [],
+              "nextRefs": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "plan-1",
+        "kind": "session_plan",
+        "title": "Session A: The Upper Chapel",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "opening": "The party arrives in the rain.",
+          "objectives": [
+            "Establish the archive problem",
+            "Find a route below"
+          ],
+          "sceneRefs": [
+            {
+              "ref": "scene-arrival"
+            },
+            {
+              "ref": "scene-courtyard"
+            }
+          ],
+          "startingLocationRef": {
+            "ref": "room-c1"
+          },
+          "pacing": {
+            "durationMinutes": 240,
+            "segments": [
+              {
+                "label": "Arrival",
+                "minutes": 30
+              },
+              {
+                "label": "Explore upper chapel",
+                "minutes": 105
+              },
+              {
+                "label": "Break",
+                "minutes": 15
+              },
+              {
+                "label": "Courtyard and access",
+                "minutes": 90
+              }
+            ],
+            "breakAfterSceneRefs": [
+              "scene-arrival"
+            ],
+            "optionalCutRefs": [],
+            "shortcuts": [],
+            "stoppingPoints": [
+              "The lower door opens"
+            ]
+          }
+        }
+      },
+      {
+        "id": "plan-2",
+        "kind": "session_plan",
+        "title": "Session B: The Lower Archive",
+        "summary": "",
+        "authoringState": "draft",
+        "canonAssessment": "unassessed",
+        "revision": 1,
+        "audience": {
+          "classification": "gm",
+          "sharePolicy": "manual"
+        },
+        "tags": [],
+        "sourceRefs": [],
+        "blocks": [],
+        "details": {
+          "opening": "The lower stair is accessible.",
+          "objectives": [
+            "Recover the manifest",
+            "Resolve the archive threat"
+          ],
+          "sceneRefs": [
+            {
+              "ref": "scene-crypt"
+            }
+          ],
+          "startingLocationRef": {
+            "ref": "room-b1"
+          },
+          "rewardRefs": [
+            {
+              "ref": "reward-cache"
+            }
+          ],
+          "pacing": {
+            "durationMinutes": 240,
+            "segments": [
+              {
+                "label": "Archive exploration and resolution",
+                "minutes": 180
+              },
+              {
+                "label": "Break",
+                "minutes": 15
+              },
+              {
+                "label": "Return and decisions",
+                "minutes": 45
+              }
+            ],
+            "breakAfterSceneRefs": [],
+            "optionalCutRefs": [],
+            "shortcuts": [],
+            "stoppingPoints": [
+              "Return to the keeper"
+            ]
+          }
+        }
+      }
+    ],
+    "links": [
+      {
+        "id": "link-001",
+        "from": {
+          "ref": "module-chapel"
+        },
+        "type": "CONTAINS",
+        "to": {
+          "ref": "chapter-1"
+        },
+        "classification": "gm",
+        "whyIncluded": "Structural navigation",
+        "condition": null
+      },
+      {
+        "id": "link-002",
+        "from": {
+          "ref": "chapter-1"
+        },
+        "type": "CONTAINS",
+        "to": {
+          "ref": "site-chapel"
+        },
+        "classification": "gm",
+        "whyIncluded": "Structural navigation",
+        "condition": null
+      },
+      {
+        "id": "link-003",
+        "from": {
+          "ref": "site-chapel"
+        },
+        "type": "CONTAINS",
+        "to": {
+          "ref": "level-upper"
+        },
+        "classification": "gm",
+        "whyIncluded": "Structural navigation",
+        "condition": null
+      },
+      {
+        "id": "link-004",
+        "from": {
+          "ref": "site-chapel"
+        },
+        "type": "CONTAINS",
+        "to": {
+          "ref": "level-lower"
+        },
+        "classification": "gm",
+        "whyIncluded": "Structural navigation",
+        "condition": null
+      },
+      {
+        "id": "link-005",
+        "from": {
+          "ref": "level-upper"
+        },
+        "type": "CONTAINS",
+        "to": {
+          "ref": "room-c1"
+        },
+        "classification": "gm",
+        "whyIncluded": "Structural navigation",
+        "condition": null
+      },
+      {
+        "id": "link-006",
+        "from": {
+          "ref": "level-upper"
+        },
+        "type": "CONTAINS",
+        "to": {
+          "ref": "room-c2"
+        },
+        "classification": "gm",
+        "whyIncluded": "Structural navigation",
+        "condition": null
+      },
+      {
+        "id": "link-007",
+        "from": {
+          "ref": "level-lower"
+        },
+        "type": "CONTAINS",
+        "to": {
+          "ref": "room-b1"
+        },
+        "classification": "gm",
+        "whyIncluded": "Structural navigation",
+        "condition": null
+      },
+      {
+        "id": "link-008",
+        "from": {
+          "ref": "scene-arrival"
+        },
+        "type": "OCCURS_AT",
+        "to": {
+          "ref": "room-c1"
+        },
+        "classification": "gm",
+        "whyIncluded": "Scene takes place here",
+        "condition": null
+      },
+      {
+        "id": "link-009",
+        "from": {
+          "ref": "scene-courtyard"
+        },
+        "type": "OCCURS_AT",
+        "to": {
+          "ref": "room-c2"
+        },
+        "classification": "gm",
+        "whyIncluded": "Scene takes place here",
+        "condition": null
+      },
+      {
+        "id": "link-010",
+        "from": {
+          "ref": "scene-crypt"
+        },
+        "type": "OCCURS_AT",
+        "to": {
+          "ref": "room-b1"
+        },
+        "classification": "gm",
+        "whyIncluded": "Scene takes place here",
+        "condition": null
+      },
+      {
+        "id": "link-011",
+        "from": {
+          "ref": "plan-1"
+        },
+        "type": "PLANS",
+        "to": {
+          "ref": "scene-arrival"
+        },
+        "classification": "gm",
+        "whyIncluded": "Planned for this session",
+        "condition": null
+      },
+      {
+        "id": "link-012",
+        "from": {
+          "ref": "plan-1"
+        },
+        "type": "PLANS",
+        "to": {
+          "ref": "scene-courtyard"
+        },
+        "classification": "gm",
+        "whyIncluded": "Planned for this session",
+        "condition": null
+      },
+      {
+        "id": "link-013",
+        "from": {
+          "ref": "plan-2"
+        },
+        "type": "PLANS",
+        "to": {
+          "ref": "scene-crypt"
+        },
+        "classification": "gm",
+        "whyIncluded": "Planned for this session",
+        "condition": null
+      },
+      {
+        "id": "link-014",
+        "from": {
+          "ref": "scene-arrival"
+        },
+        "type": "FEATURES",
+        "to": {
+          "ref": "npc-malric"
+        },
+        "classification": "gm",
+        "whyIncluded": "Present in this authored scene",
+        "condition": null
+      },
+      {
+        "id": "link-015",
+        "from": {
+          "ref": "scene-courtyard"
+        },
+        "type": "FEATURES",
+        "to": {
+          "ref": "npc-malric"
+        },
+        "classification": "gm",
+        "whyIncluded": "Present in this authored scene",
+        "condition": null
+      },
+      {
+        "id": "link-016",
+        "from": {
+          "ref": "scene-arrival"
+        },
+        "type": "LEADS_TO",
+        "to": {
+          "ref": "scene-courtyard"
+        },
+        "classification": "gm",
+        "whyIncluded": "Possible next scene",
+        "condition": null
+      },
+      {
+        "id": "link-017",
+        "from": {
+          "ref": "scene-courtyard"
+        },
+        "type": "LEADS_TO",
+        "to": {
+          "ref": "scene-crypt"
+        },
+        "classification": "gm",
+        "whyIncluded": "Possible next scene",
+        "condition": null
+      },
+      {
+        "id": "link-018",
+        "from": {
+          "ref": "scene-courtyard"
+        },
+        "type": "USES",
+        "to": {
+          "ref": "enc-guardian"
+        },
+        "classification": "gm",
+        "whyIncluded": "Encounter at the stair",
+        "condition": null
+      },
+      {
+        "id": "link-019",
+        "from": {
+          "ref": "enc-guardian"
+        },
+        "type": "OCCURS_AT",
+        "to": {
+          "ref": "room-c2"
+        },
+        "classification": "gm",
+        "whyIncluded": "Guardian at the stair",
+        "condition": null
+      },
+      {
+        "id": "link-020",
+        "from": {
+          "ref": "room-c2"
+        },
+        "type": "HAS_CLUE",
+        "to": {
+          "ref": "clue-tracks"
+        },
+        "classification": "gm",
+        "whyIncluded": "Observable at the stair",
+        "condition": null
+      },
+      {
+        "id": "link-021",
+        "from": {
+          "ref": "room-b1"
+        },
+        "type": "HAS_CLUE",
+        "to": {
+          "ref": "clue-ledger"
+        },
+        "classification": "gm",
+        "whyIncluded": "Inside the ledger case",
+        "condition": null
+      },
+      {
+        "id": "link-022",
+        "from": {
+          "ref": "room-b1"
+        },
+        "type": "HAS_HAZARD",
+        "to": {
+          "ref": "hazard-water"
+        },
+        "classification": "gm",
+        "whyIncluded": "Threatens the archive",
+        "condition": null
+      },
+      {
+        "id": "link-023",
+        "from": {
+          "ref": "room-b1"
+        },
+        "type": "HAS_TREASURE",
+        "to": {
+          "ref": "reward-cache"
+        },
+        "classification": "gm",
+        "whyIncluded": "Potential reward for preserving records",
+        "condition": null
+      },
+      {
+        "id": "link-024",
+        "from": {
+          "ref": "clue-ledger"
+        },
+        "type": "SUPPORTS",
+        "to": {
+          "ref": "secret-delivery"
+        },
+        "classification": "gm",
+        "whyIncluded": "Manifest provides evidence",
+        "condition": null
+      },
+      {
+        "id": "link-025",
+        "from": {
+          "ref": "clue-ledger"
+        },
+        "type": "REVEALS",
+        "to": {
+          "ref": "secret-delivery"
+        },
+        "classification": "gm",
+        "whyIncluded": "Potential discovery; no grant is implied",
+        "condition": null
+      },
+      {
+        "id": "link-026",
+        "from": {
+          "ref": "lore-archive"
+        },
+        "type": "ABOUT",
+        "to": {
+          "ref": "site-chapel"
+        },
+        "classification": "gm",
+        "whyIncluded": "Historical context for this place",
+        "condition": null
+      },
+      {
+        "id": "link-027",
+        "from": {
+          "ref": "lore-archive"
+        },
+        "type": "REFERENCES",
+        "to": {
+          "ref": "claim-courier"
+        },
+        "classification": "gm",
+        "whyIncluded": "Connected statement",
+        "condition": null
+      },
+      {
+        "id": "link-028",
+        "from": {
+          "ref": "secret-delivery"
+        },
+        "type": "DOCUMENTED_IN",
+        "to": {
+          "ref": "source-gm"
+        },
+        "classification": "gm",
+        "whyIncluded": "Author-established fact",
+        "condition": null
+      },
+      {
+        "id": "link-029",
+        "from": {
+          "ref": "lore-archive"
+        },
+        "type": "DOCUMENTED_IN",
+        "to": {
+          "ref": "source-gm"
+        },
+        "classification": "gm",
+        "whyIncluded": "Article provenance",
+        "condition": null
+      },
+      {
+        "id": "link-030",
+        "from": {
+          "ref": "beat-ledger"
+        },
+        "type": "PART_OF_STORY",
+        "to": {
+          "ref": "arc-records"
+        },
+        "classification": "gm",
+        "whyIncluded": "Central investigation beat",
+        "condition": null
+      }
+    ],
+    "dependencies": [],
+    "assets": []
+  },
+  "campaignRuntimeExample": {
+    "exportPolicy": "Excluded from moduleDefinition; illustrative campaign-bound values, not transferable account identifiers.",
+    "campaignId": "illustrative-campaign",
+    "installationId": "illustrative-installation",
+    "session": {
+      "id": "runtime-session-15",
+      "planRef": {
+        "ref": "plan-2"
+      },
+      "number": 15,
+      "state": "inProgress"
+    },
+    "events": [
+      {
+        "id": "event-ledger",
+        "kind": "clueDiscovered",
+        "sessionId": "runtime-session-15",
+        "contentRef": {
+          "ref": "clue-ledger"
+        },
+        "actorCharacterIds": [
+          "character-a"
+        ],
+        "summary": "Character A opened the ledger case."
+      }
+    ],
+    "grants": [
+      {
+        "id": "grant-ledger",
+        "targetRef": {
+          "ref": "clue-ledger"
+        },
+        "safeBlockRef": "safe-ledger",
+        "audience": {
+          "kind": "character",
+          "id": "character-a"
+        },
+        "sourceEventId": "event-ledger",
+        "policyRevision": 1
+      }
+    ],
+    "rewardAwards": [],
+    "note": "Finding the clue grants only its prepared observation here. Revealing the secret requires its own safe representation and authorized revelation."
+  },
+  "guidePreviewExpectations": [
+    {
+      "scopeRef": "plan-1",
+      "expectedRefs": [
+        "scene-arrival",
+        "scene-courtyard",
+        "room-c1",
+        "room-c2",
+        "npc-malric",
+        "enc-guardian",
+        "clue-tracks",
+        "lore-archive"
+      ],
+      "why": "Bounded context expansion; secret delivery remains inaccessible to players."
+    },
+    {
+      "scopeRef": "room-b1",
+      "expectedRefs": [
+        "scene-crypt",
+        "clue-ledger",
+        "hazard-water",
+        "reward-cache"
+      ],
+      "why": "Room view works independently of selected session."
+    },
+    {
+      "viewer": "character-a",
+      "afterEvent": "event-ledger",
+      "visibleBlockIds": [
+        "safe-ledger"
+      ],
+      "mustExcludeBlockIds": [
+        "safe-delivery"
+      ],
+      "why": "Observation is not automatic knowledge of all connected truths."
+    }
+  ]
+}

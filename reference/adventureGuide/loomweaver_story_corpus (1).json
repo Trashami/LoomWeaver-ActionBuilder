@@ -1,0 +1,514 @@
+{
+  "manifest": {
+    "schema_version": "loomweaver-story-corpus/1.0",
+    "seed_version": "story-context-2026-10-30-v1",
+    "format": "narrative_story_source_not_sql_rows",
+    "safe_to_import_directly": false,
+    "source": "User-provided campaign seed brief v3 and prior user-reported story/session details in this conversation; manuscript not supplied.",
+    "database_read_performed": false,
+    "warning": "This file contains semantic story records, not validated lw_* rows. VS Code agent must inspect actual DDL, deduplicate existing production records and map through import logic. Do NOT reset production or invent missing details.",
+    "ownership": {
+      "known_user_ids": [
+        1,
+        2,
+        3
+      ],
+      "shadow_campaign_id": 1,
+      "grand_illusion_campaign_id": null
+    },
+    "provenance_values": [
+      "established_production",
+      "established_user_report",
+      "established_production_membership_plus_user_report",
+      "established_user_report_suspicion",
+      "generated_draft",
+      "unknown"
+    ],
+    "required_agent_checks": [
+      "Obtain nine manuscript chapters before claiming complete campaign coverage",
+      "Read exact DDL and inspect existing production records read-only",
+      "Do not put Grand Illusion material into campaign 1 without explicit campaign mapping",
+      "Resolve live session 15 versus reported Shadow campaign conclusion before marking final session completed",
+      "Do not create party knowledge grants based solely on GM-only information",
+      "Validate scene config against Angular frontend type",
+      "Create normalized IDs and DB rows only after FK/enum/type validation",
+      "Dry-run then obtain explicit approval before production writes",
+      "No deletion of unrelated campaigns, adventures or users",
+      "Neo4j sync via existing service only after MySQL commit"
+    ]
+  },
+  "shadow_of_the_mountain": {
+    "campaign": {
+      "campaign_id": 1,
+      "slug": "shadow-of-the-mountain",
+      "name": "The Shadow of the Mountain",
+      "system_code": "dnd5e",
+      "world_name": "Icrandor",
+      "gm_user_id": 1,
+      "weave_enabled": true,
+      "current_act": "Act II: The Road to Cinth",
+      "current_session_number": 14,
+      "current_location_name": "Cinth — Artificers Quarter",
+      "provenance": "established_production"
+    },
+    "adventure": {
+      "id": "adv-shadow-mountain",
+      "version_id": "adv-ver-sotm-1-0",
+      "adventure_format": "full-campaign",
+      "expected_duration_minutes": 1440,
+      "recommended_level_range": "5–9",
+      "author_user_id": 1,
+      "provenance": "established_production"
+    },
+    "members": [
+      {
+        "user_id": 1,
+        "member_role": "gm",
+        "assigned_character_key": null
+      },
+      {
+        "user_id": 2,
+        "member_role": "player",
+        "assigned_character_key": "pc-dal"
+      }
+    ],
+    "sessions": [
+      {
+        "session_id": "session-14",
+        "session_number": 14,
+        "session_state": "completed",
+        "primary_location_node_id": "node-loc-cinth-gala",
+        "assigned_scene_key": "scene-cinth-gala",
+        "story_events": [],
+        "provenance": "established_production",
+        "note": "Do not infer completed episode specifics from status."
+      },
+      {
+        "session_id": "session-15",
+        "session_number": 15,
+        "session_state": "live",
+        "primary_location_node_id": "node-loc-ruined-chapel",
+        "assigned_scene_key": "scene-plains-red",
+        "content_links_count_verified": 16,
+        "optional_node_reference": "npc-emrys",
+        "story_events": [],
+        "provenance": "established_production"
+      }
+    ],
+    "adventure_nodes": [
+      {
+        "id": "node-chap-whispering",
+        "node_kind": "chapter",
+        "visibility": "players",
+        "provenance": "established_production",
+        "content": "Not supplied"
+      },
+      {
+        "id": "node-loc-ruined-chapel",
+        "node_kind": "location",
+        "provenance": "established_production",
+        "content": "Not supplied"
+      },
+      {
+        "id": "node-room-c1-nave",
+        "node_kind": "room",
+        "parent_node_id": "node-loc-ruined-chapel",
+        "area_key": "C1",
+        "visibility": "players",
+        "default_state": "completed",
+        "linked_scene_key": "scene-plains-red",
+        "provenance": "established_production"
+      },
+      {
+        "id": "node-clue-chokrah-seal",
+        "node_kind": "clue",
+        "visibility": "gm",
+        "default_state": "unresolved",
+        "provenance": "established_production"
+      }
+    ],
+    "scenes": [
+      {
+        "scene_key": "scene-cinth-gala",
+        "provenance": "established_production",
+        "scene_config_json": null
+      },
+      {
+        "scene_key": "scene-plains-red",
+        "provenance": "established_production",
+        "scene_config_json": null
+      }
+    ],
+    "locations": [
+      {
+        "key": "loc-icrandor",
+        "title": "Icrandor",
+        "description": "World name of the established campaign.",
+        "provenance": "established_production",
+        "visibility": "players",
+        "hierarchy": "world"
+      },
+      {
+        "key": "loc-cinth",
+        "title": "Cinth",
+        "description": "Known settlement referenced by the adventure progress and session 14.",
+        "provenance": "established_production",
+        "visibility": "players",
+        "hierarchy": "settlement"
+      },
+      {
+        "key": "loc-cinth-artificers-quarter",
+        "title": "Cinth — Artificers Quarter",
+        "description": "Recorded campaign current location.",
+        "provenance": "established_production",
+        "visibility": "players",
+        "parent": "loc-cinth",
+        "hierarchy": "district"
+      },
+      {
+        "key": "loc-cinth-gala",
+        "title": "Cinth Gala",
+        "description": "Existing session 14 location node; setting specifics not supplied.",
+        "provenance": "established_production",
+        "visibility": "players",
+        "hierarchy": "site"
+      },
+      {
+        "key": "loc-ruined-chapel",
+        "title": "Ruined Chapel",
+        "description": "Existing session 15 location; its room C1 is the nave.",
+        "provenance": "established_production",
+        "visibility": "players",
+        "hierarchy": "site"
+      },
+      {
+        "key": "loc-ruined-chapel-c1",
+        "title": "Nave (C1)",
+        "description": "Room C1; current database marks it completed.",
+        "provenance": "established_production",
+        "visibility": "players",
+        "parent": "loc-ruined-chapel",
+        "hierarchy": "room"
+      }
+    ],
+    "player_characters": [
+      {
+        "character_key": "pc-dal",
+        "name": "Dal Riata",
+        "user_id": 2,
+        "identity_status": "name drawn from later-story conversation; reconcile character name in Shadow campaign",
+        "class": null,
+        "level": null,
+        "ancestry": null,
+        "stats": null,
+        "provenance": "established_production_membership_plus_user_report"
+      }
+    ],
+    "npcs": [
+      {
+        "key": "npc-emrys",
+        "title": "Emrys",
+        "description": "Optional NPC reference in session 15. Identity, role, allegiance, and behavior not supplied.",
+        "provenance": "established_production",
+        "visibility": "gm"
+      }
+    ],
+    "encounters": [
+      {
+        "key": "enc-ruined-chapel-unknown",
+        "title": "Ruined Chapel: Encounter Slot",
+        "description": "Session 15 references encounter content, but creature list, stats, and outcome are not supplied.",
+        "provenance": "unknown",
+        "visibility": "gm",
+        "status": "unverified_slot"
+      }
+    ],
+    "lore": [
+      {
+        "key": "lore-shadow-dragon-conclusion",
+        "title": "Defeat of the Dragon",
+        "description": "The Shadow of the Mountain concluded with a dragon being killed. The dragon’s identity, place, and participants are not verified here.",
+        "provenance": "established_user_report",
+        "visibility": "gm"
+      }
+    ],
+    "secrets": {
+      "revealed": [],
+      "unrevealed": [
+        {
+          "key": "secret-chokrah-seal",
+          "title": "Chokrah Seal",
+          "description": "Unresolved GM-only clue exists in the adventure; its significance is unknown.",
+          "provenance": "established_production",
+          "visibility": "gm",
+          "status": "unresolved"
+        }
+      ]
+    },
+    "play_events_unassigned": [
+      {
+        "key": "shadow-dragon-defeat",
+        "title": "Dragon Defeated",
+        "description": "The campaign concluded with a dragon defeated. Exact session number, chronology relative to recorded live session 15, and combat details require reconciliation.",
+        "provenance": "established_user_report",
+        "visibility": "gm",
+        "session_id": null,
+        "write_to_lw_play_events": false
+      }
+    ],
+    "known_missing": [
+      "Chapter manuscript text for all nine chapters",
+      "Exact player character roster and statistics",
+      "Actual NPC identities and motivations",
+      "Encounters and enemy statistics",
+      "Session narratives and dates",
+      "Canon secrets and historical reveals",
+      "Map graphics and renderer configurations",
+      "Clarification of how the reported campaign ending relates to production session 15 live"
+    ]
+  },
+  "the_grand_illusion_separate": {
+    "campaign": {
+      "campaign_id": null,
+      "slug": "the-grand-illusion",
+      "name": "The Grand Illusion",
+      "status": "separate later adventure, NOT approved for insertion under campaign_id 1",
+      "provenance": "established_user_report"
+    },
+    "session_episodes": [
+      {
+        "episode_key": "gi-grove-commission",
+        "title": "The Sacred Grove Commission",
+        "session_id": null,
+        "sequence": 1,
+        "events": [
+          "Edhellain king tasked the party with protecting a sacred grove."
+        ],
+        "provenance": "established_user_report",
+        "note": "Sequence among broad episodes only; no actual session number."
+      },
+      {
+        "episode_key": "gi-museum",
+        "title": "The Museum and the Lineage Book",
+        "session_id": null,
+        "sequence": 2,
+        "events": [
+          "Dal Riata took a lineage book that called to him.",
+          "The party was seen at the museum.",
+          "The party fought non-elven opponents and escaped."
+        ],
+        "provenance": "established_user_report"
+      },
+      {
+        "episode_key": "gi-forest",
+        "title": "An Airship in the Forest",
+        "session_id": null,
+        "sequence": 3,
+        "events": [
+          "An airship awaits the party in the forest."
+        ],
+        "provenance": "established_user_report",
+        "note": "Waiting airship is established; boarding and departure are not."
+      }
+    ],
+    "player_characters": [
+      {
+        "key": "pc-dal-riata",
+        "title": "Dal Riata",
+        "description": "Party character who stole the lineage book. Mechanics and statistics not supplied.",
+        "provenance": "established_user_report",
+        "visibility": "players",
+        "owner_user_id": null
+      }
+    ],
+    "npcs": [
+      {
+        "key": "npc-edhellain-king",
+        "title": "Edhellain King",
+        "description": "Monarch who assigned the sacred grove mission. Name and motives beyond reported actions are unknown.",
+        "provenance": "established_user_report",
+        "visibility": "players"
+      },
+      {
+        "key": "npc-dhreg-riata",
+        "title": "Dhreg Riata",
+        "description": "Reported as unaware of the book’s significance. Exact role and knowledge boundaries require review.",
+        "provenance": "established_user_report",
+        "visibility": "gm"
+      }
+    ],
+    "factions": [
+      {
+        "key": "faction-riata",
+        "title": "Riata Family",
+        "description": "Family whose potential royal lineage is tied to the stolen book.",
+        "provenance": "established_user_report",
+        "visibility": "gm"
+      },
+      {
+        "key": "faction-edhellain-crown",
+        "title": "Edhellain Crown",
+        "description": "Royal authority associated with the king who assigned the party to the sacred grove.",
+        "provenance": "established_user_report",
+        "visibility": "players"
+      }
+    ],
+    "locations": [
+      {
+        "key": "gi-sacred-grove",
+        "title": "Sacred Grove",
+        "description": "Location the party was ordered to protect; no map or exact coordinates supplied.",
+        "provenance": "established_user_report",
+        "visibility": "players"
+      },
+      {
+        "key": "gi-museum",
+        "title": "Museum",
+        "description": "Location where Dal took the lineage book and the party was discovered.",
+        "provenance": "established_user_report",
+        "visibility": "players"
+      },
+      {
+        "key": "gi-forest-airship",
+        "title": "Forest Airship Site",
+        "description": "Forest where an airship awaits the party; precise location unknown.",
+        "provenance": "established_user_report",
+        "visibility": "players"
+      }
+    ],
+    "items": [
+      {
+        "key": "item-riata-lineage-book",
+        "title": "Riata Lineage Book",
+        "description": "Book taken by Dal at the museum; reportedly called to him and may expose the family’s royal ancestry.",
+        "provenance": "established_user_report",
+        "visibility": "gm"
+      }
+    ],
+    "encounters": [
+      {
+        "key": "enc-museum-opponents",
+        "title": "Museum Escape Combat",
+        "description": "Party fought opponents described as non-elves and escaped; numbers, types, rolls and casualties are unknown.",
+        "provenance": "established_user_report",
+        "visibility": "players",
+        "outcome": "party_escaped",
+        "creatures": null
+      }
+    ],
+    "world_lore": [
+      {
+        "key": "lore-riata-royal-claim",
+        "title": "The Riata Lineage",
+        "description": "The book is believed capable of revealing the Riata family as the true royal line; this is not independently confirmed as canonical truth.",
+        "provenance": "established_user_report",
+        "visibility": "gm"
+      }
+    ],
+    "claims": [
+      {
+        "id": "claim-riata-royal-line",
+        "statement": "The Riata family are the true royal line.",
+        "truth_assessment": "unverified",
+        "gm_canonical_truth": null,
+        "visibility": "gm",
+        "provenance": "established_user_report_suspicion"
+      },
+      {
+        "id": "claim-grove-ambush",
+        "statement": "The king assigned the grove mission to ambush and kill the party.",
+        "truth_assessment": "unverified",
+        "gm_canonical_truth": null,
+        "visibility": "gm",
+        "provenance": "established_user_report_suspicion"
+      }
+    ],
+    "secrets": {
+      "revealed": [
+        {
+          "key": "reveal-book-in-dals-possession",
+          "title": "Dal Took the Book",
+          "description": "The party witnessed or was involved in the museum incident, but exactly which characters know of the book and its history is not confirmed.",
+          "provenance": "established_user_report",
+          "visibility": "gm",
+          "grant_party_knowledge": false
+        }
+      ],
+      "unrevealed": [
+        {
+          "key": "secret-riata-crown",
+          "title": "True Royal Lineage",
+          "description": "Potential revelation from the book. Not confirmed as truth or player discovery.",
+          "provenance": "established_user_report_suspicion",
+          "visibility": "gm"
+        },
+        {
+          "key": "secret-grove-ambush",
+          "title": "Possible Grove Ambush",
+          "description": "Suspicion that the grove mission is a trap. No confirmation.",
+          "provenance": "established_user_report_suspicion",
+          "visibility": "gm"
+        },
+        {
+          "key": "secret-dhreg-unaware",
+          "title": "Dhreg’s Lack of Awareness",
+          "description": "Dhreg does not know the book’s significance; whether any player knows this is unverified.",
+          "provenance": "established_user_report",
+          "visibility": "gm"
+        }
+      ]
+    },
+    "knowledge_grants": [],
+    "relationships": [
+      {
+        "from": "pc-dal-riata",
+        "type": "USES",
+        "to": "item-riata-lineage-book",
+        "context": "Dal took possession; projected type USES is model-compatible but may not capture ownership precisely.",
+        "provenance": "established_user_report"
+      },
+      {
+        "from": "item-riata-lineage-book",
+        "type": "REFERENCES",
+        "to": "faction-riata",
+        "provenance": "established_user_report"
+      },
+      {
+        "from": "npc-edhellain-king",
+        "type": "REFERENCES",
+        "to": "gi-sacred-grove",
+        "context": "King assigned mission to protect grove; REFERENC﻿ES is approximate.",
+        "provenance": "established_user_report"
+      },
+      {
+        "from": "enc-museum-opponents",
+        "type": "OCCURS_AT",
+        "to": "gi-museum",
+        "provenance": "established_user_report"
+      }
+    ],
+    "missing": [
+      "Actual campaign ID, session IDs and node IDs",
+      "Confirmed sequence relative to specific real sessions",
+      "GM canonical answer for lineage and grove theory",
+      "Party roster, stats, spell lists and inventories",
+      "Who knows each secret",
+      "Specific museum opponents and rules-complete encounter data",
+      "Airship name, crew, combat map and whether party boarded"
+    ]
+  },
+  "cross_adventure_continuity": [
+    {
+      "event": "Dragon defeated",
+      "adventure": "The Shadow of the Mountain",
+      "order": 1,
+      "source": "user report"
+    },
+    {
+      "event": "Grand Illusion begins",
+      "adventure": "The Grand Illusion",
+      "order": 2,
+      "source": "user report"
+    }
+  ]
+}

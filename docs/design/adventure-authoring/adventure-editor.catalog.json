@@ -1,0 +1,2917 @@
+{
+  "contractVersion": "loomweaver.authoring-catalog/1-proposal",
+  "status": "proposed; not an implemented endpoint contract or formal JSON Schema",
+  "createdOn": "2026-10-30",
+  "purpose": "Configure one progressive authoring editor and validate structured drafts.",
+  "editor": {
+    "selector": "lw-content-editor",
+    "hosts": [
+      "page",
+      "modal"
+    ],
+    "inputs": [
+      "context",
+      "profile",
+      "value",
+      "referenceOptions"
+    ],
+    "outputs": [
+      "draftChanged",
+      "saveRequested",
+      "previewRequested",
+      "approvalRequested"
+    ],
+    "layout": [
+      "Identity and scope",
+      "Main writing surface",
+      "Context-specific structured sections",
+      "Connections and evidence",
+      "Sharing and sources",
+      "Validation and guide preview"
+    ],
+    "modes": [
+      "write",
+      "structured",
+      "guidePreview",
+      "json"
+    ],
+    "insertionMenu": [
+      "prose",
+      "readAloud",
+      "gmNote",
+      "check",
+      "choice",
+      "table",
+      "image",
+      "reference",
+      "tactics",
+      "reward",
+      "condition"
+    ],
+    "saveDraftMinimum": [
+      "title",
+      "kind"
+    ],
+    "defaults": {
+      "authoringState": "draft",
+      "audience": "gm",
+      "automaticPlayerPublication": false
+    },
+    "autoSave": "Save drafts with optimistic revision and visible save state; preserve undo/recovery.",
+    "accessibility": [
+      "Keyboard block movement",
+      "Semantic headings",
+      "Focus return",
+      "Field errors linked to labels",
+      "Mobile full-screen modal",
+      "Plain-text fallback"
+    ],
+    "typeChange": "Preview incompatible fields; preserve original data until explicitly migrated; never silently discard."
+  },
+  "recordEnvelope": {
+    "id": "stable-public-content-id",
+    "kind": "profile kind",
+    "title": "User title",
+    "summary": "Short GM-facing abstract",
+    "authoringState": "draft|ready|approved|archived",
+    "canonAssessment": "unassessed|established|disputed",
+    "revision": 1,
+    "audience": {
+      "classification": "gm",
+      "sharePolicy": "manual"
+    },
+    "tags": [],
+    "sourceRefs": [],
+    "blocks": [],
+    "details": {}
+  },
+  "blockEnvelope": {
+    "id": "stable-block-id",
+    "kind": "prose|readAloud|gmNote|check|choice|table|image|reference|tactics|reward|condition",
+    "title": "Optional heading",
+    "sortOrder": 10,
+    "audience": {
+      "classification": "gm",
+      "sharePolicy": "manual"
+    },
+    "text": "Exact author prose",
+    "data": {},
+    "mentionRefs": [],
+    "sourceRefs": []
+  },
+  "referenceRules": {
+    "contentRef": "Use {ref: id}; target must be present or explicitly declared as an external content dependency.",
+    "blockRef": "Use a stable block ID; validate that its parent record is accessible.",
+    "runtimeRef": "Resolved in the campaign only; excluded from reusable module definitions.",
+    "dependencyRef": "References an entry in package.dependencies; resolve version/entitlement on import.",
+    "assetRef": "References package.assets; never arbitrary local paths or privileged URLs.",
+    "mention": "Mentions may suggest ABOUT/REFERENCES. Semantic facts, grants and outcomes require explicit review."
+  },
+  "types": {
+    "ref": {
+      "ref": "stable-content-id"
+    },
+    "richText": {
+      "format": "portableMarkdown",
+      "text": "Author text with optional [[stable-id|display name]] links; no executable HTML."
+    },
+    "rulesetRef": {
+      "code": "dnd5e",
+      "version": "campaign-selected-version"
+    },
+    "partyGuidance": {
+      "minPlayers": 3,
+      "maxPlayers": 5,
+      "levelMin": 3,
+      "levelMax": 5,
+      "notes": "Adapt to installed ruleset."
+    },
+    "conditionTree": {
+      "op": "all",
+      "items": [
+        {
+          "op": "flagEquals",
+          "key": "gate-open",
+          "value": true
+        }
+      ]
+    },
+    "outcome": {
+      "id": "outcome-id",
+      "when": {
+        "op": "manual"
+      },
+      "description": "Possible consequence",
+      "effects": [
+        {
+          "operation": "proposeFlag",
+          "key": "gate-open",
+          "value": true
+        }
+      ],
+      "nextRefs": []
+    },
+    "choice": {
+      "id": "choice-id",
+      "approach": "Negotiate",
+      "requirements": null,
+      "check": null,
+      "outcomeRefs": [
+        "outcome-id"
+      ]
+    },
+    "check": {
+      "id": "check-id",
+      "trigger": "Inspect the seal",
+      "ruleset": "campaign-ruleset",
+      "abilityOrSkill": "Perception",
+      "target": 13,
+      "success": "Notice the wire",
+      "failure": "No new information",
+      "retryPolicy": "New approach required",
+      "outcomeRefs": []
+    },
+    "exit": {
+      "id": "exit-id",
+      "label": "North stair",
+      "destination": {
+        "ref": "room-id"
+      },
+      "direction": "north",
+      "travelMinutes": 2,
+      "barrier": "Locked iron gate",
+      "condition": null,
+      "classification": "gm",
+      "safeLabel": "Iron gate",
+      "oneWay": false
+    },
+    "environment": {
+      "light": "dim",
+      "sound": "Water dripping",
+      "smell": "Wet iron",
+      "terrain": "Slippery steps",
+      "dimensions": {
+        "width": 30,
+        "length": 40,
+        "height": 15,
+        "unit": "ft"
+      },
+      "overrides": []
+    },
+    "mapAnchor": {
+      "assetRef": "map-id",
+      "regionId": "C3",
+      "coordinateSpace": "imagePixels",
+      "sourceWidth": 2000,
+      "sourceHeight": 1400,
+      "polygon": [
+        [
+          10,
+          10
+        ],
+        [
+          90,
+          10
+        ],
+        [
+          90,
+          80
+        ],
+        [
+          10,
+          80
+        ]
+      ]
+    },
+    "participant": {
+      "id": "participant-slot",
+      "templateDependencyRef": "creature-template",
+      "npcRef": null,
+      "count": 2,
+      "side": "guardians",
+      "objective": "Protect gate",
+      "start": {
+        "zone": "North stair"
+      },
+      "hidden": false
+    },
+    "position": {
+      "participantId": "participant-slot",
+      "zone": "North stair",
+      "distanceFromEntrance": 20,
+      "unit": "ft"
+    },
+    "sideObjective": {
+      "side": "guardians",
+      "goal": "Prevent access",
+      "stoppingCondition": "Seal restored"
+    },
+    "tacticalPhase": {
+      "id": "phase-1",
+      "trigger": "Encounter begins",
+      "behavior": "Block the stair",
+      "adaptation": "Retreat when seal breaks"
+    },
+    "reinforcement": {
+      "trigger": {
+        "op": "manual"
+      },
+      "participantIds": [
+        "participant-slot"
+      ],
+      "arrivalZone": "North stair"
+    },
+    "scalingOption": {
+      "label": "Small party",
+      "adjustments": [
+        "Remove one guardian"
+      ],
+      "rulesetValidationRequired": true
+    },
+    "pacingPlan": {
+      "durationMinutes": 240,
+      "segments": [
+        {
+          "label": "Opening",
+          "minutes": 20
+        }
+      ],
+      "breakAfterSceneRefs": [],
+      "optionalCutRefs": [],
+      "shortcuts": [],
+      "stoppingPoints": [
+        "Before the lower stair"
+      ]
+    },
+    "worldTime": {
+      "calendarRef": null,
+      "era": "Before the Flood",
+      "label": "Year 800",
+      "sortOrdinal": 800,
+      "precision": "year"
+    },
+    "playUse": {
+      "contextRef": {
+        "ref": "scene-id"
+      },
+      "whyRelevant": "Explains the sealed stair",
+      "clueRefs": []
+    },
+    "sceneOverrides": {
+      "occupants": [],
+      "environment": {},
+      "damageDescription": "",
+      "validWhen": null
+    },
+    "clock": {
+      "id": "clock-id",
+      "label": "Flood rises",
+      "segments": 4,
+      "advanceWhen": "After a noisy encounter",
+      "completionOutcomeRef": "flooded"
+    },
+    "characterHook": {
+      "roleOrBackground": "Scholar",
+      "prompt": "Identify the older inscription",
+      "characterRef": null
+    },
+    "service": {
+      "label": "Healer",
+      "providerRef": null,
+      "availability": "Daytime",
+      "terms": "Donation"
+    },
+    "scheduleEntry": {
+      "when": "At dusk",
+      "locationRef": {
+        "ref": "room-id"
+      },
+      "activity": "Checks the seals"
+    },
+    "questObjective": {
+      "id": "objective-1",
+      "description": "Find the manifest",
+      "locationRef": null,
+      "prerequisites": null,
+      "completionRule": "GM confirms evidence recovered"
+    },
+    "discoveryRule": {
+      "mode": "automatic",
+      "trigger": "Read the ledger",
+      "check": null
+    },
+    "rewardComponent": {
+      "kind": "currency",
+      "amount": 25,
+      "unit": "gp",
+      "itemDependencyRef": null,
+      "advancementRuleRef": null
+    },
+    "rollTableRow": {
+      "min": 1,
+      "max": 3,
+      "text": "Patrol passes",
+      "resultRef": null
+    },
+    "conditionalText": {
+      "when": {
+        "op": "flagEquals",
+        "key": "flooded",
+        "value": true
+      },
+      "text": "Water covers the lower stair."
+    },
+    "checklistItem": {
+      "id": "prep-map",
+      "label": "Prepare player-safe map",
+      "resourceRef": null
+    },
+    "credit": {
+      "name": "Creator name",
+      "role": "Author"
+    },
+    "licenseDeclaration": {
+      "permission": "creatorOwned",
+      "licenseLabel": "Creator-provided terms",
+      "redistributionAllowed": true,
+      "attribution": "Creator name"
+    },
+    "playEvent": {
+      "id": "event-id",
+      "kind": "clueDiscovered",
+      "summary": "Manifest recovered",
+      "occurredAt": "2026-10-30T19:00:00-07:00",
+      "worldTime": null,
+      "participantRefs": [],
+      "contentRefs": [],
+      "sourceRefs": []
+    },
+    "decision": {
+      "id": "decision-id",
+      "eventId": "event-id",
+      "actorRefs": [],
+      "choice": "Spare the guardian",
+      "consequence": "Guardian offers a route"
+    },
+    "revelation": {
+      "id": "revelation-id",
+      "target": {
+        "ref": "secret-id"
+      },
+      "safeBlockRef": "safe-block-id",
+      "audience": {
+        "kind": "party",
+        "runtimeId": "party-id"
+      },
+      "sourceEventId": "event-id"
+    }
+  },
+  "profiles": [
+    {
+      "kind": "adventure",
+      "label": "Adventure / module",
+      "sections": [
+        "Overview",
+        "Structure",
+        "Running it",
+        "Publication"
+      ],
+      "fields": [
+        {
+          "path": "details.premise",
+          "label": "What is this adventure about?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.hooks",
+          "label": "Why will the party engage?",
+          "type": "text[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.system",
+          "label": "Ruleset and version",
+          "type": "rulesetRef",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.party",
+          "label": "Party and level guidance",
+          "type": "partyGuidance",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.format",
+          "label": "Format",
+          "type": "enum:oneShot|weekend|campaignAct|campaign",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.durationMinutes",
+          "label": "Expected play time",
+          "type": "integer",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.startingLocation",
+          "label": "Where does play begin?",
+          "type": "ref",
+          "requiredAt": "ready",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.startingSituation",
+          "label": "Opening situation",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.chapterRefs",
+          "label": "Chapters",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "chapter"
+          ]
+        },
+        {
+          "path": "details.factionRefs",
+          "label": "Major factions",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "faction"
+          ]
+        },
+        {
+          "path": "details.essentialBeatRefs",
+          "label": "Essential beats",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "story_beat"
+          ]
+        },
+        {
+          "path": "details.optionalSceneRefs",
+          "label": "Optional scenes",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "scene"
+          ]
+        },
+        {
+          "path": "details.endings",
+          "label": "Endings and consequences",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.pacing",
+          "label": "Timing, shortcuts, breakpoints",
+          "type": "pacingPlan",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.contentAdvisories",
+          "label": "Table content guidance",
+          "type": "text[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.adaptationNotes",
+          "label": "How to fit another campaign",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.credits",
+          "label": "Authorship and credits",
+          "type": "credit[]",
+          "requiredAt": "package",
+          "prompt": ""
+        },
+        {
+          "path": "details.distribution",
+          "label": "Distribution permissions",
+          "type": "licenseDeclaration",
+          "requiredAt": "package",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Adventure overview, hooks, readiness, pacing, chapter navigation and endings.",
+      "authoringNotes": "A complete module references existing content; it does not duplicate every linked record.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "chapter",
+      "label": "Chapter / act",
+      "sections": [
+        "Overview",
+        "Structure",
+        "Progression"
+      ],
+      "fields": [
+        {
+          "path": "details.purpose",
+          "label": "Purpose in the adventure",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.entryConditions",
+          "label": "How this chapter starts",
+          "type": "conditionTree",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.locationRefs",
+          "label": "Places",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.beatRefs",
+          "label": "Story beats",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "story_beat"
+          ]
+        },
+        {
+          "path": "details.essentialSceneRefs",
+          "label": "Required scenes",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "scene"
+          ]
+        },
+        {
+          "path": "details.optionalSceneRefs",
+          "label": "Optional scenes",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "scene"
+          ]
+        },
+        {
+          "path": "details.exitOutcomes",
+          "label": "Ways to leave or finish",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.levelGuidance",
+          "label": "Level/scaling guidance",
+          "type": "partyGuidance",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.pacing",
+          "label": "Pacing",
+          "type": "pacingPlan",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Chapter overview, current objectives, branches and location index.",
+      "authoringNotes": "Chapter order is presentation order; it must not force a linear play history.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "dungeon_level",
+      "label": "Dungeon level / floor",
+      "sections": [
+        "Overview",
+        "Map and areas",
+        "Life on this level",
+        "Connections"
+      ],
+      "fields": [
+        {
+          "path": "details.areaPrefix",
+          "label": "Area numbering prefix",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.mapRef",
+          "label": "Map",
+          "type": "assetRef",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.theme",
+          "label": "Theme and purpose",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.generalFeatures",
+          "label": "Light, sound, materials, scale",
+          "type": "environment",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.recommendedParty",
+          "label": "Party guidance",
+          "type": "partyGuidance",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.roomRefs",
+          "label": "Keyed areas",
+          "type": "ref[]",
+          "requiredAt": "ready",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location"
+          ]
+        },
+        {
+          "path": "details.factionRefs",
+          "label": "Factions and territories",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "faction"
+          ]
+        },
+        {
+          "path": "details.connections",
+          "label": "Stairs, gates and portals",
+          "type": "exit[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.wanderingTableRef",
+          "label": "Wandering encounter table",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "roll_table"
+          ]
+        },
+        {
+          "path": "details.restRules",
+          "label": "Resting and safe areas",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.clocks",
+          "label": "Patrols and escalating threats",
+          "type": "clock[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.revisitChanges",
+          "label": "What changes after a visit?",
+          "type": "outcome[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Floor map, keyed area index, general features, factions, travel and revisit changes.",
+      "authoringNotes": "General features apply to rooms unless a room explicitly overrides them; room secrets never inherit a public audience.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "location",
+      "label": "Place / city / site / room",
+      "sections": [
+        "Overview",
+        "Physical space",
+        "People and activity",
+        "Discoveries",
+        "Connections"
+      ],
+      "fields": [
+        {
+          "path": "details.locationType",
+          "label": "Place type",
+          "type": "enum:world|continent|region|city|district|site|floor|room|wildernessArea",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.parentRef",
+          "label": "Containing place or level",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.areaKey",
+          "label": "Room/area key",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.description",
+          "label": "What is physically here?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.environment",
+          "label": "Light, sound, smell, terrain",
+          "type": "environment",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.exits",
+          "label": "Exits, routes and barriers",
+          "type": "exit[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.mapAnchor",
+          "label": "Map position or polygon",
+          "type": "mapAnchor",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.occupantRefs",
+          "label": "Usual occupants",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "npc",
+            "faction"
+          ]
+        },
+        {
+          "path": "details.activity",
+          "label": "What happens here normally?",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.services",
+          "label": "City services and shops",
+          "type": "service[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.districtRefs",
+          "label": "Districts and sites",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location"
+          ]
+        },
+        {
+          "path": "details.factionRefs",
+          "label": "Local factions",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "faction"
+          ]
+        },
+        {
+          "path": "details.rumorRefs",
+          "label": "Local rumors",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "claim"
+          ]
+        },
+        {
+          "path": "details.loreRefs",
+          "label": "Relevant history",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "lore"
+          ]
+        },
+        {
+          "path": "details.clueRefs",
+          "label": "Discoverable clues",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "clue"
+          ]
+        },
+        {
+          "path": "details.hazardRefs",
+          "label": "Hazards",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "hazard"
+          ]
+        },
+        {
+          "path": "details.treasureRefs",
+          "label": "Treasure",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "treasure"
+          ]
+        },
+        {
+          "path": "details.revisitChanges",
+          "label": "How can this place change?",
+          "type": "outcome[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Places tab, room description, exits, map, occupants, local lore and discoveries.",
+      "authoringNotes": "Subtype controls visible fields: cities show districts/services; rooms show area key, exits and map anchor. A session uses a scene linked to this place, not a copied place.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "scene",
+      "label": "Scene / place in a session",
+      "sections": [
+        "Situation",
+        "At the table",
+        "Choices",
+        "Consequences"
+      ],
+      "fields": [
+        {
+          "path": "details.locationRef",
+          "label": "Where does this happen?",
+          "type": "ref",
+          "requiredAt": "ready",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.situation",
+          "label": "What is happening now?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.purpose",
+          "label": "Why does this scene matter?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.entryConditions",
+          "label": "When is this scene relevant?",
+          "type": "conditionTree",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.npcRefs",
+          "label": "Present NPCs",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "npc"
+          ]
+        },
+        {
+          "path": "details.encounterRefs",
+          "label": "Encounters",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "encounter"
+          ]
+        },
+        {
+          "path": "details.choices",
+          "label": "Likely approaches and consequences",
+          "type": "choice[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.outcomes",
+          "label": "Possible outcomes",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.durationMinutes",
+          "label": "Expected minutes",
+          "type": "integer",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.overrides",
+          "label": "Scene-specific occupants, light, damage",
+          "type": "sceneOverrides",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.isOptional",
+          "label": "Optional scene",
+          "type": "boolean",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Session beats, immediate situation, present cast, read-aloud, encounters and next steps.",
+      "authoringNotes": "Outcomes are authored possibilities. Playing the scene records an actual event separately.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "story_arc",
+      "label": "Story / plot thread",
+      "sections": [
+        "Premise",
+        "People and stakes",
+        "Branches",
+        "Resolution"
+      ],
+      "fields": [
+        {
+          "path": "details.centralQuestion",
+          "label": "Central question",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.stakes",
+          "label": "What can be lost?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.backgroundLoreRefs",
+          "label": "Established background",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "lore"
+          ]
+        },
+        {
+          "path": "details.npcRefs",
+          "label": "Actors and motives",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "npc",
+            "faction"
+          ]
+        },
+        {
+          "path": "details.beatRefs",
+          "label": "Story beats",
+          "type": "ref[]",
+          "requiredAt": "ready",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "story_beat"
+          ]
+        },
+        {
+          "path": "details.clocks",
+          "label": "Pressure over time",
+          "type": "clock[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.resolutions",
+          "label": "Possible resolutions",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.playerConnections",
+          "label": "Character hooks",
+          "type": "characterHook[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Story overview, unresolved threads, stakes and consequences.",
+      "authoringNotes": "Write flexible pressures and opportunities; never assert future player choices as events.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "story_beat",
+      "label": "Story beat",
+      "sections": [
+        "Purpose",
+        "Trigger",
+        "Options",
+        "Follow-through"
+      ],
+      "fields": [
+        {
+          "path": "details.purpose",
+          "label": "What changes or becomes possible?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.trigger",
+          "label": "When can this occur?",
+          "type": "conditionTree",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.sceneRefs",
+          "label": "Where can it happen?",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "scene"
+          ]
+        },
+        {
+          "path": "details.prerequisiteRefs",
+          "label": "Prerequisite beats or facts",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "story_beat",
+            "claim",
+            "secret"
+          ]
+        },
+        {
+          "path": "details.choices",
+          "label": "Player options",
+          "type": "choice[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.outcomes",
+          "label": "Consequences",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.essential",
+          "label": "Essential to this module?",
+          "type": "boolean",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Preparation checklist and branching story progression.",
+      "authoringNotes": "Essential means required for this authored scenario to resolve, not a compulsory player decision.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "lore",
+      "label": "World lore / encyclopedia",
+      "sections": [
+        "Article",
+        "Truth and sources",
+        "Connections",
+        "Use in play"
+      ],
+      "fields": [
+        {
+          "path": "details.category",
+          "label": "Category",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.article",
+          "label": "Lore article",
+          "type": "richText",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.worldTime",
+          "label": "Historical date or era",
+          "type": "worldTime",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.subjectRefs",
+          "label": "People, places and things discussed",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.claimRefs",
+          "label": "Specific factual or disputed claims",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "claim",
+            "secret"
+          ]
+        },
+        {
+          "path": "details.sourceRefs",
+          "label": "Evidence and sources",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "source_record"
+          ]
+        },
+        {
+          "path": "details.relatedLoreRefs",
+          "label": "Related articles",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "lore"
+          ]
+        },
+        {
+          "path": "details.playUses",
+          "label": "How can this matter at the table?",
+          "type": "playUse[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.playerSafeBlockRefs",
+          "label": "Prepared player-safe excerpts",
+          "type": "blockRef[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Lore tab, location history, linked references and authorized Loom citations.",
+      "authoringNotes": "An article can exist without a session or adventure. Link a clue/scene to it to make it actionable. Mentioning an entity creates ABOUT only, never a factual relationship.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "session_plan",
+      "label": "Session plan / reusable session template",
+      "sections": [
+        "Opening",
+        "Plan",
+        "Resources",
+        "Pacing"
+      ],
+      "fields": [
+        {
+          "path": "details.opening",
+          "label": "Opening situation",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.recapBlockRef",
+          "label": "Prepared recap",
+          "type": "blockRef",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.objectives",
+          "label": "GM preparation objectives",
+          "type": "text[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.sceneRefs",
+          "label": "Ordered planned scenes",
+          "type": "ref[]",
+          "requiredAt": "ready",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "scene"
+          ]
+        },
+        {
+          "path": "details.startingLocationRef",
+          "label": "Starting location",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.unresolvedRefs",
+          "label": "Carry-forward threads",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.preparation",
+          "label": "Preparation checklist",
+          "type": "checklistItem[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.pacing",
+          "label": "Time budget, optional cuts, breaks",
+          "type": "pacingPlan",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.rewardRefs",
+          "label": "Potential rewards",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "treasure"
+          ]
+        },
+        {
+          "path": "details.fallbacks",
+          "label": "If the party goes elsewhere",
+          "type": "text[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Session guide, beats, relevant cast, places, lore and resources.",
+      "authoringNotes": "No real player IDs, completion flags or actual XP awards in a reusable session template.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "session_record",
+      "label": "Played session / recap",
+      "sections": [
+        "What happened",
+        "Decisions",
+        "Discoveries",
+        "Carry-forward"
+      ],
+      "fields": [
+        {
+          "path": "details.sessionNumber",
+          "label": "Campaign session number",
+          "type": "integer",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.playedAt",
+          "label": "Actual real-world timestamp",
+          "type": "dateTime",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.planRef",
+          "label": "Plan used",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "session_plan"
+          ]
+        },
+        {
+          "path": "details.participantRefs",
+          "label": "Actual participants",
+          "type": "runtimeRef[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.events",
+          "label": "Observed events",
+          "type": "playEvent[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.decisions",
+          "label": "Player decisions",
+          "type": "decision[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.revelations",
+          "label": "Who learned what?",
+          "type": "revelation[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.rewardEventRefs",
+          "label": "Award ledger entries",
+          "type": "runtimeRef[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.unresolvedRefs",
+          "label": "Carry-forward threads",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.recap",
+          "label": "Approved recap",
+          "type": "richText",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Session history and authorized Loom evidence; runtime-only.",
+      "authoringNotes": "Draft recaps can be edited. Approved history is corrected through audited revisions; events and awards are not silently rewritten.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "encounter",
+      "label": "Encounter: combat / social / exploration",
+      "sections": [
+        "Setup",
+        "Participants",
+        "Terrain",
+        "Running it",
+        "Resolution"
+      ],
+      "fields": [
+        {
+          "path": "details.encounterType",
+          "label": "Encounter type",
+          "type": "enum:combat|social|exploration|mixed",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.locationRef",
+          "label": "Encounter location",
+          "type": "ref",
+          "requiredAt": "ready",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.trigger",
+          "label": "How does it begin?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.stakes",
+          "label": "What is at risk?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.objectives",
+          "label": "Goals for each side",
+          "type": "sideObjective[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.participants",
+          "label": "Templates, counts, sides and positions",
+          "type": "participant[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.mapRef",
+          "label": "Battle scene or map",
+          "type": "assetRef",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.terrain",
+          "label": "Terrain and environmental effects",
+          "type": "environment",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.startingPositions",
+          "label": "Positions if no battle map",
+          "type": "position[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.tactics",
+          "label": "Tactics and adaptation",
+          "type": "tacticalPhase[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.reinforcements",
+          "label": "Reinforcement triggers",
+          "type": "reinforcement[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.checks",
+          "label": "Social/exploration checks",
+          "type": "check[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.resolutions",
+          "label": "Victory, negotiation, retreat, failure",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.scaling",
+          "label": "Scaling by party strength",
+          "type": "scalingOption[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.rewardRefs",
+          "label": "Potential rewards",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "treasure"
+          ]
+        },
+        {
+          "path": "details.aftermath",
+          "label": "Persistent effects",
+          "type": "outcome[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Encounter card, launch setup, tactical notes, alternatives, rewards and aftermath.",
+      "authoringNotes": "Combat requires combatant templates and positions; social requires agendas and leverage; exploration requires an obstacle and consequences. Live HP/initiative/resources belong to encounter instances.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "npc",
+      "label": "NPC",
+      "sections": [
+        "Identity",
+        "Roleplay",
+        "Knowledge",
+        "Connections"
+      ],
+      "fields": [
+        {
+          "path": "details.role",
+          "label": "Role in the world",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.appearance",
+          "label": "Recognizable details",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.motive",
+          "label": "What do they want?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.voice",
+          "label": "Speech and roleplay cues",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.dialogue",
+          "label": "Prepared lines",
+          "type": "text[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.disposition",
+          "label": "Initial disposition",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.homeRef",
+          "label": "Usual location",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location"
+          ]
+        },
+        {
+          "path": "details.factionRefs",
+          "label": "Affiliations",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "faction"
+          ]
+        },
+        {
+          "path": "details.knowledgeRefs",
+          "label": "Facts this NPC knows",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "claim",
+            "secret"
+          ]
+        },
+        {
+          "path": "details.leverage",
+          "label": "Needs, fears and negotiation leverage",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.creatureTemplateRef",
+          "label": "Rules template",
+          "type": "dependencyRef",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.schedule",
+          "label": "Usual movements",
+          "type": "scheduleEntry[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "NPC dossier and scene-specific cast.",
+      "authoringNotes": "NPC knowledge does not grant player access. Current position is runtime state.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "faction",
+      "label": "Faction",
+      "sections": [
+        "Identity",
+        "Goals",
+        "Resources",
+        "Relationships"
+      ],
+      "fields": [
+        {
+          "path": "details.purpose",
+          "label": "Purpose",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.goals",
+          "label": "Goals",
+          "type": "text[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.methods",
+          "label": "Methods and limits",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.leaderRefs",
+          "label": "Leaders",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "npc"
+          ]
+        },
+        {
+          "path": "details.territoryRefs",
+          "label": "Territory",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.resources",
+          "label": "Resources",
+          "type": "text[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.clocks",
+          "label": "Faction plans",
+          "type": "clock[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.reactions",
+          "label": "Responses to party choices",
+          "type": "outcome[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Local factions, motivations, pressures and consequences.",
+      "authoringNotes": "Secret faction agendas are separate GM blocks.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "quest",
+      "label": "Quest / investigation",
+      "sections": [
+        "Hook",
+        "Objectives",
+        "Evidence",
+        "Resolution"
+      ],
+      "fields": [
+        {
+          "path": "details.hook",
+          "label": "Hook",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.giverRef",
+          "label": "Quest giver",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "npc",
+            "faction"
+          ]
+        },
+        {
+          "path": "details.objectives",
+          "label": "Objectives",
+          "type": "questObjective[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.prerequisites",
+          "label": "Availability",
+          "type": "conditionTree",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.clueRefs",
+          "label": "Investigation leads",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "clue"
+          ]
+        },
+        {
+          "path": "details.locationRefs",
+          "label": "Relevant places",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.resolutions",
+          "label": "Success, failure and alternatives",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.rewardRefs",
+          "label": "Potential rewards",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "treasure"
+          ]
+        }
+      ],
+      "guideProjection": "Quest tracker, leads, prerequisites and rewards.",
+      "authoringNotes": "Provide alternative leads for essential deductions; do not silently solve investigations for players.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "clue",
+      "label": "Clue / evidence",
+      "sections": [
+        "What is found",
+        "Discovery",
+        "Meaning",
+        "Connections"
+      ],
+      "fields": [
+        {
+          "path": "details.observation",
+          "label": "What can be observed?",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.locationRef",
+          "label": "Where it can be found",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.discovery",
+          "label": "Trigger, automatic discovery or check",
+          "type": "discoveryRule",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.supportsRefs",
+          "label": "Claims supported",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "claim",
+            "secret"
+          ]
+        },
+        {
+          "path": "details.contradictsRefs",
+          "label": "Claims contradicted",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "claim",
+            "secret"
+          ]
+        },
+        {
+          "path": "details.sourceRef",
+          "label": "Evidence source",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "source_record"
+          ]
+        },
+        {
+          "path": "details.leadsToRefs",
+          "label": "Next leads",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.safeBlockRef",
+          "label": "What the finder is told",
+          "type": "blockRef",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.fallbacks",
+          "label": "Other ways to obtain an essential lead",
+          "type": "text[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Discoveries, investigation leads and cited evidence.",
+      "authoringNotes": "Evidence may support a false claim; finding it does not automatically confirm that claim.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "secret",
+      "label": "Secret / protected fact",
+      "sections": [
+        "Truth",
+        "Discovery paths",
+        "Safe revelations"
+      ],
+      "fields": [
+        {
+          "path": "details.canonicalTruth",
+          "label": "GM-only truth",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.subjectRefs",
+          "label": "Who or what it concerns",
+          "type": "ref[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.sourceRefs",
+          "label": "Canon evidence",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "source_record"
+          ]
+        },
+        {
+          "path": "details.discoveryRefs",
+          "label": "Ways to discover it",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "clue",
+            "scene"
+          ]
+        },
+        {
+          "path": "details.safeBlockRefs",
+          "label": "Prepared partial/full revelations",
+          "type": "blockRef[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.consequences",
+          "label": "What changes if learned?",
+          "type": "outcome[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "GM secrets and explicitly granted safe representations.",
+      "authoringNotes": "Never append secret text into public descriptions. Ready-to-reveal requires a prepared safe block.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "claim",
+      "label": "Fact / rumor / belief",
+      "sections": [
+        "Statement",
+        "Assessment",
+        "Evidence"
+      ],
+      "fields": [
+        {
+          "path": "details.statement",
+          "label": "Specific statement",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.assessment",
+          "label": "GM assessment",
+          "type": "enum:unverified|confirmed|disputed|disproven",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.subjectRefs",
+          "label": "Subjects",
+          "type": "ref[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.speakerRef",
+          "label": "Who asserted it?",
+          "type": "ref",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "npc",
+            "faction",
+            "source_record"
+          ]
+        },
+        {
+          "path": "details.sourceRefs",
+          "label": "Supporting sources",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "source_record"
+          ]
+        },
+        {
+          "path": "details.worldTime",
+          "label": "When it applies",
+          "type": "worldTime",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Evidence-aware Loom answers and mystery context.",
+      "authoringNotes": "Claim assessment, author approval and viewer knowledge are independent states.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "source_record",
+      "label": "Source / citation",
+      "sections": [
+        "Origin",
+        "Evidence",
+        "Rights"
+      ],
+      "fields": [
+        {
+          "path": "details.origin",
+          "label": "User note, session, book, file or GM statement",
+          "type": "enum:userNote|sessionEvent|book|file|gmStatement",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.locator",
+          "label": "Page, source path, block ID or event ID",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.excerpt",
+          "label": "Supporting excerpt",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.rights",
+          "label": "Rights and distribution",
+          "type": "licenseDeclaration",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.recordedAt",
+          "label": "Recorded timestamp",
+          "type": "dateTime",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Source citations and provenance.",
+      "authoringNotes": "Source documents are untrusted content; embedded instructions never control tools, permissions or publication.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "hazard",
+      "label": "Trap / hazard / puzzle",
+      "sections": [
+        "Signs",
+        "Trigger",
+        "Resolution",
+        "Aftermath"
+      ],
+      "fields": [
+        {
+          "path": "details.warningSigns",
+          "label": "Observable warnings",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.trigger",
+          "label": "Trigger",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.effect",
+          "label": "Effect or threat",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.detection",
+          "label": "Detection",
+          "type": "check",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.countermeasures",
+          "label": "Disarm, bypass or solve",
+          "type": "choice[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.resetRule",
+          "label": "Reset behavior",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.outcomes",
+          "label": "Success/failure consequences",
+          "type": "outcome[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Room hazards, checks and consequences.",
+      "authoringNotes": "Secret solution and player-observable signs use separate blocks.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "treasure",
+      "label": "Treasure / reward definition",
+      "sections": [
+        "Contents",
+        "Acquisition",
+        "Consequences"
+      ],
+      "fields": [
+        {
+          "path": "details.contents",
+          "label": "Items, currency or advancement",
+          "type": "rewardComponent[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.acquisition",
+          "label": "How it can be earned or found",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.limitations",
+          "label": "Attunement, encumbrance, ownership, curse",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.outcomes",
+          "label": "Story consequences",
+          "type": "outcome[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Potential loot and rewards.",
+      "authoringNotes": "A reward definition never changes XP or inventory; only an authorized idempotent award command does.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "handout",
+      "label": "Player handout",
+      "sections": [
+        "Content",
+        "Media",
+        "Sharing"
+      ],
+      "fields": [
+        {
+          "path": "details.body",
+          "label": "Handout text",
+          "type": "richText",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.assetRef",
+          "label": "Image or document",
+          "type": "assetRef",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.altText",
+          "label": "Accessible description",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.shareTrigger",
+          "label": "Suggested sharing moment",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.sourceRefs",
+          "label": "Sources",
+          "type": "ref[]",
+          "requiredAt": "optional",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "source_record"
+          ]
+        }
+      ],
+      "guideProjection": "Prepared player materials and explicit sharing.",
+      "authoringNotes": "Ready requires body or asset. A GM map is never made player-safe merely by hiding its caption.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "roll_table",
+      "label": "Roll table",
+      "sections": [
+        "Dice",
+        "Rows",
+        "Use"
+      ],
+      "fields": [
+        {
+          "path": "details.dice",
+          "label": "Dice expression",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.rows",
+          "label": "Inclusive ranges and results",
+          "type": "rollTableRow[]",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.purpose",
+          "label": "When to roll",
+          "type": "text",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.repeatPolicy",
+          "label": "Repeated-result behavior",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Rollable tables linked to rooms, levels and encounters.",
+      "authoringNotes": "Validate full range coverage, no overlaps, and system-supported dice syntax.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    },
+    {
+      "kind": "read_aloud",
+      "label": "Read-aloud passage",
+      "sections": [
+        "Text",
+        "Delivery",
+        "Sharing"
+      ],
+      "fields": [
+        {
+          "path": "details.text",
+          "label": "Words to read verbatim",
+          "type": "richText",
+          "requiredAt": "ready",
+          "prompt": ""
+        },
+        {
+          "path": "details.contextRef",
+          "label": "Attached room, scene or encounter",
+          "type": "ref",
+          "requiredAt": "ready",
+          "prompt": "",
+          "allowedReferenceKinds": [
+            "location",
+            "scene",
+            "encounter",
+            "dungeon_level"
+          ]
+        },
+        {
+          "path": "details.trigger",
+          "label": "When to read it",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.variants",
+          "label": "Variants for changed conditions",
+          "type": "conditionalText[]",
+          "requiredAt": "optional",
+          "prompt": ""
+        },
+        {
+          "path": "details.deliveryNotes",
+          "label": "Private delivery guidance",
+          "type": "text",
+          "requiredAt": "optional",
+          "prompt": ""
+        }
+      ],
+      "guideProjection": "Ordered read-aloud blocks at the current context.",
+      "authoringNotes": "UI shortcut for creating a block, not a second independently copied article. Spoken at the table and published to the app are separate actions.",
+      "draftRequirements": [
+        "title",
+        "kind"
+      ],
+      "readinessPolicy": "Required-at-ready fields apply only to this selected profile; package checks also validate referenced dependencies."
+    }
+  ],
+  "relationships": [
+    {
+      "type": "CONTAINS",
+      "meaning": "Structural containment",
+      "fromKinds": [
+        "adventure",
+        "chapter",
+        "dungeon_level",
+        "location"
+      ],
+      "toKinds": [
+        "chapter",
+        "dungeon_level",
+        "location"
+      ],
+      "group": "containment"
+    },
+    {
+      "type": "PART_OF_STORY",
+      "meaning": "Story membership",
+      "fromKinds": [
+        "story_beat",
+        "scene"
+      ],
+      "toKinds": [
+        "story_arc"
+      ],
+      "group": "story"
+    },
+    {
+      "type": "PLANS",
+      "meaning": "Planned content, not history",
+      "fromKinds": [
+        "session_plan"
+      ],
+      "toKinds": [
+        "scene"
+      ],
+      "group": "planning"
+    },
+    {
+      "type": "OCCURS_AT",
+      "meaning": "Authored location",
+      "fromKinds": [
+        "scene",
+        "encounter"
+      ],
+      "toKinds": [
+        "location",
+        "dungeon_level"
+      ],
+      "group": "placement"
+    },
+    {
+      "type": "FEATURES",
+      "meaning": "Authored present cast",
+      "fromKinds": [
+        "scene",
+        "encounter"
+      ],
+      "toKinds": [
+        "npc",
+        "faction"
+      ],
+      "group": "placement"
+    },
+    {
+      "type": "USES",
+      "meaning": "Encounter used by scene",
+      "fromKinds": [
+        "scene"
+      ],
+      "toKinds": [
+        "encounter"
+      ],
+      "group": "placement"
+    },
+    {
+      "type": "HAS_CLUE",
+      "meaning": "Clue available here",
+      "fromKinds": [
+        "location",
+        "dungeon_level"
+      ],
+      "toKinds": [
+        "clue"
+      ],
+      "group": "placement"
+    },
+    {
+      "type": "HAS_HAZARD",
+      "meaning": "Hazard available here",
+      "fromKinds": [
+        "location",
+        "dungeon_level"
+      ],
+      "toKinds": [
+        "hazard"
+      ],
+      "group": "placement"
+    },
+    {
+      "type": "HAS_TREASURE",
+      "meaning": "Potential reward here",
+      "fromKinds": [
+        "location",
+        "encounter",
+        "quest"
+      ],
+      "toKinds": [
+        "treasure"
+      ],
+      "group": "placement"
+    },
+    {
+      "type": "ABOUT",
+      "meaning": "Discusses a subject, no factual assertion",
+      "fromKinds": [
+        "lore",
+        "claim",
+        "secret"
+      ],
+      "toKinds": [
+        "*"
+      ],
+      "group": "reference"
+    },
+    {
+      "type": "REFERENCES",
+      "meaning": "Reference only",
+      "fromKinds": [
+        "*"
+      ],
+      "toKinds": [
+        "*"
+      ],
+      "group": "reference"
+    },
+    {
+      "type": "DOCUMENTED_IN",
+      "meaning": "Citation in source",
+      "fromKinds": [
+        "claim",
+        "secret",
+        "lore",
+        "clue"
+      ],
+      "toKinds": [
+        "source_record"
+      ],
+      "group": "evidence"
+    },
+    {
+      "type": "SUPPORTS",
+      "meaning": "Evidence supports a claim",
+      "fromKinds": [
+        "clue",
+        "source_record"
+      ],
+      "toKinds": [
+        "claim",
+        "secret"
+      ],
+      "group": "evidence"
+    },
+    {
+      "type": "CONTRADICTS",
+      "meaning": "Evidence contradicts a claim",
+      "fromKinds": [
+        "clue",
+        "source_record"
+      ],
+      "toKinds": [
+        "claim"
+      ],
+      "group": "evidence"
+    },
+    {
+      "type": "REVEALS",
+      "meaning": "Potential discovery path, not actual grant",
+      "fromKinds": [
+        "clue",
+        "scene"
+      ],
+      "toKinds": [
+        "secret",
+        "claim",
+        "location"
+      ],
+      "group": "discovery"
+    },
+    {
+      "type": "LEADS_TO",
+      "meaning": "Possible next scene",
+      "fromKinds": [
+        "scene",
+        "story_beat"
+      ],
+      "toKinds": [
+        "scene",
+        "story_beat"
+      ],
+      "group": "story"
+    },
+    {
+      "type": "REQUIRES",
+      "meaning": "Prerequisite, not ownership",
+      "fromKinds": [
+        "scene",
+        "story_beat",
+        "quest"
+      ],
+      "toKinds": [
+        "story_beat",
+        "claim",
+        "secret"
+      ],
+      "group": "story"
+    },
+    {
+      "type": "MOTIVATED_BY",
+      "meaning": "Actor connected to a story pressure",
+      "fromKinds": [
+        "npc",
+        "faction"
+      ],
+      "toKinds": [
+        "story_arc",
+        "quest"
+      ],
+      "group": "story"
+    }
+  ],
+  "conditionalRequirements": [
+    {
+      "when": {
+        "kind": "location",
+        "details.locationType": "room"
+      },
+      "require": [
+        "details.parentRef",
+        "details.areaKey",
+        "details.exits"
+      ],
+      "allowExplicitEmpty": [
+        "details.exits"
+      ]
+    },
+    {
+      "when": {
+        "kind": "location",
+        "details.locationType": "city"
+      },
+      "recommend": [
+        "details.districtRefs",
+        "details.services",
+        "details.factionRefs",
+        "details.rumorRefs"
+      ]
+    },
+    {
+      "when": {
+        "kind": "encounter",
+        "details.encounterType": "combat"
+      },
+      "require": [
+        "details.participants",
+        "details.objectives",
+        "details.tactics"
+      ],
+      "requireEither": [
+        "details.mapRef",
+        "details.startingPositions"
+      ]
+    },
+    {
+      "when": {
+        "kind": "encounter",
+        "details.encounterType": "social"
+      },
+      "require": [
+        "details.objectives"
+      ],
+      "requireCustom": [
+        "Participants have agendas and leverage; include a noncombat resolution."
+      ]
+    },
+    {
+      "when": {
+        "kind": "encounter",
+        "details.encounterType": "exploration"
+      },
+      "requireCustom": [
+        "Define obstacle, progress/resolution rule and failure consequence."
+      ]
+    },
+    {
+      "when": {
+        "kind": "secret",
+        "operation": "reveal"
+      },
+      "require": [
+        "details.safeBlockRefs"
+      ]
+    },
+    {
+      "when": {
+        "kind": "handout"
+      },
+      "requireEither": [
+        "details.body",
+        "details.assetRef"
+      ]
+    },
+    {
+      "when": {
+        "kind": "location",
+        "hasMapAnchor": true
+      },
+      "require": [
+        "details.mapAnchor.sourceWidth",
+        "details.mapAnchor.sourceHeight",
+        "details.mapAnchor.coordinateSpace"
+      ]
+    }
+  ],
+  "validationGates": {
+    "draft": [
+      "Title and kind; allow incomplete sections; server verifies campaign edit access."
+    ],
+    "ready": [
+      "Profile requirements",
+      "References resolve",
+      "Containment acyclic",
+      "Room key unique within level",
+      "Allowed relationship endpoints",
+      "No dangling block or asset refs",
+      "Safe representations for proposed reveals"
+    ],
+    "approve": [
+      "Explicit GM review",
+      "Evidence and rumor assessment preserved",
+      "Approved revision indexed for authorized Loom retrieval; drafts excluded"
+    ],
+    "package": [
+      "Dependency closure",
+      "Asset hashes/rights verified",
+      "No account IDs or private play state",
+      "Stable package refs",
+      "No unresolved required dependency",
+      "Critical checks support installed ruleset",
+      "References and source text preserved"
+    ],
+    "play": [
+      "Create instances from templates",
+      "Reauthorize grants and awards",
+      "Append events with idempotency key",
+      "Never change canon merely by checking a planned beat"
+    ]
+  },
+  "conditions": {
+    "allowedOps": [
+      "all",
+      "any",
+      "not",
+      "flagEquals",
+      "objectiveComplete",
+      "hasKnowledge",
+      "manual"
+    ],
+    "evaluation": "Server-side allowlisted interpreter; missing hidden state never leaks through condition results; no JavaScript, SQL or Cypher in content."
+  },
+  "guideQuery": {
+    "filters": [
+      "adventure",
+      "chapter",
+      "level",
+      "session",
+      "location",
+      "room",
+      "encounter",
+      "unresolved",
+      "discovered",
+      "optional"
+    ],
+    "expansion": "Session plan -> planned scenes -> locations, encounters, cast, authored clues/hazards/rewards -> directly linked lore and sources; bounded traversal.",
+    "whyIncluded": "Return authorized relationship path and inclusion reason per result.",
+    "security": "Apply audience and source permissions before counts, traversal explanations, citations, preview or asset delivery."
+  },
+  "persistence": {
+    "authority": "MySQL",
+    "projection": "Neo4j",
+    "write": "Authorized SQL transaction writes revisions, links and pending outbox; retryable versioned projector updates graph.",
+    "mapping": {
+      "identity": "lw_entities",
+      "article": "lw_lore_entries",
+      "place": "lw_world_locations",
+      "adventure": "lw_adventures + lw_adventure_versions + lw_adventure_nodes",
+      "blocks": "lw_adventure_blocks",
+      "links": "lw_adventure_links / campaign-wide entity relationships",
+      "sessions": "lw_sessions + lw_session_content",
+      "history": "lw_play_events + typed event details",
+      "knowledge": "lw_knowledge_grants + safe representations",
+      "installation": "lw_module_installations + lw_module_id_maps"
+    },
+    "gaps": [
+      "New profile kinds and data require reviewed enum/typed-table migrations.",
+      "Do not persist every detail in metadata_json: normalize references, ownership, grants, conditions used by rules and mutable state.",
+      "Package templates must be independent of campaign-specific nodes and runtime identities."
+    ]
+  },
+  "separation": {
+    "moduleDefinition": [
+      "approved content revisions",
+      "session templates",
+      "assets and licenses",
+      "dependencies"
+    ],
+    "campaignRuntime": [
+      "scheduled sessions",
+      "actual events",
+      "character grants",
+      "HP/resources",
+      "inventory and XP awards",
+      "private notes",
+      "progress",
+      "current NPC positions"
+    ]
+  },
+  "exampleFile": "adventure-editor.example.json",
+  "humanGuide": "adventure-editor.md"
+}

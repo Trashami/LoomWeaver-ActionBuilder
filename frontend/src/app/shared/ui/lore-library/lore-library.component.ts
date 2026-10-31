@@ -42,7 +42,16 @@ export class LwLoreLibraryComponent {
   readonly newTagsText = signal<string>('');
   readonly newVisibility = signal<'players' | 'gm' | 'public'>('players');
   readonly newLinkedLocationKey = signal<string>('');
+  readonly newSessionId = signal<string>('');
+  readonly newQuestKind = signal<'none' | 'main' | 'side'>('none');
+  readonly newQuestId = signal<string>('');
+  readonly newQuestTitle = signal<string>('');
   readonly mentionQuery = signal<string>('');
+
+  readonly availableSessions = computed(() => this.worldLore.store.sessions());
+  readonly availableQuests = computed(() =>
+    this.worldLore.store.authorizedEntities().filter((e) => e.entityType === 'Quest'),
+  );
 
   readonly mentionSuggestions = computed(() => {
     const q = this.mentionQuery().trim();
@@ -57,6 +66,7 @@ export class LwLoreLibraryComponent {
   });
 
   openQuickCreate(): void {
+    const activeSess = this.worldLore.store.activeSession();
     this.editingEntryId.set(null);
     this.newTitle.set('');
     this.newCategory.set('Kingdoms & Settlements');
@@ -66,6 +76,10 @@ export class LwLoreLibraryComponent {
     this.newTagsText.set('');
     this.newVisibility.set('players');
     this.newLinkedLocationKey.set(this.worldLore.selectedLocationKey() ?? '');
+    this.newSessionId.set(activeSess?.sessionId ?? '');
+    this.newQuestKind.set('none');
+    this.newQuestId.set('');
+    this.newQuestTitle.set('');
     this.createModalOpen.set(true);
   }
 
@@ -79,7 +93,45 @@ export class LwLoreLibraryComponent {
     this.newTagsText.set(entry.tags.join(', '));
     this.newVisibility.set(entry.visibility);
     this.newLinkedLocationKey.set(entry.linkedEntityKeys[0] ?? '');
+    this.newSessionId.set(entry.sessionId ?? '');
+    this.newQuestKind.set(
+      entry.questKind === 'main' || entry.questKind === 'side' ? entry.questKind : entry.questTitle ? 'main' : 'none',
+    );
+    this.newQuestId.set(entry.questId ?? '');
+    this.newQuestTitle.set(entry.questTitle ?? '');
     this.createModalOpen.set(true);
+  }
+
+  onQuestPickerChange(questKey: string): void {
+    this.newQuestId.set(questKey);
+    const match = this.availableQuests().find((q) => q.compositeKey === questKey);
+    if (match) {
+      this.newQuestTitle.set(match.name);
+      if (this.newQuestKind() === 'none') {
+        this.newQuestKind.set('main');
+      }
+    }
+  }
+
+  assignEntryToCurrentSession(entry: LoreEntryVm): void {
+    const sess = this.worldLore.store.activeSession();
+    if (!sess) return;
+    this.worldLore.saveLoreEntry({
+      id: entry.id,
+      title: entry.title,
+      category: entry.category,
+      subtitle: entry.subtitle,
+      excerpt: entry.excerpt,
+      content: entry.content,
+      tags: entry.tags,
+      linkedEntityKeys: entry.linkedEntityKeys,
+      visibility: entry.visibility,
+      sessionId: sess.sessionId,
+      sessionLabel: `Session ${sess.sessionNumber} · ${sess.title}`,
+      questId: entry.questId ?? null,
+      questTitle: entry.questTitle ?? null,
+      questKind: entry.questKind ?? null,
+    });
   }
 
   onContentChange(value: string): void {
@@ -105,6 +157,9 @@ export class LwLoreLibraryComponent {
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
     const linkedEntityKeys = this.newLinkedLocationKey() ? [this.newLinkedLocationKey()] : [];
+    const sess = this.availableSessions().find((s) => s.sessionId === this.newSessionId());
+    const questKind = this.newQuestKind() === 'none' ? null : this.newQuestKind();
+    const questTitle = questKind ? this.newQuestTitle().trim() || null : null;
 
     this.worldLore.saveLoreEntry({
       id: this.editingEntryId() ?? undefined,
@@ -114,7 +169,12 @@ export class LwLoreLibraryComponent {
       content: this.newContent().trim() || this.newSummary().trim() || title,
       tags: tags.length > 0 ? tags : [category],
       linkedEntityKeys,
-      visibility: this.newVisibility()
+      visibility: this.newVisibility(),
+      sessionId: sess?.sessionId ?? (this.newSessionId() || null),
+      sessionLabel: sess ? `Session ${sess.sessionNumber} · ${sess.title}` : null,
+      questId: questKind ? (this.newQuestId() || `quest-${(questTitle ?? title).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`) : null,
+      questTitle,
+      questKind,
     });
     this.createModalOpen.set(false);
   }

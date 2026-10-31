@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
 import { NgpButton } from 'ng-primitives/button';
+import { AdventureGuideService } from '../../../../core/services/adventure-guide.service';
+import { LoomWeaverStoreService } from '../../../../core/services/loomweaver-store.service';
 import { FullscreenDiceOverlayService } from '../../../dice/engine/fullscreen-dice-overlay.service';
 import { VttCombatService } from '../../services/vtt-combat.service';
 import { VTT_GM_TABLES, VttGmTable, VttGmTableId } from './vtt-gm-tables';
@@ -15,6 +17,8 @@ export type VttGmGuideSection = 'guide' | 'notes' | 'actions';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VttGmGuidePanelComponent {
+  readonly store = inject(LoomWeaverStoreService);
+  readonly adventureGuide = inject(AdventureGuideService);
   readonly vtt = inject(VttCombatService);
   private readonly fullscreenDice = inject(FullscreenDiceOverlayService);
 

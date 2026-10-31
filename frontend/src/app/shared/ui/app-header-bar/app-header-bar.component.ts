@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpInput } from 'ng-primitives/input';
 import { NgpToolbar } from 'ng-primitives/toolbar';
 import { CampaignVm, ViewerRole } from '../../../core/models/loomweaver.models';
-import { LwExperienceMode } from '../../../core/services/loomweaver-store.service';
+import { LoomWeaverStoreService, LwExperienceMode } from '../../../core/services/loomweaver-store.service';
 import { LwIconComponent } from '../icon/icon.component';
 import { LwUserMenuComponent } from '../user-menu/user-menu.component';
 
@@ -26,6 +26,7 @@ import { LwUserMenuComponent } from '../user-menu/user-menu.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwAppHeaderBarComponent {
+  readonly store = inject(LoomWeaverStoreService, { optional: true });
   readonly variant = input<'studio' | 'public'>('studio');
   readonly campaigns = input<readonly CampaignVm[]>([]);
   readonly activeCampaign = input<CampaignVm | null>(null);

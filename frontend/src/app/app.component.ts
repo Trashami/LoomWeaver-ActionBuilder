@@ -29,6 +29,7 @@ import {
 import { LoomWeaverStoreService } from "./core/services/loomweaver-store.service";
 import { WebAudioAmbienceService } from "./features/assets/engine/web-audio-ambience.service";
 import { LwAppHeaderBarComponent } from "./shared/ui/app-header-bar/app-header-bar.component";
+import { LwAdventureGuideModalComponent } from "./shared/ui/adventure-guide-modal/adventure-guide-modal.component";
 import { LwAlertifyToastStackComponent } from "./shared/ui/alertify-toast-stack/alertify-toast-stack.component";
 import { LwAuthModalComponent } from "./shared/ui/auth-modal/auth-modal.component";
 import { LwFullscreenDiceOverlayComponent } from "./shared/ui/fullscreen-dice-overlay/fullscreen-dice-overlay.component";
@@ -107,11 +108,10 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
         route: "/encounters",
         icon: "swords",
       },
-      // Reuses existing /loom route until a dedicated sessions/chronicles route exists.
       {
         id: "session-log",
-        label: "Sessions & Chronicles",
-        route: "/loom",
+        label: "Sessions",
+        route: "/sessions",
         icon: "calendar-days",
       },
       {
@@ -183,6 +183,7 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
     RouterLinkActive,
     NgpButton,
     LwAppHeaderBarComponent,
+    LwAdventureGuideModalComponent,
     LwAlertifyToastStackComponent,
     LwAuthModalComponent,
     LwFullscreenDiceOverlayComponent,

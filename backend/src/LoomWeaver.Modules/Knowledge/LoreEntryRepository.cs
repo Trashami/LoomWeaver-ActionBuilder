@@ -10,7 +10,14 @@ public static class LoreEntryRepository
 {
     private const string DefaultArtwork = "/icrandor_world_dashboard.jpg";
 
-    private sealed record LorePayload(List<string>? Tags, List<string>? LinkedEntityKeys);
+    private sealed record LorePayload(
+        List<string>? Tags,
+        List<string>? LinkedEntityKeys,
+        string? SessionId = null,
+        string? SessionLabel = null,
+        string? QuestId = null,
+        string? QuestTitle = null,
+        string? QuestKind = null);
 
     public static async Task Hydrate(LoomWeaverMySqlRepository repo, int campaignId, CancellationToken ct)
     {
@@ -46,7 +53,12 @@ public static class LoreEntryRepository
                     r.GetBoolean(9),
                     created.ToString("MMM d, yyyy"),
                     updated.ToString("MMM d, yyyy"),
-                    new DateTimeOffset(updated).ToUnixTimeMilliseconds()));
+                    new DateTimeOffset(updated).ToUnixTimeMilliseconds(),
+                    payload?.SessionId,
+                    payload?.SessionLabel,
+                    payload?.QuestId,
+                    payload?.QuestTitle,
+                    payload?.QuestKind));
             }
         }
 
@@ -82,7 +94,14 @@ public static class LoreEntryRepository
             }
         }
 
-        var payload = JsonSerializer.Serialize(new LorePayload(entry.Tags.ToList(), entry.LinkedEntityKeys.ToList()));
+        var payload = JsonSerializer.Serialize(new LorePayload(
+            entry.Tags.ToList(),
+            entry.LinkedEntityKeys.ToList(),
+            entry.SessionId,
+            entry.SessionLabel,
+            entry.QuestId,
+            entry.QuestTitle,
+            entry.QuestKind));
         await using (var cmd = new MySqlCommand("""
             INSERT INTO lw_lore_entries (id, campaign_id, composite_key, title, subtitle, category, excerpt, content,
               artwork_url, visibility, archived, payload_json)

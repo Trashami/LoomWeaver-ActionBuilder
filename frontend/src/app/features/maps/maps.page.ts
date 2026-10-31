@@ -132,33 +132,20 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   readonly campaigns = computed(() =>
     this.store.campaigns().map((c) => ({ id: c.id, name: c.name })),
   );
-  readonly sessions = signal<readonly { id: string; label: string }[]>([]);
+  readonly sessions = computed(() =>
+    this.store.sessions().map((s) => ({ id: s.sessionId, label: s.label })),
+  );
   readonly encounters = signal<readonly { id: string; label: string }[]>([]);
-  readonly assignSessionId = signal<string>('');
+  readonly assignSessionId = computed(() => this.store.activeSessionId());
   readonly assignEncounterId = signal<string>('');
   readonly assignLocationNodeId = signal<string>('');
 
   private readonly campaignAssignments = effect((onCleanup) => {
     const campaignId = this.store.activeCampaignId();
-    this.sessions.set([]);
     this.encounters.set([]);
-    this.assignSessionId.set('');
     this.assignEncounterId.set('');
-    if (campaignId <= 0) return;
+    if (campaignId <= 0 || !this.store.isGmForActiveCampaign()) return;
 
-    const sessions = this.http
-      .get<readonly { sessionId: string; title: string }[]>(`/api/v2/campaigns/${campaignId}/sessions`)
-      .subscribe({
-        next: (items) => {
-          const options = (items ?? []).map((item) => ({ id: item.sessionId, label: item.title }));
-          this.sessions.set(options);
-          this.assignSessionId.set(options[0]?.id ?? '');
-        },
-        error: () => this.alertify.notifyStatus('Map assignment', 'Sessions unavailable', 'Campaign sessions could not be loaded.', 'crimson'),
-      });
-    onCleanup(() => sessions.unsubscribe());
-
-    if (!this.store.isGmForActiveCampaign()) return;
     const encounters = this.http
       .get<readonly { id: string; name: string }[]>(`/api/v2/campaigns/${campaignId}/encounters`)
       .subscribe({
@@ -439,7 +426,7 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     this.gridCols.set(intent.gridCols);
     this.gridRows.set(intent.gridRows);
     this.store.setCampaign(intent.campaignId);
-    this.assignSessionId.set(intent.sessionId);
+    this.store.setActiveSession(intent.sessionId);
     this.assignEncounterId.set(intent.encounterId);
     this.dimensionMode.set(intent.dimensionMode);
     this.cameraView.set(intent.dimensionMode === '2d' ? 'real-2d' : 'isometric');
@@ -502,7 +489,7 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       summary,
       ...cur.filter((m) => m.sceneKey !== summary.sceneKey),
     ]);
-    this.assignSessionId.set(intent.sessionId);
+    this.store.setActiveSession(intent.sessionId);
     this.assignEncounterId.set(intent.encounterId);
     this.onOpenExistingMapFromLanding(summary);
     this.pngPipelineBanner.set(
@@ -2006,12 +1993,8 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   }
 
   publishMapToCoreCampaign(): void {
-    const sessionId = this.assignSessionId();
-    if (!sessionId) {
-      this.alertify.notifyStatus('Map assignment', 'No session selected', 'Create or select a saved campaign session before assigning this map.', 'crimson');
-      return;
-    }
-
+    const sessionId = this.assignSessionId() || this.sessions()[0]?.id || 'session-1';
+    this.store.setActiveSession(sessionId);
     this.saveSceneRevision();
     const campName = this.store.activeCampaign().name;
     const sessLabel =
@@ -2019,13 +2002,28 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     const encLabel =
       this.encounters().find((e) => e.id === this.assignEncounterId())?.label ??
       'Unassigned encounter';
+    const previewArt =
+      this.stage.captureViewportDataUrl() ??
+      this.sceneGraph().floorAlbedoUrl ??
+      '/battlemap-showcase.jpg';
     this.adventureGuide.assignBattlemapToSessionAndPlace({
       sceneKey: this.selectedSceneKey(),
       sceneTitle: this.mapTitle(),
       sessionId,
       locationNodeId: this.assignLocationNodeId(),
-      artworkUrl: '/battlemap-showcase.jpg',
+      artworkUrl: previewArt,
       biome: this.activeTheme(),
+    });
+    this.store.attachElementToSession({
+      sessionId,
+      elementKind: 'Map',
+      targetKey: this.selectedSceneKey(),
+      title: this.mapTitle(),
+      subtitle: `${this.dimensionMode().toUpperCase()} Battlemap · ${this.activeTheme()}`,
+      summary: `Published to ${sessLabel} (${encLabel})`,
+      routeLink: `/arcane-screen?scene=${this.selectedSceneKey()}`,
+      visibility: 'players',
+      artworkUrl: previewArt,
     });
     this.pngPipelineBanner.set(
       `Published '${this.mapTitle()}' (${this.dimensionMode().toUpperCase()}) -> ${campName} · ${sessLabel} · ${encLabel}`,

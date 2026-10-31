@@ -322,7 +322,12 @@ public static class WorldLoreEndpoints
                 req.Archived,
                 existing?.CreatedAtLabel ?? "Just now",
                 "Just now",
-                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                req.SessionId ?? existing?.SessionId,
+                req.SessionLabel ?? existing?.SessionLabel,
+                req.QuestId ?? existing?.QuestId,
+                req.QuestTitle ?? existing?.QuestTitle,
+                req.QuestKind ?? existing?.QuestKind
             );
 
             try
@@ -403,43 +408,18 @@ public static class WorldLoreEndpoints
     {
         var campaign = FallbackSeedData.Campaigns.FirstOrDefault(c => c.Id == campaignId)
             ?? new CampaignDto(campaignId, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 0, string.Empty, false);
-        var maps = GetCampaignList(WorldLoreStateStore.MapsByCampaign, campaignId)
-            .Where(m => isGm || m.Visibility != "gm")
-            .ToList();
-
-        var activeMapId = !string.IsNullOrWhiteSpace(requestedMapId) && maps.Any(m => m.MapId == requestedMapId)
-            ? requestedMapId
-            : maps.FirstOrDefault()?.MapId;
-
-        var overlays = GetCampaignList(WorldLoreStateStore.OverlaysByCampaign, campaignId)
-            .Where(o => isGm || o.Visibility != "gm")
-            .ToList();
-
+        var maps = GetCampaignList(WorldLoreStateStore.MapsByCampaign, campaignId).Where(m => isGm || m.Visibility != "gm").ToList();
+        var activeMapId = !string.IsNullOrWhiteSpace(requestedMapId) && maps.Any(m => m.MapId == requestedMapId) ? requestedMapId : maps.FirstOrDefault()?.MapId;
+        var overlays = GetCampaignList(WorldLoreStateStore.OverlaysByCampaign, campaignId).Where(o => isGm || o.Visibility != "gm").ToList();
         var markers = GetCampaignList(WorldLoreCatalogStore.MarkersByCampaign, campaignId)
             .Where(m => isGm || (m.Visibility != "gm" && m.DiscoveryStatus != "undiscovered"))
-            .Select(m => isGm ? m : m with { SecretCount = 0 })
-            .ToList();
-
-        var waypoints = GetCampaignList(WorldLoreCatalogStore.WaypointsByCampaign, campaignId)
-            .Where(w => isGm || w.Visibility != "gm")
-            .ToList();
-
-        var lore = GetCampaignList(WorldLoreCatalogStore.LoreByCampaign, campaignId)
-            .Where(l => !l.Archived && (isGm || l.Visibility != "gm"))
-            .ToList();
-
-        var history = GetCampaignList(WorldLoreCatalogStore.HistoryByCampaign, campaignId)
-            .Where(h => isGm || h.Visibility != "gm")
-            .OrderBy(h => h.SortOrder)
-            .ToList();
-
-        var discoveries = GetCampaignList(WorldLoreCatalogStore.DiscoveriesByCampaign, campaignId)
-            .Where(d => isGm || d.Visibility != "gm")
-            .ToList();
-
+            .Select(m => isGm ? m : m with { SecretCount = 0 }).ToList();
+        var waypoints = GetCampaignList(WorldLoreCatalogStore.WaypointsByCampaign, campaignId).Where(w => isGm || w.Visibility != "gm").ToList();
+        var lore = GetCampaignList(WorldLoreCatalogStore.LoreByCampaign, campaignId).Where(l => !l.Archived && (isGm || l.Visibility != "gm")).ToList();
+        var history = GetCampaignList(WorldLoreCatalogStore.HistoryByCampaign, campaignId).Where(h => isGm || h.Visibility != "gm").OrderBy(h => h.SortOrder).ToList();
+        var discoveries = GetCampaignList(WorldLoreCatalogStore.DiscoveriesByCampaign, campaignId).Where(d => isGm || d.Visibility != "gm").ToList();
         var visibleLocations = GetCampaignList(WorldLoreStateStore.LocationsByCampaign, campaignId)
-            .Where(l => isGm || (l.Visibility != "gm" && l.DiscoveryStatus != "undiscovered"))
-            .ToList();
+            .Where(l => isGm || (l.Visibility != "gm" && l.DiscoveryStatus != "undiscovered")).ToList();
 
         var stats = new WorldStatisticsSummaryDto(
             RegionCount: overlays.Count(o => o.OverlayType == "region") + visibleLocations.Count(l => l.HierarchyLevel == "Region"),

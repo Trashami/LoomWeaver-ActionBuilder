@@ -6,20 +6,57 @@
     [attr.aria-label]="ariaLabel()"
     (click)="onBackdropClick($event)"
   >
-    <div class="lw-modal" cdkTrapFocus [cdkTrapFocusAutoCapture]="true" [attr.data-size]="size()">
-      <header class="lw-modal__header">
+    <div
+      class="lw-modal"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      [attr.data-size]="size()"
+      [class.lw-modal--dragging]="isDragging()"
+      [style.transform]="'translate3d(' + dragOffsetX() + 'px, ' + dragOffsetY() + 'px, 0)'"
+    >
+      <header
+        class="lw-modal__header"
+        [class.lw-modal__header--draggable]="draggable()"
+        (pointerdown)="onHeaderPointerDown($event)"
+        (pointermove)="onHeaderPointerMove($event)"
+        (pointerup)="onHeaderPointerUp($event)"
+        (pointercancel)="onHeaderPointerUp($event)"
+        (dblclick)="resetPosition()"
+      >
         <div class="lw-modal__heading">
+          @if (title()) {
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <strong style="font-size: 0.98rem; color: #f5ebd6;">{{ title() }}</strong>
+              @if (subtitle()) {
+                <span style="font-size: 0.76rem; color: rgba(235, 228, 213, 0.72);">{{ subtitle() }}</span>
+              }
+            </div>
+          }
           <ng-content select="[modalHeader]" />
         </div>
-        <button
-          ngpButton
-          type="button"
-          class="lw-modal__close"
-          [attr.aria-label]="closeLabel()"
-          (click)="close()"
-        >
-          <lw-icon name="close" [size]="18" />
-        </button>
+        <div class="lw-modal__header-controls">
+          @if (draggable() && (dragOffsetX() !== 0 || dragOffsetY() !== 0)) {
+            <button
+              ngpButton
+              type="button"
+              class="lw-modal__reset-pos"
+              title="Center modal window"
+              aria-label="Center modal window"
+              (click)="resetPosition()"
+            >
+              Center
+            </button>
+          }
+          <button
+            ngpButton
+            type="button"
+            class="lw-modal__close"
+            [attr.aria-label]="closeLabel()"
+            (click)="close()"
+          >
+            <lw-icon name="close" [size]="18" />
+          </button>
+        </div>
       </header>
 
       <div class="lw-modal__body">
@@ -27,7 +64,7 @@
       </div>
 
       <footer class="lw-modal__footer">
-        <ng-content select="[modalFooter]" />
+        <ng-content select="[modalFooter],[lwModalFooter]" />
       </footer>
     </div>
   </div>

@@ -271,6 +271,39 @@
     background: rgba(217, 183, 122, 0.08);
     color: #f2d9a0;
   }
+
+  &--emerald {
+    background: rgba(73, 232, 146, 0.1);
+    color: #49e892;
+  }
+}
+
+.lw-session-tile {
+  background: rgba(9, 28, 20, 0.72);
+  border-right: 1px solid rgba(73, 232, 146, 0.24);
+}
+
+.lw-session-tile__kicker {
+  color: #49e892 !important;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 0.62rem;
+}
+
+@media (max-width: 760px) {
+  .lw-topbar__left {
+    flex-wrap: wrap;
+  }
+
+  .lw-campaign-tile {
+    flex: 1 1 180px;
+    min-height: 48px;
+    padding: 0.35rem 0.65rem;
+  }
+
+  .lw-topbar__right {
+    flex-wrap: wrap;
+  }
 }
 
 .lw-profile-tile {

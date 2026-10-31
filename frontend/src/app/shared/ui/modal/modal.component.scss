@@ -27,6 +27,7 @@
     0 24px 64px rgba(0, 0, 0, 0.72),
     0 0 0 1px rgba(73, 232, 146, 0.14);
   overflow: hidden;
+  will-change: transform;
 
   &[data-size='sm'] {
     max-width: 480px;
@@ -35,6 +36,17 @@
   &[data-size='lg'] {
     max-width: 940px;
   }
+
+  &[data-size='xl'] {
+    max-width: 1120px;
+  }
+
+  &--dragging {
+    user-select: none;
+    box-shadow:
+      0 28px 72px rgba(0, 0, 0, 0.86),
+      0 0 0 1px rgba(217, 183, 122, 0.45);
+  }
 }
 
 .lw-modal__header {
@@ -42,14 +54,47 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.1rem 1.25rem;
+  padding: 1.05rem 1.25rem;
   border-bottom: 1px solid rgba(73, 232, 146, 0.16);
   background: rgba(6, 18, 13, 0.85);
+
+  &--draggable {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
 }
 
 .lw-modal__heading {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.lw-modal__header-controls {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.lw-modal__reset-pos {
+  height: 32px;
+  padding: 0 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 183, 122, 0.34);
+  background: rgba(14, 32, 24, 0.85);
+  color: #f3e5c8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #49e892;
+    color: #49e892;
+  }
 }
 
 .lw-modal__close {

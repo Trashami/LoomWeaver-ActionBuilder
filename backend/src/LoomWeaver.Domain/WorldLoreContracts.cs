@@ -171,7 +171,12 @@ public sealed record LoreEntryDto(
     bool Archived,
     string CreatedAtLabel,
     string UpdatedAtLabel,
-    long UpdatedAtUnixMs
+    long UpdatedAtUnixMs,
+    string? SessionId = null,
+    string? SessionLabel = null,
+    string? QuestId = null,
+    string? QuestTitle = null,
+    string? QuestKind = null
 );
 
 public sealed record WorldHistoryChronicleEventDto(
@@ -277,7 +282,12 @@ public sealed record UpsertLoreEntryRequest(
     IReadOnlyList<string>? Tags,
     IReadOnlyList<string>? LinkedEntityKeys,
     string Visibility,
-    bool Archived = false
+    bool Archived = false,
+    string? SessionId = null,
+    string? SessionLabel = null,
+    string? QuestId = null,
+    string? QuestTitle = null,
+    string? QuestKind = null
 );
 
 public sealed record CreateWorldHistoryEventRequest(

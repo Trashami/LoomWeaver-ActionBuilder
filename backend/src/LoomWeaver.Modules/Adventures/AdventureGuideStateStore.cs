@@ -1,8 +1,9 @@
 using LoomWeaver.Domain;
+using LoomWeaver.Modules.Knowledge;
 
 namespace LoomWeaver.Modules.Adventures;
 
-// Runtime Arcane Screen state. Seeds are empty; content is added by the GM and campaign data.
+// Runtime Arcane Screen and Session Guide state. Seeds are empty; content is added by the GM and campaign data.
 public static class AdventureGuideStateStore
 {
     private static readonly object SyncLock = new();
@@ -19,7 +20,116 @@ public static class AdventureGuideStateStore
 
     private static readonly Dictionary<string, AdventureAssignedBattlemapDto> AssignedMapsByScope = new(StringComparer.OrdinalIgnoreCase);
 
+    private static readonly Dictionary<int, string> ActiveSessionByCampaign = new();
+
+    private static readonly Dictionary<int, List<SessionAttachmentItemDto>> AttachmentsByCampaign = new();
+
     private static readonly List<AdventurePlayEventDto> PlayEvents = new();
+
+    public static string GetActiveSessionId(int campaignId)
+    {
+        lock (SyncLock)
+        {
+            return ActiveSessionByCampaign.TryGetValue(campaignId, out var sId) ? sId : "";
+        }
+    }
+
+    public static void SetActiveSessionId(int campaignId, string sessionId)
+    {
+        lock (SyncLock)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId)) return;
+            ActiveSessionByCampaign[campaignId] = sessionId.Trim();
+        }
+    }
+
+    public static IReadOnlyList<SessionAttachmentItemDto> GetSessionAttachments(
+        int campaignId,
+        bool isGm,
+        string? sessionId = null)
+    {
+        lock (SyncLock)
+        {
+            if (!AttachmentsByCampaign.TryGetValue(campaignId, out var list))
+            {
+                return Array.Empty<SessionAttachmentItemDto>();
+            }
+            return list
+                .Where(a => (isGm || a.Visibility != "gm") &&
+                            (string.IsNullOrWhiteSpace(sessionId) || string.Equals(a.SessionId, sessionId, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
+    }
+
+    public static SessionAttachmentItemDto AttachElement(int campaignId, AttachSessionElementRequest req)
+    {
+        lock (SyncLock)
+        {
+            if (!AttachmentsByCampaign.TryGetValue(campaignId, out var list))
+            {
+                list = new List<SessionAttachmentItemDto>();
+                AttachmentsByCampaign[campaignId] = list;
+            }
+
+            var sesId = string.IsNullOrWhiteSpace(req.SessionId) ? GetActiveSessionId(campaignId) : req.SessionId.Trim();
+            var kind = string.IsNullOrWhiteSpace(req.ElementKind) ? "Lore" : req.ElementKind.Trim();
+            var key = string.IsNullOrWhiteSpace(req.TargetKey)
+                ? $"elem-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                : req.TargetKey.Trim();
+            var id = $"{sesId}:{kind}:{key}".ToLowerInvariant();
+            var vis = string.Equals(req.Visibility, "gm", StringComparison.OrdinalIgnoreCase) ? "gm" : "players";
+
+            var item = new SessionAttachmentItemDto(
+                Id: id,
+                SessionId: sesId,
+                ElementKind: kind,
+                TargetKey: key,
+                Title: string.IsNullOrWhiteSpace(req.Title) ? "Attached Element" : req.Title.Trim(),
+                Subtitle: string.IsNullOrWhiteSpace(req.Subtitle) ? kind : req.Subtitle.Trim(),
+                Summary: string.IsNullOrWhiteSpace(req.Summary) ? $"Attached to {sesId}" : req.Summary.Trim(),
+                RouteLink: string.IsNullOrWhiteSpace(req.RouteLink) ? "/sessions" : req.RouteLink.Trim(),
+                Visibility: vis,
+                QuestKind: req.QuestKind,
+                ArtworkUrl: req.ArtworkUrl
+            );
+
+            list.RemoveAll(a => string.Equals(a.Id, id, StringComparison.OrdinalIgnoreCase));
+            list.Insert(0, item);
+
+            if (string.Equals(kind, "Map", StringComparison.OrdinalIgnoreCase))
+            {
+                AssignBattlemap(
+                    new AssignBattlemapToAdventureRequest(
+                        SceneKey: key,
+                        SceneTitle: item.Title,
+                        SessionId: sesId,
+                        LocationNodeId: "",
+                        ArtworkUrl: req.ArtworkUrl,
+                        Biome: item.Subtitle),
+                    campaignId);
+            }
+
+            PlayEvents.Insert(0, new AdventurePlayEventDto(
+                $"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                "element_attached",
+                "Sessions",
+                $"Attached {kind} '{item.Title}' to {sesId}",
+                "Just now"));
+
+            return item;
+        }
+    }
+
+    public static void DetachElement(int campaignId, string attachmentId)
+    {
+        lock (SyncLock)
+        {
+            if (AttachmentsByCampaign.TryGetValue(campaignId, out var list))
+            {
+                list.RemoveAll(a => string.Equals(a.Id, attachmentId, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+    }
 
     public static ContextualAdventureGuideDto BuildGuide(
         int campaignId,
@@ -32,11 +142,16 @@ public static class AdventureGuideStateStore
         {
             var normScopeKind = NormalizeScopeKind(scopeKind, scopeId);
             var normScopeId = ResolveScopeId(normScopeKind, scopeId);
-            var filter = string.IsNullOrWhiteSpace(progressFilter) ? "all" : progressFilter.Trim().ToLowerInvariant();
+            var activeSesId = GetActiveSessionId(campaignId);
+            if (string.IsNullOrWhiteSpace(normScopeId) && !string.IsNullOrWhiteSpace(activeSesId))
+            {
+                normScopeId = activeSesId;
+            }
 
-            var assignedMap = AssignedMapsByScope.TryGetValue(normScopeId, out var scopedMap)
-                ? scopedMap
-                : EmptyBattlemap();
+            var filter = string.IsNullOrWhiteSpace(progressFilter) ? "all" : progressFilter.Trim().ToLowerInvariant();
+            var isWholeGuide = string.Equals(normScopeKind, "adventure", StringComparison.OrdinalIgnoreCase);
+
+            var assignedMap = ResolveAssignedBattlemap(campaignId, normScopeId, activeSesId);
 
             var visibleRegions = assignedMap.ClickableRegions
                 .Where(r => isGm || r.Visibility != "gm" || SharedReadAloudAndSecretIds.Contains(r.RoomNodeId))
@@ -49,20 +164,127 @@ public static class AdventureGuideStateStore
 
             var filteredNpcs = filter == "all" ? allNpcs : allNpcs.Where(n => FilterMatches(n.ProgressState, filter)).ToList();
 
+            var attachments = GetSessionAttachments(
+                campaignId,
+                isGm,
+                isWholeGuide ? null : normScopeId);
+
+            var loreEntries = WorldLoreCatalogStore.LoreByCampaign.TryGetValue(campaignId, out var campaignLore)
+                ? campaignLore
+                    .Where(l => !l.Archived && (isGm || l.Visibility != "gm"))
+                    .Where(l => isWholeGuide || string.IsNullOrWhiteSpace(normScopeId) ||
+                                string.Equals(l.SessionId, normScopeId, StringComparison.OrdinalIgnoreCase))
+                    .Select(l => new AdventureGuideElementItemDto(
+                        NodeId: $"lore-{l.Id}",
+                        CompositeKey: l.CompositeKey,
+                        ElementKind: string.IsNullOrWhiteSpace(l.QuestTitle) ? l.Category : $"{l.Category} · {l.QuestTitle}",
+                        AreaKey: l.SessionId,
+                        Title: l.Title,
+                        Subtitle: l.Subtitle,
+                        Summary: l.Excerpt,
+                        ArtworkUrl: l.ArtworkUrl,
+                        WhyIncluded: string.IsNullOrWhiteSpace(l.SessionLabel) ? "Campaign Lore" : $"Assigned to {l.SessionLabel}",
+                        ProgressState: GetNodeState($"lore-{l.Id}", "discovered"),
+                        RouteLink: "/world-lore",
+                        Visibility: l.Visibility))
+                    .ToList()
+                : new List<AdventureGuideElementItemDto>();
+
+            foreach (var att in attachments.Where(a => a.ElementKind.Equals("Lore", StringComparison.OrdinalIgnoreCase)))
+            {
+                if (!loreEntries.Any(x => x.CompositeKey == att.TargetKey || x.NodeId == $"lore-{att.TargetKey}"))
+                {
+                    loreEntries.Add(new AdventureGuideElementItemDto(
+                        NodeId: $"att-{att.Id}",
+                        CompositeKey: att.TargetKey,
+                        ElementKind: "Lore",
+                        AreaKey: att.SessionId,
+                        Title: att.Title,
+                        Subtitle: att.Subtitle,
+                        Summary: att.Summary,
+                        ArtworkUrl: att.ArtworkUrl ?? "/icrandor_world_dashboard.jpg",
+                        WhyIncluded: $"Attached to {att.SessionId}",
+                        ProgressState: "discovered",
+                        RouteLink: att.RouteLink,
+                        Visibility: att.Visibility));
+                }
+            }
+
+            var questAndClueItems = attachments
+                .Where(a => a.ElementKind is "Quest" or "SideQuest" or "Item" or "Handout")
+                .Select(a => new AdventureGuideElementItemDto(
+                    NodeId: $"att-{a.Id}",
+                    CompositeKey: a.TargetKey,
+                    ElementKind: a.ElementKind,
+                    AreaKey: a.SessionId,
+                    Title: a.Title,
+                    Subtitle: a.Subtitle,
+                    Summary: a.Summary,
+                    ArtworkUrl: a.ArtworkUrl ?? "/icrandor_world_dashboard.jpg",
+                    WhyIncluded: $"Attached to {a.SessionId}",
+                    ProgressState: GetNodeState($"att-{a.Id}", "discovered"),
+                    RouteLink: a.RouteLink,
+                    Visibility: a.Visibility))
+                .ToList();
+
+            var encounterItems = attachments
+                .Where(a => a.ElementKind is "Encounter" or "Monster")
+                .Select(a => new AdventureGuideEncounterItemDto(
+                    NodeId: $"att-{a.Id}",
+                    CompositeKey: a.TargetKey,
+                    Title: a.Title,
+                    Subtitle: a.Subtitle,
+                    Difficulty: a.ElementKind,
+                    XpReward: 450,
+                    Trigger: a.Summary,
+                    TerrainNotes: assignedMap.Title,
+                    TacticsSummary: $"Attached to {a.SessionId}",
+                    AssignedSceneKey: assignedMap.SceneKey,
+                    WhyIncluded: $"Attached to {a.SessionId}",
+                    ProgressState: GetNodeState($"att-{a.Id}", "unresolved"),
+                    RouteLink: a.RouteLink,
+                    VttRouteLink: string.IsNullOrWhiteSpace(assignedMap.SceneKey) ? "/arcane-screen" : $"/arcane-screen?scene={assignedMap.SceneKey}",
+                    Visibility: a.Visibility))
+                .ToList();
+
+            var npcAttachments = attachments
+                .Where(a => a.ElementKind is "NPC" or "Character")
+                .Select(a => new AdventureGuideNpcItemDto(
+                    NodeId: $"att-{a.Id}",
+                    CompositeKey: a.TargetKey,
+                    Name: a.Title,
+                    Role: a.Subtitle,
+                    DispositionLabel: "Attached",
+                    DispositionTone: "gold",
+                    Initials: a.Title.Length >= 2 ? a.Title[..2].ToUpperInvariant() : "NP",
+                    RingColor: "#d9b77a",
+                    ArtworkUrl: a.ArtworkUrl ?? "/icrandor_world_dashboard.jpg",
+                    Motive: a.Summary,
+                    DialogueExcerpt: "",
+                    WhyIncluded: $"Attached to {a.SessionId}",
+                    ProgressState: "discovered",
+                    RouteLink: a.RouteLink,
+                    Visibility: a.Visibility))
+                .ToList();
+
+            var combinedNpcs = filteredNpcs.Concat(npcAttachments).ToList();
+
             return new ContextualAdventureGuideDto(
                 CampaignId: campaignId,
-                AdventureId: "",
-                AdventureVersionId: "",
-                AdventureTitle: "",
+                AdventureId: $"adv-{campaignId}",
+                AdventureVersionId: "v2",
+                AdventureTitle: isWholeGuide ? "Whole Campaign Adventure Guide" : "Current Session Guide",
                 ActiveScopeKind: normScopeKind,
                 ActiveScopeId: normScopeId,
-                ActiveSessionId: "",
+                ActiveSessionId: string.IsNullOrWhiteSpace(normScopeId) ? activeSesId : normScopeId,
                 ActiveSessionNumber: 0,
-                HeaderTitle: "",
-                HeaderSubtitle: "",
+                HeaderTitle: isWholeGuide ? "Whole Campaign Adventure Guide" : (string.IsNullOrWhiteSpace(assignedMap.Title) ? "Active Session Guide" : assignedMap.Title),
+                HeaderSubtitle: isWholeGuide ? "All Sessions, Quests, Lore & Encounters" : $"Session Scope · {normScopeId}",
                 ArtworkUrl: assignedMap.ArtworkUrl,
                 Epigraph: "",
-                Summary: "",
+                Summary: isWholeGuide
+                    ? "Complete campaign guide spanning all sessions, maps, quests, side quests, lore entries, NPCs, and encounters."
+                    : "Filtered strictly to content, maps, quests, lore, and encounters attached to the selected session.",
                 ImmediateSituation: "",
                 SensoryDescription: "",
                 ActiveAreaKey: null,
@@ -75,18 +297,34 @@ public static class AdventureGuideStateStore
                 SkillChecks: Array.Empty<AdventureSkillCheckDto>(),
                 AssignedBattlemap: assignedMap with { ClickableRegions = visibleRegions },
                 Beats: Beats.ToList(),
-                KeyNpcs: filteredNpcs,
-                Encounters: Array.Empty<AdventureGuideEncounterItemDto>(),
-                CluesAndHazards: Array.Empty<AdventureGuideElementItemDto>(),
+                KeyNpcs: combinedNpcs,
+                Encounters: encounterItems,
+                CluesAndHazards: questAndClueItems,
                 TreasuresAndRewards: Array.Empty<AdventureGuideElementItemDto>(),
                 Secrets: Array.Empty<string>(),
-                NotesTabItems: Array.Empty<AdventureGuideElementItemDto>(),
-                NpcsTabItems: allNpcs,
+                NotesTabItems: questAndClueItems,
+                NpcsTabItems: combinedNpcs,
                 PlacesTabItems: AdventureGuideSeedCatalog.GetPlacesTabItems(isGm, assignedMap, GetNodeState, SharedReadAloudAndSecretIds),
-                LoreTabItems: AdventureGuideSeedCatalog.GetLoreTabItems(isGm),
+                LoreTabItems: loreEntries,
                 RecentPlayEvents: PlayEvents.Take(6).ToList()
             );
         }
+    }
+
+    private static AdventureAssignedBattlemapDto ResolveAssignedBattlemap(int campaignId, string scopeId, string activeSesId)
+    {
+        if (!string.IsNullOrWhiteSpace(scopeId))
+        {
+            if (AssignedMapsByScope.TryGetValue($"{campaignId}:{scopeId}", out var byCampScope)) return byCampScope;
+            if (AssignedMapsByScope.TryGetValue(scopeId, out var byScope)) return byScope;
+        }
+        if (!string.IsNullOrWhiteSpace(activeSesId))
+        {
+            if (AssignedMapsByScope.TryGetValue($"{campaignId}:{activeSesId}", out var byActive)) return byActive;
+            if (AssignedMapsByScope.TryGetValue(activeSesId, out var byActiveRaw)) return byActiveRaw;
+        }
+        if (AssignedMapsByScope.TryGetValue($"campaign:{campaignId}:latest", out var byLatest)) return byLatest;
+        return EmptyBattlemap();
     }
 
     public static void ToggleBeat(string beatId)
@@ -99,7 +337,7 @@ public static class AdventureGuideStateStore
             var nextDone = !cur.Done;
             Beats[idx] = cur with { Done = nextDone, ProgressState = nextDone ? "completed" : "unresolved" };
             PlayEvents.Insert(0, new($"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", "beat_checked", "GM",
-                $"{(nextDone ? "Completed" : "Reopened")} Session Beat: {cur.Label} (Location secrets remain isolated)", "Just now"));
+                $"{(nextDone ? "Completed" : "Reopened")} Session Beat: {cur.Label}", "Just now"));
         }
     }
 
@@ -132,7 +370,7 @@ public static class AdventureGuideStateStore
         {
             var key = string.IsNullOrWhiteSpace(req.IdempotencyKey) ? $"reward-{req.NodeId}" : req.IdempotencyKey;
             if (!AwardedRewardKeys.Add(key))
-                return (false, 0, $"Reward '{req.CurrencyOrItemLabel}' was already awarded (idempotent ledger verified).");
+                return (false, 0, $"Reward '{req.CurrencyOrItemLabel}' was already awarded.");
             NodeProgressStates[req.NodeId] = "completed";
             var msg = $"Awarded +{req.XpAmount} XP & {req.CurrencyOrItemLabel} to the party.";
             PlayEvents.Insert(0, new($"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", "reward_awarded", "GM", msg, "Just now"));
@@ -192,13 +430,13 @@ public static class AdventureGuideStateStore
         }
     }
 
-    public static AdventureAssignedBattlemapDto AssignBattlemap(AssignBattlemapToAdventureRequest req)
+    public static AdventureAssignedBattlemapDto AssignBattlemap(AssignBattlemapToAdventureRequest req, int campaignId = 1)
     {
         lock (SyncLock)
         {
             var locNodeId = req.LocationNodeId ?? "";
             var sesId = req.SessionId ?? "";
-            var art = string.IsNullOrWhiteSpace(req.ArtworkUrl) ? "" : req.ArtworkUrl;
+            var art = string.IsNullOrWhiteSpace(req.ArtworkUrl) ? "/battlemap-showcase.jpg" : req.ArtworkUrl;
 
             var updated = new AdventureAssignedBattlemapDto(
                 SceneKey: req.SceneKey,
@@ -213,29 +451,30 @@ public static class AdventureGuideStateStore
                 VttRouteLink: $"/arcane-screen?scene={req.SceneKey}",
                 ClickableRegions: Array.Empty<AdventureMapRegionChipDto>());
 
-            if (!string.IsNullOrWhiteSpace(sesId)) AssignedMapsByScope[sesId] = updated;
-            if (!string.IsNullOrWhiteSpace(locNodeId)) AssignedMapsByScope[locNodeId] = updated;
+            if (!string.IsNullOrWhiteSpace(sesId))
+            {
+                AssignedMapsByScope[sesId] = updated;
+                AssignedMapsByScope[$"{campaignId}:{sesId}"] = updated;
+                ActiveSessionByCampaign[campaignId] = sesId;
+            }
+            if (!string.IsNullOrWhiteSpace(locNodeId))
+            {
+                AssignedMapsByScope[locNodeId] = updated;
+                AssignedMapsByScope[$"{campaignId}:{locNodeId}"] = updated;
+            }
+            AssignedMapsByScope[$"campaign:{campaignId}:latest"] = updated;
+
             PlayEvents.Insert(0, new AdventurePlayEventDto(
                 $"evt-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 "map_assigned", "LoomMaps",
-                $"Assigned Battlemap '{updated.Title}'",
+                $"Assigned Battlemap '{updated.Title}' to {sesId}",
                 "Just now"));
             return updated;
         }
     }
 
     private static AdventureAssignedBattlemapDto EmptyBattlemap() => new(
-        SceneKey: "",
-        Title: "",
-        SessionId: "",
-        SessionTitle: "",
-        LocationNodeId: "",
-        LocationTitle: "",
-        AreaKey: null,
-        ArtworkUrl: "",
-        RouteLink: "",
-        VttRouteLink: "",
-        ClickableRegions: Array.Empty<AdventureMapRegionChipDto>());
+        "", "", "", "", "", "", null, "", "", "", Array.Empty<AdventureMapRegionChipDto>());
 
     private static string GetNodeState(string nodeId, string fallback) =>
         NodeProgressStates.TryGetValue(nodeId, out var st) ? st : fallback;

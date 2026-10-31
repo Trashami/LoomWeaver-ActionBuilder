@@ -6,6 +6,7 @@
     <router-outlet />
   </div>
   <lw-loom-launcher [generativeAiEnabled]="store.weaveEnabled()" />
+  <lw-adventure-guide-modal />
   <lw-fullscreen-dice-overlay />
   <lw-alertify-toast-stack />
 } @else {
@@ -249,6 +250,7 @@
       }
     </div>
   </div>
+  <lw-adventure-guide-modal />
   <lw-fullscreen-dice-overlay />
   <lw-alertify-toast-stack />
   <lw-auth-modal />

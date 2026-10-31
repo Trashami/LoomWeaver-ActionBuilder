@@ -38,7 +38,7 @@
       (dimensionModeChanged)="onDimensionModeSwitch($event)"
       (modeChanged)="studioMode.set($event)"
       (campaignChanged)="store.setCampaign($event)"
-      (sessionChanged)="assignSessionId.set($event)"
+      (sessionChanged)="store.setActiveSession($event)"
       (encounterChanged)="assignEncounterId.set($event)"
       (toggleLeftDock)="leftDockCollapsed.set(!leftDockCollapsed())"
       (toggleRightDock)="rightDockCollapsed.set(!rightDockCollapsed())"

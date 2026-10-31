@@ -74,22 +74,21 @@ export class VttCombatService {
     ...SEED_ADDITIONAL_ENCOUNTERS,
   ]);
 
-  readonly encounters = computed<readonly EncounterCardVm[]>(() =>
-    this.encounterDetails().filter((e) => e.campaignId === this.store.activeCampaignId()),
-  );
+  readonly encounters = computed<readonly EncounterCardVm[]>(() => {
+    const filtered = this.encounterDetails().filter((e) => e.campaignId === this.store.activeCampaignId());
+    return filtered.length > 0 ? filtered : this.encounterDetails();
+  });
 
   readonly sessionsForActiveCampaign = computed<readonly CampaignSessionVm[]>(() => {
     const cid = this.store.activeCampaignId();
-    return this.sessions().filter((s) => s.campaignId === cid);
+    const filtered = this.sessions().filter((s) => s.campaignId === cid);
+    return filtered.length > 0 ? filtered : this.sessions();
   });
 
-  readonly activeLiveEncounter = computed<EncounterDetailVm | null>(
-    () => {
-      const campaignId = this.store.activeCampaignId();
-      const campaignEncounters = this.encounterDetails().filter((e) => e.campaignId === campaignId);
-      return campaignEncounters.find((e) => e.id === this.activeEncounterId()) ?? campaignEncounters[0] ?? null;
-    },
-  );
+  readonly activeLiveEncounter = computed<EncounterDetailVm | null>(() => {
+    const list = this.encounters() as readonly EncounterDetailVm[];
+    return list.find((e) => e.id === this.activeEncounterId()) ?? list[0] ?? null;
+  });
 
   readonly creatures = signal<readonly CreatureCardVm[]>(SEED_CREATURES);
   readonly npcs = signal<readonly NpcCardVm[]>(SEED_NPCS);

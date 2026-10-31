@@ -224,6 +224,11 @@ export interface LoreEntryVm {
   readonly createdAtLabel: string;
   readonly updatedAtLabel: string;
   readonly updatedAtUnixMs: number;
+  readonly sessionId?: string | null;
+  readonly sessionLabel?: string | null;
+  readonly questId?: string | null;
+  readonly questTitle?: string | null;
+  readonly questKind?: 'main' | 'side' | string | null;
 }
 
 export interface WorldHistoryChronicleEventVm {

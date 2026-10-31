@@ -58,12 +58,21 @@ export class AdventureGuideService {
 
   constructor() {
     effect(() => {
+      const globalSesId = this.store.activeSessionId();
+      if (globalSesId && this.activeScopeKind() === 'session' && this.activeScopeId() !== globalSesId) {
+        this.activeScopeId.set(globalSesId);
+      }
+    }, { allowSignalWrites: true });
+
+    effect(() => {
       const cid = this.store.activeCampaignId();
       const role = this.store.viewerRole();
       const sKind = this.activeScopeKind();
       const sId = this.activeScopeId();
       const filter = this.activeProgressFilter();
-      this.refreshGuide(cid, role, sKind, sId, filter);
+      if (cid > 0) {
+        this.refreshGuide(cid, role, sKind, sId, filter);
+      }
     });
   }
 
@@ -348,6 +357,11 @@ export class AdventureGuideService {
     };
 
     this.localAssignedMap.set(updatedMap);
+    if (params.sessionId) {
+      this.store.setActiveSession(params.sessionId);
+      this.activeScopeKind.set('session');
+      this.activeScopeId.set(params.sessionId);
+    }
     this.localEvents.update((prev) => [
       {
         id: `evt-${Date.now()}`,

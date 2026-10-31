@@ -1,0 +1,255 @@
+<div class="lw-sessions-page">
+  <lw-page-header
+    kicker="CAMPAIGN SESSIONS & ADVENTURE PLANNER"
+    title="Sessions"
+    subtitle="Select the active session you are planning or playing, attach maps, lore, quests, side quests, encounters, NPCs, and items, and launch the Adventure Guide or Arcane Screen.">
+    <div lwPageActions class="lw-sessions-page__header-actions">
+      <lw-button variant="secondary" size="sm" (pressed)="openAdventureGuide('session')">
+        Open Adventure Guide (Current Session)
+      </lw-button>
+      <lw-button variant="ghost" size="sm" (pressed)="openAdventureGuide('adventure')">
+        Whole Adventure Guide
+      </lw-button>
+      <lw-button variant="primary" size="sm" (pressed)="launchArcaneScreenForSession()">
+        Launch Arcane Screen VTT
+      </lw-button>
+      @if (isGm()) {
+        <lw-button variant="secondary" size="sm" (pressed)="createSessionModalOpen.set(true)">
+          + New Session
+        </lw-button>
+      }
+    </div>
+  </lw-page-header>
+
+  @if (store.activeSession(); as activeSess) {
+    <section class="lw-active-session-banner" aria-label="Active Current Session">
+      <div class="lw-active-session-banner__main">
+        <div class="lw-active-session-banner__badges">
+          <lw-badge tone="emerald">ACTIVE CURRENT SESSION</lw-badge>
+          <lw-badge tone="gold">Session {{ activeSess.sessionNumber }} · {{ activeSess.statusLabel }}</lw-badge>
+          <span class="lw-active-session-banner__loc">{{ activeSess.locationLabel }}</span>
+        </div>
+        <h2>{{ activeSess.title }}</h2>
+        <p>{{ activeSess.summary }}</p>
+      </div>
+
+      <div class="lw-active-session-banner__controls">
+        <label class="lw-active-session-banner__picker">
+          <span>Switch Active Session (Global):</span>
+          <select
+            [ngModel]="store.activeSessionId()"
+            (ngModelChange)="store.setActiveSession($event)"
+            aria-label="Switch active session across LoomWeaver">
+            @for (sess of store.sessions(); track sess.sessionId) {
+              <option [value]="sess.sessionId">
+                Session {{ sess.sessionNumber }} — {{ sess.title }} ({{ sess.statusLabel }})
+              </option>
+            }
+          </select>
+        </label>
+        <div class="lw-active-session-banner__quick-links">
+          <a routerLink="/maps" class="lw-sessions-link-pill">Publish Map from Map Studio</a>
+          <a routerLink="/world-lore" class="lw-sessions-link-pill">Assign Lore & Quests</a>
+          <a routerLink="/loom" class="lw-sessions-link-pill">Session Notes (The Loom)</a>
+        </div>
+      </div>
+    </section>
+  }
+
+  <div class="lw-sessions-layout">
+    <aside class="lw-sessions-roster" aria-label="Campaign Sessions">
+      <lw-panel title="CAMPAIGN SESSIONS" subtitle="Click any session to set it as the Current Session everywhere">
+        <div class="lw-sessions-list">
+          @for (sess of store.sessions(); track sess.sessionId) {
+            <article
+              class="lw-session-card"
+              [class.lw-session-card--active]="sess.sessionId === store.activeSessionId()"
+              (click)="selectSession(sess)">
+              <div class="lw-session-card__top">
+                <span class="lw-session-card__num">SESSION {{ sess.sessionNumber }}</span>
+                <lw-badge [tone]="sess.sessionId === store.activeSessionId() ? 'emerald' : 'neutral'">
+                  {{ sess.sessionId === store.activeSessionId() ? 'CURRENT SESSION' : sess.statusLabel }}
+                </lw-badge>
+              </div>
+              <h3>{{ sess.title }}</h3>
+              <p>{{ sess.summary }}</p>
+              <div class="lw-session-card__meta">
+                <span>{{ sess.locationLabel }}</span>
+              </div>
+            </article>
+          }
+        </div>
+      </lw-panel>
+    </aside>
+
+    <div class="lw-sessions-workbench">
+      @if (isGm()) {
+        <lw-panel
+          title="ATTACH ELEMENTS TO CURRENT SESSION"
+          [subtitle]="'Attaching to: ' + (store.activeSession()?.title || 'Current Session')">
+          <div class="lw-attach-form">
+            <div class="lw-attach-form__row">
+              <label class="lw-attach-field">
+                <span>Element Type</span>
+                <select [ngModel]="attachKind()" (ngModelChange)="attachKind.set($event); attachExistingKey.set('')">
+                  <option value="Map">Battlemap / Scene</option>
+                  <option value="Lore">World & Lore Entry</option>
+                  <option value="Quest">Main Quest</option>
+                  <option value="SideQuest">Side Quest</option>
+                  <option value="Encounter">Combat Encounter</option>
+                  <option value="NPC">NPC / Character / Monster</option>
+                  <option value="Item">Item / Handout / Clue</option>
+                </select>
+              </label>
+
+              <label class="lw-attach-field">
+                <span>Pick Existing Campaign Element (Optional)</span>
+                <select [ngModel]="attachExistingKey()" (ngModelChange)="onExistingOptionChange($event)">
+                  <option value="">Custom or New Element...</option>
+                  @for (opt of availableExistingOptions(); track opt.key) {
+                    <option [value]="opt.key">{{ opt.title }} ({{ opt.subtitle }})</option>
+                  }
+                </select>
+              </label>
+
+              <label class="lw-attach-field">
+                <span>Player Visibility</span>
+                <select [ngModel]="attachVisibility()" (ngModelChange)="attachVisibility.set($event)">
+                  <option value="players">Visible in Player Guide</option>
+                  <option value="gm">GM Secret Only</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="lw-attach-form__row">
+              <label class="lw-attach-field">
+                <span>Element Title</span>
+                <input
+                  type="text"
+                  [ngModel]="attachCustomTitle()"
+                  (ngModelChange)="attachCustomTitle.set($event)"
+                  placeholder="e.g. Vampire Gala Ballroom Map, Blood Chalice Lore, Side Quest..." />
+              </label>
+
+              <label class="lw-attach-field">
+                <span>Session Notes / Objective / Quest Link</span>
+                <input
+                  type="text"
+                  [ngModel]="attachCustomSubtitle()"
+                  (ngModelChange)="attachCustomSubtitle.set($event)"
+                  placeholder="How this element is used in this session..." />
+              </label>
+
+              <div class="lw-attach-form__submit">
+                <lw-button variant="primary" size="md" (pressed)="attachSelectedElement()">
+                  Attach to Current Session
+                </lw-button>
+              </div>
+            </div>
+          </div>
+        </lw-panel>
+      }
+
+      <lw-panel
+        title="ATTACHED ELEMENTS FOR CURRENT SESSION"
+        [subtitle]="
+          (store.activeSession()?.title || 'Active Session') +
+          ' · Synced with Adventure Guide & Arcane Screen'
+        ">
+        <div class="lw-session-tabs" role="tablist">
+          @for (tab of categoryTabs; track tab.id) {
+            <button
+              type="button"
+              class="lw-session-tab"
+              [class.lw-session-tab--active]="activeTab() === tab.id"
+              (click)="activeTab.set(tab.id)">
+              <lw-icon [name]="tab.icon" [size]="14"></lw-icon>
+              <span>{{ tab.label }}</span>
+            </button>
+          }
+        </div>
+
+        <div class="lw-attached-grid">
+          @for (item of filteredAttachments(); track item.id) {
+            <article class="lw-attached-card">
+              <div class="lw-attached-card__head">
+                <lw-badge [tone]="item.elementKind === 'Map' ? 'emerald' : 'gold'">
+                  {{ item.elementKind === 'SideQuest' ? 'Side Quest' : item.elementKind }}
+                </lw-badge>
+                @if (item.visibility === 'gm') {
+                  <lw-badge tone="crimson">GM Only</lw-badge>
+                }
+              </div>
+              <h4>{{ item.title }}</h4>
+              <p>{{ item.subtitle }}</p>
+              <div class="lw-attached-card__actions">
+                <a [routerLink]="item.routeLink.split('?')[0]" class="lw-sessions-link-pill">
+                  Open Element
+                </a>
+                @if (item.elementKind === 'Map') {
+                  <lw-button variant="primary" size="sm" (pressed)="launchArcaneScreenForSession()">
+                    Open in Arcane Screen
+                  </lw-button>
+                }
+                @if (isGm()) {
+                  <lw-button
+                    variant="ghost"
+                    size="sm"
+                    (pressed)="store.detachElementFromSession(item.id)">
+                    Remove
+                  </lw-button>
+                }
+              </div>
+            </article>
+          } @empty {
+            <div class="lw-attached-empty">
+              <p>No elements in this category attached to {{ store.activeSession()?.title }} yet.</p>
+            </div>
+          }
+        </div>
+      </lw-panel>
+    </div>
+  </div>
+</div>
+
+<lw-modal
+  [(open)]="createSessionModalOpen"
+  title="Create Campaign Session"
+  subtitle="Add a new session and set it as your active planning session"
+  size="md"
+  [draggable]="true">
+  <div class="lw-attach-form">
+    <label class="lw-attach-field">
+      <span>Session Title</span>
+      <input
+        type="text"
+        [ngModel]="newSessionTitle()"
+        (ngModelChange)="newSessionTitle.set($event)"
+        placeholder="e.g. Session 16 — Beneath the Shadow Mountain" />
+    </label>
+    <label class="lw-attach-field">
+      <span>Primary Location / Region</span>
+      <input
+        type="text"
+        [ngModel]="newSessionLocation()"
+        (ngModelChange)="newSessionLocation.set($event)"
+        placeholder="e.g. Cinth — Vampire Gala" />
+    </label>
+    <label class="lw-attach-field">
+      <span>Session Synopsis & Objectives</span>
+      <textarea
+        rows="4"
+        [ngModel]="newSessionSummary()"
+        (ngModelChange)="newSessionSummary.set($event)"
+        placeholder="Describe what the party is facing in this session..."></textarea>
+    </label>
+  </div>
+  <div lwModalFooter style="display: flex; justify-content: flex-end; gap: 8px;">
+    <lw-button variant="ghost" size="sm" (pressed)="createSessionModalOpen.set(false)">
+      Cancel
+    </lw-button>
+    <lw-button variant="primary" size="sm" (pressed)="createNewSession()">
+      Create & Set Active
+    </lw-button>
+  </div>
+</lw-modal>

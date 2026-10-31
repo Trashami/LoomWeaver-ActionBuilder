@@ -76,6 +76,31 @@
       <div class="lw-lore-full__controls">
         <select
           class="lw-lore-select"
+          [ngModel]="worldLore.loreSessionFilter()"
+          (ngModelChange)="worldLore.loreSessionFilter.set($event)"
+          aria-label="Filter lore by session">
+          <option value="All">All Sessions</option>
+          <option value="current-session">Current Session ({{ worldLore.store.activeSession()?.title || 'Active' }})</option>
+          @for (sess of availableSessions(); track sess.sessionId) {
+            <option [value]="sess.sessionId">Session {{ sess.sessionNumber }} · {{ sess.title }}</option>
+          }
+        </select>
+
+        <select
+          class="lw-lore-select"
+          [ngModel]="worldLore.loreQuestFilter()"
+          (ngModelChange)="worldLore.loreQuestFilter.set($event)"
+          aria-label="Filter lore by quest or side quest">
+          <option value="All">All Quests & Side Quests</option>
+          <option value="main">Main Quests Only</option>
+          <option value="side">Side Quests Only</option>
+          @for (q of availableQuests(); track q.compositeKey) {
+            <option [value]="q.name">{{ q.name }}</option>
+          }
+        </select>
+
+        <select
+          class="lw-lore-select"
           [ngModel]="worldLore.loreCategoryFilter()"
           (ngModelChange)="worldLore.loreCategoryFilter.set($event)"
           aria-label="Filter lore by category">
@@ -153,6 +178,16 @@
             </div>
             <h4>{{ entry.title }}</h4>
             <p>{{ entry.excerpt }}</p>
+            @if (entry.sessionLabel || entry.questTitle) {
+              <div class="lw-lore-entry-card__tags" style="margin-bottom: 6px;">
+                @if (entry.sessionLabel) {
+                  <span class="lw-lore-tag">{{ entry.sessionLabel }}</span>
+                }
+                @if (entry.questTitle) {
+                  <span class="lw-lore-tag">{{ entry.questKind === 'side' ? 'Side Quest' : 'Quest' }}: {{ entry.questTitle }}</span>
+                }
+              </div>
+            }
             <div class="lw-lore-entry-card__footer">
               <div class="lw-lore-entry-card__tags">
                 @for (tag of entry.tags.slice(0, 3); track tag) {
@@ -191,6 +226,14 @@
             </div>
             @if (worldLore.isGm()) {
               <div class="lw-lore-reader__actions">
+                <button
+                  type="button"
+                  class="lw-lore-btn lw-lore-btn--ghost"
+                  (click)="assignEntryToCurrentSession(activeEntry)"
+                  title="Assign this lore entry to the active session">
+                  <lw-icon name="event" [size]="14"></lw-icon>
+                  <span>Assign to Current Session</span>
+                </button>
                 <button type="button" class="lw-lore-btn lw-lore-btn--ghost" (click)="openEditEntry(activeEntry)">
                   <lw-icon name="edit" [size]="14"></lw-icon>
                   <span>Edit</span>
@@ -205,6 +248,19 @@
               </div>
             }
           </div>
+
+          @if (activeEntry.sessionLabel || activeEntry.questTitle) {
+            <div class="lw-lore-reader__links" style="margin-bottom: 10px;">
+              @if (activeEntry.sessionLabel) {
+                <span class="lw-lore-pill lw-lore-pill--active">Assigned: {{ activeEntry.sessionLabel }}</span>
+              }
+              @if (activeEntry.questTitle) {
+                <span class="lw-lore-pill lw-lore-pill--active">
+                  {{ activeEntry.questKind === 'side' ? 'Side Quest' : 'Main Quest' }}: {{ activeEntry.questTitle }}
+                </span>
+              }
+            </div>
+          }
 
           <p class="lw-lore-reader__summary">{{ activeEntry.excerpt }}</p>
           <div class="lw-lore-reader__body">{{ activeEntry.content }}</div>
@@ -301,6 +357,50 @@
             </select>
           </label>
         </div>
+
+        <div class="lw-lore-field-row">
+          <label class="lw-lore-field">
+            <span>Assign to Session (Planning / Guide)</span>
+            <select [ngModel]="newSessionId()" (ngModelChange)="newSessionId.set($event)">
+              <option value="">All Sessions / World Canon</option>
+              @for (sess of availableSessions(); track sess.sessionId) {
+                <option [value]="sess.sessionId">
+                  Session {{ sess.sessionNumber }} · {{ sess.title }}{{ sess.sessionId === worldLore.store.activeSessionId() ? ' (Current)' : '' }}
+                </option>
+              }
+            </select>
+          </label>
+          <label class="lw-lore-field">
+            <span>Attach to Quest or Side Quest</span>
+            <select [ngModel]="newQuestKind()" (ngModelChange)="newQuestKind.set($event)">
+              <option value="none">No Quest Attachment</option>
+              <option value="main">Main Quest</option>
+              <option value="side">Side Quest</option>
+            </select>
+          </label>
+        </div>
+
+        @if (newQuestKind() !== 'none') {
+          <div class="lw-lore-field-row">
+            <label class="lw-lore-field">
+              <span>Select Existing Campaign Quest</span>
+              <select [ngModel]="newQuestId()" (ngModelChange)="onQuestPickerChange($event)">
+                <option value="">Custom Quest / Side Quest Title...</option>
+                @for (q of availableQuests(); track q.compositeKey) {
+                  <option [value]="q.compositeKey">{{ q.name }} ({{ q.subtitle }})</option>
+                }
+              </select>
+            </label>
+            <label class="lw-lore-field">
+              <span>{{ newQuestKind() === 'side' ? 'Side Quest Title' : 'Main Quest Title' }}</span>
+              <input
+                type="text"
+                [ngModel]="newQuestTitle()"
+                (ngModelChange)="newQuestTitle.set($event)"
+                placeholder="Enter quest or side quest name..." />
+            </label>
+          </div>
+        }
 
         <label class="lw-lore-field">
           <span>Summary (Optional)</span>

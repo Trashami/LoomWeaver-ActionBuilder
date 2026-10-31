@@ -1,4 +1,20 @@
 <div class="lw-gm-panel">
+  <section class="lw-gm-card" style="margin-bottom: 0.6rem;">
+    <header class="lw-gm-card__head">
+      <h3>{{ store.activeSession()?.title || 'Current Session' }}</h3>
+      <span class="lw-gm-round">Session {{ store.activeSession()?.sessionNumber || 15 }}</span>
+    </header>
+    <p class="lw-gm-body">{{ adventureGuide.guide().assignedBattlemap.title }}</p>
+    <div class="lw-gm-btn-row" style="margin-top: 0.45rem;">
+      <button ngpButton type="button" class="lw-gm-btn lw-gm-btn--on" (click)="store.openAdventureGuideModal('session')">
+        Open Adventure Guide (Current Session)
+      </button>
+      <button ngpButton type="button" class="lw-gm-btn" (click)="store.openAdventureGuideModal('adventure')">
+        Whole Guide
+      </button>
+    </div>
+  </section>
+
   @if (encounter(); as enc) {
     <nav class="lw-gm-subtabs" aria-label="Guide sections">
       <button ngpButton type="button" [class.active]="section() === 'guide'" (click)="section.set('guide')">Guide</button>

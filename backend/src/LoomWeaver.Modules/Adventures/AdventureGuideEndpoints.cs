@@ -184,7 +184,7 @@ public static class AdventureGuideEndpoints
             if (!access.IsAccountGm)
                 return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
             var isGm = access.IsEffectiveGm;
-            var assigned = AdventureGuideStateStore.AssignBattlemap(req);
+            var assigned = AdventureGuideStateStore.AssignBattlemap(req, campaignId);
 
             await graph.ProjectBattlemapAssignmentAsync(
                 campaignId,
@@ -195,6 +195,55 @@ public static class AdventureGuideEndpoints
                 ct);
 
             return Results.Ok(AdventureGuideStateStore.BuildGuide(campaignId, isGm, scopeKind, scopeId, filter));
+        });
+
+        api.MapGet("/campaigns/{campaignId:int}/active-session", (int campaignId) =>
+        {
+            return Results.Ok(new { sessionId = AdventureGuideStateStore.GetActiveSessionId(campaignId) });
+        });
+
+        api.MapPost("/campaigns/{campaignId:int}/active-session", (
+            int campaignId,
+            SetActiveSessionRequest req) =>
+        {
+            AdventureGuideStateStore.SetActiveSessionId(campaignId, req.SessionId);
+            return Results.Ok(new { sessionId = AdventureGuideStateStore.GetActiveSessionId(campaignId) });
+        });
+
+        api.MapGet("/campaigns/{campaignId:int}/session-attachments", (
+            int campaignId,
+            string? sessionId,
+            string? role,
+            HttpContext httpContext) =>
+        {
+            var isGm = CampaignAccessResolver.Resolve(httpContext, campaignId, role).IsEffectiveGm;
+            return Results.Ok(AdventureGuideStateStore.GetSessionAttachments(campaignId, isGm, sessionId));
+        });
+
+        api.MapPost("/campaigns/{campaignId:int}/session-attachments", (
+            int campaignId,
+            AttachSessionElementRequest req,
+            string? role,
+            HttpContext httpContext) =>
+        {
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
+            var item = AdventureGuideStateStore.AttachElement(campaignId, req);
+            return Results.Ok(item);
+        });
+
+        api.MapDelete("/campaigns/{campaignId:int}/session-attachments/{attachmentId}", (
+            int campaignId,
+            string attachmentId,
+            string? role,
+            HttpContext httpContext) =>
+        {
+            var access = CampaignAccessResolver.Resolve(httpContext, campaignId, role);
+            if (!access.IsAccountGm)
+                return Results.Json(new { message = "GM authorization required." }, statusCode: 403);
+            AdventureGuideStateStore.DetachElement(campaignId, attachmentId);
+            return Results.Ok(AdventureGuideStateStore.GetSessionAttachments(campaignId, access.IsEffectiveGm, null));
         });
 
         return api;

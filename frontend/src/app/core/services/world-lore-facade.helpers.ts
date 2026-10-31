@@ -134,8 +134,12 @@ export function filterLoreEntriesList(
   cat: string,
   tag: string,
   sortBy: 'updated' | 'created' | 'name',
+  sessionFilter = 'All',
+  activeSessionId = '',
+  questFilter = 'All',
 ): readonly LoreEntryVm[] {
   const q = query.trim().toLowerCase();
+  const targetSession = sessionFilter === 'current-session' ? activeSessionId : sessionFilter;
   const list = entries
     .filter((e) => !e.archived && (isGm || e.visibility !== 'gm'))
     .filter((e) => {
@@ -149,12 +153,23 @@ export function filterLoreEntriesList(
       return e.category === cat;
     })
     .filter((e) => (tag === 'All' ? true : e.tags.includes(tag)))
+    .filter((e) => {
+      if (!targetSession || targetSession === 'All') return true;
+      return e.sessionId === targetSession;
+    })
+    .filter((e) => {
+      if (!questFilter || questFilter === 'All') return true;
+      if (questFilter === 'main' || questFilter === 'side') return e.questKind === questFilter;
+      return e.questId === questFilter || e.questTitle === questFilter;
+    })
     .filter((e) =>
       !q
         ? true
         : e.title.toLowerCase().includes(q) ||
           e.excerpt.toLowerCase().includes(q) ||
           e.content.toLowerCase().includes(q) ||
+          (e.sessionLabel ?? '').toLowerCase().includes(q) ||
+          (e.questTitle ?? '').toLowerCase().includes(q) ||
           e.tags.some((t) => t.toLowerCase().includes(q)),
     );
 
@@ -270,6 +285,11 @@ export function buildFallbackLoreEntryVm(
     linkedEntityKeys?: readonly string[];
     visibility: 'players' | 'gm' | 'public';
     archived?: boolean;
+    sessionId?: string | null;
+    sessionLabel?: string | null;
+    questId?: string | null;
+    questTitle?: string | null;
+    questKind?: string | null;
   },
 ): LoreEntryVm {
   const id = req.id ?? `lore-${Date.now().toString().slice(-5)}`;
@@ -292,6 +312,11 @@ export function buildFallbackLoreEntryVm(
     createdAtLabel: 'Just now',
     updatedAtLabel: 'Just now',
     updatedAtUnixMs: Date.now(),
+    sessionId: req.sessionId ?? null,
+    sessionLabel: req.sessionLabel ?? null,
+    questId: req.questId ?? null,
+    questTitle: req.questTitle ?? null,
+    questKind: req.questKind ?? null,
   };
 }
 
