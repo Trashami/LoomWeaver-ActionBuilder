@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import {
   ArcRotateCamera,
+  ArcRotateCameraPointersInput,
   Color3,
   Color4,
   Engine,
@@ -11,6 +12,7 @@ import {
   PointLight,
   Scene,
   StandardMaterial,
+  Texture,
   Vector3,
 } from '@babylonjs/core';
 import {
@@ -30,6 +32,10 @@ export class BabylonEffectStageService {
   private readonly draggedSubject = new Subject<TokenPlacement>();
   private readonly droppedSubject = new Subject<TokenPlacement>();
   private cleanupHandlers: (() => void)[] = [];
+  private ground: Mesh | null = null;
+  private groundMat: StandardMaterial | null = null;
+  private gridLines: Mesh | null = null;
+  private backdropUrl = '';
   camera: ArcRotateCamera | null = null;
 
   resize(): void {
@@ -38,8 +44,38 @@ export class BabylonEffectStageService {
 
   zoomCamera(delta: number): void {
     if (this.camera) {
-      this.camera.radius = Math.max(5, Math.min(100, this.camera.radius + delta));
+      this.camera.radius = Math.max(
+        this.camera.lowerRadiusLimit ?? 5,
+        Math.min(this.camera.upperRadiusLimit ?? 100, this.camera.radius + delta),
+      );
     }
+  }
+
+  /** Paints the battlemap artwork onto the ground plane, keeping its aspect ratio. */
+  setBackdrop(url: string): void {
+    if (!this.scene || !this.ground || !this.groundMat || !url || url === this.backdropUrl) return;
+    this.backdropUrl = url;
+    const tex = new Texture(url, this.scene);
+    const ground = this.ground;
+    tex.onLoadObservable.addOnce(() => {
+      const size = tex.getSize();
+      if (size.width > 0 && size.height > 0) {
+        ground.scaling.z = size.height / size.width / (20 / 28);
+      }
+    });
+    this.groundMat.diffuseTexture = tex;
+    this.groundMat.diffuseColor = Color3.White();
+    this.groundMat.emissiveColor = new Color3(0.22, 0.22, 0.22);
+  }
+
+  setGridVisible(visible: boolean): void {
+    if (this.gridLines) this.gridLines.isVisible = visible;
+  }
+
+  /** Left-drag orbits the camera only while Space is held; otherwise it is reserved for tokens. */
+  setRotateHeld(held: boolean): void {
+    const pointers = this.camera?.inputs.attached['pointers'] as ArcRotateCameraPointersInput | undefined;
+    if (pointers) pointers.buttons = held ? [0] : [];
   }
 
   readonly activeKeyframeLabel = signal<string>('Ready');
@@ -75,6 +111,8 @@ export class BabylonEffectStageService {
       camera.upperRadiusLimit = 44;
       this.camera = camera;
       camera.attachControl(canvas, true);
+      camera.inputs.removeByType('ArcRotateCameraMouseWheelInput');
+      this.setRotateHeld(false);
 
       const hemi = new HemisphericLight('lw-vtt-hemi', new Vector3(0, 1, 0), this.scene);
       hemi.intensity = 0.65;
@@ -93,6 +131,8 @@ export class BabylonEffectStageService {
       gMat.diffuseColor = Color3.FromHexString('#101d18');
       gMat.specularColor = Color3.FromHexString('#1c3028');
       ground.material = gMat;
+      this.ground = ground;
+      this.groundMat = gMat;
 
       const lines: Vector3[][] = [];
       for (let x = -14; x <= 14; x += 2) {
@@ -103,6 +143,9 @@ export class BabylonEffectStageService {
       }
       const grid = MeshBuilder.CreateLineSystem('lw-vtt-grid', { lines }, this.scene);
       grid.color = Color3.FromHexString('#264035');
+      grid.isVisible = false;
+      this.gridLines = grid;
+      this.backdropUrl = '';
       this.fogPlane = new BabylonFogPlane(this.scene);
 
       this.dragController = new TokenDragController(this.scene, ground, {

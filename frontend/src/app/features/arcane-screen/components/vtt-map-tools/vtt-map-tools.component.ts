@@ -38,7 +38,7 @@ export class VttMapToolsComponent {
   readonly vtt = inject(VttCombatService);
   readonly serverSync = inject(VttServerSyncService);
 
-  readonly gridEnabled = model<boolean>(true);
+  readonly gridEnabled = model<boolean>(false);
   readonly railOpen = model<boolean>(false);
   readonly rollDice = output<void>();
   readonly openShortcuts = output<void>();

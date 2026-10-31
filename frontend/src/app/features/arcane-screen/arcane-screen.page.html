@@ -74,10 +74,10 @@
     }
 
     <!-- Edge-to-Edge Battlefield Viewport -->
-    <section class="lw-vtt-map-stage" [class.lw-vtt-map-stage--3d]="battle.mapMode3D()" (wheel)="onMapWheel($event)" aria-label="Interactive Encounter Battle Map">
+    <section class="lw-vtt-map-stage" [class.lw-vtt-map-stage--3d]="battle.mapMode3D()" (wheel)="onMapWheel($event)" (mousedown)="onMapMouseDown($event)" (mousemove)="onMapMouseMove($event)" (mouseup)="onMapMouseUp()" (mouseleave)="onMapMouseUp()" aria-label="Interactive Encounter Battle Map">
       <canvas #vttCanvas class="lw-vtt-babylon-canvas" [class.lw-vtt-babylon-canvas--active]="battle.mapMode3D()"></canvas>
 
-      <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="battle.mapMode3D()" [style.transform]="'scale(' + (zoomLevel() / 100) + ')'" [style.transformOrigin]="'center center'">
+      <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="battle.mapMode3D()" [style.transform]="view2d.transform()" [style.transformOrigin]="'center center'">
         <div class="lw-vtt-map-backdrop" [style.backgroundImage]="'url(' + activeBattlemapBackdropUrl() + ')'"></div>
 
         <svg #battleSvg class="lw-vtt-svg" viewBox="0 0 1200 800" preserveAspectRatio="none" (mousemove)="onBattleMapPointerMove($event)" (mouseup)="onBattleMapMouseUp()" (click)="onBattleMapClick($event)">

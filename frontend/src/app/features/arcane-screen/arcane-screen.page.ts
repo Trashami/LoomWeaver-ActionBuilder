@@ -24,6 +24,7 @@ import { VttGmTrackersPanelComponent } from './components/vtt-gm/vtt-gm-trackers
 import { toDockAction, toDockToken } from './components/vtt-action-dock/vtt-action-dock.adapter';
 import type { DockAction, DockToken } from './components/vtt-action-dock/vtt-action-dock.models';
 import { VttBattleStateService } from './services/vtt-battle-state.service';
+import { VttMapView2dService } from './services/vtt-map-view-2d.service';
 import { VttCombatService } from './services/vtt-combat.service';
 import { VttFogService } from './services/vtt-fog.service';
 import { VttDisplaySettingsService } from './services/vtt-display-settings.service';
@@ -54,6 +55,7 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   readonly battle = inject(VttBattleStateService); readonly fog = inject(VttFogService);
   readonly stage = inject(BabylonEffectStageService); readonly audio = inject(WebAudioAmbienceService);
   readonly fullscreenDice = inject(FullscreenDiceOverlayService); private readonly router = inject(Router);
+  readonly view2d = inject(VttMapView2dService);
   readonly serverSync = inject(VttServerSyncService); readonly vttReturn = inject(VttReturnRouteService);
   readonly vttDisplay = inject(VttDisplaySettingsService); readonly timer = inject(VttEncounterTimerService);
   readonly handouts = inject(VttHandoutService); readonly showShortcuts = signal<boolean>(false);
@@ -71,6 +73,11 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     effect(() => { this.vtt.tokens(); this.fog.layer(); untracked(() => this.sync3dStage()); });
+    effect(() => {
+      const url = this.activeBattlemapBackdropUrl();
+      const visible = this.gridEnabled();
+      untracked(() => { this.stage.setBackdrop(url); this.stage.setGridVisible(visible); });
+    });
     effect(() => {
       const sceneFromQuery = this.route.snapshot.queryParamMap.get('scene');
       const assignedScene = this.adventureGuide.guide().assignedBattlemap?.sceneKey;
@@ -91,25 +98,24 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  readonly gridEnabled = signal<boolean>(true);
+  readonly gridEnabled = signal<boolean>(false);
   private dragMoved = false;
 
   readonly selectedDiceFormula = signal<string>('1d20');
-  readonly zoomLevel = signal<number>(100);
+  readonly zoomLevel = this.view2d.zoom;
   readonly dmToolReadout = signal<string>('');
-
   onMapWheel(event: WheelEvent): void {
     event.preventDefault();
-    if (this.battle.mapMode3D()) {
-      this.stage.zoomCamera(event.deltaY * 0.05);
-      return;
-    }
-    const delta = event.deltaY < 0 ? 10 : -10;
-    this.zoomLevel.update((z) => Math.max(50, Math.min(250, z + delta)));
+    if (this.battle.mapMode3D()) this.stage.zoomCamera(event.deltaY * 0.05);
+    else this.view2d.wheel(event.deltaY);
   }
 
-  changeZoom(amount: number): void { this.zoomLevel.update((z) => Math.max(50, Math.min(250, z + amount))); }
-  resetZoom(): void { this.zoomLevel.set(100); }
+  onMapMouseDown(event: MouseEvent): void { if (!this.battle.mapMode3D()) this.view2d.start(event); }
+  onMapMouseMove(event: MouseEvent): void { if (!this.battle.mapMode3D()) this.view2d.move(event); }
+  onMapMouseUp(): void { this.view2d.end(); }
+
+  changeZoom(amount: number): void { this.view2d.zoomBy(amount); }
+  resetZoom(): void { this.view2d.reset(); }
   readonly gmRailOpen = signal<boolean>(false);
 
   // Quick-Add Monster & NPC Form State
@@ -146,6 +152,7 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
         const tok = this.vtt.tokens().find((t) => t.key === k);
         if (tok) this.handleTokenSelectionOrCast(tok, false);
       });
+      this.stage.setBackdrop(this.activeBattlemapBackdropUrl()); this.stage.setGridVisible(this.gridEnabled());
       this.sync3dStage();
     }
     this.timer.start();
@@ -181,6 +188,17 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
     this.stage.syncFog(this.fog.layer());
   }
 
+  @HostListener('window:keyup', ['$event'])
+  onWindowKeyup(event: KeyboardEvent): void {
+    if (event.code === 'Space') this.releaseSpace();
+  }
+
+  @HostListener('window:blur')
+  releaseSpace(): void {
+    this.view2d.setSpaceHeld(false);
+    this.stage.setRotateHeld(false);
+  }
+
   @HostListener('window:keydown', ['$event'])
   onWindowKeydown(event: KeyboardEvent): void {
     const tag = (event.target as HTMLElement | null)?.tagName?.toLowerCase();
@@ -189,6 +207,13 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
         this.battle.cancelAllInteractiveModes();
         this.battle.settingsModalOpen.set(false);
       }
+      return;
+    }
+
+    if (event.code === 'Space' && !event.repeat) {
+      event.preventDefault();
+      this.view2d.setSpaceHeld(true);
+      this.stage.setRotateHeld(true);
       return;
     }
 
@@ -257,6 +282,7 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   }
 
   onBattleMapClick(event: MouseEvent): void {
+    if (this.view2d.consumeDragClick()) return;
     if (this.dragMoved) {
       this.dragMoved = false;
       return;
