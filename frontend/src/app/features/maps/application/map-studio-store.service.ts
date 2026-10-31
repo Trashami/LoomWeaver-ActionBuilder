@@ -28,6 +28,7 @@ interface SavedMapSceneDocument extends MapSceneGraphState {
 @Injectable({ providedIn: 'root' })
 export class MapStudioStoreService {
   private readonly http = inject(HttpClient);
+  private resourcesLoaded = false;
 
   readonly mapTitle = signal<string>('Untitled Map');
   readonly activeLevelIndex = signal<number>(1);
@@ -73,11 +74,13 @@ export class MapStudioStoreService {
 
   readonly catalogAssets = signal<readonly MapCatalogAssetItem[]>([]);
 
-  constructor() {
+  ensureStudioResourcesLoaded(): void {
+    if (this.resourcesLoaded) return;
     this.loadStudioResources();
   }
 
   loadStudioResources(): void {
+    this.resourcesLoaded = true;
     this.http.get<MapPresetTemplate[]>('/api/v2/maps/presets').subscribe({
       next: (list) => {
         if (Array.isArray(list) && list.length > 0) this.presets.set(list);
@@ -165,6 +168,7 @@ export class MapStudioStoreService {
     sceneKey: string,
     onLoaded: (scene: SavedMapSceneDocument) => void,
   ): void {
+    this.ensureStudioResourcesLoaded();
     const requestVersion = ++this.sceneLoadVersion;
     this.serverSceneRevision.set(0);
     this.http

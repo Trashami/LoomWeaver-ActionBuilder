@@ -16,13 +16,16 @@ public static class SaveSceneEndpoint
         group.MapModelManifestEndpoints();
 
         group.MapGet("/maps/presets", () =>
-            Results.Ok(SceneRepository.GetPresets()));
+            Results.Ok(SceneRepository.GetPresets()))
+            .AllowAnonymous();
 
         group.MapGet("/maps/catalog-assets", (string? category, string? q) =>
-            Results.Ok(SceneRepository.GetCatalogAssets(category, q)));
+            Results.Ok(SceneRepository.GetCatalogAssets(category, q)))
+            .AllowAnonymous();
 
         group.MapGet("/maps/assets/thumbnails", (string? category, string? q) =>
-            Results.Ok(PythonThumbnailProcessRunner.GetThumbnails(category, q)));
+            Results.Ok(PythonThumbnailProcessRunner.GetThumbnails(category, q)))
+            .AllowAnonymous();
 
         group.MapPost("/maps/assets/render-batch", async (BatchRenderThumbnailsRequest? req) =>
         {

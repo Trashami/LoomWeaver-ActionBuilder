@@ -19,7 +19,8 @@ public static class ModelManifestEndpoint
     {
         // Only unrestricted models are listed; purchased/locked models need an entitlement-checked route.
         group.MapGet("/maps/assets/model-manifest", async (LoomWeaverMySqlRepository repo, CancellationToken ct) =>
-            Results.Ok(new { models = await ReadAsync(repo, ct) }));
+            Results.Ok(new { models = await ReadAsync(repo, ct) }))
+            .AllowAnonymous();
     }
 
     internal static string? ToPublicUrl(string storageRef)

@@ -104,7 +104,7 @@ ln -sfn /var/www/jane-assets/5etools/img /var/www/loomweaver/assets/5e-tools
 echo "3. Archiving previous LoomWeaver app files (moved, not deleted)..."
 ARCHIVE=/var/www/.lw_deploy_archive/$(date +%Y%m%d_%H%M%S)
 mkdir -p "$ARCHIVE/loomweaver-prev"
-for p in vtt3d generator loommaps loom-weaver mythweaver; do
+for p in vtt3d generator loom-weaver mythweaver; do
     if [ -e "/var/www/$p" ] || [ -L "/var/www/$p" ]; then
         mv "/var/www/$p" "$ARCHIVE/"
     fi
@@ -131,6 +131,10 @@ ln -sfn /var/www/loomweaver /var/www/loom-weaver
 ln -sfn /var/www/loomweaver /var/www/mythweaver
 mkdir -p /var/www/loommaps /var/www/vtt3d/current /var/www/generator/current
 ln -sfn /var/www/loomweaver/client /var/www/loommaps/client
+if [ ! -e /var/www/loommaps/current/client ]; then
+    mkdir -p /var/www/loommaps/current
+    ln -sfn /var/www/loomweaver/client /var/www/loommaps/current/client
+fi
 ln -sfn /var/www/loomweaver/client /var/www/vtt3d/current/client
 ln -sfn /var/www/loomweaver/client /var/www/generator/current/client
 
