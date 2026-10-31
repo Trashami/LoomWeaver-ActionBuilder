@@ -8,6 +8,7 @@ import {
 } from '@babylonjs/core';
 import { MapWallSegmentNode, WallDrawMode, WallOpeningNode } from '../map-scene-contract';
 import { GlbModelCache } from '../rendering/glb-model-cache';
+import { resolveTextureLodUrl } from '../rendering/glb-lod';
 import { TerrainMeshBuilder } from '../terrain/terrain-mesh.builder';
 import { wallEndExtension } from './wall-join-profile';
 import { fitWallStamp, wallGroundAt } from './wall-terrain-fit';
@@ -45,6 +46,11 @@ export class WallMeshBuilder {
   private static texCache = new Map<string, Texture>();
   private static activeScene: Scene | null = null;
   private static ghostMat: StandardMaterial | null = null;
+  private static builtWallSigByScene = new WeakMap<Scene, { sig: string; count: number }>();
+
+  static evictScene(scene: Scene): void {
+    this.builtWallSigByScene.delete(scene);
+  }
 
   private static ensureSceneCache(scene: Scene): void {
     if (this.activeScene !== scene) {
@@ -56,13 +62,46 @@ export class WallMeshBuilder {
 
   private static getCachedTexture(scene: Scene, url: string): Texture {
     this.ensureSceneCache(scene);
-    const existing = this.texCache.get(url);
+    const resolved = resolveTextureLodUrl(url, GlbModelCache.getLodTier());
+    const existing = this.texCache.get(resolved);
     if (existing) {
       return existing;
     }
-    const tex = new Texture(url, scene);
-    this.texCache.set(url, tex);
+    const tex = new Texture(resolved, scene);
+    this.texCache.set(resolved, tex);
     return tex;
+  }
+
+  private static computeWallSceneSig(
+    scene: Scene,
+    walls: readonly MapWallSegmentNode[] | undefined,
+    hideSecrets: boolean,
+    onGlbLoaded?: () => void,
+  ): string {
+    const tier = GlbModelCache.getLodTier();
+    const elevVer = TerrainMeshBuilder.getElevationVersion();
+    if (!walls || walls.length === 0) {
+      return `${tier}|${elevVer}|${hideSecrets ? 1 : 0}|empty`;
+    }
+    const parts: string[] = [`${tier}|${elevVer}|${hideSecrets ? 1 : 0}`];
+    for (const w of walls) {
+      const hasWallTpl = w.modelUrl
+        ? Boolean(GlbModelCache.getOrLoadTemplate(scene, w.modelUrl, onGlbLoaded))
+        : false;
+      const ptsSig = w.points.map((p) => `${p[0]},${p[1]}`).join(';');
+      const opsSig = w.openings
+        .map((op) => {
+          const doorUrl = op.modelUrl || '/assets/object-library/models/obj-89c62a2b01238531.glb';
+          const hasDoorTpl = Boolean(GlbModelCache.getOrLoadTemplate(scene, doorUrl, onGlbLoaded));
+          return `${op.id}:${op.t}:${op.widthMeters}:${op.heightMeters ?? 0}:${op.isOpen ? 1 : 0}:${op.isSecret ? 1 : 0}:${op.isRevealedToPlayers ? 1 : 0}:${doorUrl}:${hasDoorTpl ? 1 : 0}`;
+        })
+        .join(',');
+      const paintSig = `${w.paintDabs?.length ?? 0}`;
+      parts.push(
+        `${w.id}|${w.drawMode}|${w.heightMeters}|${w.thicknessMeters}|${w.perspective}|${w.material}|${w.modelUrl ?? ''}:${hasWallTpl ? 1 : 0}|${w.albedoUrl ?? ''}|${w.normalUrl ?? ''}|${w.colorHex ?? ''}|${w.connectionOverlap ?? 15}|${w.offsetY ?? -0.06}|${w.stampScale ?? 1}|${w.rotationOffsetDeg ?? 0}|${w.terrainSmoothing ?? 75}|${ptsSig}|${opsSig}|${paintSig}`,
+      );
+    }
+    return parts.join('||');
   }
 
   private static getSharedGhostWallMat(scene: Scene): StandardMaterial {
@@ -585,6 +624,12 @@ export class WallMeshBuilder {
     onGlbLoaded?: () => void,
   ): number {
     this.ensureSceneCache(scene);
+    const sig = this.computeWallSceneSig(scene, walls, hideSecrets, onGlbLoaded);
+    const prev = this.builtWallSigByScene.get(scene);
+    if (prev && prev.sig === sig) {
+      return prev.count;
+    }
+
     WallSurfacePaint.clear(scene);
     scene.transformNodes
       .filter((n) => n.name.startsWith('lw-wall-node-') || n.name.startsWith('lw-door-node-'))
@@ -598,7 +643,10 @@ export class WallMeshBuilder {
       )
       .forEach((m) => m.dispose(false, false));
 
-    if (!walls || walls.length === 0) return 0;
+    if (!walls || walls.length === 0) {
+      this.builtWallSigByScene.set(scene, { sig, count: 0 });
+      return 0;
+    }
     let meshCount = 0;
 
     for (const wall of walls) {
@@ -747,8 +795,16 @@ export class WallMeshBuilder {
               );
               inst.position.set(px, ground + offsetY - (smoothing > 0 ? 0.18 : 0), pz);
               inst.rotation.y = angleY + rotOffsetRad;
-              fitWallStamp(scene, inst, [spanStartX, spanStartZ], [ux, uz],
-                extendedSpanLen, ground, smoothing);
+              fitWallStamp(
+                scene,
+                inst,
+                [spanStartX, spanStartZ],
+                [ux, uz],
+                extendedSpanLen,
+                ground,
+                smoothing,
+                terrainDrop > 0.005 || Math.abs(minGroundY) > 0.005,
+              );
               meshCount++;
             }
           } else {
@@ -856,6 +912,7 @@ export class WallMeshBuilder {
     }
 
     WallSurfacePaint.replay(scene, walls);
+    this.builtWallSigByScene.set(scene, { sig, count: meshCount });
     return meshCount;
   }
 

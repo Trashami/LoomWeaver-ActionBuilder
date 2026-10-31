@@ -9,11 +9,13 @@ import {
   FALLBACK_PNG_ASSET_ITEMS,
 } from '../engine/map-asset-fallbacks';
 import { toBaseGlbUrl } from '../engine/rendering/glb-lod';
+import { GlbModelCache } from '../engine/rendering/glb-model-cache';
 
 interface RawManifestAsset {
   readonly id: string;
   readonly name: string;
   readonly category: string;
+  readonly sourceFile?: string;
   readonly pngPreviewUrl?: string;
   readonly thumbnailUrl?: string;
   readonly glbUrl?: string;
@@ -44,6 +46,7 @@ interface PngManifestResponse {
 @Injectable({ providedIn: 'root' })
 export class MapPngAssetApiService {
   private readonly http = inject(HttpClient);
+  private manifestLoaded = false;
 
   readonly pngAssets3d = signal<readonly LwMapPngAssetItem[]>(FALLBACK_PNG_ASSET_ITEMS);
   readonly pngAssets = this.pngAssets3d;
@@ -54,6 +57,9 @@ export class MapPngAssetApiService {
   private readonly catalogOverrides = new Map<string, Partial<LwMapPngAssetItem>>();
 
   private normalizeAsset(raw: RawManifestAsset): LwMapPngAssetItem {
+    if (raw.id && raw.sourceFile) {
+      GlbModelCache.registerSourceFileLodMapping(raw.id, raw.sourceFile);
+    }
     const rawGlb = raw.glbUrl || raw.modelUrl || '';
     const resolvedModelUrl =
       raw.id?.startsWith('obj-') && (!rawGlb || rawGlb.startsWith('/assets/models-3d/'))
@@ -101,14 +107,23 @@ export class MapPngAssetApiService {
     );
   }
 
+  /** Lazily loads the asset manifests once when entering the studio or opening the asset picker. */
+  ensureManifestLoaded(): void {
+    if (this.manifestLoaded) return;
+    this.loadPngAssetManifest();
+  }
+
   loadPngAssetManifest(): void {
+    this.manifestLoaded = true;
     this.loadEditableAssetPropertiesCatalog();
     this.loadBumpHeightManifest();
-    this.http.get<PngManifestResponse>('/api/v2/maps/assets/thumbnails').subscribe({
+    this.http.get<PngManifestResponse | RawManifestAsset[]>('/api/v2/maps/assets/thumbnails').subscribe({
       next: (res) => {
-        const list = res?.assets ?? res?.items ?? [];
+        const list: readonly RawManifestAsset[] = Array.isArray(res)
+          ? res
+          : (res?.assets ?? res?.items ?? []);
         if (list.length > 0) {
-          this.pngAssets3d.set(list.map((a) => this.normalizeAsset(a)));
+          this.pngAssets3d.set(list.map((a: RawManifestAsset) => this.normalizeAsset(a)));
         } else {
           this.loadStaticManifestFallback();
         }

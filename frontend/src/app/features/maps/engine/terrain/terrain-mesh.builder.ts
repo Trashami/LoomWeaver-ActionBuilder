@@ -1,5 +1,7 @@
 import { configureFloorRelief } from './floor-texture-relief';
 import { WaterChannelTerrain } from '../water/water-channel-terrain';
+import { GlbModelCache } from '../rendering/glb-model-cache';
+import { resolveTextureLodUrl } from '../rendering/glb-lod';
 import {
   Color3,
   DynamicTexture,
@@ -34,6 +36,10 @@ export class TerrainMeshBuilder {
   private static readonly COMP_SIZE = 1024;
 
   private static customElevations: Float32Array | null = null;
+  private static elevationVersion = 0;
+  private static appliedFloorSigByScene = new WeakMap<Scene, string>();
+  private static appliedReliefSigByScene = new WeakMap<Scene, string>();
+  private static floorTexCache = new WeakMap<Scene, Map<string, Texture>>();
   private static activeAlbedoUrl =
     '/assets/sewer-dungeon-wall-library-v1/512/worn-castle-flagstone.png';
   private static activeNormalUrl =
@@ -52,6 +58,23 @@ export class TerrainMeshBuilder {
   private static compositeDynTex: DynamicTexture | null = null;
   private static eraserScratchCanvas: HTMLCanvasElement | null = null;
   private static imageCache = new Map<string, HTMLImageElement>();
+
+  static getElevationVersion(): number {
+    return this.elevationVersion;
+  }
+
+  private static getOrCreateFloorTex(scene: Scene, url: string): Texture {
+    let map = this.floorTexCache.get(scene);
+    if (!map) {
+      map = new Map<string, Texture>();
+      this.floorTexCache.set(scene, map);
+    }
+    const existing = map.get(url);
+    if (existing) return existing;
+    const tex = new Texture(url, scene);
+    map.set(url, tex);
+    return tex;
+  }
 
   static getCellStepMeters(): number {
     return this.activeGridMode === '10 ft' ? 3.0 : 1.5;
@@ -104,11 +127,13 @@ export class TerrainMeshBuilder {
 
   static resetElevations(): void {
     this.customElevations = null;
+    this.elevationVersion++;
   }
 
   static clearFloorPaint(scene: Scene | null): void {
     this.paintDabs = [];
     if (scene) {
+      this.appliedFloorSigByScene.delete(scene);
       const ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
       if (ground) {
         this.applyMaterialAndBump(scene, ground, '');
@@ -131,6 +156,8 @@ export class TerrainMeshBuilder {
     let ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
     if (!ground) {
       this.compositeDynTex = null;
+      this.appliedFloorSigByScene.delete(scene);
+      this.appliedReliefSigByScene.delete(scene);
       ground = MeshBuilder.CreateGround(
         'lw-terrain-ground',
         {
@@ -157,6 +184,21 @@ export class TerrainMeshBuilder {
     }
 
     return ground;
+  }
+
+  static syncReliefAndGridIfChanged(
+    scene: Scene,
+    ground: Mesh,
+    baseReliefScale = 24,
+    waterSplineCount = 0,
+  ): void {
+    const sig = `${this.elevationVersion}|${baseReliefScale}|${waterSplineCount}|${this.activeGridMode}`;
+    if (this.appliedReliefSigByScene.get(scene) === sig) {
+      return;
+    }
+    this.appliedReliefSigByScene.set(scene, sig);
+    this.applyVertexReliefAndHeightMap(scene, ground, baseReliefScale);
+    this.rebuildGridOverlay(scene);
   }
 
   /**
@@ -305,11 +347,17 @@ export class TerrainMeshBuilder {
     tilingScale = 10,
     heightUrl?: string,
   ): void {
+    const tier = GlbModelCache.getLodTier();
+    const sig = `${tier}|${albedoUrl}|${normalUrl}|${heightUrl ?? ''}|${tilingScale}`;
+    if (this.appliedFloorSigByScene.get(scene) === sig) {
+      return;
+    }
+    this.appliedFloorSigByScene.set(scene, sig);
     this.activeAlbedoUrl = albedoUrl;
     this.activeNormalUrl = normalUrl;
     this.activeHeightUrl = heightUrl ?? '';
-
     this.floorTilingScale = tilingScale;
+
     const ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
     if (ground) {
       this.applyMaterialAndBump(scene, ground, '');
@@ -372,6 +420,7 @@ export class TerrainMeshBuilder {
       this.rebuildGridOverlay(scene);
     }
     if (needsMaterialRebuild) {
+      this.appliedFloorSigByScene.delete(scene);
       this.applyMaterialAndBump(scene, ground, '');
     }
   }
@@ -581,11 +630,21 @@ export class TerrainMeshBuilder {
     const vScale = Math.round(this.floorTilingScale * 0.8);
     const hasCustomColorOrPaint =
       this.floorColorStrength > 0 || this.paintDabs.length > 0;
+    const tier = GlbModelCache.getLodTier();
+    const resolvedAlbedoUrl = this.activeAlbedoUrl
+      ? resolveTextureLodUrl(this.activeAlbedoUrl, tier)
+      : '';
+    const resolvedNormalUrl = this.activeNormalUrl
+      ? resolveTextureLodUrl(this.activeNormalUrl, tier)
+      : '';
+    const resolvedHeightUrl = this.activeHeightUrl
+      ? resolveTextureLodUrl(this.activeHeightUrl, tier)
+      : '';
 
     try {
-      if (this.activeAlbedoUrl) {
+      if (resolvedAlbedoUrl) {
         if (hasCustomColorOrPaint) {
-          const readyImg = this.loadOrGetAlbedoImage(this.activeAlbedoUrl, (loaded) => {
+          const readyImg = this.loadOrGetAlbedoImage(resolvedAlbedoUrl, (loaded) => {
             const currentMat = scene.getMaterialByName(
               'lw-terrain-mat',
             ) as StandardMaterial | null;
@@ -596,22 +655,22 @@ export class TerrainMeshBuilder {
           if (readyImg) {
             this.rebuildCompositeCanvasFromImage(scene, mat, readyImg);
           } else {
-            const diffTex = new Texture(this.activeAlbedoUrl, scene);
+            const diffTex = this.getOrCreateFloorTex(scene, resolvedAlbedoUrl);
             diffTex.uScale = uScale;
             diffTex.vScale = vScale;
             mat.diffuseTexture = diffTex;
           }
         } else {
-          const diffTex = new Texture(this.activeAlbedoUrl, scene);
+          const diffTex = this.getOrCreateFloorTex(scene, resolvedAlbedoUrl);
           diffTex.uScale = uScale;
           diffTex.vScale = vScale;
           mat.diffuseTexture = diffTex;
           // Pre-warm image cache so switching to brush painting is instantaneous
-          this.loadOrGetAlbedoImage(this.activeAlbedoUrl, () => {});
+          this.loadOrGetAlbedoImage(resolvedAlbedoUrl, () => {});
         }
       }
-      if (this.activeNormalUrl) {
-        const bumpTex = new Texture(this.activeNormalUrl, scene);
+      if (resolvedNormalUrl) {
+        const bumpTex = this.getOrCreateFloorTex(scene, resolvedNormalUrl);
         bumpTex.uScale = uScale;
         bumpTex.vScale = vScale;
         bumpTex.level = (this.floorBumpIntensity / 100) * 1.35;
@@ -623,7 +682,15 @@ export class TerrainMeshBuilder {
       }
     }
 
-    configureFloorRelief(scene, mat, this.activeNormalUrl, this.activeHeightUrl, this.floorHeightScale, uScale, vScale);
+    configureFloorRelief(
+      scene,
+      mat,
+      resolvedNormalUrl,
+      resolvedHeightUrl,
+      this.floorHeightScale,
+      uScale,
+      vScale,
+    );
     ground.material = mat;
     ground.receiveShadows = true;
   }
@@ -696,6 +763,7 @@ export class TerrainMeshBuilder {
       }
     }
 
+    this.elevationVersion++;
     ground.updateVerticesData('position', positions);
     this.recomputeNormals(ground, positions);
     ground.refreshBoundingInfo();

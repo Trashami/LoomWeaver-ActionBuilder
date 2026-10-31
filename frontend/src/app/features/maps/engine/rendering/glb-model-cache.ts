@@ -10,10 +10,11 @@ import {
   TransformNode,
 } from '@babylonjs/core';
 
-import { GlbLodManifest, GlbLodTier, glbLodCandidates, toBaseGlbUrl } from './glb-lod';
+import { GlbLodTier, glbLodCandidates, resolveGlbLodUrl, toBaseGlbUrl } from './glb-lod';
 
 export interface CachedGlbTemplate {
   readonly url: string;
+  readonly baseUrl: string;
   readonly templatePivot: TransformNode;
   readonly rawWidth: number;
   readonly rawHeight: number;
@@ -37,19 +38,38 @@ export interface GlbPaintOptions {
 export class GlbModelCache {
   private static cache = new Map<string, CachedGlbTemplate>();
   private static pending = new Map<string, Promise<CachedGlbTemplate | null>>();
+  private static pendingCallbacks = new Map<string, Set<() => void>>();
   private static failedUrls = new Set<string>();
   private static activeScene: Scene | null = null;
   private static sharedGhostMat: StandardMaterial | null = null;
   private static tintedMatCache = new Map<string, StandardMaterial>();
   private static decoderConfigured = false;
   private static lodTier: GlbLodTier = 'mid';
-  private static lodManifest: GlbLodManifest | undefined;
+  private static lodManifest = new Map<string, Partial<Record<GlbLodTier, string>>>();
   /** Bumped on every eviction so loads started under an old tier are discarded on completion. */
   private static generation = 0;
 
   /** Supplies the server's list of existing LOD files so missing variants are never requested. */
-  static setLodManifest(manifest: GlbLodManifest): void {
-    this.lodManifest = manifest;
+  static setLodManifest(manifest: ReadonlyMap<string, Partial<Record<GlbLodTier, string>>>): void {
+    for (const [k, v] of manifest.entries()) {
+      this.lodManifest.set(k, { ...this.lodManifest.get(k), ...v });
+    }
+  }
+
+  /**
+   * Registers an `obj-<hash>` asset's `sourceFile` base name so both
+   * `/assets/object-library/models/obj-<hash>_{low,mid,high}.glb` and
+   * `/assets/models-3d/<sourceBase>_{low,mid,high}.glb` are known LOD candidates.
+   */
+  static registerSourceFileLodMapping(id: string, sourceFile?: string): void {
+    if (!id || !sourceFile || !sourceFile.toLowerCase().endsWith('.glb')) return;
+    const objBase = `/assets/object-library/models/${id}.glb`;
+    const srcBase = `/assets/models-3d/${toBaseGlbUrl(sourceFile)}`;
+    this.lodManifest.set(objBase, {
+      low: resolveGlbLodUrl( srcBase, 'low'),
+      mid: resolveGlbLodUrl(srcBase, 'mid'),
+      high: resolveGlbLodUrl(srcBase, 'high'),
+    });
   }
 
   static ensureScene(scene: Scene): void {
@@ -66,6 +86,7 @@ export class GlbModelCache {
     if (this.activeScene !== scene) {
       this.cache.clear();
       this.pending.clear();
+      this.pendingCallbacks.clear();
       this.tintedMatCache.clear();
       this.sharedGhostMat = null;
       this.activeScene = scene;
@@ -120,6 +141,10 @@ export class GlbModelCache {
     return mat;
   }
 
+  /**
+   * Returns the single cached template for `modelUrl` at the current quality LOD tier,
+   * or initiates a single deduplicated async load shared across all stamps of this asset.
+   */
   static getOrLoadTemplate(
     scene: Scene,
     modelUrl: string,
@@ -130,35 +155,54 @@ export class GlbModelCache {
       return null;
     }
     const baseUrl = toBaseGlbUrl(modelUrl);
-    // Try the preferred tier, then nearby tiers, then the unsuffixed base file.
+    const cached = this.cache.get(baseUrl) ?? this.cache.get(modelUrl);
+    if (cached) {
+      return cached;
+    }
+
     const candidates = glbLodCandidates(baseUrl, this.lodTier, this.lodManifest).filter(
       (c) => !this.failedUrls.has(c),
     );
-    const url = candidates.find((c) => this.cache.has(c)) ?? candidates[0];
-    if (!url) {
+    if (candidates.length === 0) {
       return null;
     }
-    const existing = this.cache.get(url);
-    if (existing) {
-      return existing;
+
+    for (const c of candidates) {
+      const hit = this.cache.get(c);
+      if (hit) {
+        this.cache.set(baseUrl, hit);
+        return hit;
+      }
     }
-    if (!this.pending.has(url)) {
+
+    if (onLoaded) {
+      let cbs = this.pendingCallbacks.get(baseUrl);
+      if (!cbs) {
+        cbs = new Set<() => void>();
+        this.pendingCallbacks.set(baseUrl, cbs);
+      }
+      cbs.add(onLoaded);
+    }
+
+    if (!this.pending.has(baseUrl)) {
       const gen = this.generation;
-      const loadPromise = this.loadGlbTemplateAsync(scene, url).then((tpl) => {
-        if (gen !== this.generation) {
-          return null;
-        }
-        this.pending.delete(url);
-        if (!tpl) {
-          this.failedUrls.add(url);
-        }
-        // A failed LOD variant also triggers a rebuild so the base fallback loads.
-        if ((tpl || url !== baseUrl) && onLoaded) {
-          onLoaded();
-        }
-        return tpl;
-      });
-      this.pending.set(url, loadPromise);
+      const loadPromise = this.loadCandidateChainAsync(scene, baseUrl, candidates, gen).then(
+        (tpl) => {
+          if (gen !== this.generation) {
+            return null;
+          }
+          this.pending.delete(baseUrl);
+          const cbs = this.pendingCallbacks.get(baseUrl);
+          this.pendingCallbacks.delete(baseUrl);
+          if (tpl && cbs) {
+            for (const cb of cbs) {
+              cb();
+            }
+          }
+          return tpl;
+        },
+      );
+      this.pending.set(baseUrl, loadPromise);
     }
     return null;
   }
@@ -180,20 +224,43 @@ export class GlbModelCache {
 
   static evictTemplates(): void {
     this.generation++;
-    for (const tpl of this.cache.values()) {
+    for (const tpl of new Set(this.cache.values())) {
       tpl.templatePivot.dispose(false, true);
     }
     this.cache.clear();
     this.pending.clear();
+    this.pendingCallbacks.clear();
     this.failedUrls.clear();
+  }
+
+  private static async loadCandidateChainAsync(
+    scene: Scene,
+    baseUrl: string,
+    candidates: readonly string[],
+    gen: number,
+  ): Promise<CachedGlbTemplate | null> {
+    for (const candidateUrl of candidates) {
+      if (scene.isDisposed || gen !== this.generation) return null;
+      if (this.failedUrls.has(candidateUrl)) continue;
+      const tpl = await this.loadGlbTemplateAsync(scene, baseUrl, candidateUrl, gen);
+      if (gen !== this.generation) return null;
+      if (tpl) {
+        this.cache.set(baseUrl, tpl);
+        this.cache.set(candidateUrl, tpl);
+        return tpl;
+      }
+      this.failedUrls.add(candidateUrl);
+    }
+    return null;
   }
 
   private static async loadGlbTemplateAsync(
     scene: Scene,
+    baseUrl: string,
     modelUrl: string,
+    gen: number,
   ): Promise<CachedGlbTemplate | null> {
     try {
-      const gen = this.generation;
       const lastSlash = modelUrl.lastIndexOf('/');
       const rootUrl = modelUrl.slice(0, lastSlash + 1);
       const fileName = modelUrl.slice(lastSlash + 1);
@@ -215,8 +282,10 @@ export class GlbModelCache {
           m.material.maxSimultaneousLights = 8;
           m.material.directIntensity = 1.5;
           m.material.environmentIntensity = 0.72;
+          m.material.freeze();
         } else if (m.material instanceof StandardMaterial) {
           m.material.maxSimultaneousLights = 8;
+          m.material.freeze();
         }
       }
 
@@ -237,16 +306,15 @@ export class GlbModelCache {
 
       templatePivot.setEnabled(false);
 
-      const entry: CachedGlbTemplate = {
+      return {
         url: modelUrl,
+        baseUrl,
         templatePivot,
         rawWidth,
         rawHeight,
         rawDepth,
         baseOffsetY,
       };
-      this.cache.set(modelUrl, entry);
-      return entry;
     } catch {
       return null;
     }

@@ -366,7 +366,10 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.pngApi.loadPngAssetManifest();
+    if (!this.showLandingHub()) {
+      this.pngApi.ensureManifestLoaded();
+      this.studio.ensureStudioResourcesLoaded();
+    }
   }
 
   ngOnDestroy(): void {
@@ -391,6 +394,8 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   }
 
   private mountStudioViewports(): void {
+    this.pngApi.ensureManifestLoaded();
+    this.studio.ensureStudioResourcesLoaded();
     setTimeout(() => {
       const canvas = this.canvasRef?.nativeElement;
       if (canvas) {
@@ -403,6 +408,7 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
           (rx, rz) => this.onSurfaceReleaseAt(rx, rz),
           () => { if(this.activeDockToolId() === 'water') this.waterEditor.beginStroke(); },
         );
+        this.stage.setQualityPreset(this.activeQuality());
         this.stage.setCameraMode(this.cameraView());
         this.wireLightDrag();
         this.syncSurfaceLock();

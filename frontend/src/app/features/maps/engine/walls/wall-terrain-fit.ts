@@ -15,10 +15,31 @@ export function wallGroundAt(scene: Scene, x: number, z: number, smoothing: numb
 export function fitWallStamp(
   scene: Scene, root: TransformNode, origin: readonly [number, number],
   axis: readonly [number, number], spanLength: number, ground: number,
-  smoothing: number,
+  smoothing: number, hasSlope = false,
 ): void {
   const bounds = root.getHierarchyBoundingVectors(true);
   const height = Math.max(0.01, bounds.max.y - bounds.min.y);
+  // Check whether any corner of the stamp bounding box extends beyond [0, spanLength]
+  const corners: readonly [number, number][] = [
+    [bounds.min.x, bounds.min.z],
+    [bounds.max.x, bounds.min.z],
+    [bounds.min.x, bounds.max.z],
+    [bounds.max.x, bounds.max.z],
+  ];
+  let needsClip = false;
+  for (const [cx, cz] of corners) {
+    const along = (cx - origin[0]) * axis[0] + (cz - origin[1]) * axis[1];
+    if (along < -0.02 || along > spanLength + 0.02) {
+      needsClip = true;
+      break;
+    }
+  }
+  // When the ground under this wall piece is flat and no span clipping is needed,
+  // keep the shared GPU geometry buffer instead of duplicating vertex buffers per wall stamp.
+  if (!hasSlope && !needsClip) {
+    return;
+  }
+
   for (const child of root.getChildMeshes()) {
     if (!(child instanceof Mesh) || !child.getTotalVertices()) continue;
     child.makeGeometryUnique();
@@ -32,7 +53,7 @@ export function fitWallStamp(
       const clipped = Math.max(0, Math.min(spanLength, along));
       p.x += (clipped - along) * axis[0];
       p.z += (clipped - along) * axis[1];
-      if (smoothing > 0) {
+      if (hasSlope && smoothing > 0) {
         const blend = Math.max(0, Math.min(1, (p.y - bounds.min.y) / height));
         const smooth = wallGroundAt(scene, p.x, p.z, smoothing);
         const base = Math.min(smooth, TerrainMeshBuilder.sampleElevationAt(scene, p.x, p.z));

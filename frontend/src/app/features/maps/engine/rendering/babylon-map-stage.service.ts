@@ -506,7 +506,12 @@ export class BabylonMapStageService {
   setGhostConfig(config: GhostAssetConfig, wallAnchor: { x: number; z: number } | null): void {
     this.ghostConfig = config;
     this.wallStartAnchor = wallAnchor;
-    if (this.scene && config.modelUrl) {
+    if (
+      this.scene &&
+      config.enabled &&
+      config.modelUrl &&
+      (config.kind === 'prop' || config.kind === 'wall' || config.kind === 'door')
+    ) {
       GlbModelCache.getOrLoadTemplate(this.scene, config.modelUrl, () => {
         const h = this.hoverCoords();
         this.updateGhostMeshAt(h.x, h.z);
@@ -859,8 +864,12 @@ export class BabylonMapStageService {
         state.floorHeightUrl,
       );
     }
-    TerrainMeshBuilder.applyVertexReliefAndHeightMap(this.scene, ground, state.terrainRelief);
-    TerrainMeshBuilder.rebuildGridOverlay(this.scene);
+    TerrainMeshBuilder.syncReliefAndGridIfChanged(
+      this.scene,
+      ground,
+      state.terrainRelief,
+      state.waterSplines?.length ?? 0,
+    );
     WaterSplineBuilder.rebuildWaterSplines(this.scene, state.waterSplines);
     SceneLightingController.syncLights(this.scene, state.lights);
     const scatterCount = SeededScatterEngine.rebuildScatterInstances(
@@ -885,13 +894,15 @@ export class BabylonMapStageService {
     );
   }
 
-  /** Removes every GLB instance (stamps, scatter, ghost) so old-tier geometry can be freed. */
+  /** Removes every GLB instance (stamps, walls, doors, scatter, ghost) so old-tier geometry can be freed. */
   private disposeGlbInstances(scene: Scene): void {
+    StampSceneBuilder.evictScene(scene);
+    WallMeshBuilder.evictScene(scene);
     scene.transformNodes
-      .filter((n) => /^lw-(stamp-node|scatter-node|ghost)-/.test(n.name))
+      .filter((n) => /^lw-(stamp-node|wall-node|door-node|scatter-node|ghost)-/.test(n.name))
       .forEach((n) => n.dispose(false, false));
     scene.meshes
-      .filter((m) => /^lw-(stamp|scatter|ghost)-/.test(m.name))
+      .filter((m) => /^lw-(stamp|wall|portal|door|scatter|ghost)-/.test(m.name))
       .forEach((m) => m.dispose(false, false));
   }
 
