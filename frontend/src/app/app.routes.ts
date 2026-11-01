@@ -207,6 +207,18 @@ export const APP_ROUTES: Routes = [
       import('./features/sourcebooks/sourcebook-reader.page').then((m) => m.SourceBookReaderPageComponent),
   },
   {
+    path: 'roll-tables',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/roll-tables/roll-tables.page').then((m) => m.RollTablesPageComponent),
+  },
+  {
+    path: 'roll-tables/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/roll-tables/roll-table.page').then((m) => m.RollTablePageComponent),
+  },
+  {
     path: 'create',
     canActivate: [authGuard],
     loadComponent: () =>

@@ -1,4 +1,5 @@
 import { inject, Injectable, Injector, NgZone, signal } from '@angular/core';
+import { LwAlertifyService, type LwRollNotifyParams } from '../../../core/services/lw-alertify.service';
 import type { FullscreenDiceBabylonRunner } from './fullscreen-dice-babylon.runner';
 import type { DicePolyhedronType } from './models';
 
@@ -28,26 +29,19 @@ export interface FullscreenDiceRollRequest {
   outcomeBadge?: string;
   isNat20?: boolean;
   isCritFail?: boolean;
-}
-
-export interface FullscreenDiceRollSummary {
-  label: string;
-  actorName: string;
-  expression: string;
-  breakdownTerms: string;
-  total: number;
-  outcomeBadge: string;
-  isNat20: boolean;
-  isCritFail: boolean;
+  /** Bottom-right result toast, shown once the dice have settled. */
+  alert?: LwRollNotifyParams;
+  /** Runs once the 3D dice are cleared from the screen (about 8s in). */
+  onComplete?: () => void;
 }
 
 @Injectable({ providedIn: 'root' })
 export class FullscreenDiceOverlayService {
   private readonly ngZone = inject(NgZone);
   private readonly injector = inject(Injector);
+  private readonly alertify = inject(LwAlertifyService);
 
   readonly overlayPhase = signal<FullscreenDiceOverlayPhase>('hidden');
-  readonly activeRollSummary = signal<FullscreenDiceRollSummary | null>(null);
 
   private canvas: HTMLCanvasElement | null = null;
   private runner: FullscreenDiceBabylonRunner | null = null;
@@ -65,21 +59,6 @@ export class FullscreenDiceOverlayService {
     this.clearTimers();
 
     const entries = this.resolveDieEntries(req);
-    const mod = req.modifier ?? 0;
-    const diceTerms = entries.map(e => String(e.value)).join(' + ');
-    const modTerm = mod > 0 ? ` + ${mod}` : mod < 0 ? ` - ${Math.abs(mod)}` : '';
-    const breakdownTerms = `${diceTerms}${modTerm}`;
-
-    this.activeRollSummary.set({
-      label: req.label,
-      actorName: req.actorName ?? '',
-      expression: req.expression,
-      breakdownTerms,
-      total: req.total,
-      outcomeBadge: req.outcomeBadge ?? (req.isNat20 ? 'CRITICAL SUCCESS' : req.isCritFail ? 'CRITICAL FAIL' : ''),
-      isNat20: Boolean(req.isNat20),
-      isCritFail: Boolean(req.isCritFail)
-    });
 
     // Step 1: Semi-opaque background and 3D dice appear immediately
     this.overlayPhase.set('rolling');
@@ -89,9 +68,12 @@ export class FullscreenDiceOverlayService {
         runner.mountCanvas(this.canvas);
       }
       runner.runRoll(entries, req, () => {
-        // Step 2: Dice have completely stopped — show bottom-right results popup
+        // Step 2: Dice have completely stopped — show the single bottom-right result toast
         this.ngZone.run(() => {
           this.overlayPhase.set('settled');
+          if (req.alert) {
+            this.alertify.notifyRoll(req.alert);
+          }
         });
 
         // Step 3: Wait 2 seconds (2000ms), then fade away the opaque bg over 2.5 seconds (2500ms)
@@ -113,6 +95,7 @@ export class FullscreenDiceOverlayService {
         this.schedule(8000, () => {
           this.runner?.clearAll();
           this.overlayPhase.set('alert-hold');
+          req.onComplete?.();
         });
 
         // Step 7: After 5 seconds (at 13000ms), fade out the bottom-right popup (900ms) and reset to hidden
@@ -130,7 +113,6 @@ export class FullscreenDiceOverlayService {
   clearResultsNow(): void {
     this.clearTimers();
     this.overlayPhase.set('hidden');
-    this.activeRollSummary.set(null);
     this.runner?.clearAll();
   }
 

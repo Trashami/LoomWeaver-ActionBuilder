@@ -2,7 +2,6 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CampaignDashboardVm } from '../models/dashboard.models';
 import { FullscreenDiceOverlayService } from '../../features/dice/engine/fullscreen-dice-overlay.service';
-import { LwAlertifyService } from './lw-alertify.service';
 import {
   AssetCardVm, CampaignSessionVm, CampaignVm, CombatTelemetryVm, EntityCardVm, GraphEdgeVm,
   LoomCitationVm, NavDestination, QualityProfile, SceneVm, SessionAttachmentVm, SubscriptionTierVm, ViewerRole,
@@ -45,7 +44,6 @@ export type AdventureGuideModalScope = 'session' | 'adventure';
 @Injectable({ providedIn: 'root' })
 export class LoomWeaverStoreService {
   private readonly http = inject(HttpClient);
-  private readonly alertify = inject(LwAlertifyService);
   private readonly fullscreenDice = inject(FullscreenDiceOverlayService);
 
   readonly navigationItems = signal<readonly NavDestination[]>(LW_NAVIGATION);
@@ -449,13 +447,18 @@ export class LoomWeaverStoreService {
       next: (res) => {
         const suffix = res.isNat20 ? ' (NAT 20!)' : res.isNat1 ? ' (NAT 1)' : '';
         this.quickRollBanner.set(`d20: ${res.total}${suffix}`);
-        this.fullscreenDice.triggerFullScreenRoll({ label: 'Quick d20 Roll', actorName: who, expression: '1d20', diceValues: [res.total], modifier: 0, total: res.total, isNat20: res.isNat20, isCritFail: res.isNat1 });
-        this.alertify.notifyRoll({ whoRolled: who, rollType: 'Quick d20 Roll', formula: '1d20 + 0', naturalDie: res.total, modifier: 0, modifiersBreakdown: '+0 Flat d20', adjustedTotal: res.total, isNat20: res.isNat20, isCritFail: res.isNat1 });
+        this.fullscreenDice.triggerFullScreenRoll({
+          label: 'Quick d20 Roll', actorName: who, expression: '1d20', diceValues: [res.total], modifier: 0, total: res.total, isNat20: res.isNat20, isCritFail: res.isNat1,
+          alert: { whoRolled: who, rollType: 'Quick d20 Roll', formula: '1d20 + 0', naturalDie: res.total, modifier: 0, modifiersBreakdown: '+0 Flat d20', adjustedTotal: res.total, isNat20: res.isNat20, isCritFail: res.isNat1 },
+        });
       },
       error: () => {
         const v = Math.floor(Math.random() * 20) + 1;
         this.quickRollBanner.set(`d20: ${v}${v === 20 ? ' (NAT 20!)' : ''}`);
-        this.fullscreenDice.triggerFullScreenRoll({ label: 'Quick d20 Roll', actorName: who, expression: '1d20', diceValues: [v], modifier: 0, total: v, isNat20: v === 20, isCritFail: v === 1 });
+        this.fullscreenDice.triggerFullScreenRoll({
+          label: 'Quick d20 Roll', actorName: who, expression: '1d20', diceValues: [v], modifier: 0, total: v, isNat20: v === 20, isCritFail: v === 1,
+          alert: { whoRolled: who, rollType: 'Quick d20 Roll', formula: '1d20 + 0', naturalDie: v, modifier: 0, modifiersBreakdown: '+0 Flat d20', adjustedTotal: v, isNat20: v === 20, isCritFail: v === 1 },
+        });
       },
     });
   }

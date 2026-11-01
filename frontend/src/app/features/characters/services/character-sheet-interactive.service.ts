@@ -410,7 +410,7 @@ export class CharacterSheetInteractiveService {
             ? 'Tracked: Live Session + Encounter'
             : 'Tracked: Character Roll';
 
-    this.alertify.notifyRoll({
+    const alert = {
       whoRolled: sheet.name,
       rollType: logItem.itemName,
       formula: logItem.formula,
@@ -422,13 +422,13 @@ export class CharacterSheetInteractiveService {
       isNat20: logItem.isNat20,
       isCritFail: logItem.isCritFail,
       outcomeSubtext,
-    });
+    };
 
     const outcomeBadge = logItem.isNat20 ? 'CRITICAL HIT' : logItem.isCritFail ? 'CRITICAL FAIL' : logItem.hit === true ? `HIT · ${logItem.damageDealt} DMG` : logItem.hit === false ? 'MISS' : '';
     this.fullscreenDice.triggerFullScreenRoll({
       label: logItem.itemName, actorName: sheet.name, expression: logItem.formula,
       diceValues: [...logItem.rawRolls], modifier: logItem.modifier, total: logItem.total,
-      outcomeBadge, isNat20: logItem.isNat20, isCritFail: logItem.isCritFail,
+      outcomeBadge, isNat20: logItem.isNat20, isCritFail: logItem.isCritFail, alert,
     });
 
     this.store.quickRollBanner.set(`${logItem.itemName}: ${logItem.total}${logItem.isNat20 ? ' (NAT 20!)' : ''}`);

@@ -1,0 +1,52 @@
+<section class="roll-tables-page">
+  <lw-page-header title="Roll Tables" subtitle="Browse every roll table and roll the dice for an outcome">
+  </lw-page-header>
+
+  <div class="toolbar">
+    <input
+      type="search"
+      placeholder="Search tables"
+      aria-label="Search roll tables"
+      [ngModel]="search()"
+      (ngModelChange)="onSearchChange($event)"
+    />
+    <input
+      type="search"
+      placeholder="Source (e.g. PHB)"
+      aria-label="Filter by source"
+      [ngModel]="source()"
+      (ngModelChange)="onSourceChange($event)"
+    />
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  <ul class="card-grid">
+    @for (table of tables(); track table.id) {
+      <li>
+        <a class="table-card" [routerLink]="['/roll-tables', table.id]">
+          <span class="table-name">{{ table.name }}</span>
+          <span class="meta">
+            {{ table.sourceBook ?? 'Unknown source' }}@if (table.page) { · p.{{ table.page }} }
+          </span>
+          <span class="meta">{{ dieLabel(table) }} · {{ table.rowCount }} rows</span>
+          @if (table.category) {
+            <span class="tag">{{ table.category }}</span>
+          }
+        </a>
+      </li>
+    }
+  </ul>
+
+  @if (!loading() && tables().length === 0 && !errorMessage()) {
+    <p class="empty">No roll tables match this search.</p>
+  }
+
+  @if (hasMore()) {
+    <button type="button" class="load-more" [disabled]="loading()" (click)="load(false)">
+      {{ loading() ? 'Loading…' : 'Load more' }}
+    </button>
+  }
+</section>

@@ -24,6 +24,7 @@ const MATERIAL_ICON_MAP: Readonly<Record<string, string>> = {
   'shield-check': 'verified_user',
   swords: 'gavel',
   dices: 'casino',
+  'table-chart': 'table_chart',
   zap: 'bolt',
   layers: 'layers',
   'shopping-bag': 'shopping_bag',

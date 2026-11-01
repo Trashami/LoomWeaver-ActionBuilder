@@ -1,0 +1,70 @@
+<section class="roll-table-page">
+  @if (table(); as t) {
+    <lw-page-header [title]="t.name" [subtitle]="(t.sourceBook ?? 'Unknown source') + (t.page ? ' · p.' + t.page : '')">
+      <a pageActions class="back-link" routerLink="/roll-tables">All roll tables</a>
+    </lw-page-header>
+
+    @if (t.caption) {
+      <p class="caption">{{ t.caption }}</p>
+    }
+
+    <div class="roll-bar">
+      @if (die(); as d) {
+        <button type="button" class="roll-button" [disabled]="rolling()" (click)="roll()">
+          Roll {{ d.expression }}
+        </button>
+      } @else {
+        <span class="meta">This table has no dice expression to roll.</span>
+      }
+      @if (lastTotal() !== null) {
+        <span class="meta">Last roll: {{ lastTotal() }}</span>
+      }
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Roll</th>
+            @for (label of t.colLabels; track $index) {
+              <th>{{ label }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of t.rows; track $index) {
+            <tr [class.matched]="matchedRow() === row">
+              <td class="range">{{ row.rangeLabel }}</td>
+              @for (cell of row.cells; track $index) {
+                <td>{{ cell }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="meta">Loading table…</p>
+  }
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+</section>
+
+<lw-modal [(open)]="modalOpen" [title]="table()?.name ?? 'Roll result'" [subtitle]="'Rolled ' + (lastTotal() ?? '')" size="md">
+  @if (matchedRow(); as row) {
+    <p class="range">{{ row.rangeLabel }}</p>
+    <dl>
+      @for (cell of row.cells; track $index) {
+        @if (cellLabel($index)) {
+          <dt>{{ cellLabel($index) }}</dt>
+        }
+        <dd>{{ cell }}</dd>
+      }
+    </dl>
+  } @else {
+    <p class="meta">No row matched the roll of {{ lastTotal() }}.</p>
+  }
+</lw-modal>

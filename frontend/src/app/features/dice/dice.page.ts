@@ -356,8 +356,6 @@ export class DicePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const isCritFail = entries.some((e) => e.dieType === 'd20' && e.value === 1);
     const formula = req.pool.map((p) => `${p.count}${p.dieType}`).join(' + ');
 
-    this.stageService.animatePoolRoll(entries, isNat20, isCritFail);
-
     const cfg = this.customConfig();
     this.http
       .post(`/api/v2/campaigns/${this.store.activeCampaignId()}/dice/roll`, {
@@ -375,7 +373,7 @@ export class DicePageComponent implements OnInit, AfterViewInit, OnDestroy {
       })
       .subscribe({ error: () => {} });
 
-    this.alertify.notifyRoll({
+    const alert = {
       whoRolled: cfg.customName || this.activeSkin().name,
       rollType: req.isRandomQuickRoll
         ? `Random Throw (${entries.length} Dice)`
@@ -393,7 +391,9 @@ export class DicePageComponent implements OnInit, AfterViewInit, OnDestroy {
       isNat20,
       isCritFail,
       outcomeSubtext: `Breakdown: ${entries.map((e) => `${e.dieType}(${e.value})`).join(' + ')}`,
-    });
+    };
+
+    this.stageService.animatePoolRoll(entries, isNat20, isCritFail, () => this.alertify.notifyRoll(alert));
   }
 
   triggerQuickRandomRollUpTo5(): void {

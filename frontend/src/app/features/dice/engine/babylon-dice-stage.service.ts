@@ -269,15 +269,22 @@ export class BabylonDiceStageService {
     entries: ReadonlyArray<{ dieType: DicePolyhedronType; value: number }>,
     isCriticalSuccess: boolean,
     isCriticalFailure: boolean,
+    onSettled?: () => void,
   ): void {
-    if (!this.scene || !entries.length) return;
+    if (!this.scene || !entries.length) {
+      onSettled?.();
+      return;
+    }
     if (this.rollAnimationTimer !== null) {
       cancelAnimationFrame(this.rollAnimationTimer);
       this.rollAnimationTimer = null;
     }
 
     const phys = this.currentCustom.physics ?? DEFAULT_DICE_PHYSICS_CONFIG;
-    if (phys.suspendSimulation) return;
+    if (phys.suspendSimulation) {
+      onSettled?.();
+      return;
+    }
 
     this.clearFloatingBadges();
     this.critEffectsRunner.clearActiveEffects();
@@ -355,6 +362,7 @@ export class BabylonDiceStageService {
         if (this.pendingRebuild) this.syncStageLightingAndRebuild();
         if (isCriticalSuccess) this.previewCritOutcomeEffect('nat20');
         else if (isCriticalFailure) this.previewCritOutcomeEffect('critfail');
+        onSettled?.();
       }
     };
     step();

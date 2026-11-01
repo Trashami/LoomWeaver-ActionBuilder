@@ -16,25 +16,27 @@ export interface LwAlertifyToastVm {
   readonly durationMs: number;
 }
 
+export interface LwRollNotifyParams {
+  readonly whoRolled: string;
+  readonly rollType: string;
+  readonly formula: string;
+  readonly naturalDie: number;
+  readonly rawRolls?: readonly number[];
+  readonly modifier: number;
+  readonly modifiersBreakdown?: string;
+  readonly adjustedTotal: number;
+  readonly isNat20?: boolean;
+  readonly isCritFail?: boolean;
+  readonly outcomeSubtext?: string;
+  readonly durationMs?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class LwAlertifyService {
   readonly toasts = signal<readonly LwAlertifyToastVm[]>([]);
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  notifyRoll(params: {
-    readonly whoRolled: string;
-    readonly rollType: string;
-    readonly formula: string;
-    readonly naturalDie: number;
-    readonly rawRolls?: readonly number[];
-    readonly modifier: number;
-    readonly modifiersBreakdown?: string;
-    readonly adjustedTotal: number;
-    readonly isNat20?: boolean;
-    readonly isCritFail?: boolean;
-    readonly outcomeSubtext?: string;
-    readonly durationMs?: number;
-  }): void {
+  notifyRoll(params: LwRollNotifyParams): void {
     const id = `ajs-roll-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const durationMs = params.durationMs ?? 4500;
     const modSign = params.modifier >= 0 ? `+${params.modifier}` : `${params.modifier}`;

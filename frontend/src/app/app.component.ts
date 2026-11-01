@@ -146,6 +146,12 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
         icon: "dices",
       },
       {
+        id: "roll-tables",
+        label: "Roll Tables",
+        route: "/roll-tables",
+        icon: "table-chart",
+      },
+      {
         id: "effects-rules",
         label: "Actions & FX Studio",
         route: "/effects",
