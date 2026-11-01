@@ -32,7 +32,7 @@ public static partial class CampaignAccessMiddleware
     [GeneratedRegex(@"^/(health|effects/health|actions/health|auth/(login|register|google|logout|request-account))$", RegexOptions.IgnoreCase)]
     private static partial Regex PublicAnyMethodRegex();
 
-    [GeneratedRegex(@"^/(actions/symbols|effects/emitters|effects/marketplace(/\d+)?|effects/(?!campaigns/)[^/]+/(standalone|export)|summon-assets/[^/]+|maps/(presets|catalog-assets|assets/thumbnails))$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^/(sources(/.*)?|actions/symbols|effects/emitters|effects/marketplace(/\d+)?|effects/(?!campaigns/)[^/]+/(standalone|export)|summon-assets/[^/]+|maps/(presets|catalog-assets|assets/thumbnails))$", RegexOptions.IgnoreCase)]
     private static partial Regex PublicReadRegex();
 
     [GeneratedRegex(@"^/api(/v\d+)?", RegexOptions.IgnoreCase)]

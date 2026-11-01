@@ -25,7 +25,7 @@ public static class SourceBookEndpoints
                 }
                 cmd.CommandText = $@"
                     SELECT s.`id`, s.`name`, s.`source_type`, s.`source_group`, s.`published`, s.`author`, s.`cover_path`,
-                           (SELECT COUNT(*) FROM `dnd_decks` d WHERE d.`source_book` = s.`id`) AS `deck_count`
+                           (SELECT COUNT(*) FROM `dnd_decks` d WHERE d.`source_book` = s.`id` COLLATE utf8mb4_0900_ai_ci) AS `deck_count`
                     FROM `dnd_sources` s {whereSql}
                     ORDER BY s.`source_group`, s.`published` DESC, s.`name`
                     LIMIT 500;";
@@ -170,7 +170,7 @@ public static class SourceBookEndpoints
         var decks = new List<Dictionary<string, object?>>();
         await using (var cmd = db.CreateCommand())
         {
-            cmd.CommandText = "SELECT `id`, `name`, `cards_count`, `image_path` FROM `dnd_decks` WHERE `source_book` = @code ORDER BY `name` LIMIT 200;";
+            cmd.CommandText = "SELECT `id`, `name`, `cards_count`, `image_path` FROM `dnd_decks` WHERE `source_book` = @code COLLATE utf8mb4_0900_ai_ci ORDER BY `name` LIMIT 200;";
             cmd.Parameters.AddWithValue("@code", code.Trim());
             await using var r = await cmd.ExecuteReaderAsync(ct);
             while (await r.ReadAsync(ct))
