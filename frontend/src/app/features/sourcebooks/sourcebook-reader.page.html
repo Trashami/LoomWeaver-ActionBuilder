@@ -1,65 +1,165 @@
 <section class="reader">
-  <aside class="reader-toc">
-    <a class="back-link" [routerLink]="['/sources', code]">Back to {{ code }}</a>
-    <h2>{{ source()?.name ?? code }}</h2>
-    <nav aria-label="Book sections">
-      <ol>
-        @for (section of sections(); track section.id) {
-          <li>
+  <!-- Left Working Table of Contents -->
+  <aside class="reader-toc" aria-label="Book Table of Contents">
+    <div class="toc-header">
+      <a class="toc-back-link" routerLink="/sources">
+        <lw-icon name="arrow-left" [size]="14" />
+        <span>Library</span>
+      </a>
+
+      @if (source(); as s) {
+        <div class="toc-book-card">
+          @if (s.cover_path) {
+            <img class="toc-book-cover" [src]="s.cover_path" [alt]="s.name + ' cover'" loading="lazy" />
+          }
+          <div class="toc-book-meta">
+            <h2 class="toc-book-title">{{ s.name }}</h2>
+            <span class="toc-book-group">{{ s.source_group || 'Sourcebook' }}</span>
+          </div>
+        </div>
+      }
+
+      <div class="toc-search-box">
+        <lw-icon name="search" [size]="14" class="toc-search-icon" />
+        <input
+          type="search"
+          placeholder="Filter chapters…"
+          [ngModel]="tocSearch()"
+          (ngModelChange)="tocSearch.set($event)"
+          aria-label="Filter chapters"
+        />
+        @if (tocSearch()) {
+          <button type="button" class="toc-search-clear" (click)="tocSearch.set('')" aria-label="Clear filter">
+            <lw-icon name="close" [size]="12" />
+          </button>
+        }
+      </div>
+    </div>
+
+    <nav class="toc-nav" aria-label="Book chapters">
+      <ol class="toc-list">
+        @for (section of filteredSections(); track section.id) {
+          <li class="toc-item">
             <a
+              class="toc-link"
               [routerLink]="['/sources', code, 'read']"
               [queryParams]="{ section: section.id }"
-              [class.active]="section.id === selectedId()"
-              [attr.aria-current]="section.id === selectedId() ? 'page' : null">
-              {{ section.name }}
+              [class.toc-link--active]="section.id === activeChapterId()"
+              [attr.aria-current]="section.id === activeChapterId() ? 'page' : null"
+            >
+              <span class="toc-item-name">{{ section.name }}</span>
+              @if (section.page) {
+                <span class="toc-item-page">p. {{ section.page }}</span>
+              }
             </a>
-            @if (section.page) {
-              <span class="meta">p. {{ section.page }}</span>
+
+            @if (section.id === activeChapterId() && node()?.children?.length) {
+              <ul class="toc-sub-list">
+                @for (child of node()!.children; track child.id) {
+                  <li class="toc-sub-item">
+                    <a
+                      class="toc-sub-link"
+                      [routerLink]="['/sources', code, 'read']"
+                      [queryParams]="{ section: child.id }"
+                      [class.toc-sub-link--active]="child.id === selectedId()"
+                    >
+                      <span class="toc-sub-name">{{ child.name }}</span>
+                      @if (child.page) {
+                        <span class="toc-sub-page">p. {{ child.page }}</span>
+                      }
+                    </a>
+                  </li>
+                }
+              </ul>
             }
           </li>
+        } @empty {
+          <li class="toc-empty">No chapters match filter</li>
         }
       </ol>
     </nav>
   </aside>
 
+  <!-- Main Structured Tome Surface -->
   <main class="reader-main">
     @if (loading()) {
-      <p class="meta">Loading...</p>
+      <div class="reader-loading">
+        <span class="reader-spinner"></span>
+        <p class="reader-loading-text">Opening tome…</p>
+      </div>
     }
+
     @if (errorMessage()) {
-      <p class="error" role="alert">{{ errorMessage() }}</p>
+      <div class="reader-error" role="alert">
+        <lw-icon name="alert-triangle" [size]="18" />
+        <p>{{ errorMessage() }}</p>
+      </div>
     }
 
     @if (node(); as n) {
-      <header>
-        <p class="meta">{{ code }}@if (n.page) { · p. {{ n.page }} }</p>
-        <h1>{{ title() }}</h1>
+      <header class="reader-header">
+        <div class="reader-breadcrumbs">
+          <a routerLink="/sources">Library</a>
+          <lw-icon name="chevron-right" [size]="12" />
+          <span>{{ source()?.name || code }}</span>
+          @if (n.page) {
+            <span class="reader-page-badge">Page {{ n.page }}</span>
+          }
+        </div>
+        <h1 class="reader-title">{{ title() }}</h1>
       </header>
 
       <article class="book-body" [innerHTML]="bodyHtml()"></article>
 
       @if (n.children.length) {
-        <section class="subsections">
-          <h2>In this section</h2>
-          <ul>
+        <section class="reader-subsections">
+          <h2 class="reader-subsections-title">Sections in this Chapter</h2>
+          <div class="reader-subsections-grid">
             @for (child of n.children; track child.id) {
-              <li>
-                <a [routerLink]="['/sources', code, 'read']" [queryParams]="{ section: child.id }">{{ child.name }}</a>
+              <a
+                class="reader-subsection-card"
+                [routerLink]="['/sources', code, 'read']"
+                [queryParams]="{ section: child.id }"
+              >
+                <span class="subsection-name">{{ child.name }}</span>
                 @if (child.page) {
-                  <span class="meta">p. {{ child.page }}</span>
+                  <span class="subsection-page">Page {{ child.page }}</span>
                 }
-              </li>
+              </a>
             }
-          </ul>
+          </div>
         </section>
       }
 
-      <nav class="pager" aria-label="Section paging">
+      <nav class="reader-pager" aria-label="Chapter navigation">
         @if (prevSection(); as prev) {
-          <a [routerLink]="['/sources', code, 'read']" [queryParams]="{ section: prev.id }">Previous: {{ prev.name }}</a>
+          <a
+            class="pager-btn pager-btn--prev"
+            [routerLink]="['/sources', code, 'read']"
+            [queryParams]="{ section: prev.id }"
+          >
+            <lw-icon name="chevron-left" [size]="16" />
+            <div class="pager-text">
+              <span class="pager-label">Previous Chapter</span>
+              <span class="pager-title">{{ prev.name }}</span>
+            </div>
+          </a>
+        } @else {
+          <div class="pager-placeholder"></div>
         }
+
         @if (nextSection(); as next) {
-          <a [routerLink]="['/sources', code, 'read']" [queryParams]="{ section: next.id }">Next: {{ next.name }}</a>
+          <a
+            class="pager-btn pager-btn--next"
+            [routerLink]="['/sources', code, 'read']"
+            [queryParams]="{ section: next.id }"
+          >
+            <div class="pager-text">
+              <span class="pager-label">Next Chapter</span>
+              <span class="pager-title">{{ next.name }}</span>
+            </div>
+            <lw-icon name="chevron-right" [size]="16" />
+          </a>
         }
       </nav>
     }

@@ -40,7 +40,7 @@ public static class RollTableEndpoints
                 var skip = Math.Max(0, offset ?? 0);
                 cmd.CommandText = $@"
                     SELECT `id`, `name`, `source_book`, `page`, `caption`, `table_category`, `col_labels_json`,
-                           JSON_LENGTH(`rows_json`) AS `row_count`
+                           `roll_die`, JSON_LENGTH(`rows_json`) AS `row_count`
                     FROM `dnd_tables`
                     WHERE {string.Join(" AND ", conditions)}
                     ORDER BY `source_book`, `name`, `id`
@@ -51,7 +51,7 @@ public static class RollTableEndpoints
                 while (await r.ReadAsync(ct))
                 {
                     var colLabels = ReadStringList(ReadNullableString(r, "col_labels_json"));
-                    var die = ParseDie(colLabels.FirstOrDefault());
+                    var die = ParseDie(colLabels.FirstOrDefault()) ?? ParseDie(ReadNullableString(r, "roll_die"));
                     tables.Add(new
                     {
                         id = r.GetInt64(r.GetOrdinal("id")),
@@ -79,7 +79,8 @@ public static class RollTableEndpoints
                 await using var db = await mysql.OpenConnectionAsync(ct);
                 await using var cmd = db.CreateCommand();
                 cmd.CommandText = @"
-                    SELECT `id`, `name`, `source_book`, `page`, `caption`, `table_category`, `col_labels_json`, `rows_json`
+                    SELECT `id`, `name`, `source_book`, `page`, `caption`, `table_category`, `col_labels_json`, `rows_json`,
+                           `roll_die`, `roll_range_col`
                     FROM `dnd_tables`
                     WHERE `id` = @id AND `is_canonical` = 1
                     LIMIT 1;";
@@ -91,9 +92,11 @@ public static class RollTableEndpoints
                     return Results.NotFound(new { message = $"Roll table {id} was not found." });
                 }
 
-                var colLabels = ReadStringList(ReadNullableString(r, "col_labels_json")).Select(StripTags).ToList();
-                var die = ParseDie(colLabels.FirstOrDefault());
-                var rows = ParseRows(ReadNullableString(r, "rows_json"));
+                var rangeCol = ReadNullableInt(r, "roll_range_col") ?? 0;
+                var rawLabels = ReadStringList(ReadNullableString(r, "col_labels_json")).Select(StripTags).ToList();
+                var colLabels = MoveToFront(rawLabels, rangeCol);
+                var die = ParseDie(rawLabels.FirstOrDefault()) ?? ParseDie(ReadNullableString(r, "roll_die"));
+                var rows = ParseRows(ReadNullableString(r, "rows_json"), rangeCol);
 
                 return Results.Ok(new
                 {
@@ -145,7 +148,21 @@ public static class RollTableEndpoints
         return (count, sides);
     }
 
-    private static List<RollRow> ParseRows(string? rowsJson)
+    // Moves the range column to the front so rows and labels always start with the roll range.
+    private static List<T> MoveToFront<T>(List<T> items, int index)
+    {
+        if (index <= 0 || index >= items.Count)
+        {
+            return items;
+        }
+        var copy = new List<T>(items);
+        var moved = copy[index];
+        copy.RemoveAt(index);
+        copy.Insert(0, moved);
+        return copy;
+    }
+
+    private static List<RollRow> ParseRows(string? rowsJson, int rangeCol)
     {
         var rows = new List<RollRow>();
         if (string.IsNullOrWhiteSpace(rowsJson))
@@ -167,11 +184,14 @@ public static class RollTableEndpoints
                 continue;
             }
 
-            var range = ParseRange(cells[0]);
+            var order = Enumerable.Range(0, cells.GetArrayLength()).ToList();
+            var rc = rangeCol < order.Count ? rangeCol : 0;
+            order = MoveToFront(order, rc);
+            var range = ParseRange(cells[order[0]]);
             var texts = new List<string>();
-            for (var i = 1; i < cells.GetArrayLength(); i++)
+            for (var i = 1; i < order.Count; i++)
             {
-                texts.Add(CellText(cells[i]));
+                texts.Add(CellText(cells[order[i]]));
             }
             rows.Add(new RollRow(range.Label, range.Min, range.Max, texts));
         }

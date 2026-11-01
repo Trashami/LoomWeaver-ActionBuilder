@@ -77,10 +77,16 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
     icon: "layers",
     items: [
       {
+        id: "library",
+        label: "Library",
+        route: "/sources",
+        icon: "book-open",
+      },
+      {
         id: "world-lore",
         label: "World & Lore",
         route: "/world-lore",
-        icon: "book-open",
+        icon: "compass",
       },
       {
         id: "quests-story",

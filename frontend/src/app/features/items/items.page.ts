@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import {
@@ -47,6 +48,16 @@ import { ItemsCatalogService } from './services/items-catalog.service';
 export class ItemsPageComponent {
   readonly store = inject(LoomWeaverStoreService);
   readonly catalog = inject(ItemsCatalogService);
+  private readonly route = inject(ActivatedRoute);
+
+  constructor() {
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const search = params.get('search');
+      if (search !== null && search !== undefined && search.trim()) {
+        this.catalog.searchQuery.set(search.trim());
+      }
+    });
+  }
 
   readonly showFilters = signal(false);
   readonly activeFilterCount = computed(() => Number(this.catalog.selectedRarity() !== 'All') + Number(this.catalog.selectedSource() !== 'All') + Number(this.catalog.selectedCollectionId() !== 'All'));

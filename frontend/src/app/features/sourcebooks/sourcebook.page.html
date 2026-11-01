@@ -1,95 +1,251 @@
-<section class="sourcebook-page">
+<section class="library-page">
   @if (source(); as s) {
-    <lw-page-header [title]="s.name" [subtitle]="s.id + ' · ' + (s.source_group ?? 'Source') + (s.author ? ' · ' + s.author : '') + (s.published ? ' · ' + s.published : '')">
-      <a pageActions class="back-link" routerLink="/sources">All sourcebooks</a>
-    </lw-page-header>
-    @if (s.cover_path) {
-      <img class="cover" [src]="s.cover_path" [alt]="s.name + ' cover'" />
-    }
-
-    @if (s.decks.length > 0) {
-      <section class="panel">
-        <h2>Decks</h2>
-        <ul class="deck-grid">
-          @for (deck of s.decks; track deck.id) {
-            <li>
-              <a [routerLink]="['/decks', deck.id]">
-                @if (deck.image_path) {
-                  <img [src]="deck.image_path" [alt]="deck.name" loading="lazy" />
-                }
-                <span class="deck-name">{{ deck.name }}</span>
-                @if (deck.cards_count) {
-                  <span class="meta">{{ deck.cards_count }} cards</span>
-                }
-              </a>
-            </li>
-          }
-        </ul>
-      </section>
-    }
-
-    <section class="panel">
-      <h2>Contents</h2>
-      @if (s.sections.length) {
-        <p><a class="read-link" [routerLink]="['/sources', s.id, 'read']">Read this book</a></p>
-      }
-      <ol class="section-list">
-        @for (section of s.sections; track section.id) {
-          <li>
-            <a [routerLink]="['/sources', s.id, 'read']" [queryParams]="{ section: section.id }">{{ section.name }}</a>
-            @if (section.page) {
-              <span class="meta">p. {{ section.page }}</span>
-            }
-          </li>
-        } @empty {
-          <li class="meta">No contents indexed for this book.</li>
-        }
-      </ol>
-    </section>
-  } @else {
-    <lw-page-header title="Sourcebooks" subtitle="Rulebooks and adventures imported into LoomWeaver.">
-      <div pageActions class="search-row">
-        <input
-          type="search"
-          placeholder="Search sourcebooks"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
-          (keyup.enter)="loadList()"
-          aria-label="Search sourcebooks"
-        />
-        <button type="button" ngpButton (click)="loadList()">Search</button>
+    <!-- Single Sourcebook Detail View -->
+    <lw-page-header
+      [title]="s.name"
+      [subtitle]="s.id + ' · ' + (s.source_group || 'Sourcebook') + (s.author ? ' · ' + s.author : '') + (s.published ? ' · ' + s.published : '')"
+    >
+      <div pageActions class="detail-actions">
+        <a class="back-link" routerLink="/sources">
+          <lw-icon name="arrow-left" [size]="14" />
+          <span>All Tomes</span>
+        </a>
+        <a class="read-btn" [routerLink]="['/sources', s.id, 'read']">
+          <lw-icon name="book-open" [size]="15" />
+          <span>Read Tome</span>
+        </a>
       </div>
     </lw-page-header>
 
+    <div class="detail-layout">
+      @if (s.cover_path) {
+        <div class="detail-cover-wrapper">
+          <img class="detail-cover" [src]="s.cover_path" [alt]="s.name + ' cover'" />
+        </div>
+      }
+
+      <div class="detail-content">
+        @if (s.decks.length > 0) {
+          <section class="detail-panel">
+            <h2 class="panel-heading">Companion Decks</h2>
+            <ul class="deck-grid">
+              @for (deck of s.decks; track deck.id) {
+                <li>
+                  <a class="deck-card" [routerLink]="['/decks', deck.id]">
+                    @if (deck.image_path) {
+                      <img [src]="deck.image_path" [alt]="deck.name" loading="lazy" />
+                    }
+                    <span class="deck-name">{{ deck.name }}</span>
+                    @if (deck.cards_count) {
+                      <span class="deck-meta">{{ deck.cards_count }} cards</span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        <section class="detail-panel">
+          <div class="panel-header-row">
+            <h2 class="panel-heading">Table of Contents</h2>
+            @if (s.sections.length) {
+              <a class="read-inline-btn" [routerLink]="['/sources', s.id, 'read']">
+                <lw-icon name="book-open" [size]="14" />
+                <span>Open Reader</span>
+              </a>
+            }
+          </div>
+
+          <ol class="toc-list">
+            @for (section of s.sections; track section.id) {
+              <li class="toc-item">
+                <a
+                  class="toc-item-link"
+                  [routerLink]="['/sources', s.id, 'read']"
+                  [queryParams]="{ section: section.id }"
+                >
+                  <span class="toc-name">{{ section.name }}</span>
+                  @if (section.page) {
+                    <span class="toc-page">p. {{ section.page }}</span>
+                  }
+                </a>
+              </li>
+            } @empty {
+              <li class="toc-empty">No contents indexed for this book.</li>
+            }
+          </ol>
+        </section>
+      </div>
+    </div>
+  } @else {
+    <!-- Main Library Landing Page -->
+    <lw-page-header
+      title="Library"
+      subtitle="Complete collection of official rulebooks, campaign settings, and adventure modules with interactive reading and roll tables."
+    >
+      <div pageActions class="library-search-wrapper">
+        <lw-icon name="search" [size]="15" class="search-input-icon" />
+        <input
+          type="search"
+          placeholder="Search books, codes, authors…"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          aria-label="Search library sourcebooks"
+        />
+        @if (search()) {
+          <button
+            type="button"
+            class="search-clear-btn"
+            (click)="search.set('')"
+            aria-label="Clear search"
+          >
+            <lw-icon name="close" [size]="13" />
+          </button>
+        }
+      </div>
+    </lw-page-header>
+
+    <!-- Filter Category Tabs -->
+    <div class="library-tabs-bar" role="tablist" aria-label="Library Categories">
+      <button
+        type="button"
+        role="tab"
+        class="library-tab"
+        [class.library-tab--active]="selectedTab() === 'all'"
+        [attr.aria-selected]="selectedTab() === 'all'"
+        (click)="setTab('all')"
+      >
+        All Books
+        <span class="tab-count">{{ sources().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="library-tab"
+        [class.library-tab--active]="selectedTab() === 'core'"
+        [attr.aria-selected]="selectedTab() === 'core'"
+        (click)="setTab('core')"
+      >
+        Core Rules
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="library-tab"
+        [class.library-tab--active]="selectedTab() === 'adventure'"
+        [attr.aria-selected]="selectedTab() === 'adventure'"
+        (click)="setTab('adventure')"
+      >
+        Adventures
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="library-tab"
+        [class.library-tab--active]="selectedTab() === 'setting'"
+        [attr.aria-selected]="selectedTab() === 'setting'"
+        (click)="setTab('setting')"
+      >
+        Setting &amp; Lore
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="library-tab"
+        [class.library-tab--active]="selectedTab() === 'supplement'"
+        [attr.aria-selected]="selectedTab() === 'supplement'"
+        (click)="setTab('supplement')"
+      >
+        Supplements
+      </button>
+    </div>
+
     @if (loading()) {
-      <p class="meta">Loading...</p>
-    }
-    @if (errorMessage()) {
-      <p class="error" role="alert">{{ errorMessage() }}</p>
+      <div class="library-loading">
+        <span class="library-spinner"></span>
+        <p>Loading library tomes…</p>
+      </div>
     }
 
-    <ul class="book-grid">
-      @for (book of sources(); track book.id) {
-        <li>
-          <a [routerLink]="['/sources', book.id]">
+    @if (errorMessage()) {
+      <div class="library-error" role="alert">
+        <lw-icon name="alert-triangle" [size]="18" />
+        <p>{{ errorMessage() }}</p>
+      </div>
+    }
+
+    <!-- Books Grid -->
+    <div class="books-grid" role="region" aria-label="Library books">
+      @for (book of filteredSources(); track book.id) {
+        <a
+          class="book-card"
+          [routerLink]="['/sources', book.id, 'read']"
+          [attr.aria-label]="'Read ' + book.name"
+        >
+          <div class="book-cover-container">
             @if (book.cover_path) {
-              <img [src]="book.cover_path" [alt]="book.name + ' cover'" loading="lazy" />
+              <img
+                class="book-cover-img"
+                [src]="book.cover_path"
+                [alt]="book.name + ' cover'"
+                loading="lazy"
+              />
+            } @else {
+              <div class="book-cover-placeholder">
+                <lw-icon name="book-open" [size]="32" class="placeholder-icon" />
+                <span class="placeholder-code">{{ book.id }}</span>
+              </div>
             }
-            <span class="book-name">{{ book.name }}</span>
-            <span class="meta">
-              {{ book.id }}
-              @if (book.published) { · {{ book.published }} }
-            </span>
-            @if (book.deck_count > 0) {
-              <span class="meta">{{ book.deck_count }} deck(s)</span>
+
+            <div class="book-cover-overlay">
+              <span class="read-action-badge">
+                <lw-icon name="book-open" [size]="14" />
+                <span>Read Tome</span>
+              </span>
+            </div>
+
+            @if (book.source_group) {
+              <span class="book-badge">{{ book.source_group }}</span>
             }
-          </a>
-        </li>
+          </div>
+
+          <div class="book-card-info">
+            <h3 class="book-title">{{ book.name }}</h3>
+            <div class="book-card-footer">
+              <span class="book-code">{{ book.id }}</span>
+              @if (book.published) {
+                <span class="book-dot">·</span>
+                <span class="book-pub">{{ book.published }}</span>
+              }
+            </div>
+            @if (book.author) {
+              <span class="book-author">{{ book.author }}</span>
+            }
+          </div>
+        </a>
       } @empty {
         @if (!loading()) {
-          <li class="meta">No sourcebooks match this search.</li>
+          <div class="books-empty">
+            <lw-icon name="search" [size]="36" class="empty-icon" />
+            <h3 class="empty-title">No tomes found</h3>
+            <p class="empty-desc">
+              No sourcebooks match the search filter "{{ search() }}".
+            </p>
+            <button
+              type="button"
+              class="empty-reset-btn"
+              (click)="search.set(''); setTab('all')"
+            >
+              Reset Filters
+            </button>
+          </div>
         }
       }
-    </ul>
+    </div>
   }
 </section>

@@ -194,18 +194,21 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('./features/sourcebooks/sourcebook.page').then((m) => m.SourceBookPageComponent),
   },
+  { path: 'library', redirectTo: 'sources', pathMatch: 'full' },
   {
     path: 'sources/:code',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/sourcebooks/sourcebook.page').then((m) => m.SourceBookPageComponent),
   },
+  { path: 'library/:code', redirectTo: 'sources/:code', pathMatch: 'full' },
   {
     path: 'sources/:code/read',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/sourcebooks/sourcebook-reader.page').then((m) => m.SourceBookReaderPageComponent),
   },
+  { path: 'library/:code/read', redirectTo: 'sources/:code/read', pathMatch: 'full' },
   {
     path: 'roll-tables',
     canActivate: [authGuard],

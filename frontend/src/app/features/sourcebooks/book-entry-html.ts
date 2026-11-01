@@ -1,19 +1,82 @@
 // Converts 5etools-style entry trees (data_json of dnd_book_nodes) into HTML.
-// Text is HTML-escaped before inline tags are stripped, so the output is safe to bind with innerHTML.
+// Text is HTML-escaped before inline tags are rendered, so the output is safe to bind with innerHTML.
 
-const BLOCK_TYPES = new Set(['entries', 'section', 'inset', 'insetReadaloud', 'quote', 'variant', 'optfeature', 'abilityDc', 'abilityAttackMod']);
+const BLOCK_TYPES = new Set([
+  'entries',
+  'section',
+  'inset',
+  'insetReadaloud',
+  'quote',
+  'variant',
+  'optfeature',
+  'abilityDc',
+  'abilityAttackMod',
+]);
+
+let tableCounter = 0;
 
 export function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Replaces {@tag content|extra} with its display text.
+/**
+ * Tokenizes text and parses 5e-tools tags (such as {@item potion of healing}, {@dice 1d20}, etc.)
+ * while escaping non-tag prose to guarantee safety from XSS.
+ */
 export function renderInlineTags(value: string): string {
-  return value.replace(/\{@\w+\s*([^{}]*)\}/g, (_match, body: string) => body.split('|')[0] ?? '');
+  if (!value) return '';
+  const tagRegex = /\{@([a-zA-Z0-9_-]+)\s*([^{}]*)\}/g;
+  let lastIndex = 0;
+  let result = '';
+  let match: RegExpExecArray | null;
+
+  while ((match = tagRegex.exec(value)) !== null) {
+    if (match.index > lastIndex) {
+      result += escapeHtml(value.slice(lastIndex, match.index));
+    }
+    lastIndex = tagRegex.lastIndex;
+
+    const tag = match[1].toLowerCase();
+    const rawBody = match[2];
+    const parts = rawBody.split('|').map((p) => p.trim());
+    const rawName = parts[0] ?? '';
+
+    if (tag === 'item') {
+      const displayText = parts[2] || parts[0] || 'Item';
+      const searchParam = encodeURIComponent(rawName);
+      result += `<a class="book-item-link" href="/items?search=${searchParam}" data-item-name="${escapeHtml(rawName)}" title="Inspect ${escapeHtml(rawName)} in Items Catalog">${escapeHtml(displayText)}</a>`;
+    } else if (tag === 'dice') {
+      const formula = parts[0] || '1d20';
+      const displayText = parts[1] || parts[0] || formula;
+      result += `<button type="button" class="book-dice-btn" data-dice="${escapeHtml(formula)}" title="Roll ${escapeHtml(formula)}">${escapeHtml(displayText)}</button>`;
+    } else if (tag === 'damage') {
+      const formula = parts[0] || '';
+      const displayText = parts[1] || parts[0] || formula;
+      result += `<button type="button" class="book-dice-btn book-dice-btn--damage" data-dice="${escapeHtml(formula)}" title="Roll damage ${escapeHtml(formula)}">${escapeHtml(displayText)}</button>`;
+    } else if (tag === 'spell') {
+      const displayText = parts[2] || parts[0] || '';
+      result += `<span class="book-tag-ref book-tag-ref--spell" title="Spell">${escapeHtml(displayText)}</span>`;
+    } else if (tag === 'creature') {
+      const displayText = parts[2] || parts[0] || '';
+      result += `<span class="book-tag-ref book-tag-ref--creature" title="Creature">${escapeHtml(displayText)}</span>`;
+    } else if (tag === 'condition') {
+      const displayText = parts[2] || parts[0] || '';
+      result += `<span class="book-tag-ref book-tag-ref--condition" title="Condition">${escapeHtml(displayText)}</span>`;
+    } else {
+      const displayText = parts[parts.length > 2 ? 2 : 0] || parts[0] || '';
+      result += escapeHtml(displayText);
+    }
+  }
+
+  if (lastIndex < value.length) {
+    result += escapeHtml(value.slice(lastIndex));
+  }
+
+  return result;
 }
 
-function inline(value: unknown): string {
-  return renderInlineTags(escapeHtml(String(value ?? '')));
+export function inline(value: unknown): string {
+  return renderInlineTags(String(value ?? ''));
 }
 
 export function renderEntries(entries: unknown): string {
@@ -35,15 +98,33 @@ export function renderEntry(entry: unknown): string {
 
   switch (type) {
     case 'list':
-      return `<ul>${(node['items'] as unknown[] ?? []).map((item) => `<li>${renderEntry(item)}</li>`).join('')}</ul>`;
+      return `<ul>${((node['items'] as unknown[]) ?? []).map((item) => `<li>${renderEntry(item)}</li>`).join('')}</ul>`;
     case 'table':
       return renderTable(node);
     case 'tableGroup':
-      return ((node['tables'] as Record<string, unknown>[] | undefined) ?? []).map(renderTable).join('');
+      return (((node['tables'] as Record<string, unknown>[]) ?? []).map(renderTable)).join('');
     case 'statblock':
-      return `<div class="book-block">${node['name'] ? `<h4>${inline(node['name'])}</h4>` : ''}${renderEntries(node['entries'])}</div>`;
-    case 'image':
-    case 'gallery':
+      return `<div class="book-block book-block--statblock">${node['name'] ? `<h4>${inline(node['name'])}</h4>` : ''}${renderEntries(node['entries'])}</div>`;
+    case 'image': {
+      let path = '';
+      if (typeof node['path'] === 'string') {
+        path = node['path'];
+      } else if (node['href']) {
+        const href = node['href'] as Record<string, unknown> | string;
+        if (typeof href === 'string') path = href;
+        else if (href && typeof href === 'object' && href['path']) path = String(href['path']);
+      }
+      if (!path) return '';
+      const cleanPath = path.replace(/\\/g, '/').replace(/^\/+/, '');
+      const fullSrc = cleanPath.startsWith('5etools/') ? `/${cleanPath}` : `/5etools/${cleanPath}`;
+      const title = typeof node['title'] === 'string' ? node['title'] : '';
+      const caption = title ? `<figcaption>${inline(title)}</figcaption>` : '';
+      return `<figure class="book-figure"><img src="${escapeHtml(fullSrc)}" alt="${escapeHtml(title)}" loading="lazy" />${caption}</figure>`;
+    }
+    case 'gallery': {
+      const images = (node['images'] as unknown[] | undefined) ?? [];
+      return `<div class="book-gallery">${images.map((img) => renderEntry(img)).join('')}</div>`;
+    }
     case 'flowchart':
       return '';
     default:
@@ -51,8 +132,11 @@ export function renderEntry(entry: unknown): string {
   }
 
   if (BLOCK_TYPES.has(type) || Array.isArray(node['entries'])) {
+    const isQuote = type === 'quote';
+    const isInset = type === 'inset' || type === 'insetReadaloud';
+    const modifierClass = isQuote ? 'book-block--quote' : isInset ? 'book-block--inset' : '';
     const heading = node['name'] ? `<h4>${inline(node['name'])}</h4>` : '';
-    return `<div class="book-block">${heading}${renderEntries(node['entries'])}</div>`;
+    return `<div class="book-block ${modifierClass}">${heading}${renderEntries(node['entries'])}</div>`;
   }
   if (Array.isArray(node['items'])) {
     return `<ul>${(node['items'] as unknown[]).map((item) => `<li>${renderEntry(item)}</li>`).join('')}</ul>`;
@@ -63,22 +147,116 @@ export function renderEntry(entry: unknown): string {
   return '';
 }
 
+function parseRollRange(cell: unknown): { min: number; max: number } | null {
+  if (cell && typeof cell === 'object') {
+    const obj = cell as Record<string, unknown>;
+    if ('roll' in obj && obj['roll'] && typeof obj['roll'] === 'object') {
+      const roll = obj['roll'] as { exact?: number; min?: number; max?: number };
+      if (typeof roll.exact === 'number') {
+        return { min: roll.exact, max: roll.exact };
+      }
+      if (typeof roll.min === 'number' && typeof roll.max === 'number') {
+        return { min: roll.min, max: roll.max };
+      }
+    }
+  }
+  if (typeof cell === 'string') {
+    const trimmed = cell.trim();
+    // "01-05" or "1-5" or "1–5" or "1 to 5"
+    const rangeMatch = /^(\d+)\s*(?:-|–|to)\s*(\d+)$/i.exec(trimmed);
+    if (rangeMatch) {
+      const min = parseInt(rangeMatch[1], 10);
+      const max = parseInt(rangeMatch[2], 10);
+      if (!isNaN(min) && !isNaN(max)) return { min, max };
+    }
+    // Exact number "5" or "05" or "00" (treated as 100 on d100)
+    const exactMatch = /^(\d+)$/.exec(trimmed);
+    if (exactMatch) {
+      let num = parseInt(exactMatch[1], 10);
+      if (exactMatch[1] === '00' || exactMatch[1] === '0') num = 100;
+      if (!isNaN(num)) return { min: num, max: num };
+    }
+  }
+  if (typeof cell === 'number') {
+    return { min: cell, max: cell };
+  }
+  return null;
+}
+
 function renderTable(node: Record<string, unknown>): string {
-  const caption = node['caption'] ? `<caption>${inline(node['caption'])}</caption>` : '';
+  const tableId = `lw-tbl-${++tableCounter}`;
+  const rawCaption = node['caption'] ? String(node['caption']) : '';
+  const caption = rawCaption ? `<caption>${inline(rawCaption)}</caption>` : '';
   const labels = (node['colLabels'] as unknown[] | undefined) ?? [];
+
+  // Detect rollable dice formula
+  let diceExpr = '';
+  if (labels.length > 0) {
+    const firstLabel = String(labels[0]).trim();
+    const dMatch = /(?:d%|\b(\d*d\d+)\b)/i.exec(firstLabel);
+    if (dMatch) {
+      diceExpr = dMatch[0].toLowerCase() === 'd%' ? '1d100' : (dMatch[1] ? (dMatch[1].startsWith('d') ? `1${dMatch[1]}` : dMatch[1]) : '1d20');
+    }
+  }
+  if (!diceExpr && rawCaption) {
+    const capMatch = /(?:d%|\b(\d*d\d+)\b)/i.exec(rawCaption);
+    if (capMatch) {
+      diceExpr = capMatch[0].toLowerCase() === 'd%' ? '1d100' : (capMatch[1] ? (capMatch[1].startsWith('d') ? `1${capMatch[1]}` : capMatch[1]) : '1d20');
+    }
+  }
+
+  const rawRows = (node['rows'] as unknown[][] | undefined) ?? [];
+  let maxFoundRoll = 0;
+  let hasRowRollRanges = false;
+
+  const rowsHtml = rawRows
+    .map((row) => {
+      const range = row.length > 0 ? parseRollRange(row[0]) : null;
+      let attr = '';
+      if (range) {
+        hasRowRollRanges = true;
+        if (range.max > maxFoundRoll) maxFoundRoll = range.max;
+        attr = ` class="book-table-row" data-roll-min="${range.min}" data-roll-max="${range.max}"`;
+      }
+      return `<tr${attr}>${row.map((cell) => `<td>${renderCell(cell)}</td>`).join('')}</tr>`;
+    })
+    .join('');
+
+  if (!diceExpr && hasRowRollRanges && maxFoundRoll > 0) {
+    if (maxFoundRoll <= 4) diceExpr = '1d4';
+    else if (maxFoundRoll <= 6) diceExpr = '1d6';
+    else if (maxFoundRoll <= 8) diceExpr = '1d8';
+    else if (maxFoundRoll <= 10) diceExpr = '1d10';
+    else if (maxFoundRoll <= 12) diceExpr = '1d12';
+    else if (maxFoundRoll <= 20) diceExpr = '1d20';
+    else diceExpr = '1d100';
+  }
+
   const head = labels.length
     ? `<thead><tr>${labels.map((label) => `<th>${inline(label)}</th>`).join('')}</tr></thead>`
     : '';
-  const rows = ((node['rows'] as unknown[][] | undefined) ?? [])
-    .map((row) => `<tr>${row.map((cell) => `<td>${renderCell(cell)}</td>`).join('')}</tr>`)
-    .join('');
-  return `<table class="book-table">${caption}${head}<tbody>${rows}</tbody></table>`;
+
+  const toolbar = diceExpr
+    ? `<div class="book-table-toolbar">
+         <button type="button" class="book-roll-btn" data-dice="${escapeHtml(diceExpr)}" data-table-id="${tableId}" data-caption="${escapeHtml(rawCaption || 'Roll Table')}">
+           Roll ${escapeHtml(diceExpr.toUpperCase())}
+         </button>
+         <span class="book-table-result" id="${tableId}-result"></span>
+       </div>`
+    : '';
+
+  return `<div class="book-table-wrapper" id="${tableId}">
+    ${toolbar}
+    <div class="book-table-scroll">
+      <table class="book-table">${caption}${head}<tbody>${rowsHtml}</tbody></table>
+    </div>
+  </div>`;
 }
 
 function renderCell(cell: unknown): string {
   if (cell && typeof cell === 'object' && 'roll' in (cell as Record<string, unknown>)) {
     const roll = (cell as { roll: { exact?: number; min?: number; max?: number } }).roll;
-    return roll.exact !== undefined ? String(roll.exact) : `${roll.min ?? ''}-${roll.max ?? ''}`;
+    return roll.exact !== undefined ? String(roll.exact) : `${roll.min ?? ''}–${roll.max ?? ''}`;
   }
   return typeof cell === 'string' ? inline(cell) : renderEntry(cell);
 }
