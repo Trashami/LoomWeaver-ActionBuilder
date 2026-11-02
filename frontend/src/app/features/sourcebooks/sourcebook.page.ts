@@ -37,6 +37,7 @@ export class SourceBookPageComponent {
   readonly source = signal<LwSourceDetailVm | null>(null);
   readonly loading = signal(false);
   readonly errorMessage = signal('');
+  readonly brokenCovers = signal<ReadonlySet<string>>(new Set());
 
   readonly filteredSources = computed(() => {
     const list = this.sources();
@@ -44,7 +45,6 @@ export class SourceBookPageComponent {
     const query = this.search().trim().toLowerCase();
 
     return list.filter((s) => {
-      // Category tab filtering
       if (tab === 'core') {
         const isCore = (s.source_group || '').toLowerCase().includes('core') || s.source_type === 'core';
         if (!isCore) return false;
@@ -59,7 +59,6 @@ export class SourceBookPageComponent {
         if (!isSupp) return false;
       }
 
-      // Search text filtering
       if (query) {
         const nameMatch = s.name.toLowerCase().includes(query);
         const codeMatch = s.id.toLowerCase().includes(query);
@@ -112,5 +111,17 @@ export class SourceBookPageComponent {
 
   setTab(tab: LibraryCategoryTab): void {
     this.selectedTab.set(tab);
+  }
+
+  hasValidCover(book: { id: string; cover_path: string | null }): boolean {
+    if (!book.cover_path) return false;
+    if (book.id !== 'PHB' && book.cover_path.endsWith('/PHB.webp')) return false;
+    return !this.brokenCovers().has(book.id);
+  }
+
+  markCoverBroken(bookId: string): void {
+    const next = new Set(this.brokenCovers());
+    next.add(bookId);
+    this.brokenCovers.set(next);
   }
 }

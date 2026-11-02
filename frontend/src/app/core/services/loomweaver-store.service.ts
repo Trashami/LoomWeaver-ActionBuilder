@@ -92,6 +92,9 @@ export class LoomWeaverStoreService {
   constructor() {
     this.restoreGenerativeAiPreference();
     this.verifyPolyglotHealth();
+    this.sessions.set(this.buildFallbackSessions(1));
+    this.activeSessionId.set('session-15');
+    this.loadMyCampaigns();
     this.refreshCampaignDashboard();
   }
 
@@ -230,7 +233,8 @@ export class LoomWeaverStoreService {
             status: idx === 0 ? 'upcoming' : 'completed',
           };
         });
-        const list = mapped.length > 0 ? mapped : this.buildFallbackSessions(campaignId);
+        const fallback = this.buildFallbackSessions(campaignId);
+        const list = mapped.length >= 2 ? mapped : [...mapped, ...fallback.filter((f) => !mapped.some((m) => m.sessionId === f.sessionId))];
         this.sessions.set(list);
         this.resolveInitialActiveSession(campaignId, list);
       },

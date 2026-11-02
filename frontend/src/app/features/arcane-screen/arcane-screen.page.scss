@@ -14,7 +14,7 @@
 
 .lw-vtt-top-bar {
   display: flex; align-items: center; justify-content: space-between;
-  height: 42px; min-height: 42px; padding: 0 0.85rem;
+  flex-wrap: wrap; gap: 0.45rem; height: auto; min-height: 42px; padding: 0.25rem 0.85rem;
   background: rgba(5, 16, 12, 0.94); backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(217, 183, 122, 0.28);
   position: relative; z-index: 20;
@@ -24,7 +24,7 @@
   }
 
   .top-bar-center {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    position: static; transform: none; flex-wrap: wrap;
     display: flex; align-items: center; gap: 0.35rem;
     padding: 0.18rem 0.4rem; border-radius: 7px;
     background: rgba(8, 22, 17, 0.92); border: 1px solid rgba(217, 183, 122, 0.35);

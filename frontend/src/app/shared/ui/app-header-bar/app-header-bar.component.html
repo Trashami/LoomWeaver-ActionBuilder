@@ -17,9 +17,7 @@
   [style.width]="width()"
   [style.min-width]="minWidth()"
   [style.max-width]="maxWidth()"
-  [style.height]="height()"
   [style.min-height]="minHeight()"
-  [style.max-height]="maxHeight()"
 >
   <div class="lw-topbar__left">
     <button
@@ -54,51 +52,156 @@
       </div>
     </a>
 
-    <div class="lw-campaign-tile">
+    <!-- Campaign Selector Tile with Custom Dropdown Menu -->
+    <div
+      class="lw-campaign-tile"
+      [class.lw-campaign-tile--open]="campaignDropdownOpen()"
+      role="button"
+      tabindex="0"
+      [attr.aria-expanded]="campaignDropdownOpen()"
+      aria-haspopup="listbox"
+      aria-label="Select Active Campaign"
+      (click)="toggleCampaignDropdown($event)"
+      (keydown.enter)="toggleCampaignDropdown($event)"
+      (keydown.space)="toggleCampaignDropdown($event)"
+    >
       <div class="lw-campaign-tile__body">
-        <span class="lw-campaign-tile__name">
-          {{ activeCampaign()?.name }}
+        <span class="lw-campaign-tile__sub lw-campaign-tile__kicker">
+          CAMPAIGN · {{ isCampaignGm() ? 'DM / GM' : 'PLAYER' }}
+        </span>
+        <span class="lw-campaign-tile__name-row">
+          <span class="lw-campaign-tile__name" [title]="activeCampaign()?.name || 'Shadow of the Mountain'">
+            {{ activeCampaign()?.name || 'Shadow of the Mountain' }}
+          </span>
           <span class="lw-campaign-tile__chev" aria-hidden="true">▾</span>
         </span>
-        <select
-          class="lw-campaign-tile__select"
-          [ngModel]="activeCampaignId()"
-          (ngModelChange)="campaignSelected.emit($event)"
-          aria-label="Active Campaign"
-        >
-          @for (camp of campaigns(); track camp.id) {
-            <option [ngValue]="camp.id">{{ camp.name }}</option>
-          }
-        </select>
         <span class="lw-campaign-tile__sub">
-          {{ isCampaignGm() ? 'DM / GM Campaign' : 'Joined as Player (DM: ' + (activeCampaign()?.dmDisplayName || 'GM') + ')' }} · {{ activeCampaign()?.currentSessionNumber ?? 0 }} sessions
+          {{ activeCampaign()?.systemLabel || 'D&D 5e' }} · {{ resolvedSessions().length || activeCampaign()?.currentSessionNumber || 3 }} sessions
         </span>
       </div>
+
+      @if (campaignDropdownOpen()) {
+        <div
+          class="lw-header-dropdown"
+          role="listbox"
+          aria-label="Available Campaigns"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="lw-header-dropdown__head">
+            <span>SWITCH ACTIVE CAMPAIGN</span>
+            <small>{{ resolvedCampaigns().length }} Campaign{{ resolvedCampaigns().length === 1 ? '' : 's' }}</small>
+          </div>
+          <div class="lw-header-dropdown__list">
+            @for (camp of resolvedCampaigns(); track camp.id) {
+              <button
+                type="button"
+                class="lw-header-dropdown__option"
+                [class.lw-header-dropdown__option--active]="camp.id === activeCampaignId()"
+                role="option"
+                [attr.aria-selected]="camp.id === activeCampaignId()"
+                (click)="selectCampaignOption(camp.id, $event)"
+              >
+                <div class="lw-header-dropdown__option-main">
+                  <strong>{{ camp.name }}</strong>
+                  <span>{{ camp.systemLabel || 'D&D 5e' }} · {{ camp.myRole === 'player' ? 'Player' : 'DM / GM' }} · {{ camp.currentAct || 'Act II' }}</span>
+                </div>
+                <span class="lw-header-dropdown__badge">
+                  {{ camp.id === activeCampaignId() ? 'ACTIVE' : 'Select' }}
+                </span>
+              </button>
+            }
+          </div>
+          <div class="lw-header-dropdown__foot">
+            <button
+              type="button"
+              class="lw-header-dropdown__foot-btn"
+              (click)="navigateAndClose('/campaigns', $event)"
+            >
+              Manage Campaigns & Quests
+            </button>
+          </div>
+        </div>
+      }
     </div>
 
+    <!-- Current Session Selector Tile with Custom Dropdown Menu -->
     @if (store) {
-      <div class="lw-campaign-tile lw-session-tile">
+      <div
+        class="lw-campaign-tile lw-session-tile"
+        [class.lw-campaign-tile--open]="sessionDropdownOpen()"
+        role="button"
+        tabindex="0"
+        [attr.aria-expanded]="sessionDropdownOpen()"
+        aria-haspopup="listbox"
+        aria-label="Select Current Session"
+        (click)="toggleSessionDropdown($event)"
+        (keydown.enter)="toggleSessionDropdown($event)"
+        (keydown.space)="toggleSessionDropdown($event)"
+      >
         <div class="lw-campaign-tile__body">
           <span class="lw-campaign-tile__sub lw-session-tile__kicker">
-            CURRENT SESSION ({{ store.activeSession()?.statusLabel || 'Active' }})
+            CURRENT SESSION ({{ store.activeSession()?.statusLabel || 'Current / Upcoming' }})
           </span>
-          <span class="lw-campaign-tile__name">
-            {{ store.activeSession()?.title || 'Session 15 — The Ruined Chapel' }}
+          <span class="lw-campaign-tile__name-row">
+            <span class="lw-campaign-tile__name" [title]="store.activeSession()?.title || 'Session 15 — The Ruined Chapel'">
+              {{ store.activeSession()?.title || 'Session 15 — The Ruined Chapel' }}
+            </span>
             <span class="lw-campaign-tile__chev" aria-hidden="true">▾</span>
           </span>
-          <select
-            class="lw-campaign-tile__select"
-            [ngModel]="store.activeSessionId()"
-            (ngModelChange)="store.setActiveSession($event)"
-            aria-label="Current Active Session"
-          >
-            @for (sess of store.sessions(); track sess.sessionId) {
-              <option [ngValue]="sess.sessionId">
-                Session {{ sess.sessionNumber }} — {{ sess.title }} ({{ sess.statusLabel }})
-              </option>
-            }
-          </select>
+          <span class="lw-campaign-tile__sub">
+            {{ store.activeSession()?.locationLabel || 'The Ruined Chapel (C1–C3)' }}
+          </span>
         </div>
+
+        @if (sessionDropdownOpen()) {
+          <div
+            class="lw-header-dropdown lw-header-dropdown--session"
+            role="listbox"
+            aria-label="Campaign Sessions"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="lw-header-dropdown__head">
+              <span>SELECT PLANNING / PLAY SESSION</span>
+              <small>{{ resolvedSessions().length }} Sessions</small>
+            </div>
+            <div class="lw-header-dropdown__list">
+              @for (sess of resolvedSessions(); track sess.sessionId) {
+                <button
+                  type="button"
+                  class="lw-header-dropdown__option"
+                  [class.lw-header-dropdown__option--active]="sess.sessionId === store.activeSessionId()"
+                  role="option"
+                  [attr.aria-selected]="sess.sessionId === store.activeSessionId()"
+                  (click)="selectSessionOption(sess.sessionId, $event)"
+                >
+                  <div class="lw-header-dropdown__option-main">
+                    <strong>Session {{ sess.sessionNumber }} — {{ sess.title }}</strong>
+                    <span>{{ sess.locationLabel }} · {{ sess.statusLabel }}</span>
+                  </div>
+                  <span class="lw-header-dropdown__badge">
+                    {{ sess.sessionId === store.activeSessionId() ? 'CURRENT' : 'Switch' }}
+                  </span>
+                </button>
+              }
+            </div>
+            <div class="lw-header-dropdown__foot">
+              <button
+                type="button"
+                class="lw-header-dropdown__foot-btn"
+                (click)="navigateAndClose('/sessions', $event)"
+              >
+                Open Sessions Planner
+              </button>
+              <button
+                type="button"
+                class="lw-header-dropdown__foot-btn lw-header-dropdown__foot-btn--emerald"
+                (click)="openAdventureGuideFromDropdown('session', $event)"
+              >
+                Session Adventure Guide
+              </button>
+            </div>
+          </div>
+        }
       </div>
     }
   </div>
@@ -146,17 +249,6 @@
       <lw-icon name="dices" [size]="18" />
     </button>
 
-    <button
-      ngpButton
-      type="button"
-      class="lw-topbar__rect-btn lw-topbar__rect-btn--gold"
-      [disabled]="!isCampaignGm()"
-      (click)="isCampaignGm() && viewerRoleToggled.emit()"
-      [title]="isCampaignGm() ? 'Switch between GM View and Player View for your campaign' : 'You are a Player in this campaign (Player View enforced)'"
-    >
-      <span>{{ isCampaignGm() ? (viewerRole() === 'gm' ? 'GM View' : 'Player View (Preview)') : 'Player View' }}</span>
-    </button>
-
     @if (store) {
       <button
         ngpButton
@@ -168,6 +260,17 @@
         <span>Adventure Guide</span>
       </button>
     }
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__rect-btn lw-topbar__rect-btn--gold"
+      [disabled]="!isCampaignGm()"
+      (click)="isCampaignGm() && viewerRoleToggled.emit()"
+      [title]="isCampaignGm() ? 'Switch between GM View and Player View for your campaign' : 'You are a Player in this campaign (Player View enforced)'"
+    >
+      <span>{{ isCampaignGm() ? (viewerRole() === 'gm' ? 'GM View' : 'Player View') : 'Player View' }}</span>
+    </button>
 
     <button
       ngpButton

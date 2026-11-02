@@ -20,7 +20,7 @@ export function escapeHtml(value: string): string {
 }
 
 /**
- * Tokenizes text and parses 5e-tools tags (such as {@item potion of healing}, {@dice 1d20}, etc.)
+ * Tokenizes text and parses 5e-tools tags (such as {@item potion of healing}, {@spell fireball}, {@dice 1d20}, etc.)
  * while escaping non-tag prose to guarantee safety from XSS.
  */
 export function renderInlineTags(value: string): string {
@@ -45,21 +45,26 @@ export function renderInlineTags(value: string): string {
       const displayText = parts[2] || parts[0] || 'Item';
       const searchParam = encodeURIComponent(rawName);
       result += `<a class="book-item-link" href="/items?search=${searchParam}" data-item-name="${escapeHtml(rawName)}" title="Inspect ${escapeHtml(rawName)} in Items Catalog">${escapeHtml(displayText)}</a>`;
-    } else if (tag === 'dice') {
-      const formula = parts[0] || '1d20';
+    } else if (tag === 'spell') {
+      const rawSource = parts[1] || '';
+      const displayText = parts[2] || parts[0] || 'Spell';
+      const spellParam = encodeURIComponent(rawName);
+      result += `<a class="book-spell-link" href="?spell=${spellParam}" data-spell-name="${escapeHtml(rawName)}" data-spell-source="${escapeHtml(rawSource)}" title="View ${escapeHtml(rawName)} spell description">${escapeHtml(displayText)}</a>`;
+    } else if (tag === 'dice' || tag === 'd20' || tag === 'hit') {
+      const rawFormula = parts[0] || '1d20';
+      const formula = tag === 'd20' || tag === 'hit'
+        ? `1d20${rawFormula.startsWith('+') || rawFormula.startsWith('-') ? rawFormula : `+${rawFormula}`}`
+        : rawFormula;
       const displayText = parts[1] || parts[0] || formula;
       result += `<button type="button" class="book-dice-btn" data-dice="${escapeHtml(formula)}" title="Roll ${escapeHtml(formula)}">${escapeHtml(displayText)}</button>`;
     } else if (tag === 'damage') {
       const formula = parts[0] || '';
       const displayText = parts[1] || parts[0] || formula;
       result += `<button type="button" class="book-dice-btn book-dice-btn--damage" data-dice="${escapeHtml(formula)}" title="Roll damage ${escapeHtml(formula)}">${escapeHtml(displayText)}</button>`;
-    } else if (tag === 'spell') {
-      const displayText = parts[2] || parts[0] || '';
-      result += `<span class="book-tag-ref book-tag-ref--spell" title="Spell">${escapeHtml(displayText)}</span>`;
     } else if (tag === 'creature') {
       const displayText = parts[2] || parts[0] || '';
       result += `<span class="book-tag-ref book-tag-ref--creature" title="Creature">${escapeHtml(displayText)}</span>`;
-    } else if (tag === 'condition') {
+    } else if (tag === 'condition' || tag === 'status') {
       const displayText = parts[2] || parts[0] || '';
       result += `<span class="book-tag-ref book-tag-ref--condition" title="Condition">${escapeHtml(displayText)}</span>`;
     } else {
@@ -97,14 +102,32 @@ export function renderEntry(entry: unknown): string {
   const type = typeof node['type'] === 'string' ? (node['type'] as string) : 'entries';
 
   switch (type) {
-    case 'list':
-      return `<ul>${((node['items'] as unknown[]) ?? []).map((item) => `<li>${renderEntry(item)}</li>`).join('')}</ul>`;
+    case 'list': {
+      const items = (node['items'] as unknown[]) ?? [];
+      const isSpellList = items.length >= 6 && items.every((it) => typeof it === 'string' && it.trim().startsWith('{@spell'));
+      const hasColumns = Boolean(node['columns']) || isSpellList;
+      const listClass = hasColumns ? ' class="book-list-columns"' : '';
+      const heading = node['name'] ? `<h4 class="book-list-heading">${inline(node['name'])}</h4>` : '';
+      return `${heading}<ul${listClass}>${items.map((item) => `<li>${renderEntry(item)}</li>`).join('')}</ul>`;
+    }
+    case 'item': {
+      const itemName = node['name'] ? `<strong>${inline(node['name'])}</strong> ` : '';
+      const body = node['entry'] ? inline(node['entry']) : renderEntries(node['entries']);
+      return `<div class="book-list-item">${itemName}${body}</div>`;
+    }
     case 'table':
       return renderTable(node);
     case 'tableGroup':
       return (((node['tables'] as Record<string, unknown>[]) ?? []).map(renderTable)).join('');
-    case 'statblock':
-      return `<div class="book-block book-block--statblock">${node['name'] ? `<h4>${inline(node['name'])}</h4>` : ''}${renderEntries(node['entries'])}</div>`;
+    case 'statblock': {
+      const tag = typeof node['tag'] === 'string' ? node['tag'].toLowerCase() : '';
+      const name = typeof node['name'] === 'string' ? node['name'] : '';
+      const src = typeof node['source'] === 'string' ? node['source'] : '';
+      if (tag === 'spell' && name && !Array.isArray(node['entries'])) {
+        return `<div class="book-spell-entry-row"><a class="book-spell-link book-spell-link--card" href="?spell=${encodeURIComponent(name)}" data-spell-name="${escapeHtml(name)}" data-spell-source="${escapeHtml(src)}" title="View ${escapeHtml(name)} spell description">${escapeHtml(name)}</a></div>`;
+      }
+      return `<div class="book-block book-block--statblock">${name ? `<h4>${inline(name)}</h4>` : ''}${renderEntries(node['entries'])}</div>`;
+    }
     case 'image': {
       let path = '';
       if (typeof node['path'] === 'string') {
@@ -119,13 +142,14 @@ export function renderEntry(entry: unknown): string {
       const fullSrc = cleanPath.startsWith('5etools/') ? `/${cleanPath}` : `/5etools/${cleanPath}`;
       const title = typeof node['title'] === 'string' ? node['title'] : '';
       const caption = title ? `<figcaption>${inline(title)}</figcaption>` : '';
-      return `<figure class="book-figure"><img src="${escapeHtml(fullSrc)}" alt="${escapeHtml(title)}" loading="lazy" />${caption}</figure>`;
+      return `<figure class="book-figure"><img src="${escapeHtml(fullSrc)}" alt="${escapeHtml(title || 'Tome illustration')}" loading="lazy" />${caption}</figure>`;
     }
     case 'gallery': {
       const images = (node['images'] as unknown[] | undefined) ?? [];
       return `<div class="book-gallery">${images.map((img) => renderEntry(img)).join('')}</div>`;
     }
     case 'flowchart':
+    case 'lwSection':
       return '';
     default:
       break;
@@ -162,14 +186,12 @@ function parseRollRange(cell: unknown): { min: number; max: number } | null {
   }
   if (typeof cell === 'string') {
     const trimmed = cell.trim();
-    // "01-05" or "1-5" or "1–5" or "1 to 5"
     const rangeMatch = /^(\d+)\s*(?:-|–|to)\s*(\d+)$/i.exec(trimmed);
     if (rangeMatch) {
       const min = parseInt(rangeMatch[1], 10);
       const max = parseInt(rangeMatch[2], 10);
       if (!isNaN(min) && !isNaN(max)) return { min, max };
     }
-    // Exact number "5" or "05" or "00" (treated as 100 on d100)
     const exactMatch = /^(\d+)$/.exec(trimmed);
     if (exactMatch) {
       let num = parseInt(exactMatch[1], 10);
@@ -189,7 +211,6 @@ function renderTable(node: Record<string, unknown>): string {
   const caption = rawCaption ? `<caption>${inline(rawCaption)}</caption>` : '';
   const labels = (node['colLabels'] as unknown[] | undefined) ?? [];
 
-  // Detect rollable dice formula
   let diceExpr = '';
   if (labels.length > 0) {
     const firstLabel = String(labels[0]).trim();

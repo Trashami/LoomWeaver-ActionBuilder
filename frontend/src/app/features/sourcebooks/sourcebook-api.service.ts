@@ -50,7 +50,31 @@ export interface BookEntryNode {
   readonly name?: string;
   readonly page?: number;
   readonly entries?: unknown[];
+  readonly entriesHigherLevel?: unknown[];
   readonly [key: string]: unknown;
+}
+
+export interface LwBookSpellDetailVm {
+  readonly id: number;
+  readonly name: string;
+  readonly level: number;
+  readonly school: string | null;
+  readonly spell_type: string | null;
+  readonly casting_time: string | null;
+  readonly range_text: string | null;
+  readonly components_json: unknown;
+  readonly duration_text: string | null;
+  readonly concentration: boolean | number;
+  readonly ritual: boolean | number;
+  readonly description: string | null;
+  readonly higher_levels: string | null;
+  readonly classes_json: unknown;
+  readonly source_book: string | null;
+  readonly source_page: number | null;
+  readonly image_path: string | null;
+  readonly raw_json: BookEntryNode | null;
+  readonly prev_spell: string | null;
+  readonly next_spell: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -70,5 +94,16 @@ export class SourceBookApiService {
 
   getNode(code: string, nodeId: number): Observable<LwBookNodeVm> {
     return this.http.get<LwBookNodeVm>(`${this.base}/${encodeURIComponent(code)}/nodes/${nodeId}`);
+  }
+
+  getSpell(code: string, spellName: string, spellSource?: string): Observable<LwBookSpellDetailVm> {
+    let params = new HttpParams();
+    if (spellSource?.trim()) {
+      params = params.set('spellSource', spellSource.trim());
+    }
+    return this.http.get<LwBookSpellDetailVm>(
+      `${this.base}/${encodeURIComponent(code)}/spells/${encodeURIComponent(spellName)}`,
+      { params },
+    );
   }
 }

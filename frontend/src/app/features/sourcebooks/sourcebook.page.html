@@ -18,9 +18,14 @@
     </lw-page-header>
 
     <div class="detail-layout">
-      @if (s.cover_path) {
+      @if (hasValidCover(s)) {
         <div class="detail-cover-wrapper">
-          <img class="detail-cover" [src]="s.cover_path" [alt]="s.name + ' cover'" />
+          <img
+            class="detail-cover"
+            [src]="s.cover_path"
+            [alt]="s.name + ' cover'"
+            (error)="markCoverBroken(s.id)"
+          />
         </div>
       }
 
@@ -188,17 +193,19 @@
           [attr.aria-label]="'Read ' + book.name"
         >
           <div class="book-cover-container">
-            @if (book.cover_path) {
+            @if (hasValidCover(book)) {
               <img
                 class="book-cover-img"
                 [src]="book.cover_path"
                 [alt]="book.name + ' cover'"
                 loading="lazy"
+                (error)="markCoverBroken(book.id)"
               />
             } @else {
               <div class="book-cover-placeholder">
                 <lw-icon name="book-open" [size]="32" class="placeholder-icon" />
                 <span class="placeholder-code">{{ book.id }}</span>
+                <span class="placeholder-title">{{ book.name }}</span>
               </div>
             }
 
