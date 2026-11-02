@@ -26,6 +26,61 @@ public static class AdventureGuideStateStore
 
     private static readonly List<AdventurePlayEventDto> PlayEvents = new();
 
+    static AdventureGuideStateStore()
+    {
+        // Configured battlemaps for Sessions 1-3. Session 4 is unconfigured so GM can configure it in Map Studio.
+        var map1 = new AdventureAssignedBattlemapDto(
+            SceneKey: "sotm-seed-scene-edhellain-palace",
+            Title: "Edhellain Palace Hall",
+            SessionId: "sotm-seed-sess-01",
+            SessionTitle: "Shadows Above the Throne",
+            LocationNodeId: "node-loc-palace",
+            LocationTitle: "Edhellain Palace",
+            AreaKey: null,
+            ArtworkUrl: "/assets/battlemaps/fortress-axeholm.jpg",
+            RouteLink: "/maps?scene=sotm-seed-scene-edhellain-palace",
+            VttRouteLink: "/arcane-screen?scene=sotm-seed-scene-edhellain-palace",
+            ClickableRegions: Array.Empty<AdventureMapRegionChipDto>());
+        AssignedMapsByScope["sotm-seed-sess-01"] = map1;
+        AssignedMapsByScope["session-1"] = map1;
+        AssignedMapsByScope["900029:sotm-seed-sess-01"] = map1;
+        AssignedMapsByScope["900029:session-1"] = map1;
+
+        var map2 = new AdventureAssignedBattlemapDto(
+            SceneKey: "sotm-seed-scene-vandia-tavern",
+            Title: "Knot & Knife Beach Road",
+            SessionId: "sotm-seed-sess-02",
+            SessionTitle: "The Knot & Knife",
+            LocationNodeId: "node-loc-vandia",
+            LocationTitle: "Vandia",
+            AreaKey: null,
+            ArtworkUrl: "/assets/battlemaps/coastal-cliff.jpg",
+            RouteLink: "/maps?scene=sotm-seed-scene-vandia-tavern",
+            VttRouteLink: "/arcane-screen?scene=sotm-seed-scene-vandia-tavern",
+            ClickableRegions: Array.Empty<AdventureMapRegionChipDto>());
+        AssignedMapsByScope["sotm-seed-sess-02"] = map2;
+        AssignedMapsByScope["session-2"] = map2;
+        AssignedMapsByScope["900029:sotm-seed-sess-02"] = map2;
+        AssignedMapsByScope["900029:session-2"] = map2;
+
+        var map3 = new AdventureAssignedBattlemapDto(
+            SceneKey: "sotm-seed-scene-plains-of-red",
+            Title: "Plains of Red",
+            SessionId: "sotm-seed-sess-03",
+            SessionTitle: "The Plains of Red",
+            LocationNodeId: "node-loc-plains-of-red",
+            LocationTitle: "Plains of Red",
+            AreaKey: null,
+            ArtworkUrl: "/assets/battlemaps/combat-caves.webp",
+            RouteLink: "/maps?scene=sotm-seed-scene-plains-of-red",
+            VttRouteLink: "/arcane-screen?scene=sotm-seed-scene-plains-of-red",
+            ClickableRegions: Array.Empty<AdventureMapRegionChipDto>());
+        AssignedMapsByScope["sotm-seed-sess-03"] = map3;
+        AssignedMapsByScope["session-3"] = map3;
+        AssignedMapsByScope["900029:sotm-seed-sess-03"] = map3;
+        AssignedMapsByScope["900029:session-3"] = map3;
+    }
+
     public static string GetActiveSessionId(int campaignId)
     {
         lock (SyncLock)

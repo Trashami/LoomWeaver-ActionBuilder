@@ -1,3 +1,4 @@
+import { resolveDefaultTokenFromLibrary } from './vtt-token-library-resolver';
 import { resolveCharacterGlbUrl } from '../../characters/models/character-portrait-catalog.data';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -207,8 +208,8 @@ export class VttCombatService {
         bonusUsed: false,
         reactionUsed: false,
         movementFeet: 30,
-        avatarUrl: p.avatarUrl,
-        glbUrl: resolveCharacterGlbUrl(p.avatarUrl) || undefined,
+        avatarUrl: resolveDefaultTokenFromLibrary({ name: p.name, roleLabel: p.classSummary, faction: 'party', avatarUrl: p.avatarUrl }).avatarUrl,
+        glbUrl: resolveDefaultTokenFromLibrary({ name: p.name, roleLabel: p.classSummary, faction: 'party', avatarUrl: p.avatarUrl }).glbUrl,
       }));
 
     const npcTokens: VttTokenVm[] = enc.sessionNpcs
@@ -229,8 +230,8 @@ export class VttCombatService {
         bonusUsed: false,
         reactionUsed: false,
         movementFeet: 30,
-        avatarUrl: n.avatarUrl,
-        glbUrl: resolveCharacterGlbUrl(n.avatarUrl) || undefined,
+        avatarUrl: resolveDefaultTokenFromLibrary({ name: n.name, roleLabel: n.role, faction: n.disposition === 'Hostile' ? 'hostile' : 'party', avatarUrl: n.avatarUrl }).avatarUrl,
+        glbUrl: resolveDefaultTokenFromLibrary({ name: n.name, roleLabel: n.role, faction: n.disposition === 'Hostile' ? 'hostile' : 'party', avatarUrl: n.avatarUrl }).glbUrl,
       }));
 
     const monsterTokens: VttTokenVm[] = [];
@@ -254,8 +255,8 @@ export class VttCombatService {
           bonusUsed: false,
           reactionUsed: false,
           movementFeet: slot.speedFeet,
-          avatarUrl: slot.tokenPreviewUrl,
-          glbUrl: slot.tokenGlbUrl || resolveCharacterGlbUrl(slot.tokenPreviewUrl) || undefined,
+          avatarUrl: resolveDefaultTokenFromLibrary({ name: slot.name, roleLabel: slot.disposition, faction: 'hostile', avatarUrl: slot.tokenPreviewUrl, glbUrl: slot.tokenGlbUrl }).avatarUrl,
+          glbUrl: resolveDefaultTokenFromLibrary({ name: slot.name, roleLabel: slot.disposition, faction: 'hostile', avatarUrl: slot.tokenPreviewUrl, glbUrl: slot.tokenGlbUrl }).glbUrl,
         });
       }
     });
@@ -482,6 +483,8 @@ export class VttCombatService {
         bonusUsed: false,
         reactionUsed: false,
         movementFeet: creature.speedFeet,
+        avatarUrl: resolveDefaultTokenFromLibrary({ name: creature.name, roleLabel: creature.creatureType, faction: 'hostile' }).avatarUrl,
+        glbUrl: resolveDefaultTokenFromLibrary({ name: creature.name, roleLabel: creature.creatureType, faction: 'hostile' }).glbUrl,
       },
     ]);
     this.selectedTargetKey.set(id);

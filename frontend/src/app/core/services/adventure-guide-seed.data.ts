@@ -36,6 +36,16 @@ export function buildSeedAdventureGuide(
   assignedMap: AdventureAssignedBattlemapVm = SEED_ASSIGNED_BATTLEMAP,
   events: readonly AdventurePlayEventVm[] = [],
 ): ContextualAdventureGuideVm {
+  let effectiveMap = assignedMap;
+  if (!effectiveMap.artworkUrl) {
+    if (scopeId === 'session-1' || scopeId === 'sotm-seed-sess-01') {
+      effectiveMap = { ...SEED_ASSIGNED_BATTLEMAP, sceneKey: 'sotm-seed-scene-edhellain-palace', title: 'Edhellain Palace Hall', artworkUrl: '/assets/battlemaps/fortress-axeholm.jpg' };
+    } else if (scopeId === 'session-2' || scopeId === 'sotm-seed-sess-02') {
+      effectiveMap = { ...SEED_ASSIGNED_BATTLEMAP, sceneKey: 'sotm-seed-scene-vandia-tavern', title: 'Knot & Knife Beach Road', artworkUrl: '/assets/battlemaps/coastal-cliff.jpg' };
+    } else if (scopeId === 'session-3' || scopeId === 'sotm-seed-sess-03') {
+      effectiveMap = { ...SEED_ASSIGNED_BATTLEMAP, sceneKey: 'sotm-seed-scene-plains-of-red', title: 'Plains of Red', artworkUrl: '/assets/battlemaps/combat-caves.webp' };
+    }
+  }
   return {
     campaignId,
     adventureId: '',
@@ -60,7 +70,7 @@ export function buildSeedAdventureGuide(
     readAloudBlocks: [],
     exits: [],
     skillChecks: [],
-    assignedBattlemap: assignedMap,
+    assignedBattlemap: effectiveMap,
     beats: [],
     keyNpcs: [],
     encounters: [],

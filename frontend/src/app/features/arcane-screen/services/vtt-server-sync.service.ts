@@ -1,3 +1,4 @@
+import { resolveDefaultTokenFromLibrary } from './vtt-token-library-resolver';
 import { resolveCharacterGlbUrl } from '../../characters/models/character-portrait-catalog.data';
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angular/core';
@@ -120,7 +121,16 @@ export class VttServerSyncService {
       ]);
       if (tokens.length === 0) return;
       const mapped = [...tokens]
-        .map((t) => ({ ...t, movementFeet: t.movementRemainingFeet, canControl: t.canControl === true, glbUrl: t.glbUrl || resolveCharacterGlbUrl(t.avatarUrl) || undefined }))
+        .map((t) => {
+          const def = resolveDefaultTokenFromLibrary(t);
+          return {
+            ...t,
+            movementFeet: t.movementRemainingFeet,
+            canControl: t.canControl === true,
+            avatarUrl: t.avatarUrl || def.avatarUrl,
+            glbUrl: t.glbUrl || def.glbUrl,
+          };
+        })
         .sort((a, b) => b.initiative - a.initiative);
       this.vtt.tokens.set(mapped);
       this.vtt.activeRound.set(state.round);

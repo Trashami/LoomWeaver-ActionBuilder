@@ -73,8 +73,36 @@
       <lw-vtt-gm-rail (nextTurn)="nextTurn()" (collapse)="gmRailOpen.set(false)" />
     }
 
-    <!-- Edge-to-Edge Battlefield Viewport -->
-    <section class="lw-vtt-map-stage" [class.lw-vtt-map-stage--3d]="battle.mapMode3D()" (wheel)="onMapWheel($event)" (mousedown)="onMapMouseDown($event)" (mousemove)="onMapMouseMove($event)" (mouseup)="onMapMouseUp()" (mouseleave)="onMapMouseUp()" aria-label="Interactive Encounter Battle Map">
+    @if (!hasConfiguredMap()) {
+      <div class="lw-vtt-unconfigured-stage" aria-label="Session Not Configured">
+        <div class="unconfigured-card">
+          <div class="unconfigured-badge">
+            <lw-icon name="map" [size]="40" />
+          </div>
+          <h2 class="unconfigured-title">This session is not yet configured</h2>
+          <p class="unconfigured-subtitle">
+            No tactical battlemap has been assigned to <strong>{{ activeSessionTitle() }}</strong>.
+          </p>
+          <p class="unconfigured-hint">
+            Assign a battlemap in Map Studio or the Session Guide, or switch to a configured session above to launch the virtual tabletop.
+          </p>
+          <div class="unconfigured-actions">
+            @if (store.viewerRole() === 'gm') {
+              <button ngpButton type="button" class="btn-top-action btn-unconfigured-primary" (click)="openMapStudio()">
+                <lw-icon name="layers" [size]="14" />
+                <span>Open Map Studio</span>
+              </button>
+            }
+            <button ngpButton type="button" class="btn-top-action" (click)="store.openAdventureGuideModal('session')">
+              <lw-icon name="book-open" [size]="14" />
+              <span>Session Guide</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <!-- Edge-to-Edge Battlefield Viewport -->
+      <section class="lw-vtt-map-stage" [class.lw-vtt-map-stage--3d]="battle.mapMode3D()" (wheel)="onMapWheel($event)" (mousedown)="onMapMouseDown($event)" (mousemove)="onMapMouseMove($event)" (mouseup)="onMapMouseUp()" (mouseleave)="onMapMouseUp()" aria-label="Interactive Encounter Battle Map">
       <canvas #vttCanvas class="lw-vtt-babylon-canvas" [class.lw-vtt-babylon-canvas--active]="battle.mapMode3D()"></canvas>
 
       <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="battle.mapMode3D()" [style.transform]="view2d.transform()" [style.transformOrigin]="'center center'">
@@ -315,6 +343,7 @@
         (editToken)="dmToolReadout.set('Editing ' + $event.name + '.')" (changeZoom)="changeZoom($event)" (resetZoom)="resetZoom()"
       />
     </section>
+    }
     <!-- RIGHTMOST MENU (Foundry VTT / MythWeaver Style) -->
     @if (battle.rightPanelCollapsed()) {
       <aside class="lw-vtt-station-rail" aria-label="Quick Access Panels">

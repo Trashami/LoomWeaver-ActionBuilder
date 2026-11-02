@@ -61,24 +61,66 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   readonly handouts = inject(VttHandoutService); readonly showShortcuts = signal<boolean>(false);
   private lastLoadedSceneKey = '';
 
+  private stageMounted = false;
+
   readonly activeBattlemapBackdropUrl = computed(() => {
     const bmap = this.adventureGuide.guide().assignedBattlemap;
-    const raw = bmap?.artworkUrl || this.vtt.activeLiveEncounter()?.thumbnailUrl || '/battlemap-showcase.jpg';
-    return this.vttDisplay.backdropUrl(raw);
+    const art = bmap?.artworkUrl?.trim();
+    if (art && art.length > 0 && !art.includes('showcase')) {
+      return this.vttDisplay.backdropUrl(art);
+    }
+    const encArt = this.vtt.activeLiveEncounter()?.thumbnailUrl?.trim();
+    if (encArt && encArt.length > 0 && !encArt.includes('showcase')) {
+      return this.vttDisplay.backdropUrl(encArt);
+    }
+    return '';
+  });
+
+  readonly hasConfiguredMap = computed(() => {
+    const bmap = this.adventureGuide.guide().assignedBattlemap;
+    const art = this.activeBattlemapBackdropUrl();
+    const sceneKey = bmap?.sceneKey?.trim();
+    return !!(art || (sceneKey && sceneKey.length > 0));
+  });
+
+  readonly activeSessionTitle = computed(() => {
+    const activeId = this.store.activeSessionId();
+    const sess = this.store.sessions().find((s) => s.sessionId === activeId);
+    return sess ? `Session ${sess.sessionNumber} · ${sess.title}` : this.adventureGuide.guide().headerTitle || 'Current Session';
   });
 
   readonly activeBattlemapTitle = computed(
     () => this.adventureGuide.guide().assignedBattlemap?.title || this.vtt.activeLiveEncounter()?.name || 'Battlefield',
   );
 
+  openMapStudio(): void {
+    this.router.navigate(['/maps']);
+  }
+
   constructor() {
-    effect(() => { this.vtt.tokens(); this.fog.layer(); untracked(() => this.sync3dStage()); });
     effect(() => {
+      const configured = this.hasConfiguredMap();
+      if (!configured) {
+        if (this.stageMounted) {
+          this.stageMounted = false;
+          this.stage.dispose();
+        }
+        return;
+      }
+      setTimeout(() => this.mountStageIfReady(), 50);
+    });
+    effect(() => {
+      if (!this.hasConfiguredMap()) return;
+      this.vtt.tokens(); this.fog.layer(); untracked(() => this.sync3dStage());
+    });
+    effect(() => {
+      if (!this.hasConfiguredMap()) return;
       const url = this.activeBattlemapBackdropUrl();
       const visible = this.gridEnabled();
       untracked(() => { this.stage.setBackdrop(url); this.stage.setGridVisible(visible); });
     });
     effect(() => {
+      if (!this.hasConfiguredMap()) return;
       const sceneFromQuery = this.route.snapshot.queryParamMap.get('scene');
       const assignedScene = this.adventureGuide.guide().assignedBattlemap?.sceneKey;
       const targetScene = sceneFromQuery || assignedScene || '';
@@ -145,19 +187,26 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   readonly dockTokenActions = computed<readonly DockAction[]>(() => this.battle.tacticalAbilities().map(toDockAction));
   readonly dockInitiativeTokenId = computed<number>(() => toDockToken(this.battle.activeInitiativeToken(), this.vtt.tokens()).id);
 
-  ngAfterViewInit(): void {
-    if (this.vtt.tokens().length === 0 && this.vtt.encounterDetails().length > 0) {
-      this.vtt.launchEncounterIntoVtt(this.vtt.activeEncounterId());
-    }
+  mountStageIfReady(): void {
+    if (this.stageMounted || !this.hasConfiguredMap()) return;
     const canvas = this.vttCanvasRef?.nativeElement;
     if (canvas) {
+      this.stageMounted = true;
       this.stage.mountStage(canvas, this.vtt.tokens(), this.vtt.selectedAttackerKey(), this.vtt.selectedTargetKey(), (k) => {
         const tok = this.vtt.tokens().find((t) => t.key === k);
         if (tok) this.handleTokenSelectionOrCast(tok, false);
       });
-      this.stage.setBackdrop(this.activeBattlemapBackdropUrl()); this.stage.setGridVisible(this.gridEnabled());
+      this.stage.setBackdrop(this.activeBattlemapBackdropUrl());
+      this.stage.setGridVisible(this.gridEnabled());
       this.sync3dStage();
     }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.vtt.tokens().length === 0 && this.vtt.encounterDetails().length > 0) {
+      this.vtt.launchEncounterIntoVtt(this.vtt.activeEncounterId());
+    }
+    this.mountStageIfReady();
     this.timer.start();
   }
 
