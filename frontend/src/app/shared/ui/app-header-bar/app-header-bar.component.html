@@ -85,6 +85,20 @@
         (actionSelected)="onSessionActionSelected($event)"
       />
     }
+
+    <button
+      ngpButton
+      type="button"
+      class="lw-topbar__rect-btn lw-topbar__loom-trigger"
+      [class.lw-topbar__loom-trigger--active]="loomOpen()"
+      [attr.aria-expanded]="loomOpen()"
+      aria-haspopup="dialog"
+      (click)="loomToggled.emit()"
+      title="Ask The Loom · Living Campaign Memory Assistant (Ctrl + K)"
+    >
+      <span>The Loom</span>
+      <span class="lw-topbar__kbd" aria-hidden="true">Ctrl + K</span>
+    </button>
   </div>
 
   <div ngpToolbar class="lw-topbar__right" aria-label="Studio utility controls">
@@ -99,63 +113,6 @@
     >
       <lw-icon name="music" [size]="18" />
     </button>
-
-    <button
-      ngpButton
-      type="button"
-      class="lw-topbar__square-btn"
-      (click)="quickRollRequested.emit()"
-      [attr.aria-label]="quickRollBanner()"
-      [title]="quickRollBanner()"
-    >
-      <lw-icon name="dices" [size]="18" />
-    </button>
-
-    @if (store) {
-      <button
-        ngpButton
-        type="button"
-        class="lw-topbar__rect-btn lw-topbar__rect-btn--emerald"
-        (click)="store.openAdventureGuideModal('session')"
-        title="Open Adventure & Session Guide (Current Session or Whole Guide)"
-      >
-        <span>Adventure Guide</span>
-      </button>
-    }
-
-    <button
-      ngpButton
-      type="button"
-      class="lw-topbar__rect-btn lw-topbar__rect-btn--gold"
-      [disabled]="!isCampaignGm()"
-      (click)="isCampaignGm() && viewerRoleToggled.emit()"
-      [title]="isCampaignGm() ? 'Switch between GM View and Player View for your campaign' : 'You are a Player in this campaign (Player View enforced)'"
-    >
-      <span>{{ isCampaignGm() ? (viewerRole() === 'gm' ? 'GM View' : 'Player View') : 'Player View' }}</span>
-    </button>
-
-    <button
-      ngpButton
-      type="button"
-      class="lw-topbar__rect-btn lw-topbar__loom-trigger"
-      [class.lw-topbar__square-btn--active]="loomOpen()"
-      [attr.aria-expanded]="loomOpen()"
-      aria-haspopup="dialog"
-      (click)="loomToggled.emit()"
-      title="Ask The Loom · Living Campaign Memory Assistant (Ctrl + K)"
-    >
-      <span>The Loom</span>
-      <span class="lw-topbar__kbd" aria-hidden="true">Ctrl + K</span>
-    </button>
-
-    <a
-      ngpButton
-      class="lw-topbar__rect-btn"
-      routerLink="/welcome"
-      title="View Public Marketing Site"
-    >
-      <span>Site</span>
-    </a>
 
     <lw-user-menu
       [userDisplayName]="userDisplayName()"

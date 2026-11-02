@@ -426,6 +426,22 @@ lw-context-switcher {
   }
 }
 
+.lw-topbar__loom-trigger {
+  border-left: none;
+  border-right: 1px solid rgba(217, 183, 122, 0.2);
+  padding: 0 1.05rem;
+  background: rgba(11, 24, 19, 0.68);
+  color: #f3e7cb;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+
+  &:hover,
+  &--active {
+    background: rgba(20, 48, 35, 0.85);
+    color: #49e892;
+  }
+}
+
 .lw-profile-tile {
   min-height: 62px;
   padding: 0 0.75rem;
