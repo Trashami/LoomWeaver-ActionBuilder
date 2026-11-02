@@ -1,368 +1,367 @@
-<section class="ab-guided">
-  <div class="ab-guided__intro">
-    <div>
-      <span class="ab-guided__eyebrow">Describe the Rule</span>
-      <h3 class="ab-guided__heading">Trigger, Requirements &amp; Effects</h3>
-    </div>
-    <p class="ab-guided__hint">
-      Click any section to adjust its conditions. Condition groups explicitly state whether <strong>ALL (AND)</strong> or <strong>ANY (OR)</strong> conditions are required.
+<section class="ab-resolution" aria-label="Resolution Pipeline">
+  <div class="ab-resolution__head">
+    <h2 class="ab-resolution__title">RESOLUTION</h2>
+    <p class="ab-resolution__sub">
+      Runs from top to bottom. Reorder or edit steps to change how the combat engine resolves this action.
     </p>
   </div>
 
-  <!-- 1. TRIGGER GROUP -->
-  <article class="ab-group-card" [class.ab-group-card--open]="expandedGroup() === 'trigger'">
-    <button
-      ngpButton
-      type="button"
-      class="ab-group-card__header"
-      (click)="toggleGroup('trigger')"
-      [attr.aria-expanded]="expandedGroup() === 'trigger'"
-    >
-      <div class="ab-group-card__title-wrap">
-        <span class="ab-group-card__step">1. Trigger</span>
-        <lw-badge
-          [label]="(triggerClause().combiner || 'ANY') === 'ANY' ? 'Match ANY (OR)' : 'Require ALL (AND)'"
-          tone="cyan"
-        />
-      </div>
-      <p class="ab-group-card__summary">{{ triggerSummary() }}</p>
-      <lw-icon [name]="expandedGroup() === 'trigger' ? 'chevron-up' : 'chevron-down'" [size]="16" tone="muted" />
-    </button>
-
-    @if (expandedGroup() === 'trigger') {
-      <div class="ab-group-card__body">
-        <div class="ab-group-card__toolbar">
-          <span class="ab-group-card__label">When should this ability trigger?</span>
-          <div class="ab-combiner-toggle" role="group" aria-label="Trigger condition match mode">
-            <button
-              ngpButton
-              type="button"
-              class="ab-combiner-toggle__btn"
-              [class.ab-combiner-toggle__btn--active]="(triggerClause().combiner || 'ANY') === 'ANY'"
-              (click)="setTriggerCombiner('ANY')"
-            >
-              Match ANY (OR)
-            </button>
-            <button
-              ngpButton
-              type="button"
-              class="ab-combiner-toggle__btn"
-              [class.ab-combiner-toggle__btn--active]="triggerClause().combiner === 'ALL'"
-              (click)="setTriggerCombiner('ALL')"
-            >
-              Require ALL (AND)
-            </button>
+  <div class="ab-step-list">
+    @for (step of steps(); track step.id; let idx = $index; let last = $last) {
+      <article class="ab-step-card" [class.ab-step-card--open]="isStepExpanded(step)">
+        <div class="ab-step-card__header">
+          <div class="ab-step-card__left" (click)="toggleStepExpanded(step)">
+            <span class="ab-step-card__grip" aria-hidden="true">::</span>
+            <span class="ab-step-card__num">{{ idx + 1 }}</span>
+            <span class="ab-step-card__badge" [attr.data-type]="step.stepType">{{ stepBadgeLabel(step.stepType) }}</span>
+            <div class="ab-step-card__titles">
+              <strong class="ab-step-card__name">{{ step.title }}</strong>
+              <span class="ab-step-card__summary">{{ stepSummarySubtitle(step) }}</span>
+            </div>
           </div>
-        </div>
 
-        <div class="ab-condition-list">
-          @for (tok of triggerClause().tokens; track tok; let idx = $index) {
-            @if (idx > 0) {
-              <div class="ab-condition-joiner">
-                <span>{{ (triggerClause().combiner || 'ANY') === 'ANY' ? 'OR' : 'AND' }}</span>
-              </div>
+          <div class="ab-step-card__actions">
+            @if (step.stepType === 'CHECK') {
+              <button ngpButton type="button" class="ab-step-card__combiner-pill" (click)="toggleCheckCombiner(idx)" title="Toggle All must pass / Any can pass">
+                {{ step.checkCombiner === 'ANY' ? 'Any can pass' : 'All must pass' }}
+              </button>
             }
-            <div class="ab-condition-row">
-              <span class="ab-condition-row__text">{{ tok }}</span>
-              <button
-                ngpButton
-                type="button"
-                class="ab-condition-row__remove"
-                title="Remove trigger condition"
-                (click)="removeTriggerToken(idx)"
-              >
-                <lw-icon name="x" [size]="13" />
-              </button>
+            <button ngpButton type="button" class="ab-step-card__icon-btn" title="Move step up" [disabled]="idx === 0" (click)="moveStep(idx, -1)">
+              <lw-icon name="chevron-up" [size]="14" />
+            </button>
+            <button ngpButton type="button" class="ab-step-card__icon-btn" title="Move step down" [disabled]="last" (click)="moveStep(idx, 1)">
+              <lw-icon name="chevron-down" [size]="14" />
+            </button>
+            <button ngpButton type="button" class="ab-step-card__icon-btn" title="Edit step details" (click)="toggleStepExpanded(step)">
+              <lw-icon name="edit" [size]="14" />
+            </button>
+            <button ngpButton type="button" class="ab-step-card__icon-btn ab-step-card__icon-btn--del" title="Remove step" (click)="deleteStep(idx)">
+              <lw-icon name="x" [size]="14" />
+            </button>
+          </div>
+        </div>
+
+        @if (isStepExpanded(step)) {
+          <div class="ab-step-card__body">
+            <div class="ab-step-row ab-step-row--compact">
+              <label class="ab-step-field">
+                <span>Step Heading</span>
+                <input ngpInput type="text" [ngModel]="step.title" (ngModelChange)="updateStepField(idx, 'title', $event)" />
+              </label>
             </div>
-          }
-        </div>
 
-        <div class="ab-group-card__footer">
-          <lw-button
-            label="+ Add trigger"
-            variant="secondary"
-            size="xs"
-            (pressed)="openPicker('trigger')"
-          />
-        </div>
-
-        @if (activePicker() === 'trigger') {
-          <div class="ab-picker">
-            <span class="ab-picker__title">Select a tabletop trigger or enter a custom one:</span>
-            <div class="ab-picker__presets">
-              @for (preset of triggerPresets; track preset) {
-                <button
-                  ngpButton
-                  type="button"
-                  class="ab-picker__chip"
-                  (click)="addConditionToGroup('trigger', preset)"
-                >
-                  {{ preset }}
-                </button>
+            @switch (step.stepType) {
+              @case ('CHECK') {
+                <div class="ab-chip-list">
+                  @for (req of step.requirements; track req; let rIdx = $index) {
+                    <span class="ab-chip">
+                      <span>{{ req }}</span>
+                      <button ngpButton type="button" (click)="removeRequirement(idx, rIdx)"><lw-icon name="x" [size]="11" /></button>
+                    </span>
+                  }
+                </div>
+                <div class="ab-step-row">
+                  <label class="ab-step-field">
+                    <span>Add standard requirement</span>
+                    <select class="ab-select" [ngModel]="''" (ngModelChange)="addRequirement(idx, $event)">
+                      <option value="">Select requirement to add...</option>
+                      @for (preset of requirementPresets; track preset) {
+                        <option [value]="preset">{{ preset }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>Or custom requirement</span>
+                    <div class="ab-inline-input">
+                      <input ngpInput type="text" placeholder="e.g. Unoccupied space within 30 ft" [ngModel]="newReqText()" (ngModelChange)="newReqText.set($event)" (keydown.enter)="addRequirement(idx, newReqText())" />
+                      <button ngpButton type="button" class="ab-mini-btn" (click)="addRequirement(idx, newReqText())">Add</button>
+                    </div>
+                  </label>
+                </div>
               }
-            </div>
-            <div class="ab-picker__custom">
-              <input
-                ngpInput
-                type="text"
-                class="ab-picker__input"
-                placeholder="Custom trigger description..."
-                [ngModel]="customInputText()"
-                (ngModelChange)="customInputText.set($event)"
-                (keydown.enter)="addConditionToGroup('trigger', customInputText())"
-              />
-              <lw-button
-                label="Add"
-                variant="emerald"
-                size="xs"
-                (pressed)="addConditionToGroup('trigger', customInputText())"
-              />
-            </div>
-          </div>
-        }
-      </div>
-    }
-  </article>
 
-  <!-- 2. REQUIREMENTS GROUP -->
-  <article class="ab-group-card" [class.ab-group-card--open]="expandedGroup() === 'requirements'">
-    <button
-      ngpButton
-      type="button"
-      class="ab-group-card__header"
-      (click)="toggleGroup('requirements')"
-      [attr.aria-expanded]="expandedGroup() === 'requirements'"
-    >
-      <div class="ab-group-card__title-wrap">
-        <span class="ab-group-card__step">2. Requirements</span>
-        <lw-badge
-          [label]="requirementCombiner() === 'ALL' ? 'Require ALL (AND)' : 'Match ANY (OR)'"
-          tone="gold"
-        />
-      </div>
-      <p class="ab-group-card__summary">{{ requirementsSummary() }}</p>
-      <lw-icon [name]="expandedGroup() === 'requirements' ? 'chevron-up' : 'chevron-down'" [size]="16" tone="muted" />
-    </button>
+              @case ('PROMPT') {
+                <div class="ab-step-row">
+                  <label class="ab-step-field">
+                    <span>Prompt who</span>
+                    <select class="ab-select" [ngModel]="step.promptTarget" (ngModelChange)="updateStepField(idx, 'promptTarget', $event)">
+                      @for (actor of actorOptions; track actor) {
+                        <option [value]="actor">{{ actor }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>When to prompt</span>
+                    <select class="ab-select" [ngModel]="step.promptTrigger" (ngModelChange)="updateStepField(idx, 'promptTrigger', $event)">
+                      @for (trig of promptTriggerOptions; track trig) {
+                        <option [value]="trig">{{ trig }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <div class="ab-step-row ab-step-row--compact">
+                  <label class="ab-step-field">
+                    <span>Prompt text shown on screen</span>
+                    <input ngpInput type="text" [ngModel]="step.promptMessage" (ngModelChange)="updateStepField(idx, 'promptMessage', $event)" placeholder="What the player or target sees in the prompt..." />
+                  </label>
+                </div>
+                <div class="ab-chip-list">
+                  @for (opt of step.promptOptions; track opt; let oIdx = $index) {
+                    <span class="ab-chip">
+                      <span>Choice: {{ opt }}</span>
+                      <button ngpButton type="button" (click)="removePromptOption(idx, oIdx)"><lw-icon name="x" [size]="11" /></button>
+                    </span>
+                  }
+                  <div class="ab-inline-input">
+                    <input ngpInput type="text" placeholder="+ Add prompt option (e.g. Upcast)" [ngModel]="newPromptOptionText()" (ngModelChange)="newPromptOptionText.set($event)" (keydown.enter)="addPromptOption(idx, newPromptOptionText())" />
+                    <button ngpButton type="button" class="ab-mini-btn" (click)="addPromptOption(idx, newPromptOptionText())">+ Add choice</button>
+                  </div>
+                </div>
+              }
 
-    @if (expandedGroup() === 'requirements') {
-      <div class="ab-group-card__body">
-        <div class="ab-group-card__toolbar">
-          <span class="ab-group-card__label">What resources and conditions must be true?</span>
-          <div class="ab-combiner-toggle" role="group" aria-label="Requirements match mode">
-            <button
-              ngpButton
-              type="button"
-              class="ab-combiner-toggle__btn"
-              [class.ab-combiner-toggle__btn--active]="requirementCombiner() === 'ALL'"
-              (click)="setRequirementsCombiner('ALL')"
-            >
-              Require ALL (AND)
-            </button>
-            <button
-              ngpButton
-              type="button"
-              class="ab-combiner-toggle__btn"
-              [class.ab-combiner-toggle__btn--active]="requirementCombiner() === 'ANY'"
-              (click)="setRequirementsCombiner('ANY')"
-            >
-              Match ANY (OR)
-            </button>
-          </div>
-        </div>
+              @case ('ROLL') {
+                <div class="ab-step-row ab-step-row--three">
+                  <label class="ab-step-field">
+                    <span>Roller</span>
+                    <select class="ab-select" [ngModel]="step.rollActor" (ngModelChange)="updateStepField(idx, 'rollActor', $event)">
+                      @for (actor of actorOptions; track actor) {
+                        <option [value]="actor">{{ actor }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>Roll check / save type</span>
+                    <select class="ab-select" [ngModel]="step.rollType" (ngModelChange)="updateStepField(idx, 'rollType', $event)">
+                      @for (rt of rollTypeOptions; track rt) {
+                        <option [value]="rt">{{ rt }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>Roll formula</span>
+                    <input ngpInput type="text" [ngModel]="step.rollFormula" (ngModelChange)="updateStepField(idx, 'rollFormula', $event)" placeholder="1d20 + Attack Modifier vs Target AC" />
+                  </label>
+                </div>
+              }
 
-        <div class="ab-condition-list">
-          @for (item of requirementItems(); track item.clauseId + '-' + item.tokenIdx; let idx = $index) {
-            @if (idx > 0) {
-              <div class="ab-condition-joiner ab-condition-joiner--gold">
-                <span>{{ requirementCombiner() === 'ALL' ? 'AND' : 'OR' }}</span>
-              </div>
+              @case ('BRANCH') {
+                <div class="ab-branch-inline">
+                  <label class="ab-branch-inline__field">
+                    <span>Ask</span>
+                    <select class="ab-select" [ngModel]="step.reactionAskTarget" (ngModelChange)="updateStepField(idx, 'reactionAskTarget', $event)">
+                      @for (actor of actorOptions; track actor) {
+                        <option [value]="actor">{{ actor }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-branch-inline__field">
+                    <span>Continue</span>
+                    <select class="ab-select" [ngModel]="step.reactionContinueMode" (ngModelChange)="updateStepField(idx, 'reactionContinueMode', $event)">
+                      @for (cm of continueModeOptions; track cm) {
+                        <option [value]="cm">{{ cm }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+
+                <div class="ab-step-row ab-step-row--compact">
+                  <label class="ab-step-field">
+                    <span>Reaction prompt message</span>
+                    <input ngpInput type="text" [ngModel]="step.promptMessage" (ngModelChange)="updateStepField(idx, 'promptMessage', $event)" placeholder="e.g. An attack hits you. Use an available reaction?" />
+                  </label>
+                </div>
+
+                <div class="ab-chip-list">
+                  @for (rx of step.reactionOptions; track rx; let rxIdx = $index) {
+                    <span class="ab-chip">
+                      <span>{{ rx }}</span>
+                      <button ngpButton type="button" (click)="removeReactionOption(idx, rxIdx)"><lw-icon name="x" [size]="11" /></button>
+                    </span>
+                  }
+                </div>
+
+                <div class="ab-step-row">
+                  <label class="ab-step-field">
+                    <span>+ Add reaction rule</span>
+                    <select class="ab-select" [ngModel]="''" (ngModelChange)="addReactionOption(idx, $event)">
+                      <option value="">Choose reaction to offer...</option>
+                      @for (preset of reactionRulePresets; track preset) {
+                        <option [value]="preset">{{ preset }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>Or custom reaction rule</span>
+                    <div class="ab-inline-input">
+                      <input ngpInput type="text" placeholder="e.g. Hellish Rebuke" [ngModel]="newReactionText()" (ngModelChange)="newReactionText.set($event)" (keydown.enter)="addReactionOption(idx, newReactionText())" />
+                      <button ngpButton type="button" class="ab-mini-btn" (click)="addReactionOption(idx, newReactionText())">+ Add reaction rule</button>
+                    </div>
+                  </label>
+                </div>
+              }
+
+              @case ('SPAWN_TOKEN') {
+                <div class="ab-step-row">
+                  <label class="ab-step-field">
+                    <span>Token to spawn on map</span>
+                    <input ngpInput type="text" [ngModel]="step.spawnTokenName" (ngModelChange)="updateStepField(idx, 'spawnTokenName', $event)" placeholder="e.g. Familiar Token, Elemental Spirit Token" />
+                  </label>
+                  <label class="ab-step-field">
+                    <span>Placement mode</span>
+                    <select class="ab-select" [ngModel]="step.spawnPlacementMode" (ngModelChange)="updateStepField(idx, 'spawnPlacementMode', $event)">
+                      @for (pm of spawnPlacementOptions; track pm) {
+                        <option [value]="pm">{{ pm }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <div class="ab-step-row">
+                  <label class="ab-step-field">
+                    <span>Placement range</span>
+                    <select class="ab-select" [ngModel]="step.spawnRangeFt" (ngModelChange)="updateStepField(idx, 'spawnRangeFt', $event)">
+                      @for (rg of spawnRangeOptions; track rg) {
+                        <option [value]="rg">{{ rg }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>Token controlled by</span>
+                    <select class="ab-select" [ngModel]="step.spawnController" (ngModelChange)="updateStepField(idx, 'spawnController', $event)">
+                      @for (actor of actorOptions; track actor) {
+                        <option [value]="actor">{{ actor }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+              }
+
+              @case ('CHANGE_TOKEN') {
+                <div class="ab-step-row">
+                  <label class="ab-step-field">
+                    <span>Who changes token</span>
+                    <select class="ab-select" [ngModel]="step.transformTarget" (ngModelChange)="updateStepField(idx, 'transformTarget', $event)">
+                      @for (actor of actorOptions; track actor) {
+                        <option [value]="actor">{{ actor }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>New creature / token form</span>
+                    <input ngpInput type="text" [ngModel]="step.transformTokenName" (ngModelChange)="updateStepField(idx, 'transformTokenName', $event)" placeholder="e.g. Beast Form Token (Wild Shape)" />
+                  </label>
+                </div>
+                <div class="ab-step-row">
+                  <label class="ab-step-field">
+                    <span>Token size on map</span>
+                    <select class="ab-select" [ngModel]="step.transformSize" (ngModelChange)="updateStepField(idx, 'transformSize', $event)">
+                      @for (sz of transformSizeOptions; track sz) {
+                        <option [value]="sz">{{ sz }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="ab-step-field">
+                    <span>Hit Points &amp; stats handling</span>
+                    <select class="ab-select" [ngModel]="step.transformHpMode" (ngModelChange)="updateStepField(idx, 'transformHpMode', $event)">
+                      @for (hm of transformHpOptions; track hm) {
+                        <option [value]="hm">{{ hm }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+              }
+
+              @case ('EFFECT') {
+                <div class="ab-outcomes-grid">
+                  <div class="ab-outcome-box ab-outcome-box--hit">
+                    <strong class="ab-outcome-box__title">HIT / IF</strong>
+                    @for (eff of step.hitEffects; track eff.id; let eIdx = $index) {
+                      <div class="ab-effect-row">
+                        <select class="ab-select ab-select--xs" [ngModel]="eff.conditionLabel" (ngModelChange)="updateEffectRow(idx, 'hit', eIdx, 'conditionLabel', $event)" aria-label="If condition">
+                          @for (cond of ifConditionOptions; track cond) {
+                            <option [value]="cond">{{ cond }}</option>
+                          }
+                        </select>
+                        <select class="ab-select ab-select--xs" [ngModel]="eff.actionVerb" (ngModelChange)="updateEffectRow(idx, 'hit', eIdx, 'actionVerb', $event)" aria-label="Effect action">
+                          @for (verb of effectVerbOptions; track verb) {
+                            <option [value]="verb">{{ verb }}</option>
+                          }
+                        </select>
+                        <select class="ab-select ab-select--xs" [ngModel]="eff.targetActor" (ngModelChange)="updateEffectRow(idx, 'hit', eIdx, 'targetActor', $event)" aria-label="Target recipient">
+                          @for (actor of actorOptions; track actor) {
+                            <option [value]="actor">{{ actor }}</option>
+                          }
+                        </select>
+                        <input ngpInput type="text" class="ab-effect-row__formula" [ngModel]="eff.formula" (ngModelChange)="updateEffectRow(idx, 'hit', eIdx, 'formula', $event)" placeholder="1d8 + MOD" />
+                        <select class="ab-select ab-select--xs" [ngModel]="eff.damageType" (ngModelChange)="updateEffectRow(idx, 'hit', eIdx, 'damageType', $event)" aria-label="Damage type">
+                          @for (dt of damageTypeOptions; track dt) {
+                            <option [value]="dt">{{ dt }}</option>
+                          }
+                        </select>
+                        <button ngpButton type="button" class="ab-effect-row__del" (click)="removeEffectRow(idx, 'hit', eIdx)"><lw-icon name="x" [size]="12" /></button>
+                      </div>
+                    }
+                    <button ngpButton type="button" class="ab-outcome-box__add" (click)="addEffectRow(idx, 'hit')">+ Add effect</button>
+                  </div>
+
+                  <div class="ab-outcome-box ab-outcome-box--miss">
+                    <strong class="ab-outcome-box__title">MISS / ELSE</strong>
+                    @for (eff of step.missEffects; track eff.id; let eIdx = $index) {
+                      <div class="ab-effect-row">
+                        <select class="ab-select ab-select--xs" [ngModel]="eff.conditionLabel" (ngModelChange)="updateEffectRow(idx, 'miss', eIdx, 'conditionLabel', $event)" aria-label="Else condition">
+                          @for (cond of ifConditionOptions; track cond) {
+                            <option [value]="cond">{{ cond }}</option>
+                          }
+                        </select>
+                        <select class="ab-select ab-select--xs" [ngModel]="eff.actionVerb" (ngModelChange)="updateEffectRow(idx, 'miss', eIdx, 'actionVerb', $event)" aria-label="Miss action">
+                          @for (verb of effectVerbOptions; track verb) {
+                            <option [value]="verb">{{ verb }}</option>
+                          }
+                        </select>
+                        <select class="ab-select ab-select--xs" [ngModel]="eff.targetActor" (ngModelChange)="updateEffectRow(idx, 'miss', eIdx, 'targetActor', $event)" aria-label="Target recipient">
+                          @for (actor of actorOptions; track actor) {
+                            <option [value]="actor">{{ actor }}</option>
+                          }
+                        </select>
+                        <input ngpInput type="text" class="ab-effect-row__formula" [ngModel]="eff.formula" (ngModelChange)="updateEffectRow(idx, 'miss', eIdx, 'formula', $event)" placeholder="0 / Half" />
+                        <button ngpButton type="button" class="ab-effect-row__del" (click)="removeEffectRow(idx, 'miss', eIdx)"><lw-icon name="x" [size]="12" /></button>
+                      </div>
+                    }
+                    <button ngpButton type="button" class="ab-outcome-box__add" (click)="addEffectRow(idx, 'miss')">+ Add effect</button>
+                  </div>
+                </div>
+              }
             }
-            <div class="ab-condition-row">
-              <span class="ab-condition-row__text">{{ item.token }}</span>
-              <button
-                ngpButton
-                type="button"
-                class="ab-condition-row__remove"
-                title="Remove requirement"
-                (click)="removeRequirementItem(item.clauseId, item.tokenIdx)"
-              >
-                <lw-icon name="x" [size]="13" />
-              </button>
-            </div>
-          }
-        </div>
+          </div>
+        }
+      </article>
 
-        <div class="ab-group-card__footer">
-          <lw-button
-            label="+ Add condition"
-            variant="secondary"
-            size="xs"
-            (pressed)="openPicker('requirements')"
-          />
-        </div>
-
-        @if (activePicker() === 'requirements') {
-          <div class="ab-picker">
-            <span class="ab-picker__title">Add a resource, range, or casting requirement:</span>
-            <div class="ab-picker__presets">
-              @for (preset of requirementPresets; track preset) {
-                <button
-                  ngpButton
-                  type="button"
-                  class="ab-picker__chip"
-                  (click)="addConditionToGroup('requirements', preset)"
-                >
-                  {{ preset }}
-                </button>
-              }
-            </div>
-            <div class="ab-picker__custom">
-              <input
-                ngpInput
-                type="text"
-                class="ab-picker__input"
-                placeholder="Or enter a custom requirement..."
-                [ngModel]="customInputText()"
-                (ngModelChange)="customInputText.set($event)"
-                (keydown.enter)="addConditionToGroup('requirements', customInputText())"
-              />
-              <lw-button
-                label="Add"
-                variant="emerald"
-                size="xs"
-                (pressed)="addConditionToGroup('requirements', customInputText())"
-              />
-            </div>
+      <div class="ab-step-insert">
+        <button ngpButton type="button" class="ab-step-insert__btn" title="Insert step here" (click)="toggleInsertMenu(idx + 1)">+</button>
+        @if (insertMenuIndex() === idx + 1) {
+          <div class="ab-step-insert__menu">
+            <button ngpButton type="button" (click)="insertStepAt(idx + 1, 'CHECK')">Check</button>
+            <button ngpButton type="button" (click)="insertStepAt(idx + 1, 'PROMPT')">Prompt</button>
+            <button ngpButton type="button" (click)="insertStepAt(idx + 1, 'ROLL')">Roll</button>
+            <button ngpButton type="button" (click)="insertStepAt(idx + 1, 'BRANCH')">Reaction prompt</button>
+            <button ngpButton type="button" (click)="insertStepAt(idx + 1, 'EFFECT')">Effect</button>
+            <button ngpButton type="button" (click)="insertStepAt(idx + 1, 'SPAWN_TOKEN')">Spawn token</button>
+            <button ngpButton type="button" (click)="insertStepAt(idx + 1, 'CHANGE_TOKEN')">Change token</button>
           </div>
         }
       </div>
     }
-  </article>
+  </div>
 
-  <!-- 3. EFFECTS GROUP -->
-  <article class="ab-group-card" [class.ab-group-card--open]="expandedGroup() === 'effects'">
-    <button
-      ngpButton
-      type="button"
-      class="ab-group-card__header"
-      (click)="toggleGroup('effects')"
-      [attr.aria-expanded]="expandedGroup() === 'effects'"
-    >
-      <div class="ab-group-card__title-wrap">
-        <span class="ab-group-card__step">3. Effects</span>
-        <lw-badge label="In Order" tone="emerald" />
-      </div>
-      <p class="ab-group-card__summary">{{ effectsSummary() }}</p>
-      <lw-icon [name]="expandedGroup() === 'effects' ? 'chevron-up' : 'chevron-down'" [size]="16" tone="muted" />
-    </button>
-
-    @if (expandedGroup() === 'effects') {
-      <div class="ab-group-card__body">
-        <div class="ab-effects-quickgrid">
-          <label class="ab-effects-field">
-            <span>AC Bonus Granted</span>
-            <input
-              ngpInput
-              type="number"
-              [ngModel]="rule().acBonus"
-              (ngModelChange)="patchNumericAcBonus($event)"
-            />
-          </label>
-          <label class="ab-effects-field">
-            <span>Effect / Damage Outcome</span>
-            <input
-              ngpInput
-              type="text"
-              [ngModel]="rule().damageOrEffectFormula"
-              (ngModelChange)="ruleChange.emit({ ...rule(), damageOrEffectFormula: $event })"
-            />
-          </label>
-          <label class="ab-effects-field">
-            <span>Duration</span>
-            <input
-              ngpInput
-              type="text"
-              [ngModel]="rule().durationLabel"
-              (ngModelChange)="ruleChange.emit({ ...rule(), durationLabel: $event })"
-            />
-          </label>
-        </div>
-
-        <div class="ab-condition-list">
-          @for (tok of effectClause().tokens; track tok; let idx = $index) {
-            <div class="ab-condition-row ab-condition-row--effect">
-              <span class="ab-condition-row__num">{{ idx + 1 }}.</span>
-              <span class="ab-condition-row__text">{{ tok }}</span>
-              <button
-                ngpButton
-                type="button"
-                class="ab-condition-row__remove"
-                title="Remove effect step"
-                (click)="removeEffectToken(idx)"
-              >
-                <lw-icon name="x" [size]="13" />
-              </button>
-            </div>
-          }
-        </div>
-
-        @if (fallbackClause(); as fb) {
-          <div class="ab-fallback-box">
-            <strong>Otherwise (If not used or requirements fail):</strong>
-            <span>{{ fb.tokens.join(', ') }}</span>
-          </div>
-        }
-
-        <div class="ab-group-card__footer">
-          <lw-button
-            label="+ Add effect step"
-            variant="secondary"
-            size="xs"
-            (pressed)="openPicker('effects')"
-          />
-          <lw-button
-            label="Open Advanced Expressions"
-            variant="ghost"
-            size="xs"
-            (pressed)="openAdvancedRequested.emit()"
-          />
-        </div>
-
-        @if (activePicker() === 'effects') {
-          <div class="ab-picker">
-            <span class="ab-picker__title">Add an effect resolution step:</span>
-            <div class="ab-picker__presets">
-              @for (preset of effectPresets; track preset) {
-                <button
-                  ngpButton
-                  type="button"
-                  class="ab-picker__chip"
-                  (click)="addConditionToGroup('effects', preset)"
-                >
-                  {{ preset }}
-                </button>
-              }
-            </div>
-            <div class="ab-picker__custom">
-              <input
-                ngpInput
-                type="text"
-                class="ab-picker__input"
-                placeholder="Or describe custom effect step..."
-                [ngModel]="customInputText()"
-                (ngModelChange)="customInputText.set($event)"
-                (keydown.enter)="addConditionToGroup('effects', customInputText())"
-              />
-              <lw-button
-                label="Add"
-                variant="emerald"
-                size="xs"
-                (pressed)="addConditionToGroup('effects', customInputText())"
-              />
-            </div>
-          </div>
-        }
-      </div>
-    }
-  </article>
+  <div class="ab-add-step-bar">
+    <span class="ab-add-step-bar__label">+ Add step</span>
+    <div class="ab-add-step-bar__chips">
+      <button ngpButton type="button" class="ab-add-step-chip" (click)="appendStep('CHECK')">Check</button>
+      <button ngpButton type="button" class="ab-add-step-chip" (click)="appendStep('PROMPT')">Prompt</button>
+      <button ngpButton type="button" class="ab-add-step-chip" (click)="appendStep('ROLL')">Roll</button>
+      <button ngpButton type="button" class="ab-add-step-chip" (click)="appendStep('BRANCH')">Reaction prompt</button>
+      <button ngpButton type="button" class="ab-add-step-chip" (click)="appendStep('EFFECT')">Effect</button>
+      <button ngpButton type="button" class="ab-add-step-chip ab-add-step-chip--gold" (click)="appendStep('SPAWN_TOKEN')">Spawn token</button>
+      <button ngpButton type="button" class="ab-add-step-chip ab-add-step-chip--gold" (click)="appendStep('CHANGE_TOKEN')">Change token</button>
+    </div>
+  </div>
 </section>

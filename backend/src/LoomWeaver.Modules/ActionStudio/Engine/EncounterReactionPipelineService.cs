@@ -17,6 +17,23 @@ public sealed class EncounterReactionPipelineService(ActionStudioMySqlRepository
             .Where(r => string.IsNullOrWhiteSpace(r.BypassedByRuleId))
             .ToList();
 
+        var activeActionRule = effectiveRules.FirstOrDefault(r =>
+            (!string.IsNullOrWhiteSpace(req.RuleId) && string.Equals(r.Id, req.RuleId, StringComparison.OrdinalIgnoreCase)) ||
+            string.Equals(r.Name, req.ActionName, StringComparison.OrdinalIgnoreCase))
+            ?? effectiveRules.FirstOrDefault();
+
+        var executedSteps = activeActionRule is not null
+            ? ActionStudio.Domain.ActionResolutionStepBuilder.EnsureResolutionSteps(activeActionRule).ResolutionSteps
+            : [];
+        var spawnStep = executedSteps?.FirstOrDefault(s => string.Equals(s.StepType, "SPAWN_TOKEN", StringComparison.OrdinalIgnoreCase));
+        var transformStep = executedSteps?.FirstOrDefault(s => string.Equals(s.StepType, "CHANGE_TOKEN", StringComparison.OrdinalIgnoreCase));
+        var tokenSpawnSummary = spawnStep is not null
+            ? $"Spawn '{spawnStep.SpawnTokenName}' ({spawnStep.SpawnPlacementMode} · {spawnStep.SpawnRange} · Controlled by {spawnStep.SpawnController})"
+            : null;
+        var tokenTransformSummary = transformStep is not null
+            ? $"Transform {transformStep.TransformSubject} into '{transformStep.TransformFormName}' ({transformStep.TransformSize} · {transformStep.TransformHpMode})"
+            : null;
+
         var stepLogs = new List<string>
         {
             $"[Step 1 · Attack Roll ({req.RollMode.ToUpperInvariant()})] {req.AttackerName} uses '{req.ActionName}' against {req.TargetName} at {req.DistanceFeet} ft: rolled {req.AttackRollTotal} vs Base AC {req.TargetBaseAc} (Raw Damage: {req.RawDamage})."
@@ -150,6 +167,15 @@ public sealed class EncounterReactionPipelineService(ActionStudioMySqlRepository
                 : $"{req.TargetName} used Reaction '{appliedReactionName}': incoming damage adjusted from {req.RawDamage} to {finalDamage} dmg{(retaliationDamage > 0 ? $" + {retaliationDamage} retaliation to {req.AttackerName}" : string.Empty)}.")
             : $"{req.AttackerName} hit {req.TargetName} ({req.AttackRollTotal} vs AC {effectiveAc}) for {finalDamage} damage.";
 
+        if (tokenSpawnSummary is not null)
+        {
+            stepLogs.Add($"[Token Spawn] {tokenSpawnSummary}");
+        }
+        if (tokenTransformSummary is not null)
+        {
+            stepLogs.Add($"[Token Transform] {tokenTransformSummary}");
+        }
+
         return new EncounterAttackStepResponse(
             Phase: "Completed",
             RequiresReactionPrompt: false,
@@ -164,7 +190,10 @@ public sealed class EncounterReactionPipelineService(ActionStudioMySqlRepository
             ConcentrationCheckTriggered: concentrationTriggered,
             ConcentrationDc: concentrationDc,
             StepByStepLog: stepLogs,
-            SummaryBanner: summary
+            SummaryBanner: summary,
+            ExecutedResolutionSteps: executedSteps,
+            TokenSpawnSummary: tokenSpawnSummary,
+            TokenTransformSummary: tokenTransformSummary
         );
     }
 

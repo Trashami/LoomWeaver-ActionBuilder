@@ -7,22 +7,19 @@
     [currentDisplayName]="studioContext().displayName"
     [demoAccounts]="studioContext().demoAccounts"
     [selectedAccountId]="selectedAccountId()"
-    [activeCategory]="activeCategory()"
     [totalRuleCount]="rules().length"
     [(searchQuery)]="globalSearchQuery"
     (campaignSelected)="onCampaignSelected($event)"
     (accountSwitched)="onAccountSwitched($event)"
-    (categorySelected)="activeCategory.set($event)"
     (createNewRule)="onCreateNewRule()"
     (exportRuleJson)="onExportRuleJson()"
-    (openEncounterRunner)="openTestTabAndRun()"
   />
 
   @if (studioContext().switchedFromPlayerCampaignNotice; as switchedNotice) {
     <div class="ab-notice ab-notice--gold">
       <lw-icon name="shield-check" [size]="16" tone="gold" />
       <span>{{ switchedNotice }}</span>
-      <lw-badge label="Auto-Defaulted to Your DM Campaign" tone="gold" />
+      <lw-badge label="Defaulted to Your DM Campaign" tone="gold" />
     </div>
   }
 
@@ -35,12 +32,11 @@
 
   @if (canAccess() && activeCampaign(); as camp) {
     <main class="ab-workbench">
-      <!-- LEFT COLUMN: Independently Scrollable Searchable Ability & Spell Library -->
+      <!-- LEFT PANE: Independently Scrollable Actions & Spells Catalog -->
       <div class="ab-workbench__left">
         <lw-rule-catalog-sidebar
           [rules]="rules()"
           [selectedRuleId]="activeRule().id"
-          [externalCategory]="activeCategory()"
           [globalSearch]="globalSearchQuery()"
           [draftRuleIds]="draftRuleIds()"
           [campaignName]="camp.name"
@@ -49,183 +45,71 @@
         />
       </div>
 
-      <!-- CENTER COLUMN: Independently Scrollable Ability Header + 3 Workspace Tabs -->
+      <!-- CENTER PANE: Independently Scrollable D&D 5e Resolution Pipeline Editor -->
       <div class="ab-workbench__center">
-        <section class="ab-ability-header">
-          <div class="ab-ability-header__left">
-            <div class="ab-ability-header__emblem">
-              <span>{{ activeRule().name.slice(0, 2).toUpperCase() }}</span>
-            </div>
-            <div>
+        <section class="ab-center-card">
+          <header class="ab-ability-header">
+            <div class="ab-ability-header__left">
               <div class="ab-ability-header__title-row">
                 <h2 class="ab-ability-header__name">{{ activeRule().name }}</h2>
                 <lw-badge
-                  [label]="activeRule().isCustomizedForCampaign ? (activeRule().bypassesCoreRuleId ? 'Campaign Bypass' : 'Custom Action') : (activeRule().bypassedByRuleId ? 'Core SQL (Bypassed)' : 'Core Engine (SQL Locked)')"
+                  [label]="activeRule().isCustomizedForCampaign ? 'Campaign override' : 'Core rule'"
                   [tone]="activeRule().isCustomizedForCampaign ? 'gold' : 'emerald'"
                 />
-                @if (draftDiffs().length > 0) {
-                  <lw-badge [label]="draftDiffs().length + ' Draft Edits'" tone="cyan" />
-                }
               </div>
-              <span class="ab-ability-header__sub">
-                {{ activeRule().actionType }} · {{ activeRule().sourceLabel }} · Scoped to {{ camp.name }}
-                @if (activeRule().bypassedByRuleName; as bypassName) {
-                  · Overridden in {{ camp.name }} by "{{ bypassName }}"
+              <p class="ab-ability-header__sub">
+                {{ activeRule().actionCost }} · {{ activeRule().targetLabel }} · {{ activeRule().rangeLabel }}
+              </p>
+            </div>
+
+            <div class="ab-ability-header__right">
+              <div class="ab-ability-header__buttons">
+                @if (canDeleteActiveRule()) {
+                  <button
+                    ngpButton
+                    type="button"
+                    class="ab-delete-custom-btn"
+                    title="Delete this custom action from your campaign"
+                    (click)="onDeleteCustomRule()"
+                  >
+                    Delete custom action
+                  </button>
                 }
+
+                <lw-button
+                  [label]="saving() ? 'Saving...' : 'Save to campaign'"
+                  variant="emerald"
+                  size="sm"
+                  [disabled]="saving()"
+                  (pressed)="onApplyRuleToCampaign()"
+                />
+              </div>
+              <span class="ab-ability-header__scope-note">
+                Changes apply to {{ camp.name }}. Core rules stay intact.
               </span>
             </div>
-          </div>
+          </header>
 
-          <div class="ab-ability-header__actions">
-            @if (canDeleteActiveRule()) {
-              <button
-                ngpButton
-                type="button"
-                class="ab-delete-custom-btn"
-                title="Delete this custom action from your campaign"
-                (click)="onDeleteCustomRule()"
-              >
-                Delete Custom Action
-              </button>
-            }
+          <!-- Collapsible Action Details Bar -->
+          <lw-rule-parameters-editor
+            [rule]="activeRule()"
+            [activeCampaignName]="camp.name"
+            (ruleChange)="onRuleUpdated($event)"
+          />
 
-            <lw-button
-              label="Test in Encounter"
-              variant="secondary"
-              size="sm"
-              (pressed)="openTestTabAndRun()"
-            />
-            <lw-button
-              [label]="hasDraftForCurrent() ? 'Draft Saved' : 'Save Draft'"
-              variant="emerald"
-              size="sm"
-              (pressed)="onSaveDraft()"
-            />
-
-            <div class="ab-more-wrap">
-              <button
-                ngpButton
-                type="button"
-                class="ab-more-btn"
-                title="Secondary actions (Duplicate, Export, Delete Custom)"
-                (click)="secondaryMenuOpen.set(!secondaryMenuOpen())"
-              >
-                <span>...</span>
-              </button>
-
-              @if (secondaryMenuOpen()) {
-                <div class="ab-more-menu" role="menu">
-                  <button ngpButton type="button" class="ab-more-menu__item" (click)="onDuplicateRule()">
-                    Duplicate Ability
-                  </button>
-                  <button ngpButton type="button" class="ab-more-menu__item" (click)="onDiscardDraft()">
-                    Discard Unsaved Draft
-                  </button>
-                  <button ngpButton type="button" class="ab-more-menu__item" (click)="onExportRuleJson()">
-                    Copy Rule JSON
-                  </button>
-                  @if (canDeleteActiveRule()) {
-                    <div class="ab-more-menu__sep"></div>
-                    <button
-                      ngpButton
-                      type="button"
-                      class="ab-more-menu__item ab-more-menu__item--danger"
-                      (click)="onDeleteCustomRule()"
-                    >
-                      Delete Custom Action
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          </div>
+          <!-- Step-by-Step Resolution Pipeline Editor -->
+          <lw-guided-rule-groups
+            [rule]="activeRule()"
+            (ruleChange)="onRuleUpdated($event)"
+          />
         </section>
-
-        <!-- Three Workspace Mode Tabs: Build | Test | Advanced -->
-        <nav class="ab-mode-tabs" role="tablist" aria-label="Ability workspace mode">
-          <button
-            ngpButton
-            type="button"
-            class="ab-mode-tab"
-            [class.ab-mode-tab--active]="workspaceTab() === 'build'"
-            (click)="workspaceTab.set('build')"
-          >
-            <strong>1. Build</strong>
-            <span>Describe Trigger, Requirements &amp; Effects</span>
-          </button>
-          <button
-            ngpButton
-            type="button"
-            class="ab-mode-tab"
-            [class.ab-mode-tab--active]="workspaceTab() === 'test'"
-            (click)="openTestTabAndRun()"
-          >
-            <strong>2. Test</strong>
-            <span>Scenario Sandbox &amp; Resource Verification</span>
-          </button>
-          <button
-            ngpButton
-            type="button"
-            class="ab-mode-tab"
-            [class.ab-mode-tab--active]="workspaceTab() === 'advanced'"
-            (click)="workspaceTab.set('advanced')"
-          >
-            <strong>3. Advanced</strong>
-            <span>Detailed Branches, Expressions &amp; Engine Bindings</span>
-          </button>
-        </nav>
-
-        @switch (workspaceTab()) {
-          @case ('build') {
-            <lw-guided-rule-groups
-              [rule]="activeRule()"
-              (ruleChange)="onRuleUpdated($event)"
-              (openAdvancedRequested)="workspaceTab.set('advanced')"
-            />
-
-            <lw-rule-parameters-editor
-              [rule]="activeRule()"
-              [activeCampaignName]="camp.name"
-              (ruleChange)="onRuleUpdated($event)"
-            />
-          }
-          @case ('test') {
-            <lw-rule-test-sandbox
-              [rule]="activeRule()"
-              [campaignId]="camp.id"
-              [evaluationResult]="evaluationResult()"
-              [evaluating]="evaluating()"
-              (runSimulation)="onRunSimulation($event)"
-            />
-          }
-          @case ('advanced') {
-            <lw-clause-sentence-editor
-              [rule]="activeRule()"
-              [clauses]="activeRule().clauses"
-              [keywords]="studioContext().clauseKeywords"
-              [tokenSuggestions]="studioContext().tokenSuggestionsByKeyword"
-              [engineSymbols]="studioContext().engineSymbols"
-              [defaultClassName]="activeRule().primaryClassName"
-              [defaultMethodName]="activeRule().primaryMethodName"
-              (clausesChange)="onClausesChanged($event)"
-              (primaryBindingChange)="onPrimaryBindingChanged($event)"
-            />
-          }
-        }
       </div>
 
-      <!-- RIGHT COLUMN: Independently Scrollable Player Card + Draft Summary + Scaling & Tags -->
+      <!-- RIGHT PANE: Independently Scrollable Live Resolve Order View ONLY -->
       <div class="ab-workbench__right">
         <lw-rule-preview-inspector
           [rule]="activeRule()"
           [campaignName]="camp.name"
-          [draftDiffs]="draftDiffs()"
-          [hasDraftSaved]="hasDraftForCurrent()"
-          [saving]="saving()"
-          (ruleChange)="onRuleUpdated($event)"
-          (saveDraftRequested)="onSaveDraft()"
-          (applyToCampaign)="onApplyRuleToCampaign()"
-          (openTestTabRequested)="openTestTabAndRun()"
         />
       </div>
     </main>

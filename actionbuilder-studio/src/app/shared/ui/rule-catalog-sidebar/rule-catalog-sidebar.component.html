@@ -1,9 +1,6 @@
 <aside class="ab-sidebar">
   <div class="ab-sidebar__header">
-    <div class="ab-sidebar__campaign-head">
-      <span class="ab-sidebar__eyebrow">Engine &amp; Campaign Rules</span>
-      <strong class="ab-sidebar__camp-name">{{ campaignName() }}</strong>
-    </div>
+    <h2 class="ab-sidebar__title">ACTIONS &amp; SPELLS</h2>
 
     <div class="ab-sidebar__search">
       <lw-icon name="search" [size]="15" tone="muted" />
@@ -11,106 +8,85 @@
         ngpInput
         type="search"
         class="ab-sidebar__search-input"
-        placeholder="Search spells, source books, schools, actions..."
+        placeholder="Find an action..."
         [ngModel]="searchQuery()"
         (ngModelChange)="onSearchChange($event)"
-        aria-label="Search actions and spells"
+        aria-label="Find an action or spell"
       />
     </div>
 
-    <div class="ab-sidebar__filters" role="tablist" aria-label="Source filter">
-      <button
-        ngpButton
-        type="button"
-        class="ab-sidebar__filter-btn"
-        [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'all'"
-        (click)="onFilterChange('all')"
+    <div class="ab-sidebar__select-row">
+      <select
+        class="ab-sidebar__select"
+        [ngModel]="activeTypeFilter()"
+        (ngModelChange)="onTypeFilterChange($event)"
+        aria-label="Filter by action or spell type"
       >
-        All ({{ allCount() }})
-      </button>
-      <button
-        ngpButton
-        type="button"
-        class="ab-sidebar__filter-btn"
-        [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'custom'"
-        (click)="onFilterChange('custom')"
+        <option value="all">All types</option>
+        <option value="Action">Action</option>
+        <option value="Bonus Action">Bonus Action</option>
+        <option value="Reaction">Reaction</option>
+        <option value="Spell">Spell</option>
+        <option value="Feature">Feature</option>
+        <option value="Save">Save</option>
+      </select>
+    </div>
+
+    <div class="ab-sidebar__select-row">
+      <select
+        class="ab-sidebar__select"
+        [ngModel]="activeSourceFilter()"
+        (ngModelChange)="onSourceFilterChange($event)"
+        aria-label="Filter by rule source"
       >
-        Custom ({{ customCount() }})
-      </button>
-      <button
-        ngpButton
-        type="button"
-        class="ab-sidebar__filter-btn"
-        [class.ab-sidebar__filter-btn--active]="activeSourceFilter() === 'srd'"
-        (click)="onFilterChange('srd')"
-      >
-        Core ({{ coreCount() }})
-      </button>
+        <option value="all">Core + campaign</option>
+        <option value="custom">Campaign overrides ({{ customCount() }})</option>
+        <option value="srd">Core rules only</option>
+      </select>
+    </div>
+
+    <div class="ab-sidebar__col-head">
+      <span>NAME</span>
+      <span>TYPE</span>
     </div>
   </div>
 
   <div class="ab-sidebar__list" (scroll)="onListScroll($event)">
     @for (rule of visibleRules(); track rule.id) {
       <div
-        class="ab-rule-card"
+        class="ab-rule-row"
         role="button"
         tabindex="0"
-        [class.ab-rule-card--active]="rule.id === selectedRuleId()"
-        [class.ab-rule-card--modified]="rule.isCustomizedForCampaign"
-        [class.ab-rule-card--bypassed]="!!rule.bypassedByRuleId"
+        [class.ab-rule-row--active]="rule.id === selectedRuleId()"
+        [class.ab-rule-row--custom]="rule.isCustomizedForCampaign"
         (click)="ruleSelected.emit(rule)"
         (keydown.enter)="ruleSelected.emit(rule)"
       >
-        <div class="ab-rule-card__avatar" [attr.data-custom]="rule.isCustomizedForCampaign">
-          <span>{{ rule.name.slice(0, 2).toUpperCase() }}</span>
+        <div class="ab-rule-row__main">
+          <span class="ab-rule-row__name">{{ rule.name }}</span>
+          @if (rule.isCustomizedForCampaign) {
+            <span class="ab-rule-row__override-dot" title="Campaign override"></span>
+          }
         </div>
 
-        <div class="ab-rule-card__body">
-          <div class="ab-rule-card__top">
-            <strong class="ab-rule-card__name">{{ rule.name }}</strong>
-            <div class="ab-rule-card__badges">
-              @if (hasDraft(rule.id)) {
-                <lw-badge label="Draft" tone="gold" />
-              } @else if (rule.bypassedByRuleId) {
-                <lw-badge label="Bypassed" tone="gold" />
-              } @else if (rule.bypassesCoreRuleId) {
-                <lw-badge label="Overrides Core" tone="gold" />
-              }
-              @if (rule.isCustomizedForCampaign && !rule.isCoreEngineRule) {
-                <button
-                  ngpButton
-                  type="button"
-                  class="ab-rule-card__delete-btn"
-                  title="Delete custom action"
-                  (click)="onDeleteCustomClick($event, rule)"
-                >
-                  Delete
-                </button>
-              }
-            </div>
-          </div>
-          <div class="ab-rule-card__meta">
-            <span
-              class="ab-rule-card__source"
-              [class.ab-rule-card__source--gold]="rule.isCustomizedForCampaign"
-              [class.ab-rule-card__source--muted]="!!rule.bypassedByRuleId"
+        <div class="ab-rule-row__right">
+          @if (rule.isCustomizedForCampaign && !rule.isCoreEngineRule) {
+            <button
+              ngpButton
+              type="button"
+              class="ab-rule-row__delete"
+              title="Delete custom action"
+              (click)="onDeleteCustomClick($event, rule)"
             >
-              @if (rule.isCustomizedForCampaign) {
-                {{ rule.bypassesCoreRuleId ? 'Campaign Bypass' : 'Custom Action' }}
-              } @else if (rule.bypassedByRuleId) {
-                Core SQL (Bypassed)
-              } @else {
-                {{ rule.sourceLabel || 'Core SQL' }}
-              }
-            </span>
-            <span class="ab-rule-card__sep">·</span>
-            <span class="ab-rule-card__cost">{{ rule.actionCost }}</span>
-          </div>
+              Delete
+            </button>
+          }
+          <span class="ab-rule-row__type">{{ shortTypeLabel(rule) }}</span>
         </div>
       </div>
     } @empty {
       <div class="ab-sidebar__empty">
-        <p>No abilities or spells match your search filter.</p>
+        <p>No actions or spells match your filter.</p>
       </div>
     }
 
@@ -120,4 +96,9 @@
       </button>
     }
   </div>
+
+  <footer class="ab-sidebar__footer">
+    <span>{{ allCount() }} rules</span>
+    <span class="ab-sidebar__footer-custom">{{ customCount() }} customized</span>
+  </footer>
 </aside>

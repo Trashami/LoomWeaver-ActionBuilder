@@ -228,6 +228,42 @@ public static class ActionRuleCatalog
             UpdatedByUsername: "Core Engine SQL",
             UpdatedAt: "2026-10-26T00:00:00Z",
             IsCoreEngineRule: true
+        ),
+        new(
+            Id: "rule-wild-shape",
+            RuleCode: "ClassFeature.WildShape",
+            Name: "Wild Shape",
+            Category: "Class Features",
+            SourceLabel: "Core Engine",
+            RulesetCode: "dnd5e-2024",
+            Summary: "As a Bonus Action, you shape-shift into a Beast form you have learned, replacing your map token and gaining Temporary HP.",
+            ActionCost: "1 Bonus Action",
+            ActionType: "Druid Class Feature (Shapeshift)",
+            RangeLabel: "Self",
+            TargetLabel: "Caster",
+            AttackOrSaveLabel: "Automatic Token Shapeshift",
+            DamageOrEffectFormula: "Swap Token Form & Grant Druid Level Temporary HP",
+            SaveDc: 0,
+            AcBonus: 0,
+            DurationLabel: "Hours equal to half Druid level",
+            RequiresConcentration: false,
+            PrimaryClassName: "CombatRuleInterpreter",
+            PrimaryMethodName: "ResolveShieldReactionWindow",
+            SourceFilePath: "LoomWeaver.Modules/ActionStudio/Engine/CombatRuleEngineInterpreter.cs",
+            Clauses:
+            [
+                new("c-ws-1", "When", ["Caster activates Wild Shape"], "CombatSessionStateService", "consumeActionResource", "Bonus Action shapeshift.", "ANY"),
+                new("c-ws-2", "Has", ["Bonus Action available", "Wild Shape use available"], "CombatSessionStateService", "consumeActionResource", "Requires Wild Shape charge.", "ALL"),
+                new("c-ws-3", "Then", ["Change Caster token to selected Beast form", "Grant Temporary HP"], "CombatRuleInterpreter", "ResolveShieldReactionWindow", "Swaps token and stats.", "ALL")
+            ],
+            ScalingTiers: [new("2-20", "Self", "Shapeshift into Beast token", "Wild Shape")],
+            WorksWith: ["Barkskin", "Moon Druid Combat Wild Shape"],
+            ConflictsWith: ["Incapacitated"],
+            Tags: ["Druid", "Shapeshift", "Class Feature", "Core Engine"],
+            IsCustomizedForCampaign: false,
+            UpdatedByUsername: "Core Engine SQL",
+            UpdatedAt: "2026-10-26T00:00:00Z",
+            IsCoreEngineRule: true
         )
     ];
 

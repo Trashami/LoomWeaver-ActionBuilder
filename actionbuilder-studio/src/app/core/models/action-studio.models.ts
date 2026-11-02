@@ -15,6 +15,69 @@ export type ClauseCombiner = 'ALL' | 'ANY';
 
 export type WorkspaceTabMode = 'build' | 'test' | 'advanced';
 
+export type ResolutionStepType =
+  | 'CHECK'
+  | 'PROMPT'
+  | 'ROLL'
+  | 'BRANCH'
+  | 'EFFECT'
+  | 'SPAWN_TOKEN'
+  | 'CHANGE_TOKEN';
+
+export interface ActionEffectItem {
+  id: string;
+  conditionLabel: string;
+  actionVerb: string;
+  targetActor: string;
+  formula: string;
+  damageType: string;
+  targetRecipient?: string;
+  formulaOrValue?: string;
+  damageOrEffectType?: string;
+}
+
+export interface ActionResolutionStep {
+  id: string;
+  order: number;
+  stepType: ResolutionStepType;
+  title: string;
+  subtitle: string;
+  checkCombiner: 'ALL' | 'ANY' | string;
+  requirements: string[];
+  promptTarget: string;
+  promptTrigger: string;
+  promptMessage: string;
+  promptOptions: string[];
+  rollActor: string;
+  rollType: string;
+  rollFormula: string;
+  reactionAskTarget: string;
+  reactionContinueMode: string;
+  reactionOptions: string[];
+  hitEffects: ActionEffectItem[];
+  missEffects: ActionEffectItem[];
+  spawnTokenName: string;
+  spawnPlacementMode: string;
+  spawnRangeFt: string;
+  spawnController: string;
+  transformTarget: string;
+  transformTokenName: string;
+  transformSize: string;
+  transformHpMode: string;
+  // Backend DTO optional compatibility fields
+  checkMode?: string;
+  continueMode?: string;
+  ifCondition?: string;
+  thenEffects?: ActionEffectItem[];
+  elseCondition?: string;
+  elseEffects?: ActionEffectItem[];
+  spawnRange?: string;
+  transformSubject?: string;
+  transformFormName?: string;
+}
+
+export type ActionRuleClause = RuleLogicClause;
+
 export interface RuleEngineMethodDescriptor {
   methodName: string;
   signature: string;
@@ -82,6 +145,7 @@ export interface CampaignActionRule {
   bypassesCoreRuleId?: string | null;
   bypassedByRuleId?: string | null;
   bypassedByRuleName?: string | null;
+  resolutionSteps?: ActionResolutionStep[];
 }
 
 export interface RuleDraftDiffItem {
@@ -223,6 +287,7 @@ export interface EncounterAttackStepRequest {
   selectedReactionRuleId?: string | null;
   reactionDecisionMade?: boolean;
   rollMode?: 'auto' | 'prompt';
+  ruleId?: string | null;
 }
 
 export interface EncounterAttackStepResponse {
@@ -240,4 +305,7 @@ export interface EncounterAttackStepResponse {
   concentrationDc: number;
   stepByStepLog: string[];
   summaryBanner: string;
+  executedResolutionSteps?: ActionResolutionStep[];
+  tokenSpawnSummary?: string | null;
+  tokenTransformSummary?: string | null;
 }

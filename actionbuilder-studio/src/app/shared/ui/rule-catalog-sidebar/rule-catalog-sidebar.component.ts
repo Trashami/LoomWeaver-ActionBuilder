@@ -11,13 +11,12 @@ import { FormsModule } from '@angular/forms';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpInput } from 'ng-primitives/input';
 import { CampaignActionRule } from '../../../core/models/action-studio.models';
-import { LwBadgeComponent } from '../badge/badge.component';
 import { LwIconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'lw-rule-catalog-sidebar',
   standalone: true,
-  imports: [FormsModule, NgpButton, NgpInput, LwIconComponent, LwBadgeComponent],
+  imports: [FormsModule, NgpButton, NgpInput, LwIconComponent],
   templateUrl: './rule-catalog-sidebar.component.html',
   styleUrl: './rule-catalog-sidebar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,12 +24,12 @@ import { LwIconComponent } from '../icon/icon.component';
 export class LwRuleCatalogSidebarComponent {
   readonly rules = input<CampaignActionRule[]>([]);
   readonly selectedRuleId = input<string>('');
-  readonly externalCategory = input<string>('All');
   readonly globalSearch = input<string>('');
   readonly draftRuleIds = input<string[]>([]);
   readonly campaignName = input<string>('Shadow of the Mountain');
 
   readonly searchQuery = model<string>('');
+  readonly activeTypeFilter = model<string>('all');
   readonly activeSourceFilter = model<'all' | 'custom' | 'srd'>('all');
   readonly visibleLimit = signal<number>(120);
 
@@ -41,29 +40,24 @@ export class LwRuleCatalogSidebarComponent {
   readonly customCount = computed(
     () => this.rules().filter((r) => r.isCustomizedForCampaign && !r.isCoreEngineRule).length
   );
-  readonly coreCount = computed(
-    () => this.rules().filter((r) => r.isCoreEngineRule !== false && !r.isCustomizedForCampaign).length
-  );
 
   readonly filteredRules = computed(() => {
     const localQ = (this.searchQuery() || '').trim().toLowerCase();
     const globalQ = (this.globalSearch() || '').trim().toLowerCase();
     const q = localQ || globalQ;
     const src = this.activeSourceFilter();
-    const cat = this.externalCategory();
+    const typeFilter = this.activeTypeFilter();
 
     return this.rules().filter((r) => {
       const isCustom = r.isCustomizedForCampaign && !r.isCoreEngineRule;
       if (src === 'custom' && !isCustom) return false;
       if (src === 'srd' && isCustom) return false;
 
-      if (cat && cat !== 'All') {
-        if (cat === 'Campaign Custom') {
-          if (!isCustom && r.category !== 'Campaign Custom') return false;
-        } else if (!r.category.toLowerCase().includes(cat.toLowerCase())) {
-          return false;
-        }
+      if (typeFilter !== 'all') {
+        const label = this.shortTypeLabel(r).toLowerCase();
+        if (label !== typeFilter.toLowerCase()) return false;
       }
+
       if (!q) return true;
 
       return (
@@ -72,7 +66,6 @@ export class LwRuleCatalogSidebarComponent {
         r.actionCost.toLowerCase().includes(q) ||
         r.actionType.toLowerCase().includes(q) ||
         r.summary.toLowerCase().includes(q) ||
-        r.ruleCode.toLowerCase().includes(q) ||
         r.tags.some((t) => t.toLowerCase().includes(q))
       );
     });
@@ -81,12 +74,30 @@ export class LwRuleCatalogSidebarComponent {
   readonly visibleRules = computed(() => this.filteredRules().slice(0, this.visibleLimit()));
   readonly hasMoreRules = computed(() => this.filteredRules().length > this.visibleLimit());
 
+  shortTypeLabel(rule: CampaignActionRule): string {
+    const cat = (rule.category || '').toLowerCase();
+    const cost = (rule.actionCost || '').toLowerCase();
+    const name = (rule.name || '').toLowerCase();
+    if (name.includes('concentration')) return 'Save';
+    if (cat === 'spells') return 'Spell';
+    if (cat.includes('feature')) return 'Feature';
+    if (cat.includes('condition')) return 'Save';
+    if (cost.includes('reaction')) return 'Reaction';
+    if (cost.includes('bonus')) return 'Bonus Action';
+    return 'Action';
+  }
+
   onSearchChange(value: string): void {
     this.searchQuery.set(value);
     this.visibleLimit.set(120);
   }
 
-  onFilterChange(filter: 'all' | 'custom' | 'srd'): void {
+  onTypeFilterChange(value: string): void {
+    this.activeTypeFilter.set(value);
+    this.visibleLimit.set(120);
+  }
+
+  onSourceFilterChange(filter: 'all' | 'custom' | 'srd'): void {
     this.activeSourceFilter.set(filter);
     this.visibleLimit.set(120);
   }
@@ -109,9 +120,5 @@ export class LwRuleCatalogSidebarComponent {
     event.stopPropagation();
     if (!rule.isCustomizedForCampaign || rule.isCoreEngineRule) return;
     this.deleteCustomRule.emit(rule);
-  }
-
-  hasDraft(ruleId: string): boolean {
-    return this.draftRuleIds().includes(ruleId);
   }
 }

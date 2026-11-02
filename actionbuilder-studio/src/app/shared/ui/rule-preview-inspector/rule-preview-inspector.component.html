@@ -1,228 +1,102 @@
-<aside class="ab-inspector">
-  <!-- 1. CONCISE PLAYER / GM ABILITY CARD -->
-  <section class="ab-preview-card">
-    <div class="ab-preview-card__tabs">
-      <div class="ab-preview-card__tab-group" role="tablist">
-        <button
-          ngpButton
-          type="button"
-          class="ab-preview-card__tab"
-          [class.ab-preview-card__tab--active]="previewMode() === 'player'"
-          (click)="previewMode.set('player')"
-        >
-          Preview (Player)
-        </button>
-        <button
-          ngpButton
-          type="button"
-          class="ab-preview-card__tab"
-          [class.ab-preview-card__tab--active]="previewMode() === 'gm'"
-          (click)="previewMode.set('gm')"
-        >
-          Preview (GM)
-        </button>
-      </div>
-      <span class="ab-preview-card__view-label">Sheet View</span>
-    </div>
+<aside class="ab-resolve-inspector" aria-label="Live Resolve Order">
+  <div class="ab-resolve-inspector__header">
+    <span class="ab-resolve-inspector__eyebrow">RESOLVE ORDER</span>
+    <h2 class="ab-resolve-inspector__title">{{ rule().name }}</h2>
+    <p class="ab-resolve-inspector__meta">
+      {{ rule().actionCost }} · {{ rule().targetLabel }} · {{ rule().rangeLabel }}
+    </p>
+  </div>
 
-    <div class="ab-ability-sheet">
-      <div class="ab-ability-sheet__top">
-        <div class="ab-ability-sheet__crest">
-          <span>{{ rule().name.slice(0, 2).toUpperCase() }}</span>
+  <ol class="ab-resolve-timeline">
+    @for (step of steps(); track step.id; let idx = $index; let last = $last) {
+      <li class="ab-resolve-node">
+        <div class="ab-resolve-node__rail">
+          <span class="ab-resolve-node__num">{{ idx + 1 }}</span>
+          @if (!last) {
+            <span class="ab-resolve-node__line"></span>
+          }
         </div>
-        <div class="ab-ability-sheet__titles">
-          <h3 class="ab-ability-sheet__name">{{ rule().name }}</h3>
-          <span class="ab-ability-sheet__type">{{ rule().actionCost }} · {{ rule().actionType }}</span>
-        </div>
-      </div>
 
-      <div class="ab-ability-sheet__meta-line">
-        <span>{{ rule().rangeLabel }}</span>
-        <span>·</span>
-        <span>{{ rule().durationLabel }}</span>
-        @if (rule().acBonus > 0) {
-          <span>·</span>
-          <strong class="ab-ability-sheet__emerald">+{{ rule().acBonus }} AC</strong>
-        }
-      </div>
-
-      <p class="ab-ability-sheet__desc">{{ rule().summary }}</p>
-
-      <div class="ab-ability-sheet__digest">
-        <div class="ab-ability-sheet__digest-row">
-          <strong>Trigger:</strong>
-          <span>{{ triggerLine() }}</span>
-        </div>
-        <div class="ab-ability-sheet__digest-row">
-          <strong>Requires:</strong>
-          <span>{{ requirementLine() }}</span>
-        </div>
-        <div class="ab-ability-sheet__digest-row">
-          <strong>Effect:</strong>
-          <span>{{ effectLine() }}</span>
-        </div>
-      </div>
-
-      @if (previewMode() === 'gm') {
-        <div class="ab-ability-sheet__gm-box">
-          <div class="ab-ability-sheet__gm-line">
-            <span>Campaign Scope:</span>
-            <strong>{{ campaignName() }} (DM Only)</strong>
+        <div class="ab-resolve-node__card" [attr.data-type]="step.stepType">
+          <div class="ab-resolve-node__top">
+            <span class="ab-resolve-node__badge">{{ stepTypeLabel(step.stepType) }}</span>
+            <strong class="ab-resolve-node__name">{{ step.title }}</strong>
           </div>
-          <div class="ab-ability-sheet__gm-line">
-            <span>Engine Handler:</span>
-            <code>{{ rule().primaryClassName }}.{{ rule().primaryMethodName }}</code>
-          </div>
+
+          @switch (step.stepType) {
+            @case ('CHECK') {
+              <p class="ab-resolve-node__detail">
+                <span class="ab-resolve-node__tag">{{ step.checkCombiner === 'ANY' ? 'Any can pass' : 'All must pass' }}:</span>
+                {{ step.requirements.length ? step.requirements.join(' · ') : 'No requirements' }}
+              </p>
+            }
+            @case ('PROMPT') {
+              <p class="ab-resolve-node__detail">
+                <span class="ab-resolve-node__tag">{{ step.promptTrigger }} ({{ step.promptTarget }}):</span>
+                {{ step.promptMessage || step.subtitle }}
+              </p>
+              @if (step.promptOptions.length > 0) {
+                <div class="ab-resolve-node__pills">
+                  @for (opt of step.promptOptions; track opt) {
+                    <span class="ab-resolve-node__pill">{{ opt }}</span>
+                  }
+                </div>
+              }
+            }
+            @case ('ROLL') {
+              <p class="ab-resolve-node__detail">
+                <span class="ab-resolve-node__tag">{{ step.rollActor }}:</span>
+                {{ step.rollType }} ({{ step.rollFormula || '1d20' }})
+              </p>
+            }
+            @case ('BRANCH') {
+              <p class="ab-resolve-node__detail">
+                <span class="ab-resolve-node__tag">Ask {{ step.reactionAskTarget }}:</span>
+                {{ step.reactionContinueMode }}
+              </p>
+              @if (step.reactionOptions.length > 0) {
+                <div class="ab-resolve-node__pills">
+                  @for (rx of step.reactionOptions; track rx) {
+                    <span class="ab-resolve-node__pill">{{ rx }}</span>
+                  }
+                </div>
+              }
+            }
+            @case ('SPAWN_TOKEN') {
+              <p class="ab-resolve-node__detail">
+                <span class="ab-resolve-node__tag">{{ step.spawnTokenName || 'Summoned Token' }}:</span>
+                {{ step.spawnPlacementMode }} ({{ step.spawnRangeFt }}) · Controlled by {{ step.spawnController }}
+              </p>
+            }
+            @case ('CHANGE_TOKEN') {
+              <p class="ab-resolve-node__detail">
+                <span class="ab-resolve-node__tag">{{ step.transformTarget }} -> {{ step.transformTokenName || 'New Form' }}:</span>
+                {{ step.transformSize }} · {{ step.transformHpMode }}
+              </p>
+            }
+            @case ('EFFECT') {
+              <div class="ab-resolve-node__outcomes">
+                @if (step.hitEffects.length > 0) {
+                  <div class="ab-resolve-node__outcome ab-resolve-node__outcome--hit">
+                    <strong>IF / HIT</strong>
+                    @for (eff of step.hitEffects; track eff.id) {
+                      <span>{{ eff.conditionLabel }}: {{ eff.actionVerb }} -> {{ eff.targetActor }} ({{ eff.formula }} {{ eff.damageType }})</span>
+                    }
+                  </div>
+                }
+                @if (step.missEffects.length > 0) {
+                  <div class="ab-resolve-node__outcome ab-resolve-node__outcome--miss">
+                    <strong>ELSE / MISS</strong>
+                    @for (eff of step.missEffects; track eff.id) {
+                      <span>{{ eff.conditionLabel }}: {{ eff.actionVerb }} -> {{ eff.targetActor }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
         </div>
-      }
-
-      <div class="ab-ability-sheet__footer">
-        <lw-badge [label]="rule().actionCost" tone="gold" />
-        <lw-button
-          label="Test in Encounter"
-          variant="ghost"
-          size="xs"
-          (pressed)="openTestTabRequested.emit()"
-        />
-      </div>
-    </div>
-  </section>
-
-  <!-- 2. DRAFT-TO-CAMPAIGN CHANGE SUMMARY -->
-  <section class="ab-draft-summary">
-    <div class="ab-draft-summary__header">
-      <div>
-        <strong class="ab-draft-summary__title">Draft-to-Campaign Change Summary</strong>
-        <span class="ab-draft-summary__sub">Target: {{ campaignName() }}</span>
-      </div>
-      <lw-badge
-        [label]="draftDiffs().length > 0 ? draftDiffs().length + ' Changed' : (hasDraftSaved() ? 'Draft Saved' : 'In Sync')"
-        [tone]="draftDiffs().length > 0 ? 'gold' : 'emerald'"
-      />
-    </div>
-
-    @if (draftDiffs().length > 0) {
-      <ul class="ab-draft-summary__list">
-        @for (diff of draftDiffs(); track diff.label) {
-          <li class="ab-draft-summary__item">
-            <strong class="ab-draft-summary__field">{{ diff.label }}:</strong>
-            <span class="ab-draft-summary__before">{{ diff.before }}</span>
-            <span class="ab-draft-summary__arrow">-></span>
-            <span class="ab-draft-summary__after">{{ diff.after }}</span>
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="ab-draft-summary__empty">
-        @if (rule().isCoreEngineRule !== false && !rule().isCustomizedForCampaign) {
-          Core Engine rules are read-only in SQL. Edit any field and apply to create a <strong>Campaign Bypass</strong> rule for {{ campaignName() }} that overrides this core rule.
-        } @else {
-          No pending differences from the active campaign bypass version. Edit any field or condition to stage a draft.
-        }
-      </p>
+      </li>
     }
-
-    <div class="ab-draft-summary__actions">
-      <lw-button
-        [label]="hasDraftSaved() ? 'Draft Saved' : 'Save Draft'"
-        variant="secondary"
-        size="sm"
-        (pressed)="saveDraftRequested.emit()"
-      />
-      <lw-button
-        [label]="saving() ? 'Applying...' : (rule().isCoreEngineRule !== false && !rule().isCustomizedForCampaign ? 'Save Campaign Bypass' : 'Apply to ' + campaignName())"
-        variant="gold"
-        size="sm"
-        [disabled]="saving()"
-        (pressed)="applyToCampaign.emit()"
-      />
-    </div>
-  </section>
-
-  <!-- 3. SCALING & LEVEL UP OPTIONS -->
-  <section class="ab-scaling-card">
-    <div class="ab-scaling-card__header">
-      <strong class="ab-scaling-card__title">Scaling &amp; Level Up Options</strong>
-      <label class="ab-scaling-card__toggle">
-        <span>Enable Level Scaling</span>
-        <input
-          type="checkbox"
-          [ngModel]="scalingEnabled()"
-          (ngModelChange)="scalingEnabled.set($event)"
-        />
-      </label>
-    </div>
-
-    @if (scalingEnabled()) {
-      <div class="ab-scaling-table">
-        <div class="ab-scaling-table__head">
-          <span>Level</span>
-          <span>Range</span>
-          <span>Additional Effects</span>
-          <span></span>
-        </div>
-        @for (tier of rule().scalingTiers; track $index; let idx = $index) {
-          <div class="ab-scaling-table__row">
-            <input
-              ngpInput
-              type="text"
-              [ngModel]="tier.levelRange"
-              (ngModelChange)="updateScalingTier(idx, 'levelRange', $event)"
-            />
-            <input
-              ngpInput
-              type="text"
-              [ngModel]="tier.diceOrValue"
-              (ngModelChange)="updateScalingTier(idx, 'diceOrValue', $event)"
-            />
-            <input
-              ngpInput
-              type="text"
-              [ngModel]="tier.summary"
-              (ngModelChange)="updateScalingTier(idx, 'summary', $event)"
-            />
-            <button
-              ngpButton
-              type="button"
-              class="ab-scaling-table__del"
-              (click)="removeScalingTier(idx)"
-            >
-              <lw-icon name="x" [size]="12" />
-            </button>
-          </div>
-        }
-      </div>
-      <lw-button
-        label="+ Add Level Tier"
-        variant="secondary"
-        size="xs"
-        (pressed)="addScalingTier()"
-      />
-    }
-  </section>
-
-  <!-- 4. TAGS & LINKING -->
-  <section class="ab-tags-card">
-    <strong class="ab-tags-card__title">Tags &amp; Linking</strong>
-    <div class="ab-tags-card__chips">
-      @for (tag of rule().tags; track tag; let idx = $index) {
-        <span class="ab-tag-pill">
-          <span>{{ tag }}</span>
-          <button ngpButton type="button" (click)="removeTag(idx)">
-            <lw-icon name="x" [size]="11" />
-          </button>
-        </span>
-      }
-      <div class="ab-tags-card__add">
-        <input
-          ngpInput
-          type="text"
-          placeholder="+ Add Tag"
-          [ngModel]="newTagText()"
-          (ngModelChange)="newTagText.set($event)"
-          (keydown.enter)="addTag()"
-        />
-      </div>
-    </div>
-  </section>
+  </ol>
 </aside>

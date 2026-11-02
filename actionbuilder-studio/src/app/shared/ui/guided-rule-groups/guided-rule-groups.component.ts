@@ -3,20 +3,36 @@ import { FormsModule } from '@angular/forms';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpInput } from 'ng-primitives/input';
 import {
+  ACTOR_OPTIONS,
+  CONTINUE_MODE_OPTIONS,
+  DAMAGE_TYPE_OPTIONS,
+  EFFECT_VERB_OPTIONS,
+  IF_CONDITION_OPTIONS,
+  PROMPT_TRIGGER_OPTIONS,
+  REACTION_RULE_PRESETS,
+  REQUIREMENT_PRESETS,
+  ROLL_TYPE_OPTIONS,
+  SPAWN_PLACEMENT_OPTIONS,
+  SPAWN_RANGE_OPTIONS,
+  TRANSFORM_HP_OPTIONS,
+  TRANSFORM_SIZE_OPTIONS,
+  createEffectItem,
+  createStepOfType,
+  ensureRuleResolutionSteps,
+  syncRuleFromResolutionSteps,
+} from '../../../core/models/action-resolution.helpers';
+import {
+  ActionEffectItem,
+  ActionResolutionStep,
   CampaignActionRule,
-  ClauseCombiner,
-  RuleLogicClause,
+  ResolutionStepType,
 } from '../../../core/models/action-studio.models';
-import { LwBadgeComponent } from '../badge/badge.component';
-import { LwButtonComponent } from '../button/button.component';
 import { LwIconComponent } from '../icon/icon.component';
-
-export type GuidedGroupKey = 'trigger' | 'requirements' | 'effects';
 
 @Component({
   selector: 'lw-guided-rule-groups',
   standalone: true,
-  imports: [FormsModule, NgpButton, NgpInput, LwIconComponent, LwButtonComponent, LwBadgeComponent],
+  imports: [FormsModule, NgpButton, NgpInput, LwIconComponent],
   templateUrl: './guided-rule-groups.component.html',
   styleUrl: './guided-rule-groups.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,242 +40,246 @@ export type GuidedGroupKey = 'trigger' | 'requirements' | 'effects';
 export class LwGuidedRuleGroupsComponent {
   readonly rule = input.required<CampaignActionRule>();
   readonly ruleChange = output<CampaignActionRule>();
-  readonly openAdvancedRequested = output<void>();
 
-  readonly expandedGroup = signal<GuidedGroupKey | null>('trigger');
-  readonly activePicker = signal<GuidedGroupKey | null>(null);
-  readonly customInputText = signal<string>('');
+  readonly expandedStepIds = signal<Record<string, boolean>>({});
+  readonly insertMenuIndex = signal<number | null>(null);
+  readonly newReqText = signal<string>('');
+  readonly newPromptOptionText = signal<string>('');
+  readonly newReactionText = signal<string>('');
 
-  readonly triggerPresets: string[] = [
-    'An attack hits you',
-    'Magic Missile targets you',
-    'Hostile Creature Casts Spell Within 60 ft',
-    'Hostile Leaves Reach Without Disengage',
-    'Creature Takes Damage While Concentrating',
-    'Ranged Or Finesse Weapon Attack Hits',
-    'Unsupported: Custom tabletop trigger (tests Not evaluated)',
-  ];
+  readonly actorOptions = ACTOR_OPTIONS;
+  readonly promptTriggerOptions = PROMPT_TRIGGER_OPTIONS;
+  readonly continueModeOptions = CONTINUE_MODE_OPTIONS;
+  readonly rollTypeOptions = ROLL_TYPE_OPTIONS;
+  readonly ifConditionOptions = IF_CONDITION_OPTIONS;
+  readonly effectVerbOptions = EFFECT_VERB_OPTIONS;
+  readonly damageTypeOptions = DAMAGE_TYPE_OPTIONS;
+  readonly spawnPlacementOptions = SPAWN_PLACEMENT_OPTIONS;
+  readonly spawnRangeOptions = SPAWN_RANGE_OPTIONS;
+  readonly transformSizeOptions = TRANSFORM_SIZE_OPTIONS;
+  readonly transformHpOptions = TRANSFORM_HP_OPTIONS;
+  readonly requirementPresets = REQUIREMENT_PRESETS;
+  readonly reactionRulePresets = REACTION_RULE_PRESETS;
 
-  readonly requirementPresets: string[] = [
-    'Reaction available',
-    'Appropriate 1st-level spell slot available',
-    'Appropriate 3rd-level spell slot available',
-    'Applicable casting requirements (Verbal, Somatic)',
-    'Distance(Attacker, Target) <= 60 ft',
-    'Distance(Attacker, Target) <= 5 ft',
-    'Target Has Concentration Active',
-    'Unsupported: Target wears iron armor (tests Not evaluated)',
-  ];
-
-  readonly effectPresets: string[] = [
-    'Spend the required resources (1 Reaction + 1st-level Spell Slot)',
-    'Grant +5 AC until the start of your next turn',
-    'Resolve the triggering attack or Magic Missile interaction',
-    'Interrupt Spell Cast & Negate Effect',
-    'Pause Movement & Execute 1 Melee Attack',
-    'Add Sneak Attack Dice To Damage Roll',
-    'Apply Chokrah +2d8 Necrotic/Radiant Surge',
-  ];
-
-  readonly triggerClause = computed<RuleLogicClause>(() => {
-    const found = this.rule().clauses.find((c) => c.keyword.toLowerCase() === 'when');
-    return (
-      found ?? {
-        id: 'c-guided-when',
-        keyword: 'When',
-        combiner: 'ANY',
-        tokens: ['An attack hits you'],
-        boundClass: this.rule().primaryClassName,
-        boundMethod: this.rule().primaryMethodName,
-        notes: 'Trigger condition',
-      }
-    );
+  readonly steps = computed<ActionResolutionStep[]>(() => {
+    const ensured = ensureRuleResolutionSteps(this.rule());
+    return ensured.resolutionSteps ?? [];
   });
 
-  readonly requirementItems = computed(() => {
-    const clauses = this.rule().clauses.filter((c) =>
-      ['has', 'contains', 'has not', 'where', 'if', 'and', 'or'].includes(c.keyword.toLowerCase())
-    );
-    const items: { clauseId: string; keyword: string; token: string; tokenIdx: number }[] = [];
-    for (const c of clauses) {
-      c.tokens.forEach((tok, idx) => {
-        items.push({ clauseId: c.id, keyword: c.keyword, token: tok, tokenIdx: idx });
-      });
+  isStepExpanded(step: ActionResolutionStep): boolean {
+    const map = this.expandedStepIds();
+    if (step.id in map) {
+      return map[step.id];
     }
-    return items;
-  });
-
-  readonly requirementCombiner = computed<ClauseCombiner>(() => {
-    const primaryReq = this.rule().clauses.find((c) =>
-      ['has', 'contains', 'if', 'where'].includes(c.keyword.toLowerCase())
-    );
-    return (primaryReq?.combiner?.toUpperCase() === 'ANY' ? 'ANY' : 'ALL') as ClauseCombiner;
-  });
-
-  readonly effectClause = computed<RuleLogicClause>(() => {
-    const found = this.rule().clauses.find((c) => c.keyword.toLowerCase() === 'then');
     return (
-      found ?? {
-        id: 'c-guided-then',
-        keyword: 'Then',
-        combiner: 'ALL',
-        tokens: [this.rule().damageOrEffectFormula || 'Apply ability effect'],
-        boundClass: this.rule().primaryClassName,
-        boundMethod: this.rule().primaryMethodName,
-        notes: 'Primary effect resolution',
-      }
+      step.stepType === 'BRANCH' ||
+      step.stepType === 'EFFECT' ||
+      step.stepType === 'SPAWN_TOKEN' ||
+      step.stepType === 'CHANGE_TOKEN'
     );
-  });
-
-  readonly fallbackClause = computed<RuleLogicClause | null>(() => {
-    return this.rule().clauses.find((c) => c.keyword.toLowerCase() === 'else') ?? null;
-  });
-
-  readonly triggerSummary = computed(() => {
-    const c = this.triggerClause();
-    const joiner = (c.combiner || 'ANY').toUpperCase() === 'ANY' ? ' OR ' : ' AND ';
-    return c.tokens.length > 0 ? c.tokens.join(joiner) : 'No trigger configured';
-  });
-
-  readonly requirementsSummary = computed(() => {
-    const items = this.requirementItems().map((i) => i.token);
-    const joiner = this.requirementCombiner() === 'ANY' ? ' OR ' : ' AND ';
-    return items.length > 0 ? items.join(joiner) : 'No special requirements';
-  });
-
-  readonly effectsSummary = computed(() => {
-    const tokens = this.effectClause().tokens;
-    return tokens.length > 0 ? tokens.join(' ; ') : this.rule().damageOrEffectFormula;
-  });
-
-  toggleGroup(group: GuidedGroupKey): void {
-    this.expandedGroup.update((cur) => (cur === group ? null : group));
-    this.activePicker.set(null);
   }
 
-  openPicker(group: GuidedGroupKey): void {
-    this.activePicker.update((cur) => (cur === group ? null : group));
-    this.customInputText.set('');
+  toggleStepExpanded(step: ActionResolutionStep): void {
+    const current = this.isStepExpanded(step);
+    this.expandedStepIds.update((map) => ({ ...map, [step.id]: !current }));
   }
 
-  setTriggerCombiner(combiner: ClauseCombiner): void {
-    const r = this.rule();
-    const hasWhen = r.clauses.some((c) => c.keyword.toLowerCase() === 'when');
-    const nextClauses = hasWhen
-      ? r.clauses.map((c) => (c.keyword.toLowerCase() === 'when' ? { ...c, combiner } : c))
-      : [{ ...this.triggerClause(), combiner }, ...r.clauses];
-    this.ruleChange.emit({ ...r, clauses: nextClauses });
+  stepBadgeLabel(stepType: ResolutionStepType): string {
+    switch (stepType) {
+      case 'CHECK':
+        return 'CHECK';
+      case 'PROMPT':
+        return 'PROMPT';
+      case 'ROLL':
+        return 'ROLL';
+      case 'BRANCH':
+        return 'BRANCH';
+      case 'SPAWN_TOKEN':
+        return 'SPAWN TOKEN';
+      case 'CHANGE_TOKEN':
+        return 'CHANGE TOKEN';
+      case 'EFFECT':
+      default:
+        return 'EFFECT';
+    }
   }
 
-  setRequirementsCombiner(combiner: ClauseCombiner): void {
-    const r = this.rule();
-    const nextClauses = r.clauses.map((c) =>
-      ['has', 'contains', 'has not', 'where', 'if'].includes(c.keyword.toLowerCase())
-        ? { ...c, combiner }
-        : c
+  stepSummarySubtitle(step: ActionResolutionStep): string {
+    switch (step.stepType) {
+      case 'CHECK':
+        return step.requirements.length > 0
+          ? step.requirements.join(' · ')
+          : 'No requirements configured';
+      case 'PROMPT':
+        return step.promptMessage || `Ask ${step.promptTarget} (${step.promptTrigger})`;
+      case 'ROLL':
+        return `${step.rollFormula || '1d20 + modifier'} (${step.rollType})`;
+      case 'BRANCH':
+        return 'Pause for eligible reactions before applying damage.';
+      case 'SPAWN_TOKEN':
+        return `${step.spawnTokenName || 'Token'} · ${step.spawnPlacementMode} (${step.spawnRangeFt})`;
+      case 'CHANGE_TOKEN':
+        return `${step.transformTarget} -> ${step.transformTokenName || 'New Form'} (${step.transformSize})`;
+      case 'EFFECT':
+      default:
+        return step.subtitle || 'Apply Hit / Miss or Save outcome effects.';
+    }
+  }
+
+  toggleCheckCombiner(stepIdx: number): void {
+    const list = this.steps().map((s, idx) =>
+      idx === stepIdx ? { ...s, checkCombiner: s.checkCombiner === 'ANY' ? 'ALL' : 'ANY' } : s
     );
-    this.ruleChange.emit({ ...r, clauses: nextClauses });
+    this.emitSteps(list);
   }
 
-  addConditionToGroup(group: GuidedGroupKey, text: string): void {
-    const clean = text.trim();
+  updateStepField<K extends keyof ActionResolutionStep>(
+    stepIdx: number,
+    field: K,
+    value: ActionResolutionStep[K]
+  ): void {
+    const list = this.steps().map((s, idx) => (idx === stepIdx ? { ...s, [field]: value } : s));
+    this.emitSteps(list);
+  }
+
+  addRequirement(stepIdx: number, rawText: string): void {
+    const clean = (rawText || '').trim();
     if (!clean) return;
-    const r = this.rule();
-    const clauses = r.clauses.map((c) => ({ ...c, tokens: [...c.tokens] }));
-
-    if (group === 'trigger') {
-      const idx = clauses.findIndex((c) => c.keyword.toLowerCase() === 'when');
-      if (idx >= 0) {
-        if (!clauses[idx].tokens.includes(clean)) clauses[idx].tokens.push(clean);
-      } else {
-        clauses.unshift({ ...this.triggerClause(), tokens: [clean] });
-      }
-    } else if (group === 'requirements') {
-      const isContains =
-        clean.toLowerCase().includes('casting') ||
-        clean.toLowerCase().includes('contains') ||
-        clean.toLowerCase().includes('unsupported');
-      const targetKw = isContains ? 'Contains' : 'Has';
-      const idx = clauses.findIndex((c) => c.keyword.toLowerCase() === targetKw.toLowerCase());
-      if (idx >= 0) {
-        if (!clauses[idx].tokens.includes(clean)) clauses[idx].tokens.push(clean);
-      } else {
-        const insertAt = Math.min(1, clauses.length);
-        clauses.splice(insertAt, 0, {
-          id: `c-req-${Date.now()}`,
-          keyword: targetKw,
-          combiner: this.requirementCombiner(),
-          tokens: [clean],
-          boundClass: r.primaryClassName,
-          boundMethod: r.primaryMethodName,
-          notes: 'Added via Guided Builder',
-        });
-      }
-    } else {
-      const idx = clauses.findIndex((c) => c.keyword.toLowerCase() === 'then');
-      if (idx >= 0) {
-        if (!clauses[idx].tokens.includes(clean)) clauses[idx].tokens.push(clean);
-      } else {
-        clauses.push({ ...this.effectClause(), tokens: [clean] });
-      }
-    }
-
-    this.ruleChange.emit({ ...r, clauses });
-    this.customInputText.set('');
-    this.activePicker.set(null);
-  }
-
-  removeTriggerToken(tokenIdx: number): void {
-    const r = this.rule();
-    const clauses = r.clauses.map((c) =>
-      c.keyword.toLowerCase() === 'when'
-        ? { ...c, tokens: c.tokens.filter((_, i) => i !== tokenIdx) }
-        : c
-    );
-    this.ruleChange.emit({ ...r, clauses });
-  }
-
-  removeRequirementItem(clauseId: string, tokenIdx: number): void {
-    const r = this.rule();
-    const clauses = r.clauses
-      .map((c) => (c.id === clauseId ? { ...c, tokens: c.tokens.filter((_, i) => i !== tokenIdx) } : c))
-      .filter((c) => c.tokens.length > 0 || ['when', 'then'].includes(c.keyword.toLowerCase()));
-    this.ruleChange.emit({ ...r, clauses });
-  }
-
-  removeEffectToken(tokenIdx: number): void {
-    const r = this.rule();
-    const clauses = r.clauses.map((c) =>
-      c.keyword.toLowerCase() === 'then'
-        ? { ...c, tokens: c.tokens.filter((_, i) => i !== tokenIdx) }
-        : c
-    );
-    this.ruleChange.emit({ ...r, clauses });
-  }
-
-  patchNumericAcBonus(acBonus: number): void {
-    const r = this.rule();
-    const bonus = Math.max(0, Number(acBonus) || 0);
-    const updatedFormula =
-      bonus > 0 && r.id === 'rule-shield-reaction'
-        ? `+${bonus} AC & Negate Magic Missile`
-        : r.damageOrEffectFormula;
-    const clauses = r.clauses.map((c) => {
-      if (c.keyword.toLowerCase() === 'with' && bonus > 0) {
-        return { ...c, tokens: [`Grant +${bonus} AC until the start of your next turn`] };
-      }
-      if (c.keyword.toLowerCase() === 'then' && bonus > 0) {
-        return {
-          ...c,
-          tokens: c.tokens.map((t) =>
-            t.includes('AC until the start')
-              ? `Grant +${bonus} AC until the start of your next turn`
-              : t
-          ),
-        };
-      }
-      return c;
+    const list = this.steps().map((s, idx) => {
+      if (idx !== stepIdx) return s;
+      const nextReqs = s.requirements.includes(clean) ? s.requirements : [...s.requirements, clean];
+      return { ...s, requirements: nextReqs, subtitle: nextReqs.join(' · ') };
     });
-    this.ruleChange.emit({ ...r, acBonus: bonus, damageOrEffectFormula: updatedFormula, clauses });
+    this.newReqText.set('');
+    this.emitSteps(list);
+  }
+
+  removeRequirement(stepIdx: number, reqIdx: number): void {
+    const list = this.steps().map((s, idx) => {
+      if (idx !== stepIdx) return s;
+      const nextReqs = s.requirements.filter((_, i) => i !== reqIdx);
+      return { ...s, requirements: nextReqs, subtitle: nextReqs.join(' · ') };
+    });
+    this.emitSteps(list);
+  }
+
+  addPromptOption(stepIdx: number, rawText: string): void {
+    const clean = (rawText || '').trim();
+    if (!clean) return;
+    const list = this.steps().map((s, idx) => {
+      if (idx !== stepIdx) return s;
+      const nextOpts = s.promptOptions.includes(clean) ? s.promptOptions : [...s.promptOptions, clean];
+      return { ...s, promptOptions: nextOpts };
+    });
+    this.newPromptOptionText.set('');
+    this.emitSteps(list);
+  }
+
+  removePromptOption(stepIdx: number, optIdx: number): void {
+    const list = this.steps().map((s, idx) =>
+      idx === stepIdx ? { ...s, promptOptions: s.promptOptions.filter((_, i) => i !== optIdx) } : s
+    );
+    this.emitSteps(list);
+  }
+
+  addReactionOption(stepIdx: number, rawText: string): void {
+    const clean = (rawText || '').trim();
+    if (!clean) return;
+    const list = this.steps().map((s, idx) => {
+      if (idx !== stepIdx) return s;
+      const nextRx = s.reactionOptions.includes(clean) ? s.reactionOptions : [...s.reactionOptions, clean];
+      return { ...s, reactionOptions: nextRx };
+    });
+    this.newReactionText.set('');
+    this.emitSteps(list);
+  }
+
+  removeReactionOption(stepIdx: number, rxIdx: number): void {
+    const list = this.steps().map((s, idx) =>
+      idx === stepIdx ? { ...s, reactionOptions: s.reactionOptions.filter((_, i) => i !== rxIdx) } : s
+    );
+    this.emitSteps(list);
+  }
+
+  addEffectRow(stepIdx: number, branch: 'hit' | 'miss'): void {
+    const newItem =
+      branch === 'hit'
+        ? createEffectItem(
+            'On Hit',
+            'Apply damage',
+            'Target(s)',
+            this.rule().damageOrEffectFormula || '1d8',
+            'Weapon damage'
+          )
+        : createEffectItem('On Miss', 'No damage', 'Target(s)', '0', 'None');
+    const list = this.steps().map((s, idx) => {
+      if (idx !== stepIdx) return s;
+      return branch === 'hit'
+        ? { ...s, hitEffects: [...s.hitEffects, newItem] }
+        : { ...s, missEffects: [...s.missEffects, newItem] };
+    });
+    this.emitSteps(list);
+  }
+
+  updateEffectRow<K extends keyof ActionEffectItem>(
+    stepIdx: number,
+    branch: 'hit' | 'miss',
+    effIdx: number,
+    field: K,
+    value: ActionEffectItem[K]
+  ): void {
+    const list = this.steps().map((s, idx) => {
+      if (idx !== stepIdx) return s;
+      const targetList = branch === 'hit' ? s.hitEffects : s.missEffects;
+      const updated = targetList.map((e, i) => (i === effIdx ? { ...e, [field]: value } : e));
+      return branch === 'hit' ? { ...s, hitEffects: updated } : { ...s, missEffects: updated };
+    });
+    this.emitSteps(list);
+  }
+
+  removeEffectRow(stepIdx: number, branch: 'hit' | 'miss', effIdx: number): void {
+    const list = this.steps().map((s, idx) => {
+      if (idx !== stepIdx) return s;
+      return branch === 'hit'
+        ? { ...s, hitEffects: s.hitEffects.filter((_, i) => i !== effIdx) }
+        : { ...s, missEffects: s.missEffects.filter((_, i) => i !== effIdx) };
+    });
+    this.emitSteps(list);
+  }
+
+  moveStep(stepIdx: number, direction: -1 | 1): void {
+    const current = [...this.steps()];
+    const targetIdx = stepIdx + direction;
+    if (targetIdx < 0 || targetIdx >= current.length) return;
+    const [moved] = current.splice(stepIdx, 1);
+    current.splice(targetIdx, 0, moved);
+    this.emitSteps(current);
+  }
+
+  deleteStep(stepIdx: number): void {
+    const current = this.steps().filter((_, idx) => idx !== stepIdx);
+    this.emitSteps(current);
+  }
+
+  toggleInsertMenu(afterIdx: number): void {
+    this.insertMenuIndex.update((cur) => (cur === afterIdx ? null : afterIdx));
+  }
+
+  insertStepAt(insertIndex: number, stepType: ResolutionStepType): void {
+    const current = [...this.steps()];
+    const newStep = createStepOfType(stepType, insertIndex + 1, this.rule());
+    current.splice(insertIndex, 0, newStep);
+    this.expandedStepIds.update((map) => ({ ...map, [newStep.id]: true }));
+    this.insertMenuIndex.set(null);
+    this.emitSteps(current);
+  }
+
+  appendStep(stepType: ResolutionStepType): void {
+    this.insertStepAt(this.steps().length, stepType);
+  }
+
+  private emitSteps(steps: ActionResolutionStep[]): void {
+    const synced = syncRuleFromResolutionSteps(this.rule(), steps);
+    this.ruleChange.emit(synced);
   }
 }

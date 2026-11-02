@@ -27,7 +27,7 @@
             </a>
             <a class="lw-app-switcher-menu__item lw-app-switcher-menu__item--active" href="https://actionbuilder.loom-weaver.com">
               <strong>ActionBuilder Studio</strong>
-              <span>Guided Rules, Engine Defaults &amp; Campaign Bypasses</span>
+              <span>D&amp;D 5e Resolution Order &amp; Campaign Rules</span>
             </a>
             <a class="lw-app-switcher-menu__item" href="https://effectbuilder.loom-weaver.com">
               <strong>EffectBuilder Studio</strong>
@@ -70,7 +70,7 @@
               }
             </select>
             <span class="lw-campaign-tile__sub">
-              Campaign · 14 sessions · High Fantasy
+              Campaign · {{ activeCampaign()?.rulesetLabel || 'D&D 5e' }}
             </span>
           </div>
           <lw-icon name="chevron-down" [size]="15" tone="muted" />
@@ -95,33 +95,13 @@
         placeholder="Search anything..."
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
-        aria-label="Search campaign rules and engine defaults"
+        aria-label="Search actions and spells"
       />
       <kbd class="lw-topbar__search-kbd">Ctrl + K</kbd>
     </div>
 
-    <!-- Right Zone: Music + Dice + GM View + The Loom + Site + Account Profile Tile -->
+    <!-- Right Zone: GM View + The Loom + Site + Account Profile Tile -->
     <div class="lw-topbar__right">
-      <a
-        class="lw-topbar__square-btn"
-        href="https://loom-weaver.com/arcane-screen"
-        title="Ambient Soundboard in Arcane Screen"
-        aria-label="Ambient Soundboard"
-      >
-        <lw-icon name="music" [size]="17" tone="muted" />
-      </a>
-
-      <button
-        ngpButton
-        type="button"
-        class="lw-topbar__square-btn"
-        title="Test Attack &amp; Reaction Roll in Encounter Sandbox"
-        aria-label="Test Roll &amp; Reaction Prompt"
-        (click)="openEncounterRunner.emit()"
-      >
-        <lw-icon name="dices" [size]="17" tone="muted" />
-      </button>
-
       <button
         ngpButton
         type="button"
@@ -172,7 +152,7 @@
               <strong class="lw-account-menu__user">{{ currentDisplayName() }}</strong>
               @if (activeCampaign(); as camp) {
                 <span class="lw-account-menu__camp">
-                  Active Campaign: {{ camp.name }} ({{ camp.rulesetLabel }})
+                  Active Campaign: {{ camp.name }}
                 </span>
               }
             </div>
@@ -186,15 +166,12 @@
                 class="lw-account-menu__dev-toggle"
                 (click)="devRoleDrawerOpen.set(!devRoleDrawerOpen())"
               >
-                <span>Developer Tools: Switch Test Account</span>
+                <span>Switch Campaign / Test Account</span>
                 <lw-icon [name]="devRoleDrawerOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
               </button>
 
               @if (devRoleDrawerOpen()) {
                 <div class="lw-account-menu__dev-body">
-                  <p class="lw-account-menu__dev-note">
-                    Verify GM campaign switching and player isolation across accounts:
-                  </p>
                   @for (acc of demoAccounts(); track acc.accountId) {
                     <button
                       ngpButton
@@ -224,67 +201,29 @@
             <lw-icon name="gavel" [size]="20" tone="gold" />
           </div>
           <div>
-            <div class="ab-subbar__title-row">
-              <h1 class="ab-subbar__title">Action Builder</h1>
-              <span class="ab-subbar__sql-pill" title="Core Engine rules are read-only in SQL. GMs add Campaign Bypass rules that override core rules for their campaign.">
-                Core SQL Locked · Campaign Bypass Enabled
-              </span>
-            </div>
+            <h1 class="ab-subbar__title">ACTION BUILDER</h1>
             <p class="ab-subbar__subtitle">
-              Create and customize actions, spells, reactions, class features, and level progression for <strong>{{ camp.name }}</strong>.
+              Customize how actions resolve in <strong>{{ camp.name }}</strong>.
             </p>
           </div>
         </div>
 
         <div class="ab-subbar__actions">
-          <label class="ab-subbar__campaign-picker">
-            <span class="ab-subbar__picker-label">GM Campaign &amp; Engine Defaults:</span>
-            <select
-              class="ab-subbar__ruleset-select"
-              [ngModel]="camp.id"
-              (ngModelChange)="onCampaignChange($event)"
-              aria-label="Switch GM Campaign and Engine Defaults"
-            >
-              @for (c of dmCampaigns(); track c.id) {
-                <option [value]="c.id">
-                  {{ c.name }} · {{ c.rulesetLabel }} ({{ c.customizedRuleCount }} bypass/custom)
-                </option>
-              }
-            </select>
-          </label>
-
-          <lw-button
-            label="+ New Campaign Bypass / Action"
-            variant="emerald"
-            size="sm"
-            (pressed)="createNewRule.emit()"
-          />
-
           <lw-button
             label="Import / Export"
             variant="secondary"
             size="sm"
             (pressed)="exportRuleJson.emit()"
           />
+
+          <lw-button
+            label="+ New action"
+            variant="emerald"
+            size="sm"
+            (pressed)="createNewRule.emit()"
+          />
         </div>
       </div>
-
-      <nav class="ab-subbar__tabs" aria-label="Rule Categories">
-        @for (cat of categories; track cat) {
-          <button
-            ngpButton
-            type="button"
-            class="ab-subbar__tab"
-            [class.ab-subbar__tab--active]="activeCategory() === cat"
-            (click)="categorySelected.emit(cat)"
-          >
-            <span>{{ cat }}</span>
-            @if (cat === 'All' && totalRuleCount() > 0) {
-              <span class="ab-subbar__tab-count">{{ totalRuleCount() }}</span>
-            }
-          </button>
-        }
-      </nav>
     </section>
   }
 </div>

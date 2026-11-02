@@ -105,7 +105,11 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
         }
         catch { }
 
-        var list = map.Values.ToList();
+        var list = map.Values
+            .Select(ActionResolutionStepBuilder.EnsureResolutionSteps)
+            .OrderBy(ActionResolutionStepBuilder.GetPriorityRank)
+            .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
         _cachedCoreRules = list;
         _cachedCoreRulesAt = DateTimeOffset.UtcNow;
         return list;
@@ -231,40 +235,44 @@ public sealed class ActionStudioMySqlRepository(LoomWeaverMySqlRepository mysql)
         var result = new List<CampaignActionRuleDto>(customMap.Count + coreRules.Count);
         foreach (var customRule in customMap.Values.OrderByDescending(x => !string.IsNullOrWhiteSpace(x.BypassesCoreRuleId)).ThenBy(x => x.Name))
         {
-            result.Add(customRule with
+            result.Add(ActionResolutionStepBuilder.EnsureResolutionSteps(customRule with
             {
                 IsCoreEngineRule = false,
                 IsCustomizedForCampaign = true,
                 SourceLabel = !string.IsNullOrWhiteSpace(customRule.BypassesCoreRuleId) ? "Campaign Bypass" : "Campaign Custom"
-            });
+            }));
         }
 
         foreach (var core in coreRules)
         {
             if (bypassByCoreId.TryGetValue(core.Id, out var activeBypass))
             {
-                result.Add(core with
+                result.Add(ActionResolutionStepBuilder.EnsureResolutionSteps(core with
                 {
                     IsCoreEngineRule = true,
                     IsCustomizedForCampaign = false,
                     SourceLabel = "Core Engine (Bypassed)",
                     BypassedByRuleId = activeBypass.Id,
                     BypassedByRuleName = activeBypass.Name
-                });
+                }));
             }
             else
             {
-                result.Add(core with
+                result.Add(ActionResolutionStepBuilder.EnsureResolutionSteps(core with
                 {
                     IsCoreEngineRule = true,
                     IsCustomizedForCampaign = false,
                     SourceLabel = string.IsNullOrWhiteSpace(core.SourceLabel) ? "Core Engine" : core.SourceLabel,
                     BypassedByRuleId = null,
                     BypassedByRuleName = null
-                });
+                }));
             }
         }
-        return result;
+        return result
+            .OrderBy(ActionResolutionStepBuilder.GetPriorityRank)
+            .ThenByDescending(r => r.IsCustomizedForCampaign)
+            .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     public async Task<ApplyCampaignRuleResponse> ApplyRuleToCampaignAsync(
