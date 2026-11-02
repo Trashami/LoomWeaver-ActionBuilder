@@ -1,7 +1,7 @@
 <div class="lw-vtt-settings">
   <fieldset class="lw-vtt-settings__group">
-    <legend>Map Quality</legend>
-    <p class="lw-vtt-settings__hint">Choose how detailed the battle map artwork is. Lower modes load lighter images.</p>
+    <legend>Map Quality (Saved to Account)</legend>
+    <p class="lw-vtt-settings__hint">Choose how detailed the battle map artwork is. Saved to your account until changed.</p>
     @for (opt of qualityOptions; track opt.id) {
       <label class="lw-vtt-settings__option" [class.active]="display.mapQuality() === opt.id">
         <input type="radio" name="lw-vtt-map-quality" [value]="opt.id" [checked]="display.mapQuality() === opt.id" (change)="select(opt.id)" />
@@ -12,6 +12,64 @@
       </label>
     }
   </fieldset>
+
+  @if (isGm()) {
+    <fieldset class="lw-vtt-settings__group">
+      <legend>Table Grid Calibration</legend>
+      <p class="lw-vtt-settings__hint">Adjust the tabletop grid live or draw a single square on the map to match custom map artwork.</p>
+
+      <button
+        type="button"
+        class="lw-vtt-settings__calibrate-btn"
+        [class.active]="display.calibratingGrid()"
+        (click)="toggleDrawSquare()"
+      >
+        {{ display.calibratingGrid() ? 'Cancel Draw Square Mode' : 'Draw 1 Square on Map to Calibrate' }}
+      </button>
+
+      <div class="lw-vtt-settings__row-head">
+        <span>Grid Square Size</span>
+        <strong>{{ gridScalePercent() }}%</strong>
+      </div>
+      <div class="lw-vtt-settings__slider-row">
+        <button type="button" class="lw-vtt-settings__step-btn" (click)="stepScale(-0.05)">-</button>
+        <input
+          type="range"
+          min="0.25"
+          max="2.5"
+          step="0.02"
+          [value]="display.gridScale()"
+          (input)="onScaleInput($event)"
+        />
+        <button type="button" class="lw-vtt-settings__step-btn" (click)="stepScale(0.05)">+</button>
+      </div>
+
+      <div class="lw-vtt-settings__row-head">
+        <span>Grid Alignment Shift (X / Y)</span>
+        <button type="button" class="lw-vtt-settings__reset-btn" (click)="resetGrid()">Reset</button>
+      </div>
+      <div class="lw-vtt-settings__slider-row">
+        <span class="lw-vtt-settings__axis">X</span>
+        <input
+          type="range"
+          min="0"
+          max="60"
+          step="1"
+          [value]="display.gridOffsetX()"
+          (input)="onOffsetXInput($event)"
+        />
+        <span class="lw-vtt-settings__axis">Y</span>
+        <input
+          type="range"
+          min="0"
+          max="60"
+          step="1"
+          [value]="display.gridOffsetY()"
+          (input)="onOffsetYInput($event)"
+        />
+      </div>
+    </fieldset>
+  }
 
   <fieldset class="lw-vtt-settings__group lw-vtt-settings__group--soon" disabled>
     <legend>Coming Soon</legend>

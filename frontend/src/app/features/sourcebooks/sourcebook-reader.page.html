@@ -46,6 +46,7 @@
               [queryParams]="{ section: section.id, spell: null, spellSource: null }"
               [class.toc-link--active]="section.id === activeChapterId()"
               [attr.aria-current]="section.id === activeChapterId() ? 'page' : null"
+              (click)="scrollToTop()"
             >
               <span class="toc-item-name">{{ section.name }}</span>
               @if (section.page) {
@@ -61,7 +62,8 @@
                       class="toc-sub-link"
                       [routerLink]="['/sources', code, 'read']"
                       [queryParams]="{ section: child.id, spell: null, spellSource: null }"
-                      [class.toc-sub-link--active]="child.id === selectedId() && !activeSpell()"
+                      [class.toc-sub-link--active]="child.id === selectedId()"
+                      (click)="scrollToTop()"
                     >
                       <span class="toc-sub-name">{{ child.name }}</span>
                       @if (child.page) {
@@ -96,121 +98,7 @@
       </div>
     }
 
-    @if (activeSpell(); as sp) {
-      <!-- Dedicated Spell Description Page inside the Sourcebook Reader -->
-      <header class="reader-header">
-        <div class="reader-breadcrumbs">
-          <a routerLink="/sources">Library</a>
-          <lw-icon name="chevron-right" [size]="12" />
-          <a [routerLink]="['/sources', code, 'read']" [queryParams]="{ section: selectedId(), spell: null, spellSource: null }">
-            {{ source()?.name || code }}
-          </a>
-          @if (title()) {
-            <lw-icon name="chevron-right" [size]="12" />
-            <a [routerLink]="['/sources', code, 'read']" [queryParams]="{ section: selectedId(), spell: null, spellSource: null }">
-              {{ title() }}
-            </a>
-          }
-          <lw-icon name="chevron-right" [size]="12" />
-          <span>{{ sp.name }}</span>
-          @if (sp.source_page) {
-            <span class="reader-page-badge">Page {{ sp.source_page }}</span>
-          }
-        </div>
-
-        <div class="spell-page-top-row">
-          <div>
-            <h1 class="reader-title">{{ sp.name }}</h1>
-            <div class="spell-subtitle-row">
-              <span class="spell-school-label">{{ spellSubtitle() }}</span>
-              @if (sp.ritual) {
-                <span class="spell-pill">Ritual</span>
-              }
-              @if (sp.concentration) {
-                <span class="spell-pill spell-pill--conc">Concentration</span>
-              }
-              @if (sp.source_book) {
-                <span class="spell-pill spell-pill--src">{{ sp.source_book }}</span>
-              }
-            </div>
-          </div>
-
-          <button type="button" class="spell-back-btn" (click)="closeSpellView()">
-            <lw-icon name="arrow-left" [size]="14" />
-            <span>Back to {{ title() || 'Spell List' }}</span>
-          </button>
-        </div>
-      </header>
-
-      <section class="spell-meta-grid" aria-label="Spell casting properties">
-        <div class="spell-meta-card">
-          <span class="spell-meta-label">Casting Time</span>
-          <span class="spell-meta-val">{{ sp.casting_time || '1 action' }}</span>
-        </div>
-        <div class="spell-meta-card">
-          <span class="spell-meta-label">Range</span>
-          <span class="spell-meta-val">{{ sp.range_text || 'Self' }}</span>
-        </div>
-        <div class="spell-meta-card">
-          <span class="spell-meta-label">Components</span>
-          <span class="spell-meta-val">{{ spellComponentsText() }}</span>
-        </div>
-        <div class="spell-meta-card">
-          <span class="spell-meta-label">Duration</span>
-          <span class="spell-meta-val">{{ sp.duration_text || 'Instantaneous' }}</span>
-        </div>
-        @if (spellClassesText()) {
-          <div class="spell-meta-card spell-meta-card--full">
-            <span class="spell-meta-label">Classes</span>
-            <span class="spell-meta-val">{{ spellClassesText() }}</span>
-          </div>
-        }
-      </section>
-
-      @if (sp.image_path && !spellImageBroken()) {
-        <figure class="spell-hero-figure">
-          <img
-            [src]="sp.image_path"
-            [alt]="sp.name + ' spell illustration'"
-            loading="lazy"
-            (error)="spellImageBroken.set(true)"
-          />
-        </figure>
-      }
-
-      <article class="book-body" [innerHTML]="spellBodyHtml()"></article>
-
-      <nav class="reader-pager" aria-label="Spell navigation">
-        @if (sp.prev_spell; as prevSp) {
-          <button type="button" class="pager-btn pager-btn--prev" (click)="openSpellByName(prevSp)">
-            <lw-icon name="chevron-left" [size]="16" />
-            <div class="pager-text">
-              <span class="pager-label">Previous Spell</span>
-              <span class="pager-title">{{ prevSp }}</span>
-            </div>
-          </button>
-        } @else {
-          <div class="pager-placeholder"></div>
-        }
-
-        <button type="button" class="spell-back-btn" (click)="closeSpellView()">
-          <lw-icon name="arrow-left" [size]="14" />
-          <span>All Spells in Chapter</span>
-        </button>
-
-        @if (sp.next_spell; as nextSp) {
-          <button type="button" class="pager-btn pager-btn--next" (click)="openSpellByName(nextSp)">
-            <div class="pager-text">
-              <span class="pager-label">Next Spell</span>
-              <span class="pager-title">{{ nextSp }}</span>
-            </div>
-            <lw-icon name="chevron-right" [size]="16" />
-          </button>
-        } @else {
-          <div class="pager-placeholder"></div>
-        }
-      </nav>
-    } @else if (node(); as n) {
+    @if (node(); as n) {
       <header class="reader-header">
         <div class="reader-breadcrumbs">
           <a routerLink="/sources">Library</a>
@@ -234,6 +122,7 @@
                 class="reader-subsection-card"
                 [routerLink]="['/sources', code, 'read']"
                 [queryParams]="{ section: child.id }"
+                (click)="scrollToTop()"
               >
                 <span class="subsection-name">{{ child.name }}</span>
                 @if (child.page) {
@@ -251,6 +140,7 @@
             class="pager-btn pager-btn--prev"
             [routerLink]="['/sources', code, 'read']"
             [queryParams]="{ section: prev.id }"
+            (click)="scrollToTop()"
           >
             <lw-icon name="chevron-left" [size]="16" />
             <div class="pager-text">
@@ -267,6 +157,7 @@
             class="pager-btn pager-btn--next"
             [routerLink]="['/sources', code, 'read']"
             [queryParams]="{ section: next.id }"
+            (click)="scrollToTop()"
           >
             <div class="pager-text">
               <span class="pager-label">Next Chapter</span>
@@ -278,4 +169,118 @@
       </nav>
     }
   </main>
+
+  <!-- In-Book Spell Reference Modal (keeps player on the current book page) -->
+  @if (activeSpell(); as sp) {
+    <lw-modal
+      [open]="true"
+      size="lg"
+      [draggable]="true"
+      [title]="sp.name"
+      [subtitle]="spellSubtitle()"
+      [ariaLabel]="sp.name + ' spell details'"
+      (closed)="closeSpellView()"
+    >
+      <div class="spell-modal-content">
+        <div class="spell-modal-top-banner">
+          @if (sp.image_path && !spellImageBroken()) {
+            <figure class="spell-hero-figure">
+              <img
+                [src]="sp.image_path"
+                [alt]="sp.name + ' spell illustration'"
+                loading="lazy"
+                (error)="spellImageBroken.set(true)"
+              />
+            </figure>
+          } @else if (source()?.cover_path) {
+            <div class="spell-crest-banner">
+              <img
+                class="spell-crest-cover"
+                [src]="source()!.cover_path!"
+                [alt]="(source()?.name || code) + ' cover'"
+                loading="lazy"
+              />
+              <div class="spell-crest-meta">
+                <span class="spell-crest-school">{{ spellSubtitle() }}</span>
+                <strong class="spell-crest-name">{{ sp.name }}</strong>
+                <span class="spell-crest-book">
+                  {{ source()?.name || sp.source_book || code }}
+                  @if (sp.source_page) {
+                    · Page {{ sp.source_page }}
+                  }
+                </span>
+              </div>
+            </div>
+          }
+
+          <div class="spell-subtitle-row">
+            <span class="spell-school-label">{{ spellSubtitle() }}</span>
+            @if (sp.ritual) {
+              <span class="spell-pill">Ritual</span>
+            }
+            @if (sp.concentration) {
+              <span class="spell-pill spell-pill--conc">Concentration</span>
+            }
+            @if (sp.source_book) {
+              <span class="spell-pill spell-pill--src">{{ sp.source_book }}</span>
+            }
+            @if (sp.source_page) {
+              <span class="reader-page-badge">Page {{ sp.source_page }}</span>
+            }
+          </div>
+        </div>
+
+        <section class="spell-meta-grid" aria-label="Spell casting properties">
+          <div class="spell-meta-card">
+            <span class="spell-meta-label">Casting Time</span>
+            <span class="spell-meta-val">{{ sp.casting_time || '1 action' }}</span>
+          </div>
+          <div class="spell-meta-card">
+            <span class="spell-meta-label">Range</span>
+            <span class="spell-meta-val">{{ sp.range_text || 'Self' }}</span>
+          </div>
+          <div class="spell-meta-card">
+            <span class="spell-meta-label">Components</span>
+            <span class="spell-meta-val">{{ spellComponentsText() }}</span>
+          </div>
+          <div class="spell-meta-card">
+            <span class="spell-meta-label">Duration</span>
+            <span class="spell-meta-val">{{ sp.duration_text || 'Instantaneous' }}</span>
+          </div>
+          @if (spellClassesText()) {
+            <div class="spell-meta-card spell-meta-card--full">
+              <span class="spell-meta-label">Classes</span>
+              <span class="spell-meta-val">{{ spellClassesText() }}</span>
+            </div>
+          }
+        </section>
+
+        <article class="book-body spell-modal-body" [innerHTML]="spellBodyHtml()"></article>
+      </div>
+
+      <div modalFooter class="spell-modal-footer">
+        @if (sp.prev_spell; as prevSp) {
+          <button type="button" class="spell-back-btn" (click)="openSpellByName(prevSp)">
+            <lw-icon name="chevron-left" [size]="14" />
+            <span>{{ prevSp }}</span>
+          </button>
+        } @else {
+          <span></span>
+        }
+
+        <button type="button" class="spell-back-btn" (click)="closeSpellView()">
+          <span>Close Spell</span>
+        </button>
+
+        @if (sp.next_spell; as nextSp) {
+          <button type="button" class="spell-back-btn" (click)="openSpellByName(nextSp)">
+            <span>{{ nextSp }}</span>
+            <lw-icon name="chevron-right" [size]="14" />
+          </button>
+        } @else {
+          <span></span>
+        }
+      </div>
+    </lw-modal>
+  }
 </section>

@@ -80,41 +80,38 @@ export interface VttTokenVm {
   readonly bonusUsed: boolean;
   readonly reactionUsed: boolean;
   readonly movementFeet: number;
-  /** Sight range in feet. Falls back to the player sight setting when absent. */
   readonly sightFeet?: number;
-  /** Darkvision range in feet. Extends vision when it exceeds sight. */
   readonly darkvisionFeet?: number;
-  /** True when the signed-in viewer may move or act with this token. The GM controls every token. */
   readonly canControl?: boolean;
-  /** Avatar portrait image URL for 2D token faces and basic 3D miniature pucks. */
   readonly avatarUrl?: string;
-  /** Real 3D GLB miniature model URL. */
   readonly glbUrl?: string;
-  /** D&D 5e size category (tiny, small, medium, large, huge, gargantuan). Defaults to medium. */
   readonly sizeCategory?: DndSizeCategory;
-  /** DM manual base color override. Takes precedence over faction defaults. */
   readonly colorOverride?: string;
 }
 
-/** Resolves token base color per standard rules:
- * - Players: Green (#2ee66b)
- * - NPCs: Grey (#737982) unless hostile
- * - Hostiles, Monsters, Emotes: Red (#ef4444)
- * - DM Override: Takes precedence if set
+const LEGACY_NEON_DEFAULTS = new Set(['#2ee66b', '#49e892', '#ef4444', '#737982']);
+
+/**
+ * Resolves matte LoomWeaver theme token base colors:
+ * - Players (PC / party): Darker forest green (#1b5e3a)
+ * - NPCs / Allies: Deep slate grey (#3d464d)
+ * - Enemies / Hostiles / Monsters: Deep crimson red (#7f1d1d)
+ * - DM Override: Takes precedence if explicitly set to a custom color
  */
 export function getTokenBaseColorHex(token: VttTokenVm): string {
-  if (token.colorOverride && token.colorOverride.trim().length > 0) {
-    return token.colorOverride.trim();
+  const override = token.colorOverride?.trim().toLowerCase();
+  if (override && override.length > 0 && !LEGACY_NEON_DEFAULTS.has(override)) {
+    return token.colorOverride!.trim();
   }
   const faction = token.faction;
   const role = (token.roleLabel || '').toLowerCase();
-  if (faction === 'hostile' || role.includes('monster') || role.includes('emote')) {
-    return '#ef4444';
+  if (faction === 'hostile' || role.includes('monster') || role.includes('enemy') || role.includes('hostile')) {
+    return '#7f1d1d';
   }
   if (faction === 'party' || role === 'pc' || role.includes('player')) {
-    return '#2ee66b';
+    return '#1b5e3a';
   }
-  return '#737982';
+  return '#3d464d';
 }
 
 export interface CombatResolutionLogVm {

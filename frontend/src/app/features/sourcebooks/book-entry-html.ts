@@ -19,10 +19,6 @@ export function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/**
- * Tokenizes text and parses 5e-tools tags (such as {@item potion of healing}, {@spell fireball}, {@dice 1d20}, etc.)
- * while escaping non-tag prose to guarantee safety from XSS.
- */
 export function renderInlineTags(value: string): string {
   if (!value) return '';
   const tagRegex = /\{@([a-zA-Z0-9_-]+)\s*([^{}]*)\}/g;
@@ -50,6 +46,11 @@ export function renderInlineTags(value: string): string {
       const displayText = parts[2] || parts[0] || 'Spell';
       const spellParam = encodeURIComponent(rawName);
       result += `<a class="book-spell-link" href="?spell=${spellParam}" data-spell-name="${escapeHtml(rawName)}" data-spell-source="${escapeHtml(rawSource)}" title="View ${escapeHtml(rawName)} spell description">${escapeHtml(displayText)}</a>`;
+    } else if (tag === 'creature') {
+      const rawSource = parts[1] || '';
+      const displayText = parts[2] || parts[0] || 'Creature';
+      const monsterQuery = rawSource ? `${rawName}|${rawSource}` : rawName;
+      result += `<a class="book-creature-link" href="/bestiary?monster=${encodeURIComponent(monsterQuery)}&search=${encodeURIComponent(rawName)}" data-monster-name="${escapeHtml(rawName)}" data-monster-source="${escapeHtml(rawSource)}" title="View ${escapeHtml(rawName)} in Bestiary">${escapeHtml(displayText)}</a>`;
     } else if (tag === 'dice' || tag === 'd20' || tag === 'hit') {
       const rawFormula = parts[0] || '1d20';
       const formula = tag === 'd20' || tag === 'hit'
@@ -61,9 +62,6 @@ export function renderInlineTags(value: string): string {
       const formula = parts[0] || '';
       const displayText = parts[1] || parts[0] || formula;
       result += `<button type="button" class="book-dice-btn book-dice-btn--damage" data-dice="${escapeHtml(formula)}" title="Roll damage ${escapeHtml(formula)}">${escapeHtml(displayText)}</button>`;
-    } else if (tag === 'creature') {
-      const displayText = parts[2] || parts[0] || '';
-      result += `<span class="book-tag-ref book-tag-ref--creature" title="Creature">${escapeHtml(displayText)}</span>`;
     } else if (tag === 'condition' || tag === 'status') {
       const displayText = parts[2] || parts[0] || '';
       result += `<span class="book-tag-ref book-tag-ref--condition" title="Condition">${escapeHtml(displayText)}</span>`;
@@ -89,6 +87,89 @@ export function renderEntries(entries: unknown): string {
     return entries === undefined || entries === null ? '' : renderEntry(entries);
   }
   return entries.map((entry) => renderEntry(entry)).join('');
+}
+
+function formatMod(score: unknown): string {
+  const n = typeof score === 'number' ? score : Number(score ?? 10);
+  if (isNaN(n)) return '+0';
+  const mod = Math.floor((n - 10) / 2);
+  return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
+function renderCreatureStatblock(node: Record<string, unknown>): string {
+  const name = typeof node['name'] === 'string' ? node['name'] : '';
+  const src = typeof node['source'] === 'string' ? node['source'] : '';
+  const bestiaryKey = typeof node['bestiaryKey'] === 'string' ? node['bestiaryKey'] : '';
+  const monsterQuery = bestiaryKey || (src ? `${name}|${src}` : name);
+  const href = `/bestiary?monster=${encodeURIComponent(monsterQuery)}&search=${encodeURIComponent(name)}`;
+
+  const btnHtml = name
+    ? `<a class="book-statblock-bestiary-btn" href="${escapeHtml(href)}" data-monster-key="${escapeHtml(bestiaryKey)}" data-monster-name="${escapeHtml(name)}" data-monster-source="${escapeHtml(src)}">View in Bestiary</a>`
+    : '';
+
+  const raw = (node['monsterRaw'] && typeof node['monsterRaw'] === 'object')
+    ? (node['monsterRaw'] as Record<string, unknown>)
+    : null;
+
+  const cr = typeof node['crText'] === 'string' ? node['crText'] : '';
+  const typeMain = typeof node['typeMain'] === 'string' ? node['typeMain'] : '';
+  const ac = node['acBest'] ?? '';
+  const hp = node['hpAvg'] ?? '';
+
+  let statsHtml = '';
+  if (raw) {
+    const abilities: Array<[string, unknown]> = [
+      ['STR', raw['str']],
+      ['DEX', raw['dex']],
+      ['CON', raw['con']],
+      ['INT', raw['int']],
+      ['WIS', raw['wis']],
+      ['CHA', raw['cha']],
+    ];
+    const abilityCells = abilities
+      .map(([lbl, val]) => `<div class="book-sb-ability"><span class="book-sb-ability-lbl">${lbl}</span><strong>${ escapeHtml(String(val ?? 10)) } (${formatMod(val)})</strong></div>`)
+      .join('');
+
+    const renderNamedList = (title: string, list: unknown): string => {
+      if (!Array.isArray(list) || list.length === 0) return '';
+      const rows = list
+        .map((it) => {
+          if (!it || typeof it !== 'object') return '';
+          const rec = it as Record<string, unknown>;
+          const nm = rec['name'] ? `<strong><em>${inline(rec['name'])}.</em></strong> ` : '';
+          return `<div class="book-sb-trait">${nm}${renderEntries(rec['entries'])}</div>`;
+        })
+        .join('');
+      return `<div class="book-sb-section"><h5 class="book-sb-section-title">${escapeHtml(title)}</h5>${rows}</div>`;
+    };
+
+    statsHtml = `
+      <div class="book-sb-vitals">
+        ${ac ? `<span><strong>AC</strong> ${escapeHtml(String(ac))}</span>` : ''}
+        ${hp ? `<span><strong>HP</strong> ${escapeHtml(String(hp))}</span>` : ''}
+        ${cr ? `<span><strong>CR</strong> ${escapeHtml(cr)}</span>` : ''}
+      </div>
+      <div class="book-sb-abilities">${abilityCells}</div>
+      ${renderNamedList('Traits', raw['trait'])}
+      ${renderNamedList('Actions', raw['action'])}
+      ${renderNamedList('Bonus Actions', raw['bonus'])}
+      ${renderNamedList('Reactions', raw['reaction'])}
+      ${renderNamedList('Legendary Actions', raw['legendary'])}
+    `;
+  }
+
+  const subtitle = [typeMain, cr ? `CR ${cr}` : '', src].filter(Boolean).join(' · ');
+  return `<div class="book-block book-block--statblock">
+    <div class="book-statblock-header">
+      <div class="book-statblock-title-wrap">
+        ${name ? `<h4 class="book-statblock-title">${inline(name)}</h4>` : ''}
+        ${subtitle ? `<span class="book-statblock-subtitle">${escapeHtml(subtitle)}</span>` : ''}
+      </div>
+      ${btnHtml}
+    </div>
+    ${statsHtml}
+    ${renderEntries(node['entries'])}
+  </div>`;
 }
 
 export function renderEntry(entry: unknown): string {
@@ -126,7 +207,7 @@ export function renderEntry(entry: unknown): string {
       if (tag === 'spell' && name && !Array.isArray(node['entries'])) {
         return `<div class="book-spell-entry-row"><a class="book-spell-link book-spell-link--card" href="?spell=${encodeURIComponent(name)}" data-spell-name="${escapeHtml(name)}" data-spell-source="${escapeHtml(src)}" title="View ${escapeHtml(name)} spell description">${escapeHtml(name)}</a></div>`;
       }
-      return `<div class="book-block book-block--statblock">${name ? `<h4>${inline(name)}</h4>` : ''}${renderEntries(node['entries'])}</div>`;
+      return renderCreatureStatblock(node);
     }
     case 'image': {
       let path = '';
@@ -142,7 +223,14 @@ export function renderEntry(entry: unknown): string {
       const fullSrc = cleanPath.startsWith('5etools/') ? `/${cleanPath}` : `/5etools/${cleanPath}`;
       const title = typeof node['title'] === 'string' ? node['title'] : '';
       const caption = title ? `<figcaption>${inline(title)}</figcaption>` : '';
-      return `<figure class="book-figure"><img src="${escapeHtml(fullSrc)}" alt="${escapeHtml(title || 'Tome illustration')}" loading="lazy" />${caption}</figure>`;
+      const isExampleStatblock = cleanPath.toLowerCase().includes('stat-block-overview');
+      const exampleHeader = isExampleStatblock
+        ? `<div class="book-statblock-header book-statblock-header--figure">
+             <span class="book-statblock-subtitle">Example Stat Block: Vampire Familiar</span>
+             <a class="book-statblock-bestiary-btn" href="/bestiary?monster=${encodeURIComponent('Vampire Familiar|XMM')}&search=${encodeURIComponent('Vampire Familiar')}" data-monster-name="Vampire Familiar" data-monster-source="XMM">View in Bestiary</a>
+           </div>`
+        : '';
+      return `<figure class="book-figure">${exampleHeader}<img src="${escapeHtml(fullSrc)}" alt="${escapeHtml(title || 'Tome illustration')}" loading="lazy" />${caption}</figure>`;
     }
     case 'gallery': {
       const images = (node['images'] as unknown[] | undefined) ?? [];

@@ -400,6 +400,37 @@
         height: 4px;
         cursor: pointer;
       }
+
+      .axis-tag {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #d9b77a;
+      }
+    }
+
+    .calibrate-draw-btn {
+      border-color: rgba(217, 183, 122, 0.45);
+      color: #f3e8d0;
+      margin-bottom: 0.25rem;
+      &.active {
+        background: rgba(217, 183, 122, 0.22);
+        border-color: #d9b77a;
+        color: #d9b77a;
+      }
+    }
+
+    .reset-grid-link {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 0.3rem;
+      color: #b9cac6;
+      font-size: 0.62rem;
+      padding: 0.1rem 0.4rem;
+      cursor: pointer;
+      &:hover {
+        border-color: #49e892;
+        color: #ffffff;
+      }
     }
 
     .scale-presets-row {

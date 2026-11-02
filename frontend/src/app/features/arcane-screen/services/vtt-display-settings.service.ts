@@ -1,4 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { BASE_GRID_CELL_SVG_PX, setActiveGridCalibration } from '../engine/vtt-los-and-grid.engine';
 
 export type VttMapQuality = 'performance' | 'balanced' | 'visual';
 
@@ -14,7 +16,6 @@ export const VTT_MAP_QUALITY_OPTIONS: readonly VttMapQualityOption[] = [
   { id: 'visual', label: 'Visual', hint: 'Full-resolution map art for the best look.' },
 ];
 
-/** Asset file suffix per quality; visual uses the base file. */
 const QUALITY_SUFFIX: Readonly<Record<VttMapQuality, string>> = {
   performance: '-low',
   balanced: '-mid',
@@ -23,8 +24,16 @@ const QUALITY_SUFFIX: Readonly<Record<VttMapQuality, string>> = {
 
 const STORAGE_KEY = 'lw.vtt.mapQuality';
 const GRID_SCALE_STORAGE_KEY = 'lw.vtt.gridScale';
+const GRID_OFFSET_X_STORAGE_KEY = 'lw.vtt.gridOffsetX';
+const GRID_OFFSET_Y_STORAGE_KEY = 'lw.vtt.gridOffsetY';
 
-/** Inserts a quality suffix before the file extension, keeping any query string. */
+export interface UserVttPreferencesDto {
+  readonly mapQuality?: string | null;
+  readonly gridScale?: number | null;
+  readonly gridOffsetX?: number | null;
+  readonly gridOffsetY?: number | null;
+}
+
 export function mapVariantUrl(baseUrl: string, suffix: string): string {
   if (!suffix || baseUrl.startsWith('data:') || baseUrl.startsWith('blob:')) return baseUrl;
   return baseUrl.replace(/(\.[a-z0-9]+)(\?.*)?$/i, `${suffix}$1$2`);
@@ -32,33 +41,120 @@ export function mapVariantUrl(baseUrl: string, suffix: string): string {
 
 @Injectable({ providedIn: 'root' })
 export class VttDisplaySettingsService {
+  private readonly http = inject(HttpClient);
+
   readonly mapQuality = signal<VttMapQuality>(readStoredQuality());
-  readonly gridScale = signal<number>(readStoredGridScale());
+  readonly gridScale = signal<number>(readStoredNumber(GRID_SCALE_STORAGE_KEY, 1.0, 0.25, 3.0));
+  readonly gridOffsetX = signal<number>(readStoredNumber(GRID_OFFSET_X_STORAGE_KEY, 0.0, -200, 200));
+  readonly gridOffsetY = signal<number>(readStoredNumber(GRID_OFFSET_Y_STORAGE_KEY, 0.0, -200, 200));
+  readonly calibratingGrid = signal<boolean>(false);
 
-  setGridScale(scale: number): void {
-    const clamped = Math.max(0.4, Math.min(2.5, Math.round(scale * 100) / 100));
-    this.gridScale.set(clamped);
-    try {
-      localStorage.setItem(GRID_SCALE_STORAGE_KEY, clamped.toString());
-    } catch {
-      // storage unavailable
-    }
-  }
-
-  /** Variant URLs that failed to load; those fall back to the base image. */
   private readonly failedVariants = signal<ReadonlySet<string>>(new Set());
   private readonly probed = new Set<string>();
 
-  setMapQuality(quality: VttMapQuality): void {
-    this.mapQuality.set(quality);
-    try {
-      localStorage.setItem(STORAGE_KEY, quality);
-    } catch {
-      // Storage can be unavailable (private mode); the choice still applies for this session.
-    }
+  constructor() {
+    this.syncCalibrationEngine();
+    this.loadAccountPreferences();
   }
 
-  /** Returns the map art URL for the selected quality, falling back to the full-resolution base image. */
+  loadAccountPreferences(): void {
+    if (typeof window === 'undefined') return;
+    this.http.get<UserVttPreferencesDto>('/api/v2/auth/preferences').subscribe({
+      next: (prefs) => {
+        if (!prefs) return;
+        const q = (prefs.mapQuality ?? '').toLowerCase();
+        if (VTT_MAP_QUALITY_OPTIONS.some((o) => o.id === q)) {
+          this.mapQuality.set(q as VttMapQuality);
+          writeStorage(STORAGE_KEY, q);
+        }
+        if (typeof prefs.gridScale === 'number' && prefs.gridScale >= 0.25 && prefs.gridScale <= 3.0) {
+          this.gridScale.set(Math.round(prefs.gridScale * 100) / 100);
+          writeStorage(GRID_SCALE_STORAGE_KEY, String(this.gridScale()));
+        }
+        if (typeof prefs.gridOffsetX === 'number' && isFinite(prefs.gridOffsetX)) {
+          this.gridOffsetX.set(Math.round(prefs.gridOffsetX * 10) / 10);
+          writeStorage(GRID_OFFSET_X_STORAGE_KEY, String(this.gridOffsetX()));
+        }
+        if (typeof prefs.gridOffsetY === 'number' && isFinite(prefs.gridOffsetY)) {
+          this.gridOffsetY.set(Math.round(prefs.gridOffsetY * 10) / 10);
+          writeStorage(GRID_OFFSET_Y_STORAGE_KEY, String(this.gridOffsetY()));
+        }
+        this.syncCalibrationEngine();
+      },
+      error: () => {
+        // Unauthenticated or offline: keep localStorage defaults
+      },
+    });
+  }
+
+  setMapQuality(quality: VttMapQuality): void {
+    this.mapQuality.set(quality);
+    writeStorage(STORAGE_KEY, quality);
+    this.persistAccountPreferences();
+  }
+
+  setGridScale(scale: number): void {
+    const clamped = Math.max(0.25, Math.min(3.0, Math.round(scale * 100) / 100));
+    this.gridScale.set(clamped);
+    writeStorage(GRID_SCALE_STORAGE_KEY, clamped.toString());
+    this.syncCalibrationEngine();
+    this.persistAccountPreferences();
+  }
+
+  setGridOffset(offsetX: number, offsetY: number): void {
+    const stepPx = BASE_GRID_CELL_SVG_PX * this.gridScale();
+    const normX = Math.round((((offsetX % stepPx) + stepPx) % stepPx) * 10) / 10;
+    const normY = Math.round((((offsetY % stepPx) + stepPx) % stepPx) * 10) / 10;
+    this.gridOffsetX.set(normX);
+    this.gridOffsetY.set(normY);
+    writeStorage(GRID_OFFSET_X_STORAGE_KEY, normX.toString());
+    writeStorage(GRID_OFFSET_Y_STORAGE_KEY, normY.toString());
+    this.syncCalibrationEngine();
+    this.persistAccountPreferences();
+  }
+
+  resetGridCalibration(): void {
+    this.gridScale.set(1.0);
+    this.gridOffsetX.set(0.0);
+    this.gridOffsetY.set(0.0);
+    this.calibratingGrid.set(false);
+    writeStorage(GRID_SCALE_STORAGE_KEY, '1');
+    writeStorage(GRID_OFFSET_X_STORAGE_KEY, '0');
+    writeStorage(GRID_OFFSET_Y_STORAGE_KEY, '0');
+    this.syncCalibrationEngine();
+    this.persistAccountPreferences();
+  }
+
+  /**
+   * MythWeaver-style "Draw 1 Square" calibration:
+   * Given a drawn square in SVG coordinates (x1, y1) -> (x2, y2),
+   * extrapolates the grid cell size and phase offsets so the entire table grid aligns to the map.
+   */
+  applyDrawnSquareCalibration(svgX1: number, svgY1: number, svgX2: number, svgY2: number): void {
+    const widthPx = Math.abs(svgX2 - svgX1);
+    const heightPx = Math.abs(svgY2 - svgY1);
+    const avgCellPx = (widthPx + heightPx) / 2;
+    if (avgCellPx < 10) return;
+
+    const newScale = Math.max(0.25, Math.min(3.0, Math.round((avgCellPx / BASE_GRID_CELL_SVG_PX) * 100) / 100));
+    const stepPx = BASE_GRID_CELL_SVG_PX * newScale;
+    const minX = Math.min(svgX1, svgX2);
+    const minY = Math.min(svgY1, svgY2);
+    const offsetX = Math.round((((minX % stepPx) + stepPx) % stepPx) * 10) / 10;
+    const offsetY = Math.round((((minY % stepPx) + stepPx) % stepPx) * 10) / 10;
+
+    this.gridScale.set(newScale);
+    this.gridOffsetX.set(offsetX);
+    this.gridOffsetY.set(offsetY);
+    this.calibratingGrid.set(false);
+
+    writeStorage(GRID_SCALE_STORAGE_KEY, newScale.toString());
+    writeStorage(GRID_OFFSET_X_STORAGE_KEY, offsetX.toString());
+    writeStorage(GRID_OFFSET_Y_STORAGE_KEY, offsetY.toString());
+    this.syncCalibrationEngine();
+    this.persistAccountPreferences();
+  }
+
   backdropUrl(baseUrl: string | null | undefined): string {
     if (!baseUrl) return '';
     const variant = mapVariantUrl(baseUrl, QUALITY_SUFFIX[this.mapQuality()]);
@@ -66,6 +162,21 @@ export class VttDisplaySettingsService {
     if (this.failedVariants().has(variant)) return baseUrl;
     this.probe(variant);
     return variant;
+  }
+
+  private syncCalibrationEngine(): void {
+    setActiveGridCalibration(this.gridScale(), this.gridOffsetX(), this.gridOffsetY());
+  }
+
+  private persistAccountPreferences(): void {
+    if (typeof window === 'undefined') return;
+    const body: UserVttPreferencesDto = {
+      mapQuality: this.mapQuality(),
+      gridScale: this.gridScale(),
+      gridOffsetX: this.gridOffsetX(),
+      gridOffsetY: this.gridOffsetY(),
+    };
+    this.http.put('/api/v2/auth/preferences', body).subscribe({ error: () => {} });
   }
 
   private probe(url: string): void {
@@ -77,20 +188,28 @@ export class VttDisplaySettingsService {
   }
 }
 
+function writeStorage(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage unavailable
+  }
+}
+
 function readStoredQuality(): VttMapQuality {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = (localStorage.getItem(STORAGE_KEY) || localStorage.getItem('lw.session.visualMode') || '').toLowerCase();
     return VTT_MAP_QUALITY_OPTIONS.some((o) => o.id === raw) ? (raw as VttMapQuality) : 'balanced';
   } catch {
     return 'balanced';
   }
 }
 
-function readStoredGridScale(): number {
+function readStoredNumber(key: string, fallback: number, min: number, max: number): number {
   try {
-    const raw = parseFloat(localStorage.getItem(GRID_SCALE_STORAGE_KEY) || '1.0');
-    return isFinite(raw) && raw >= 0.4 && raw <= 2.5 ? raw : 1.0;
+    const raw = parseFloat(localStorage.getItem(key) || String(fallback));
+    return isFinite(raw) && raw >= min && raw <= max ? raw : fallback;
   } catch {
-    return 1.0;
+    return fallback;
   }
 }

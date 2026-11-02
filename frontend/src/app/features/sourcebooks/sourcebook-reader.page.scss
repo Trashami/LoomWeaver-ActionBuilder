@@ -155,10 +155,28 @@
   letter-spacing: 0.02em; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Spell Description Page Styles */
-.spell-page-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.spell-subtitle-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
-.spell-school-label { font-size: 0.96rem; font-style: italic; color: #b7cec2; }
+/* Spell Modal Styles */
+.spell-modal-content { display: flex; flex-direction: column; gap: 1.15rem; }
+.spell-modal-top-banner { display: flex; flex-direction: column; gap: 0.85rem; }
+.spell-subtitle-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.spell-school-label { font-size: 0.94rem; font-style: italic; color: #b7cec2; }
+
+.spell-crest-banner {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.85rem 1.1rem; border-radius: 8px;
+  background: linear-gradient(135deg, rgba(16, 40, 29, 0.92), rgba(7, 20, 15, 0.96));
+  border: 1px solid rgba(217, 183, 122, 0.28);
+}
+
+.spell-crest-cover {
+  width: 52px; height: 70px; object-fit: cover; border-radius: 5px;
+  border: 1px solid rgba(217, 183, 122, 0.45); flex-shrink: 0;
+}
+
+.spell-crest-meta { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.spell-crest-school { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.08em; color: #49e892; font-weight: 600; }
+.spell-crest-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.25rem; color: #d9b77a; }
+.spell-crest-book { font-size: 0.8rem; color: #8da498; }
 
 .spell-pill {
   padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.72rem;
@@ -176,23 +194,24 @@
   &:hover { background: rgba(46, 230, 107, 0.15); border-color: #2ee66b; color: #ffffff; }
 }
 
-.spell-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.75rem; }
+.spell-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; }
+.spell-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.65rem; }
 
 .spell-meta-card {
   background: #081711; border: 1px solid rgba(73, 232, 146, 0.18);
-  border-radius: 8px; padding: 0.75rem 0.95rem;
-  display: flex; flex-direction: column; gap: 0.2rem;
+  border-radius: 8px; padding: 0.65rem 0.85rem;
+  display: flex; flex-direction: column; gap: 0.18rem;
   &.spell-meta-card--full { grid-column: 1 / -1; }
 }
 
-.spell-meta-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #d9b77a; font-weight: 600; }
-.spell-meta-val { font-size: 0.92rem; color: #e8efe9; font-weight: 500; }
+.spell-meta-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: #d9b77a; font-weight: 600; }
+.spell-meta-val { font-size: 0.88rem; color: #e8efe9; font-weight: 500; }
 
 .spell-hero-figure {
-  margin: 1.5rem auto 2rem; padding: 0; width: 100%;
+  margin: 0 auto; padding: 0; width: 100%;
   display: flex; justify-content: center; align-items: center;
   img {
-    display: block; margin: 0 auto; max-width: min(100%, 540px); max-height: 440px;
+    display: block; margin: 0 auto; max-width: min(100%, 460px); max-height: 320px;
     width: auto; height: auto; object-fit: contain; border-radius: 8px;
     border: 1px solid rgba(73, 232, 146, 0.25); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); background: #040c09;
   }
@@ -230,7 +249,48 @@
   }
 
   ::ng-deep .book-block--quote { border-left-color: #d9b77a; font-style: italic; background: rgba(22, 20, 10, 0.6); border-color: rgba(217, 183, 122, 0.25); }
-  ::ng-deep .book-block--statblock { border-left-color: #ef4444; background: rgba(28, 14, 14, 0.6); border-color: rgba(239, 68, 68, 0.25); h4 { color: #f87171; } }
+  ::ng-deep .book-block--statblock {
+    border-left-color: #b91c1c; background: rgba(20, 11, 11, 0.82); border-color: rgba(217, 183, 122, 0.28);
+    h4 { color: #d9b77a; margin: 0; }
+  }
+
+  ::ng-deep .book-statblock-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    padding-bottom: 0.75rem; margin-bottom: 0.85rem; border-bottom: 1px solid rgba(217, 183, 122, 0.24);
+    &.book-statblock-header--figure {
+      width: 100%; max-width: 680px; padding: 0.65rem 0.95rem; margin-bottom: 0.65rem;
+      background: rgba(8, 23, 17, 0.92); border: 1px solid rgba(217, 183, 122, 0.3); border-radius: 8px;
+    }
+  }
+  ::ng-deep .book-statblock-title-wrap { display: flex; flex-direction: column; gap: 0.15rem; }
+  ::ng-deep .book-statblock-subtitle { font-size: 0.8rem; color: #9db5a8; font-style: italic; }
+
+  ::ng-deep a.book-statblock-bestiary-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.42rem 0.85rem; border-radius: 6px;
+    background: rgba(27, 94, 58, 0.45); border: 1px solid #49e892;
+    color: #e8f5ee; font-size: 0.8rem; font-weight: 600; text-decoration: none; cursor: pointer;
+    &:hover { background: rgba(46, 230, 107, 0.28); color: #ffffff; }
+  }
+
+  ::ng-deep .book-sb-vitals {
+    display: flex; flex-wrap: wrap; gap: 1.25rem; font-size: 0.9rem; color: #e0ede6;
+    margin-bottom: 0.75rem;
+    strong { color: #d9b77a; }
+  }
+  ::ng-deep .book-sb-abilities {
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.4rem;
+    padding: 0.6rem; background: rgba(5, 16, 12, 0.75); border: 1px solid rgba(217, 183, 122, 0.2);
+    border-radius: 6px; margin-bottom: 0.9rem; text-align: center;
+  }
+  ::ng-deep .book-sb-ability { display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.82rem; }
+  ::ng-deep .book-sb-ability-lbl { font-size: 0.7rem; color: #d9b77a; font-weight: 700; }
+  ::ng-deep .book-sb-section { margin-top: 0.85rem; }
+  ::ng-deep .book-sb-section-title {
+    margin: 0 0 0.45rem; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #d9b77a; border-bottom: 1px solid rgba(217, 183, 122, 0.22); padding-bottom: 0.2rem;
+  }
+  ::ng-deep .book-sb-trait { margin-bottom: 0.5rem; p { display: inline; margin: 0; } }
 
   /* Centered Images and Figures */
   ::ng-deep img {
@@ -255,11 +315,19 @@
     .book-figure { margin: 0 auto; }
   }
 
-  /* Interactive Links: Items & Spells */
+  /* Interactive Links: Items, Spells, Creatures */
   ::ng-deep a.book-item-link {
     color: #49e892; text-decoration: none; border-bottom: 1px dashed rgba(73, 232, 146, 0.55);
     padding: 0 2px; font-weight: 500; cursor: pointer;
     &:hover { color: #2ee66b; background: rgba(46, 230, 107, 0.12); border-bottom-style: solid; }
+  }
+
+  ::ng-deep a.book-creature-link {
+    color: #f3c78b; background: rgba(217, 183, 122, 0.12);
+    border: 1px solid rgba(217, 183, 122, 0.34); border-radius: 4px;
+    padding: 0.08rem 0.45rem; text-decoration: none; font-weight: 600;
+    cursor: pointer; display: inline-block; transition: all 0.15s ease;
+    &:hover { color: #ffffff; background: rgba(217, 183, 122, 0.26); border-color: #d9b77a; }
   }
 
   ::ng-deep a.book-spell-link {
@@ -277,7 +345,6 @@
   }
 
   ::ng-deep .book-tag-ref { display: inline-block; padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.9em; }
-  ::ng-deep .book-tag-ref--creature { color: #fb923c; background: rgba(251, 146, 60, 0.1); border: 1px solid rgba(251, 146, 60, 0.25); }
   ::ng-deep .book-tag-ref--condition { color: #f472b6; background: rgba(244, 114, 182, 0.1); border: 1px solid rgba(244, 114, 182, 0.25); }
 
   /* Inline Dice Buttons & Roll Tables */

@@ -25,20 +25,18 @@
           }
         </select>
 
-        <span class="session-status-pill live" [title]="'Battle Encounter is LIVE for all players'">
+        <span class="session-status-pill live" title="Battle Encounter is LIVE for all players">
           <span class="live-pulse"></span>
           <span>{{ activeBattlemapTitle() }} · Rnd {{ vtt.activeRound() }}</span>
         </span>
 
         <button ngpButton type="button" class="btn-top-action" (click)="store.openAdventureGuideModal('session')" title="Open Adventure Guide (Current Session or Whole Guide)"><lw-icon name="book-open" [size]="12" /> <span>Adventure Guide</span></button>
-
-        <button ngpButton type="button" class="btn-top-action" (click)="timer.toggle()" [title]="timer.running() ? 'Pause Stopwatch' : 'Resume Stopwatch'"> <lw-icon [name]="timer.running() ? 'pause' : 'play'" [size]="12" /> <span>{{ timer.formatted() }}</span></button>
-
-        <button ngpButton type="button" class="btn-top-action" (click)="toggleMapMode()" title="Toggle 2D / 3D View"> <lw-icon [name]="battle.mapMode3D() ? 'layers' : 'view_in_ar'" [size]="12" /> <span>{{ battle.mapMode3D() ? '3D View' : '2D Map' }}</span></button>
+        <button ngpButton type="button" class="btn-top-action" (click)="timer.toggle()" [title]="timer.running() ? 'Pause Stopwatch' : 'Resume Stopwatch'"><lw-icon [name]="timer.running() ? 'pause' : 'play'" [size]="12" /> <span>{{ timer.formatted() }}</span></button>
+        <button ngpButton type="button" class="btn-top-action" (click)="toggleMapMode()" title="Toggle 2D / 3D View"><lw-icon [name]="battle.mapMode3D() ? 'layers' : 'view_in_ar'" [size]="12" /> <span>{{ battle.mapMode3D() ? '3D View' : '2D Map' }}</span></button>
         <button ngpButton type="button" class="btn-top-action" (click)="store.toggleLoomDrawer()" title="The Loom Campaign Memory"><lw-icon name="history_edu" [size]="12" /> <span>The Loom</span></button>
 
         @if (store.viewerRole() === 'gm') {
-          <button ngpButton type="button" class="btn-top-action" (click)="vtt.concludeEncounterAndAwardXp(vtt.activeEncounterId())" title="Conclude Encounter & Award XP"> <lw-icon name="crown" [size]="12" /> <span>Award XP</span></button>
+          <button ngpButton type="button" class="btn-top-action" (click)="vtt.concludeEncounterAndAwardXp(vtt.activeEncounterId())" title="Conclude Encounter & Award XP"><lw-icon name="crown" [size]="12" /> <span>Award XP</span></button>
         }
       </div>
     </div>
@@ -47,7 +45,7 @@
       @if (store.viewerRole() === 'gm') {
         <button ngpButton type="button" class="btn-top-action btn-top-handout" (click)="openHandoutModal()" title="Reveal a handout to every player"><lw-icon name="scroll" [size]="12" /> <span>Reveal Handout</span></button>
       }
-      <button ngpButton type="button" class="btn-top-action" [class.active]="battle.measureEnabled()" [disabled]="!battle.canMeasure()" (click)="battle.toggleMeasureTool()" [title]="battle.canMeasure() ? 'Measure privately (only you see it)' : 'Measuring is locked during your turn'"><lw-icon name="target" [size]="12" /> <span>Measure</span></button>
+      <button ngpButton type="button" class="btn-top-action" [class.active]="battle.measureEnabled()" [disabled]="!battle.canMeasure()" (click)="battle.toggleMeasureTool()" [title]="battle.canMeasure() ? 'Measure privately' : 'Measuring is locked during your turn'"><lw-icon name="target" [size]="12" /> <span>Measure</span></button>
       <button ngpButton type="button" class="btn-top-action" (click)="changeZoom(-10)" title="Zoom out"><lw-icon name="minus" [size]="12" /></button>
       <span class="top-bar-zoom">{{ zoomLevel() }}%</span>
       <button ngpButton type="button" class="btn-top-action" (click)="changeZoom(10)" title="Zoom in"><lw-icon name="plus" [size]="12" /></button>
@@ -60,7 +58,6 @@
     </div>
   </header>
 
-  <!-- Floating Left Expandable Toolbar ("Map Tools") -->
   <lw-vtt-map-tools
     [(gridEnabled)]="gridEnabled"
     [(railOpen)]="gmRailOpen"
@@ -76,16 +73,10 @@
     @if (!hasConfiguredMap()) {
       <div class="lw-vtt-unconfigured-stage" aria-label="Session Not Configured">
         <div class="unconfigured-card">
-          <div class="unconfigured-badge">
-            <lw-icon name="map" [size]="40" />
-          </div>
+          <div class="unconfigured-badge"><lw-icon name="map" [size]="40" /></div>
           <h2 class="unconfigured-title">This session is not yet configured</h2>
-          <p class="unconfigured-subtitle">
-            No tactical battlemap has been assigned to <strong>{{ activeSessionTitle() }}</strong>.
-          </p>
-          <p class="unconfigured-hint">
-            Assign a battlemap in Map Studio or the Session Guide, or switch to a configured session above to launch the virtual tabletop.
-          </p>
+          <p class="unconfigured-subtitle">No tactical battlemap has been assigned to <strong>{{ activeSessionTitle() }}</strong>.</p>
+          <p class="unconfigured-hint">Assign a battlemap in Map Studio or the Session Guide, or switch to a configured session above to launch the virtual tabletop.</p>
           <div class="unconfigured-actions">
             @if (store.viewerRole() === 'gm') {
               <button ngpButton type="button" class="btn-top-action btn-unconfigured-primary" (click)="openMapStudio()">
@@ -101,250 +92,236 @@
         </div>
       </div>
     } @else {
-      <!-- Edge-to-Edge Battlefield Viewport -->
       <section class="lw-vtt-map-stage" [class.lw-vtt-map-stage--3d]="battle.mapMode3D()" (wheel)="onMapWheel($event)" (mousedown)="onMapMouseDown($event)" (mousemove)="onMapMouseMove($event)" (mouseup)="onMapMouseUp()" (mouseleave)="onMapMouseUp()" aria-label="Interactive Encounter Battle Map">
-      <canvas #vttCanvas class="lw-vtt-babylon-canvas" [class.lw-vtt-babylon-canvas--active]="!isHighPerformance2d()"></canvas>
+        <canvas #vttCanvas class="lw-vtt-babylon-canvas" [class.lw-vtt-babylon-canvas--active]="!isHighPerformance2d()"></canvas>
 
-      <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="!isHighPerformance2d()" [style.transform]="view2d.transform()" [style.transformOrigin]="'center center'">
-        <div class="lw-vtt-map-backdrop" [style.backgroundImage]="'url(' + activeBattlemapBackdropUrl() + ')'"></div>
+        <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="!isHighPerformance2d()" [style.transform]="view2d.transform()" [style.transformOrigin]="'center center'">
+          <div class="lw-vtt-map-backdrop" [style.backgroundImage]="'url(' + activeBattlemapBackdropUrl() + ')'"></div>
 
-        <svg #battleSvg class="lw-vtt-svg" [class.lw-vtt-svg--targeting]="battle.pendingAbility() || battle.measureEnabled() || battle.targetSelectionMode()" viewBox="0 0 1200 800" preserveAspectRatio="none" (mousemove)="onBattleMapPointerMove($event)" (mouseup)="onBattleMapMouseUp()" (click)="onBattleMapClick($event)">
-        @if (gridEnabled()) {
-          <g class="lw-vtt-svg__grid">
-            @for (gx of gridVerticalLines(); track gx) {
-              <line [attr.x1]="gx" y1="0" [attr.x2]="gx" y2="800" />
-            }
-            @for (gy of gridHorizontalLines(); track gy) {
-              <line x1="0" [attr.y1]="gy" x2="1200" [attr.y2]="gy" />
-            }
-          </g>
-        }
-
-        <polygon class="lw-vtt-svg__los-poly" [attr.points]="battle.observerSightPolygonSvg()" />
-
-        <g class="lw-vtt-svg__walls">
-          @for (wall of battle.walls(); track wall.id) {
-            <line class="lw-vtt-wall-line" [attr.x1]="toSvgX(wall.x1)" [attr.y1]="toSvgY(wall.z1)" [attr.x2]="toSvgX(wall.x2)" [attr.y2]="toSvgY(wall.z2)" />
-          }
-        </g>
-
-        @if (fog.layerHref(); as fogHref) {
-          <image class="lw-vtt-svg__fog" [attr.href]="fogHref" x="0" y="0" width="1200" height="800" preserveAspectRatio="none" />
-        }
-
-        @if (battle.activeRangeAndAoePreview(); as aoe) {
-          <g class="lw-vtt-svg__aoe-group">
-            <line class="lw-vtt-cast-line" [class.blocked]="aoe.clamped.blockedByWall" [attr.x1]="toSvgX(aoe.clamped.start.x)" [attr.y1]="toSvgY(aoe.clamped.start.z)" [attr.x2]="toSvgX(aoe.clamped.end.x)" [attr.y2]="toSvgY(aoe.clamped.end.z)" />
-            @if (aoe.isSingleOrMulti) {
-              <circle class="lw-vtt-snap-ring" [class.snapped]="!!aoe.snappedToken" [class.blocked]="aoe.clamped.blockedByWall" [attr.cx]="toSvgX(aoe.clamped.end.x)" [attr.cy]="toSvgY(aoe.clamped.end.z)" r="26" />
-            } @else {
-              <circle class="lw-vtt-aoe-circle" [class.blocked]="aoe.clamped.blockedByWall" [attr.cx]="toSvgX(aoe.clamped.end.x)" [attr.cy]="toSvgY(aoe.clamped.end.z)" [attr.r]="toSvgPx(aoe.aoeRadiusFeet)" />
-            }
-            @if (battle.actionBarSettings().showMapRangeLabels) {
-              <g [attr.transform]="'translate(' + toSvgX(aoe.clamped.end.x) + ',' + (toSvgY(aoe.clamped.end.z) - (aoe.isSingleOrMulti ? 36 : toSvgPx(aoe.aoeRadiusFeet) + 14)) + ')'">
-                <rect x="-155" y="-22" width="310" height="24" rx="6" fill="rgba(5, 16, 12, 0.94)" stroke="#49e892" />
-                <text x="0" y="-6" text-anchor="middle" fill="#49e892" font-size="11.5" font-weight="700">
-                  {{ aoe.ability.name }}: {{ aoe.clamped.distanceFeet }}ft / {{ aoe.ability.rangeFeet }}ft ·
-                  {{ aoe.isSingleOrMulti ? (aoe.maxTargets > 1 ? 'Targets ' + battle.queuedTargetSequence().length + '/' + aoe.maxTargets : (aoe.snappedToken ? 'Snapped: ' + aoe.snappedToken.name : 'Single Target')) : 'AoE ' + aoe.aoeRadiusFeet + 'ft (' + aoe.highlightedTokens.length + ' in AoE)' }}
-                  {{ aoe.clamped.blockedByWall ? '(WALL)' : '' }}
-                </text>
+          <svg #battleSvg class="lw-vtt-svg" [class.lw-vtt-svg--targeting]="battle.pendingAbility() || battle.measureEnabled() || battle.targetSelectionMode()" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" (mousemove)="onBattleMapPointerMove($event)" (mouseup)="onBattleMapMouseUp()" (click)="onBattleMapClick($event)">
+            @if (gridEnabled()) {
+              <g class="lw-vtt-svg__grid">
+                @for (gx of gridVerticalLines(); track gx) {
+                  <line [attr.x1]="gx" y1="0" [attr.x2]="gx" y2="800" />
+                }
+                @for (gy of gridHorizontalLines(); track gy) {
+                  <line x1="0" [attr.y1]="gy" x2="1200" [attr.y2]="gy" />
+                }
               </g>
             }
-          </g>
-        }
 
-        @if (battle.activeMovementPreview(); as mv) {
-          <g class="lw-vtt-svg__move-group">
-            <line class="lw-vtt-move-line" [class.blocked]="mv.blockedByWall" [attr.x1]="toSvgX(mv.waypoints[0].x)" [attr.y1]="toSvgY(mv.waypoints[0].z)" [attr.x2]="toSvgX(mv.destination.x)" [attr.y2]="toSvgY(mv.destination.z)" />
-            @for (wp of mv.waypoints; track $index) {
-              <circle [attr.cx]="toSvgX(wp.x)" [attr.cy]="toSvgY(wp.z)" r="5" fill="#49e892" />
-            }
-            <circle class="lw-vtt-move-ghost" [attr.cx]="toSvgX(mv.destination.x)" [attr.cy]="toSvgY(mv.destination.z)" r="24" />
-            <g [attr.transform]="'translate(' + toSvgX(mv.destination.x) + ',' + (toSvgY(mv.destination.z) - 34) + ')'">
-              <rect x="-135" y="-22" width="270" height="24" rx="6" fill="rgba(5, 16, 12, 0.94)" stroke="#49e892" />
-              <text x="0" y="-6" text-anchor="middle" fill="#49e892" font-size="12" font-weight="700">
-                Grid Move: {{ mv.distanceFeet }}ft / {{ store.viewerRole() === 'gm' ? 'DM Unlimited' : battle.remainingMovementFeet() + 'ft' }} {{ mv.blockedByWall ? '(WALL)' : '' }}
-              </text>
+            <polygon class="lw-vtt-svg__los-poly" [attr.points]="battle.observerSightPolygonSvg()" />
+
+            <g class="lw-vtt-svg__walls">
+              @for (wall of battle.walls(); track wall.id) {
+                <line class="lw-vtt-wall-line" [attr.x1]="toSvgX(wall.x1)" [attr.y1]="toSvgY(wall.z1)" [attr.x2]="toSvgX(wall.x2)" [attr.y2]="toSvgY(wall.z2)" />
+              }
             </g>
-          </g>
-        }
 
-        @for (token of battle.visibleMapTokens(); track token.key) {
-          <g class="lw-vtt-token"
-             [class.lw-vtt-token--targeted]="battle.isTokenTargetedWithReticle(token.key)"
-             [class.lw-vtt-token--in-aoe]="battle.activeRangeAndAoePreview()?.highlightedKeys?.has(token.key)"
-             [class.lw-vtt-token--active-turn]="battle.activeInitiativeToken().key === token.key"
-             [class.lw-vtt-token--hidden-los]="!battle.isTokenInPlayerLoS(token)"
-             [attr.opacity]="battle.tokenOpacity(token)"
-             [attr.transform]="'translate(' + toSvgX(token.x) + ',' + toSvgY(token.z) + ')'"
-             (mousedown)="onTokenMouseDown($event, token)"
-             (click)="onTokenClicked($event, token)">
-
-            @if (battle.activeInitiativeToken().key === token.key && battle.actionBarSettings().autoCenterActiveTurn) {
-              <circle r="31" fill="none" stroke="#49e892" stroke-width="2" stroke-dasharray="4 3" />
+            @if (fog.layerHref(); as fogHref) {
+              <image class="lw-vtt-svg__fog" [attr.href]="fogHref" x="0" y="0" width="1200" height="800" preserveAspectRatio="none" />
             }
 
-            @if (battle.activeRangeAndAoePreview()?.highlightedKeys?.has(token.key)) {
-              <circle r="30" fill="rgba(255, 36, 56, 0.28)" stroke="#ff2438" stroke-width="2.5" />
-            }
-
-            <defs>
-              <clipPath [attr.id]="'token-clip-' + token.key">
-                <circle [attr.r]="getTokenAvatarRadius2D(token)" cx="0" cy="0" />
-              </clipPath>
-            </defs>
-            <circle [attr.r]="getTokenRadius2D(token)" [attr.fill]="battle.isTokenTargetedWithReticle(token.key) ? '#2b070c' : '#071510'" [attr.stroke]="getTokenBaseStroke(token)" stroke-width="3" />
-            @if (token.avatarUrl) {
-              <image [attr.href]="token.avatarUrl" [attr.x]="-getTokenAvatarRadius2D(token)" [attr.y]="-getTokenAvatarRadius2D(token)" [attr.width]="getTokenAvatarRadius2D(token) * 2" [attr.height]="getTokenAvatarRadius2D(token) * 2" preserveAspectRatio="xMidYMid slice" [attr.clip-path]="'url(#token-clip-' + token.key + ')'" />
-            } @else {
-              <text x="0" y="4" text-anchor="middle" fill="#f3e8d0" font-size="12" font-weight="700">{{ token.name.slice(0, 2).toUpperCase() }}</text>
-            }
-
-            @if (battle.isTokenTargetedWithReticle(token.key)) {
-              <g class="lw-vtt-target-reticle">
-                <circle cx="0" cy="0" r="28" fill="none" stroke="#ff2438" stroke-width="2.8" />
-                <circle cx="0" cy="0" r="11" fill="none" stroke="#ff2438" stroke-width="2.6" />
-                <line x1="-38" y1="0" x2="38" y2="0" stroke="#ff2438" stroke-width="2.8" />
-                <line x1="0" y1="-38" x2="0" y2="38" stroke="#ff2438" stroke-width="2.8" />
+            @if (battle.activeRangeAndAoePreview(); as aoe) {
+              <g class="lw-vtt-svg__aoe-group">
+                <line class="lw-vtt-cast-line" [class.blocked]="aoe.clamped.blockedByWall" [attr.x1]="toSvgX(aoe.clamped.start.x)" [attr.y1]="toSvgY(aoe.clamped.start.z)" [attr.x2]="toSvgX(aoe.clamped.end.x)" [attr.y2]="toSvgY(aoe.clamped.end.z)" />
+                @if (aoe.isSingleOrMulti) {
+                  <circle class="lw-vtt-snap-ring" [class.snapped]="!!aoe.snappedToken" [class.blocked]="aoe.clamped.blockedByWall" [attr.cx]="toSvgX(aoe.clamped.end.x)" [attr.cy]="toSvgY(aoe.clamped.end.z)" r="22" />
+                } @else {
+                  <circle class="lw-vtt-aoe-circle" [class.blocked]="aoe.clamped.blockedByWall" [attr.cx]="toSvgX(aoe.clamped.end.x)" [attr.cy]="toSvgY(aoe.clamped.end.z)" [attr.r]="toSvgPx(aoe.aoeRadiusFeet)" />
+                }
               </g>
             }
 
-            @if (battle.getTargetStackCount(token.key) > 1) {
-              <g transform="translate(24, -24)">
-                <rect x="-14" y="-10" width="28" height="18" rx="9" fill="#ff2438" stroke="#ffffff" stroke-width="1.5" />
-                <text x="0" y="3" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="800">x{{ battle.getTargetStackCount(token.key) }}</text>
+            @if (battle.activeMovementPreview(); as mv) {
+              <g class="lw-vtt-svg__move-group">
+                <line class="lw-vtt-move-line" [class.blocked]="mv.blockedByWall" [attr.x1]="toSvgX(mv.waypoints[0].x)" [attr.y1]="toSvgY(mv.waypoints[0].z)" [attr.x2]="toSvgX(mv.destination.x)" [attr.y2]="toSvgY(mv.destination.z)" />
+                @for (wp of mv.waypoints; track $index) {
+                  <circle [attr.cx]="toSvgX(wp.x)" [attr.cy]="toSvgY(wp.z)" r="4" fill="#2d8a56" />
+                }
+                <circle class="lw-vtt-move-ghost" [attr.cx]="toSvgX(mv.destination.x)" [attr.cy]="toSvgY(mv.destination.z)" r="20" />
               </g>
             }
 
-            <rect x="-40" y="26" width="80" height="16" rx="4" fill="rgba(5, 14, 10, 0.92)" />
-            <text x="0" y="37" text-anchor="middle" fill="#d9e5df" font-size="10" font-weight="600">{{ token.name.slice(0, 12) }} ({{ token.currentHp }})</text>
-            @if (store.viewerRole() === 'gm' && token.faction === 'hostile' && !battle.isTokenInPlayerLoS(token)) {
-              <rect x="-36" y="-42" width="72" height="14" rx="4" fill="rgba(239, 93, 114, 0.92)" />
-              <text x="0" y="-32" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="700">NO LOS (HIDDEN)</text>
+            @for (token of battle.visibleMapTokens(); track token.key) {
+              <g class="lw-vtt-token"
+                 [class.lw-vtt-token--targeted]="battle.isTokenTargetedWithReticle(token.key)"
+                 [class.lw-vtt-token--in-aoe]="battle.activeRangeAndAoePreview()?.highlightedKeys?.has(token.key)"
+                 [class.lw-vtt-token--active-turn]="battle.activeInitiativeToken().key === token.key"
+                 [class.lw-vtt-token--hidden-los]="!battle.isTokenInPlayerLoS(token)"
+                 [attr.opacity]="battle.tokenOpacity(token)"
+                 [attr.transform]="'translate(' + toSvgX(token.x) + ',' + toSvgY(token.z) + ')'"
+                 (mousedown)="onTokenMouseDown($event, token)"
+                 (click)="onTokenClicked($event, token)">
+
+                <defs>
+                  <clipPath [attr.id]="'token-clip-' + token.key">
+                    <circle [attr.r]="getTokenAvatarRadius2D(token)" cx="0" cy="0" />
+                  </clipPath>
+                </defs>
+                <circle [attr.r]="getTokenRadius2D(token)" [attr.fill]="getTokenBaseFill(token)" [attr.stroke]="getTokenBaseStroke(token)" stroke-width="2.5" />
+                @if (token.avatarUrl) {
+                  <image [attr.href]="token.avatarUrl" [attr.x]="-getTokenAvatarRadius2D(token)" [attr.y]="-getTokenAvatarRadius2D(token)" [attr.width]="getTokenAvatarRadius2D(token) * 2" [attr.height]="getTokenAvatarRadius2D(token) * 2" preserveAspectRatio="xMidYMid slice" [attr.clip-path]="'url(#token-clip-' + token.key + ')'" />
+                } @else {
+                  <text x="0" y="4" text-anchor="middle" fill="#e5ece8" font-size="11" font-weight="700">{{ token.name.slice(0, 2).toUpperCase() }}</text>
+                }
+
+                @if (battle.isTokenTargetedWithReticle(token.key)) {
+                  <g class="lw-vtt-target-reticle">
+                    <circle cx="0" cy="0" [attr.r]="getTokenRadius2D(token) + 4" fill="none" stroke="#991b1b" stroke-width="2.2" />
+                    <circle cx="0" cy="0" r="9" fill="none" stroke="#991b1b" stroke-width="2" />
+                  </g>
+                }
+
+                <rect x="-36" [attr.y]="getTokenRadius2D(token) + 3" width="72" height="14" rx="4" fill="rgba(7, 16, 12, 0.9)" />
+                <text x="0" [attr.y]="getTokenRadius2D(token) + 13" text-anchor="middle" fill="#d9e5df" font-size="9.5" font-weight="600">{{ token.name.slice(0, 11) }} ({{ token.currentHp }})</text>
+              </g>
             }
-          </g>
+          </svg>
+        </div>
+
+        <!-- Interactive Draw-1-Square Grid Calibration Overlay -->
+        @if (vttDisplay.calibratingGrid()) {
+          <div
+            class="lw-vtt-calib-overlay"
+            (pointerdown)="onCalibPointerDown($event)"
+            (pointermove)="onCalibPointerMove($event)"
+            (pointerup)="onCalibPointerUp($event)"
+          >
+            <div class="lw-vtt-calib-banner" (pointerdown)="$event.stopPropagation()">
+              <span>Click and drag a box over <strong>1 single square</strong> on the battle map to match the grid</span>
+              <button type="button" (click)="vttDisplay.calibratingGrid.set(false)">Cancel [Esc]</button>
+            </div>
+            @if (calibBox(); as b) {
+              <div
+                class="lw-vtt-calib-rubberband"
+                [style.left.px]="b.x"
+                [style.top.px]="b.y"
+                [style.width.px]="b.w"
+                [style.height.px]="b.h"
+              ></div>
+            }
+          </div>
         }
-      </svg>
-      </div>
 
-      @if (battle.pendingAbility() || battle.measureEnabled()) {
-        <div class="lw-vtt-hud-overlay">
-          @if (battle.pendingAbility(); as pending) {
-            <div class="lw-vtt-hud-pills">
-              @if (battle.queuedTargetSequence().length > 0) {
-                <button ngpButton type="button" class="lw-vtt-subpill lw-vtt-subpill--gold" (click)="executePendingAbilityCast()">
-                  Cast {{ pending.name }} Now ({{ battle.queuedTargetSequence().length }}/{{ pending.maxTargets }})
-                </button>
-              }
-              <button ngpButton type="button" class="lw-vtt-subpill" (click)="battle.cancelAllInteractiveModes()">Cancel [Esc]</button>
-            </div>
-          }
-          @if (battle.measureEnabled()) {
-            <div class="lw-vtt-measure-bar">
-              <button ngpButton type="button" class="lw-vtt-subpill" [class.active]="battle.measureSubMode() === 'spell'" (click)="battle.toggleMeasureTool('spell')">Spell Range & AoE</button>
-              <button ngpButton type="button" class="lw-vtt-subpill" [class.active]="battle.measureSubMode() === 'movement'" (click)="battle.toggleMeasureTool('movement')">Private Movement ({{ battle.remainingMovementFeet() }}ft left)</button>
-              @if (battle.measureSubMode() === 'spell') {
-                <select class="lw-vtt-measure-select" aria-label="Select Spell to Measure" [ngModel]="battle.measuredAbilityId()" (ngModelChange)="battle.measuredAbilityId.set($event)">
-                  @for (ab of battle.tacticalAbilities(); track ab.id) {
-                    <option [value]="ab.id">{{ ab.name }} (Max {{ ab.rangeFeet }}ft)</option>
-                  }
-                </select>
-              } @else {
-                <button ngpButton type="button" class="lw-vtt-subpill lw-vtt-subpill--gold" (click)="commitMovePreview()">Commit Move</button>
-              }
-              <button ngpButton type="button" class="lw-vtt-subpill" (click)="battle.cancelAllInteractiveModes()">Close [Esc]</button>
-            </div>
-          }
-        </div>
-      }
-
-      <lw-vtt-dm-drawers />
-
-      @if (battle.openDmDrawer() === 'quick-add') {
-        <div class="lw-vtt-floating-drawer">
-          <div class="lw-vtt-drawer-head">
-            <h4>Quick Add Monster or NPC</h4>
-            <button ngpButton type="button" (click)="battle.openDmDrawer.set('none')">Close</button>
+        @if (battle.pendingAbility() || battle.measureEnabled()) {
+          <div class="lw-vtt-hud-overlay">
+            @if (battle.pendingAbility(); as pending) {
+              <div class="lw-vtt-hud-pills">
+                @if (battle.queuedTargetSequence().length > 0) {
+                  <button ngpButton type="button" class="lw-vtt-subpill lw-vtt-subpill--gold" (click)="executePendingAbilityCast()">
+                    Cast {{ pending.name }} Now ({{ battle.queuedTargetSequence().length }}/{{ pending.maxTargets }})
+                  </button>
+                }
+                <button ngpButton type="button" class="lw-vtt-subpill" (click)="battle.cancelAllInteractiveModes()">Cancel [Esc]</button>
+              </div>
+            }
+            @if (battle.measureEnabled()) {
+              <div class="lw-vtt-measure-bar">
+                <button ngpButton type="button" class="lw-vtt-subpill" [class.active]="battle.measureSubMode() === 'spell'" (click)="battle.toggleMeasureTool('spell')">Spell Range & AoE</button>
+                <button ngpButton type="button" class="lw-vtt-subpill" [class.active]="battle.measureSubMode() === 'movement'" (click)="battle.toggleMeasureTool('movement')">Private Movement ({{ battle.remainingMovementFeet() }}ft left)</button>
+                @if (battle.measureSubMode() === 'spell') {
+                  <select class="lw-vtt-measure-select" aria-label="Select Spell to Measure" [ngModel]="battle.measuredAbilityId()" (ngModelChange)="battle.measuredAbilityId.set($event)">
+                    @for (ab of battle.tacticalAbilities(); track ab.id) {
+                      <option [value]="ab.id">{{ ab.name }} (Max {{ ab.rangeFeet }}ft)</option>
+                    }
+                  </select>
+                } @else {
+                  <button ngpButton type="button" class="lw-vtt-subpill lw-vtt-subpill--gold" (click)="commitMovePreview()">Commit Move</button>
+                }
+                <button ngpButton type="button" class="lw-vtt-subpill" (click)="battle.cancelAllInteractiveModes()">Close [Esc]</button>
+              </div>
+            }
           </div>
-          <div class="lw-vtt-drawer-grid">
-            <div class="lw-vtt-field">
-              <span>Spawn Bestiary Monster onto Battle Map</span>
-              <div class="lw-vtt-inline-row">
-                <select [ngModel]="quickAddMonsterId()" (ngModelChange)="quickAddMonsterId.set($event)">
-                  @for (c of vtt.creatures(); track c.id) {
-                    <option [value]="c.id">{{ c.name }} (CR {{ c.challengeRating }} · HP {{ c.maxHp }})</option>
-                  }
-                </select>
-                <lw-button variant="primary" size="sm" (pressed)="spawnSelectedBestiaryMonster()">+ Add Monster</lw-button>
+        }
+
+        <lw-vtt-dm-drawers />
+
+        @if (battle.openDmDrawer() === 'quick-add') {
+          <div class="lw-vtt-floating-drawer">
+            <div class="lw-vtt-drawer-head">
+              <h4>Quick Add Monster or NPC</h4>
+              <button ngpButton type="button" (click)="battle.openDmDrawer.set('none')">Close</button>
+            </div>
+            <div class="lw-vtt-drawer-grid">
+              <div class="lw-vtt-field">
+                <span>Spawn Bestiary Monster onto Battle Map</span>
+                <div class="lw-vtt-inline-row">
+                  <select [ngModel]="quickAddMonsterId()" (ngModelChange)="quickAddMonsterId.set($event)">
+                    @for (c of vtt.creatures(); track c.id) {
+                      <option [value]="c.id">{{ c.name }} (CR {{ c.challengeRating }} · HP {{ c.maxHp }})</option>
+                    }
+                  </select>
+                  <lw-button variant="primary" size="sm" (pressed)="spawnSelectedBestiaryMonster()">+ Add Monster</lw-button>
+                </div>
+              </div>
+              <div class="lw-vtt-field">
+                <span>Quick Add New NPC to Encounter</span>
+                <div class="lw-vtt-inline-row">
+                  <input type="text" placeholder="NPC Name" [ngModel]="quickAddNpcName()" (ngModelChange)="quickAddNpcName.set($event)" />
+                  <select [ngModel]="quickAddNpcDisposition()" (ngModelChange)="quickAddNpcDisposition.set($event)">
+                    <option value="Friendly">Friendly</option>
+                    <option value="Neutral">Neutral</option>
+                    <option value="Deceptive">Deceptive</option>
+                    <option value="Hostile">Hostile</option>
+                  </select>
+                  <lw-button variant="gold" size="sm" (pressed)="addQuickNpcToMap()">+ Add NPC</lw-button>
+                </div>
               </div>
             </div>
-            <div class="lw-vtt-field">
-              <span>Quick Add New NPC to Encounter</span>
+          </div>
+        }
+
+        @if (battle.openDmDrawer() === 'dm-session') {
+          <div class="lw-vtt-floating-drawer">
+            <div class="lw-vtt-drawer-head">
+              <h4>DM Session Toolkit</h4>
+              <button ngpButton type="button" (click)="battle.openDmDrawer.set('none')">Close</button>
+            </div>
+            <div class="lw-vtt-drawer-grid">
               <div class="lw-vtt-inline-row">
-                <input type="text" placeholder="NPC Name" [ngModel]="quickAddNpcName()" (ngModelChange)="quickAddNpcName.set($event)" />
-                <select [ngModel]="quickAddNpcDisposition()" (ngModelChange)="quickAddNpcDisposition.set($event)">
-                  <option value="Friendly">Friendly</option>
-                  <option value="Neutral">Neutral</option>
-                  <option value="Deceptive">Deceptive</option>
-                  <option value="Hostile">Hostile</option>
+                <span>Quick DCs:</span>
+                <button ngpButton type="button" class="lw-vtt-subpill" (click)="rollQuickDcCheck(10, 'Easy')">DC 10 Easy</button>
+                <button ngpButton type="button" class="lw-vtt-subpill" (click)="rollQuickDcCheck(15, 'Med')">DC 15 Med</button>
+                <button ngpButton type="button" class="lw-vtt-subpill" (click)="rollQuickDcCheck(20, 'Hard')">DC 20 Hard</button>
+              </div>
+              <div class="lw-vtt-inline-row">
+                <select [ngModel]="selectedDiceFormula()" (ngModelChange)="selectedDiceFormula.set($event)">
+                  <option value="1d20">1d20</option>
+                  <option value="2d6">2d6</option>
+                  <option value="3d8">3d8</option>
+                  <option value="4d10">4d10</option>
+                  <option value="1d100">1d100</option>
                 </select>
-                <lw-button variant="gold" size="sm" (pressed)="addQuickNpcToMap()">+ Add NPC</lw-button>
+                <button ngpButton type="button" class="lw-vtt-subpill lw-vtt-subpill--gold" (click)="rollSelectedDice()">Roll Dice</button>
+                <button ngpButton type="button" class="lw-vtt-subpill" (click)="timer.toggle()">{{ timer.running() ? 'Pause Timer' : 'Resume Timer' }}</button>
+                <button ngpButton type="button" class="lw-vtt-subpill" (click)="vtt.concludeEncounterAndAwardXp(vtt.activeEncounterId())">Award XP</button>
               </div>
             </div>
           </div>
-        </div>
-      }
+        }
+        @if (battle.settingsModalOpen()) { <lw-vtt-settings-modal /> }
+        <lw-vtt-handout-modal />
 
-      @if (battle.openDmDrawer() === 'dm-session') {
-        <div class="lw-vtt-floating-drawer">
-          <div class="lw-vtt-drawer-head">
-            <h4>DM Session Toolkit</h4>
-            <button ngpButton type="button" (click)="battle.openDmDrawer.set('none')">Close</button>
-          </div>
-          <div class="lw-vtt-drawer-grid">
-            <div class="lw-vtt-inline-row">
-              <span>Quick DCs:</span>
-              <button ngpButton type="button" class="lw-vtt-subpill" (click)="rollQuickDcCheck(10, 'Easy')">DC 10 Easy</button>
-              <button ngpButton type="button" class="lw-vtt-subpill" (click)="rollQuickDcCheck(15, 'Med')">DC 15 Med</button>
-              <button ngpButton type="button" class="lw-vtt-subpill" (click)="rollQuickDcCheck(20, 'Hard')">DC 20 Hard</button>
-            </div>
-            <div class="lw-vtt-inline-row">
-              <select [ngModel]="selectedDiceFormula()" (ngModelChange)="selectedDiceFormula.set($event)">
-                <option value="1d20">1d20</option>
-                <option value="2d6">2d6</option>
-                <option value="3d8">3d8</option>
-                <option value="4d10">4d10</option>
-                <option value="1d100">1d100</option>
-              </select>
-              <button ngpButton type="button" class="lw-vtt-subpill lw-vtt-subpill--gold" (click)="rollSelectedDice()">Roll Dice</button>
-              <button ngpButton type="button" class="lw-vtt-subpill" (click)="timer.toggle()">{{ timer.running() ? 'Pause Timer' : 'Resume Timer' }}</button>
-              <button ngpButton type="button" class="lw-vtt-subpill" (click)="vtt.concludeEncounterAndAwardXp(vtt.activeEncounterId())">Award XP</button>
-            </div>
-          </div>
-        </div>
-      }
-      @if (battle.settingsModalOpen()) { <lw-vtt-settings-modal /> }
-      <lw-vtt-handout-modal />
-
-      <!-- Centered Bottom Action Dock -->
-      <lw-vtt-action-dock
-        [activeDisplayToken]="dockActiveToken()" [activeInitiativeTokenId]="dockInitiativeTokenId()"
-        [turnActionUsed]="battle.activeObserverToken().actionUsed" [turnBonusActionUsed]="battle.activeObserverToken().bonusUsed"
-        [turnReactionUsed]="battle.activeObserverToken().reactionUsed" [turnMovementRemainingFeet]="battle.remainingMovementFeet()"
-        [turnMovementMaxFeet]="battle.activeObserverToken().movementFeet" [canEndTurn]="isObserverActiveTurn() || store.viewerRole() === 'gm'"
-        [isGm]="store.viewerRole() === 'gm'" [isMeasuring]="battle.measureEnabled()"
-        [pendingAction]="battle.pendingAbility()?.name ?? null" [tokenActions]="dockTokenActions()"
-        [skin]="battle.actionBarSettings().skin" [zoom]="zoomLevel()" [getTokenHp]="dockHp" [getTokenAc]="dockAc"
-        (chooseAction)="selectDockAction($event)" (endTurn)="nextTurn()" (toggleMeasure)="dockToggleMeasure()"
-        (standardAction)="dockStandardAction($event)" (skillCheck)="dockCheck($event.skill.name, $event.token)"
-        (saveCheck)="dockCheck($event.save.name, $event.token)" (abilityCheck)="dockCheck($event.stat, $event.token)"
-        (savingThrow)="dockCheck($event.stat + ' save', $event.token)" (openSheet)="dmToolReadout.set('Opening sheet for ' + $event.name + '.')"
-        (cancelPendingAction)="battle.pendingAbility.set(null)" (endActionTest)="battle.pendingAbility.set(null)"
-        (editToken)="dmToolReadout.set('Editing ' + $event.name + '.')" (changeZoom)="changeZoom($event)" (resetZoom)="resetZoom()"
-      />
-    </section>
+        <lw-vtt-action-dock
+          [activeDisplayToken]="dockActiveToken()" [activeInitiativeTokenId]="dockInitiativeTokenId()"
+          [turnActionUsed]="battle.activeObserverToken().actionUsed" [turnBonusActionUsed]="battle.activeObserverToken().bonusUsed"
+          [turnReactionUsed]="battle.activeObserverToken().reactionUsed" [turnMovementRemainingFeet]="battle.remainingMovementFeet()"
+          [turnMovementMaxFeet]="battle.activeObserverToken().movementFeet" [canEndTurn]="isObserverActiveTurn() || store.viewerRole() === 'gm'"
+          [isGm]="store.viewerRole() === 'gm'" [isMeasuring]="battle.measureEnabled()"
+          [pendingAction]="battle.pendingAbility()?.name ?? null" [tokenActions]="dockTokenActions()"
+          [skin]="battle.actionBarSettings().skin" [zoom]="zoomLevel()" [getTokenHp]="dockHp" [getTokenAc]="dockAc"
+          (chooseAction)="selectDockAction($event)" (endTurn)="nextTurn()" (toggleMeasure)="dockToggleMeasure()"
+          (standardAction)="dockStandardAction($event)" (skillCheck)="dockCheck($event.skill.name, $event.token)"
+          (saveCheck)="dockCheck($event.save.name, $event.token)" (abilityCheck)="dockCheck($event.stat, $event.token)"
+          (savingThrow)="dockCheck($event.stat + ' save', $event.token)" (openSheet)="dmToolReadout.set('Opening sheet for ' + $event.name + '.')"
+          (cancelPendingAction)="battle.pendingAbility.set(null)" (endActionTest)="battle.pendingAbility.set(null)"
+          (editToken)="dmToolReadout.set('Editing ' + $event.name + '.')" (changeZoom)="changeZoom($event)" (resetZoom)="resetZoom()"
+        />
+      </section>
     }
-    <!-- RIGHTMOST MENU (Foundry VTT / MythWeaver Style) -->
+
+    <!-- RIGHTMOST MENU -->
     @if (battle.rightPanelCollapsed()) {
       <aside class="lw-vtt-station-rail" aria-label="Quick Access Panels">
         <button ngpButton type="button" class="lw-vtt-rail-btn" (click)="battle.rightPanelCollapsed.set(false)" title="Expand Right Panel"><lw-icon name="chevron-left" [size]="16" /></button>
@@ -362,9 +339,7 @@
     } @else {
       <aside class="lw-vtt-right-panel" aria-label="Encounter Information & Role-Scoped Drawer">
         <header class="lw-vtt-right-panel__header">
-          <div class="lw-vtt-station-title">
-            <strong>{{ rightTabTitle() }}</strong>
-          </div>
+          <div class="lw-vtt-station-title"><strong>{{ rightTabTitle() }}</strong></div>
           <button ngpButton type="button" class="lw-vtt-collapse-btn" (click)="battle.rightPanelCollapsed.set(true)" title="Collapse to Rail"><lw-icon name="chevron-right" [size]="16" /></button>
         </header>
 
@@ -389,7 +364,7 @@
 
         <div class="lw-vtt-right-content">
           @if (battle.activeRightTab() === 'settings') {
-            <lw-vtt-settings-panel />
+            <lw-vtt-settings-panel (enableGrid)="gridEnabled.set(true)" />
           }
           @if (battle.activeRightTab() === 'chat') {
             <div class="lw-vtt-tab-pane">
@@ -415,7 +390,6 @@
               </div>
             </div>
           }
-
           @if (battle.activeRightTab() === 'combat-log') {
             <div class="lw-vtt-tab-list">
               @for (entry of vtt.combatLogs(); track entry.id) {
@@ -426,7 +400,6 @@
               }
             </div>
           }
-
           @if (battle.activeRightTab() === 'initiative') {
             <div class="lw-vtt-tab-list">
               <div class="lw-vtt-turn-toolbar">
@@ -439,15 +412,11 @@
                   <div class="lw-vtt-init-row__body">
                     <strong>{{ row.name }} {{ row.key === battle.activeInitiativeToken().key ? '(Turn)' : '' }}</strong>
                     <span>HP {{ row.currentHp }}/{{ row.maxHp }} · AC {{ row.armorClass }}</span>
-                    @if (store.viewerRole() === 'gm' && row.faction === 'hostile' && !battle.isTokenInPlayerLoS(row)) {
-                      <small class="lw-vtt-hidden-note">Hidden from Player LoS</small>
-                    }
                   </div>
                 </div>
               }
             </div>
           }
-
           @if (battle.activeRightTab() === 'quests') {
             <div class="lw-vtt-tab-list">
               @for (q of battle.visibleQuests(); track q.id) {
@@ -464,7 +433,6 @@
               }
             </div>
           }
-
           @if (battle.activeRightTab() === 'npcs') {
             <div class="lw-vtt-tab-list">
               @for (npc of battle.visibleNpcs(); track npc.id) {
@@ -472,51 +440,21 @@
                   <div class="lw-vtt-item-card__head"><strong>{{ npc.name }}</strong><span>{{ npc.scope }} · {{ npc.disposition }}</span></div>
                   <small>{{ npc.title }} · {{ npc.locationName }}</small>
                   <p>{{ npc.summary }}</p>
-                  @if (store.viewerRole() === 'gm') {
-                    <p class="lw-vtt-gm-secret">GM Secret: {{ npc.gmSecret }}</p>
-                    <button ngpButton type="button" class="lw-vtt-reveal-btn" (click)="battle.toggleNpcRevealed(npc.id)">
-                      {{ npc.revealedToPlayers ? 'Revealed' : 'Hidden (Click to Reveal)' }}
-                    </button>
-                  }
                 </article>
               }
             </div>
           }
-
           @if (battle.activeRightTab() === 'guide') {
-            <div class="lw-vtt-tab-list">
-              <lw-vtt-gm-guide (readout)="dmToolReadout.set($event)" />
-            </div>
+            <div class="lw-vtt-tab-list"><lw-vtt-gm-guide (readout)="dmToolReadout.set($event)" /></div>
           }
-
           @if (battle.activeRightTab() === 'trackers') {
-            <div class="lw-vtt-tab-list">
-              <lw-vtt-gm-trackers />
-            </div>
-          }
-
-          @if (battle.activeRightTab() === 'lore') {
-            <div class="lw-vtt-tab-list">
-              @for (lore of battle.visibleLore(); track lore.id) {
-                <article class="lw-vtt-item-card" [class.gm-secret]="!lore.revealedToPlayers">
-                  <div class="lw-vtt-item-card__head"><strong>{{ lore.title }}</strong><span>{{ lore.category }}</span></div>
-                  <p>{{ lore.summary }}</p>
-                  @if (store.viewerRole() === 'gm') {
-                    <p class="lw-vtt-gm-secret">{{ lore.gmNotes }}</p>
-                    <button ngpButton type="button" class="lw-vtt-reveal-btn" (click)="battle.toggleLoreRevealed(lore.id)">
-                      {{ lore.revealedToPlayers ? 'Revealed' : 'Hidden (Click to Reveal)' }}
-                    </button>
-                  }
-                </article>
-              }
-            </div>
+            <div class="lw-vtt-tab-list"><lw-vtt-gm-trackers /></div>
           }
         </div>
       </aside>
     }
   </div>
 
-  <!-- Centered Hotkeys Dialog Modal (Over Center of Map) -->
   @if (showShortcuts()) {
     <div class="shortcuts-backdrop" (click)="showShortcuts.set(false)" role="dialog" aria-modal="true" aria-label="Tabletop Hotkeys">
       <div class="shortcuts-card floating-shortcuts" (click)="$event.stopPropagation()">
@@ -525,15 +463,14 @@
             <span class="shortcuts-icon"><lw-icon name="note" [size]="16" /></span>
             <h4>Tabletop Hotkeys & Controls</h4>
           </div>
-          <button ngpButton type="button" class="close-shortcuts-btn" (click)="showShortcuts.set(false)" title="Close (Esc)" aria-label="Close hotkeys"><lw-icon name="close" [size]="14" /></button>
+          <button ngpButton type="button" class="close-shortcuts-btn" (click)="showShortcuts.set(false)" title="Close (Esc)"><lw-icon name="close" [size]="14" /></button>
         </div>
         <ul class="shortcuts-list">
           <li><span>Lock / Unlock Target</span><div><kbd>T</kbd> / <kbd>Click</kbd></div></li>
-          <li><span>Confirm Cast / Attack</span> <div><kbd>Enter</kbd></div></li>
-          <li><span>Toggle Grid</span> <div><kbd>G</kbd></div></li>
-          <li><span>Toggle Sidebar</span> <div><kbd>M</kbd></div></li>
-          <li><span>Pan base map</span> <div><kbd>Click & Drag</kbd></div></li>
-          <li><span>Deselect / Cancel</span> <div><kbd>Esc</kbd></div></li>
+          <li><span>Confirm Cast / Attack</span><div><kbd>Enter</kbd></div></li>
+          <li><span>Toggle Grid</span><div><kbd>G</kbd></div></li>
+          <li><span>Pan base map</span><div><kbd>Click & Drag</kbd></div></li>
+          <li><span>Deselect / Cancel</span><div><kbd>Esc</kbd></div></li>
         </ul>
       </div>
     </div>

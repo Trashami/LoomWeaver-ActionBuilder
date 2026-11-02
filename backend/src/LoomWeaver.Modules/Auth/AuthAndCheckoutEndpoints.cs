@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using LoomWeaver.Domain;
 using LoomWeaver.Infrastructure.MySql;
@@ -5,11 +6,21 @@ using LoomWeaver.Modules.Realtime;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using MySqlConnector;
 
 namespace LoomWeaver.Modules.Auth;
 
+public sealed record UserVttPreferencesDto(
+    string? MapQuality,
+    double? GridScale,
+    double? GridOffsetX,
+    double? GridOffsetY
+);
+
 public static class AuthAndCheckoutEndpoints
 {
+    private static readonly ConcurrentDictionary<long, UserVttPreferencesDto> FallbackPrefs = new();
+
     private static readonly List<StripeCheckoutSettlementResponse> SettlementLedger = new()
     {
         new(
@@ -207,6 +218,88 @@ public static class AuthAndCheckoutEndpoints
             return Results.Ok(MySqlUserAuthStore.ToLegacyUserDto(user));
         });
 
+        api.MapGet("/auth/preferences", async (HttpContext ctx, LoomWeaverMySqlRepository repo, CancellationToken ct) =>
+        {
+            var user = ResolveAuthenticatedUser(ctx);
+            if (user is null)
+            {
+                return Results.Json(new { message = "Authentication required." }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            try
+            {
+                await using var conn = await repo.OpenConnectionAsync(ct);
+                await EnsurePrefsTableAsync(conn, ct);
+                await using var cmd = new MySqlCommand(
+                    "SELECT map_quality, grid_scale, grid_offset_x, grid_offset_y FROM lw_user_preferences WHERE user_id = @uid LIMIT 1;",
+                    conn);
+                cmd.Parameters.AddWithValue("@uid", user.Id);
+                await using var r = await cmd.ExecuteReaderAsync(ct);
+                if (await r.ReadAsync(ct))
+                {
+                    var dto = new UserVttPreferencesDto(
+                        r.IsDBNull(0) ? "balanced" : r.GetString(0),
+                        r.IsDBNull(1) ? 1.0 : r.GetDouble(1),
+                        r.IsDBNull(2) ? 0.0 : r.GetDouble(2),
+                        r.IsDBNull(3) ? 0.0 : r.GetDouble(3));
+                    FallbackPrefs[user.Id] = dto;
+                    return Results.Ok(dto);
+                }
+            }
+            catch
+            {
+                // Fallback to in-memory preference cache when DB unavailable
+            }
+
+            return Results.Ok(FallbackPrefs.TryGetValue(user.Id, out var cached)
+                ? cached
+                : new UserVttPreferencesDto("balanced", 1.0, 0.0, 0.0));
+        });
+
+        api.MapPut("/auth/preferences", async (UserVttPreferencesDto req, HttpContext ctx, LoomWeaverMySqlRepository repo, CancellationToken ct) =>
+        {
+            var user = ResolveAuthenticatedUser(ctx);
+            if (user is null)
+            {
+                return Results.Json(new { message = "Authentication required." }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            var quality = (req.MapQuality ?? "balanced").Trim().ToLowerInvariant();
+            if (quality is not ("performance" or "balanced" or "visual")) quality = "balanced";
+            var scale = Math.Clamp(req.GridScale ?? 1.0, 0.25, 3.0);
+            var offsetX = Math.Clamp(req.GridOffsetX ?? 0.0, -200.0, 200.0);
+            var offsetY = Math.Clamp(req.GridOffsetY ?? 0.0, -200.0, 200.0);
+            var saved = new UserVttPreferencesDto(quality, scale, offsetX, offsetY);
+            FallbackPrefs[user.Id] = saved;
+
+            try
+            {
+                await using var conn = await repo.OpenConnectionAsync(ct);
+                await EnsurePrefsTableAsync(conn, ct);
+                await using var cmd = new MySqlCommand("""
+                    INSERT INTO lw_user_preferences (user_id, map_quality, grid_scale, grid_offset_x, grid_offset_y)
+                    VALUES (@uid, @q, @s, @ox, @oy)
+                    ON DUPLICATE KEY UPDATE
+                      map_quality = VALUES(map_quality),
+                      grid_scale = VALUES(grid_scale),
+                      grid_offset_x = VALUES(grid_offset_x),
+                      grid_offset_y = VALUES(grid_offset_y);
+                    """, conn);
+                cmd.Parameters.AddWithValue("@uid", user.Id);
+                cmd.Parameters.AddWithValue("@q", quality);
+                cmd.Parameters.AddWithValue("@s", scale);
+                cmd.Parameters.AddWithValue("@ox", offsetX);
+                cmd.Parameters.AddWithValue("@oy", offsetY);
+                await cmd.ExecuteNonQueryAsync(ct);
+            }
+            catch
+            {
+                // Kept in FallbackPrefs
+            }
+
+            return Results.Ok(saved);
+        });
+
         api.MapGet("/marketplace/settlements", (HttpContext ctx) =>
         {
             if (ResolveAuthenticatedUser(ctx) is null)
@@ -258,6 +351,21 @@ public static class AuthAndCheckoutEndpoints
         return api;
     }
 
+    private static async Task EnsurePrefsTableAsync(MySqlConnection conn, CancellationToken ct)
+    {
+        await using var cmd = new MySqlCommand("""
+            CREATE TABLE IF NOT EXISTS lw_user_preferences (
+              user_id BIGINT PRIMARY KEY,
+              map_quality VARCHAR(32) NOT NULL DEFAULT 'balanced',
+              grid_scale DOUBLE NOT NULL DEFAULT 1.0,
+              grid_offset_x DOUBLE NOT NULL DEFAULT 0.0,
+              grid_offset_y DOUBLE NOT NULL DEFAULT 0.0,
+              updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            );
+            """, conn);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
     public static StoredUserRecord? ResolveAuthenticatedUser(HttpContext ctx)
     {
         var authHeader = ctx.Request.Headers.Authorization.FirstOrDefault();
@@ -281,7 +389,6 @@ public static class AuthAndCheckoutEndpoints
             if (fromCookie is not null) return fromCookie;
         }
 
-        // Browsers cannot set headers on WebSocket upgrades; SignalR sends access_token instead.
         if (ctx.Request.Path.StartsWithSegments("/hubs") &&
             ctx.Request.Query.TryGetValue("access_token", out var hubToken) &&
             !string.IsNullOrWhiteSpace(hubToken))

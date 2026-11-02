@@ -16,8 +16,6 @@ import { VttCombatService } from '../../services/vtt-combat.service';
 import { VttServerSyncService } from '../../services/vtt-server-sync.service';
 import {
   DndSizeCategory,
-  DND_SIZE_ORDER,
-  DND_SIZE_METRICS,
 } from '../../../effects/engine/effect-timeline.contract';
 import { VttDisplaySettingsService } from '../../services/vtt-display-settings.service';
 import { SEED_VTT_WALL_SEGMENTS } from '../../services/vtt-battle.seed';
@@ -80,6 +78,7 @@ export class VttMapToolsComponent {
   deselectAll(): void {
     this.battle.queuedTargetSequence.set([]);
     this.battle.cancelAllInteractiveModes();
+    this.vttDisplay.calibratingGrid.set(false);
     this.activeLeftTool.set(null);
   }
 
@@ -106,27 +105,65 @@ export class VttMapToolsComponent {
     (this.battle.walls as any).set(SEED_VTT_WALL_SEGMENTS);
   }
 
-  // Grid Scale Controls (D&D 5e 5-ft square scaling)
+  // Grid Scale & Live Calibration Controls
   readonly gridScale = computed(() => this.vttDisplay.gridScale());
   readonly gridScalePercent = computed(() => Math.round(this.vttDisplay.gridScale() * 100));
+  readonly gridOffsetX = computed(() => this.vttDisplay.gridOffsetX());
+  readonly gridOffsetY = computed(() => this.vttDisplay.gridOffsetY());
 
   setGridScale(scale: number): void {
+    this.gridEnabled.set(true);
     this.vttDisplay.setGridScale(scale);
   }
 
   increaseGridScale(): void {
-    const next = Math.round((this.vttDisplay.gridScale() + 0.1) * 10) / 10;
+    this.gridEnabled.set(true);
+    const next = Math.round((this.vttDisplay.gridScale() + 0.05) * 100) / 100;
     this.vttDisplay.setGridScale(Math.min(2.5, next));
   }
 
   decreaseGridScale(): void {
-    const next = Math.round((this.vttDisplay.gridScale() - 0.1) * 10) / 10;
-    this.vttDisplay.setGridScale(Math.max(0.4, next));
+    this.gridEnabled.set(true);
+    const next = Math.round((this.vttDisplay.gridScale() - 0.05) * 100) / 100;
+    this.vttDisplay.setGridScale(Math.max(0.25, next));
   }
 
   onGridScaleInput(event: Event): void {
     const val = parseFloat((event.target as HTMLInputElement).value);
-    if (!isNaN(val)) this.vttDisplay.setGridScale(val);
+    if (!isNaN(val)) {
+      this.gridEnabled.set(true);
+      this.vttDisplay.setGridScale(val);
+    }
+  }
+
+  onGridOffsetXInput(event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    if (!isNaN(val)) {
+      this.gridEnabled.set(true);
+      this.vttDisplay.setGridOffset(val, this.vttDisplay.gridOffsetY());
+    }
+  }
+
+  onGridOffsetYInput(event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    if (!isNaN(val)) {
+      this.gridEnabled.set(true);
+      this.vttDisplay.setGridOffset(this.vttDisplay.gridOffsetX(), val);
+    }
+  }
+
+  startDrawSquareCalibration(): void {
+    const next = !this.vttDisplay.calibratingGrid();
+    this.vttDisplay.calibratingGrid.set(next);
+    if (next) {
+      this.gridEnabled.set(true);
+      this.battle.mapMode3D.set(false);
+      this.activeLeftTool.set(null);
+    }
+  }
+
+  resetGridCalibration(): void {
+    this.vttDisplay.resetGridCalibration();
   }
 
   // Token Size Controls (D&D core rules)

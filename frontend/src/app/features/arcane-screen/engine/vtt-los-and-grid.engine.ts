@@ -6,9 +6,28 @@ import {
 } from "../models/vtt-battle.models";
 
 export const FEET_PER_WORLD_UNIT = 2.5;
-export const WORLD_UNITS_PER_GRID_CELL = 2; // 2 * 2.5ft = 5ft grid cell
+export const WORLD_UNITS_PER_GRID_CELL = 1; // 1 world unit = 50 SVG px = 1 5-ft square at scale 1.0
 export const SVG_VIEWBOX_WIDTH = 1200;
 export const SVG_VIEWBOX_HEIGHT = 800;
+export const BASE_GRID_CELL_SVG_PX = 50;
+
+let currentGridScale = 1.0;
+let currentGridOffsetX = 0.0;
+let currentGridOffsetY = 0.0;
+
+export function setActiveGridCalibration(scale: number, offsetX: number, offsetY: number): void {
+  currentGridScale = Math.max(0.25, Math.min(3.0, scale || 1.0));
+  currentGridOffsetX = Number.isFinite(offsetX) ? offsetX : 0;
+  currentGridOffsetY = Number.isFinite(offsetY) ? offsetY : 0;
+}
+
+export function getActiveGridCalibration(): { scale: number; offsetX: number; offsetY: number } {
+  return {
+    scale: currentGridScale,
+    offsetX: currentGridOffsetX,
+    offsetY: currentGridOffsetY,
+  };
+}
 
 export function worldToSvgX(x: number): number {
   return Math.round(((x + 12) / 24) * SVG_VIEWBOX_WIDTH * 10) / 10;
@@ -31,30 +50,36 @@ export function svgToWorldPoint(svgX: number, svgY: number): VttPoint2D {
 }
 
 export function feetToSvgPx(feet: number): number {
+  const cellPx = BASE_GRID_CELL_SVG_PX * currentGridScale;
   if (feet <= 5) {
-    return 28;
+    return Math.round(cellPx * 0.56 * 10) / 10;
   }
-  return Math.round(feet * 6.8 * 10) / 10;
+  return Math.round((feet / 5) * cellPx * 10) / 10;
 }
 
 export function distanceInFeet(a: VttPoint2D, b: VttPoint2D): number {
-  return (
-    Math.round(Math.hypot(b.x - a.x, b.z - a.z) * FEET_PER_WORLD_UNIT * 10) / 10
-  );
+  const cellWorld = 1.0 * currentGridScale;
+  const squares = Math.hypot(b.x - a.x, b.z - a.z) / cellWorld;
+  return Math.round(squares * 5 * 10) / 10;
 }
 
 export function snapToFiveFootGrid(pt: VttPoint2D): VttPoint2D {
-  const step = 1.0; // 1 world unit step = 5ft dungeon tile alignment
-  return {
-    x: Math.max(-10.5, Math.min(10.5, Math.round(pt.x / step) * step)),
-    z: Math.max(-6.5, Math.min(6.5, Math.round(pt.z / step) * step)),
-  };
+  const stepPx = BASE_GRID_CELL_SVG_PX * currentGridScale;
+  const modX = ((currentGridOffsetX % stepPx) + stepPx) % stepPx;
+  const modY = ((currentGridOffsetY % stepPx) + stepPx) % stepPx;
+
+  const svgX = worldToSvgX(pt.x);
+  const svgY = worldToSvgY(pt.z);
+
+  const col = Math.round((svgX - modX - stepPx * 0.5) / stepPx);
+  const row = Math.round((svgY - modY - stepPx * 0.5) / stepPx);
+
+  const snappedSvgX = Math.max(stepPx * 0.5, Math.min(SVG_VIEWBOX_WIDTH - stepPx * 0.5, modX + (col + 0.5) * stepPx));
+  const snappedSvgY = Math.max(stepPx * 0.5, Math.min(SVG_VIEWBOX_HEIGHT - stepPx * 0.5, modY + (row + 0.5) * stepPx));
+
+  return svgToWorldPoint(snappedSvgX, snappedSvgY);
 }
 
-/**
- * Computes intersection between segment AB and wall segment CD.
- * Returns parameter t in [0, 1] along AB if an intersection occurs.
- */
 export function intersectSegmentWithWall(
   a: VttPoint2D,
   b: VttPoint2D,
@@ -88,10 +113,6 @@ export function intersectSegmentWithWall(
   return null;
 }
 
-/**
- * Clamps a ray from `start` toward `desiredEnd` so it never exceeds `maxRangeFeet`
- * and stops immediately at the closest vision/movement-blocking wall.
- */
 export function clampLineToRangeAndWalls(
   start: VttPoint2D,
   desiredEnd: VttPoint2D,
@@ -102,7 +123,7 @@ export function clampLineToRangeAndWalls(
   const dx = desiredEnd.x - start.x;
   const dz = desiredEnd.z - start.z;
   const rawWorldDist = Math.hypot(dx, dz);
-  const maxWorldDist = maxRangeFeet / FEET_PER_WORLD_UNIT;
+  const maxWorldDist = (maxRangeFeet / 5) * currentGridScale;
 
   let clampedEnd: VttPoint2D = desiredEnd;
   if (rawWorldDist > maxWorldDist && rawWorldDist > 1e-5) {
@@ -127,7 +148,6 @@ export function clampLineToRangeAndWalls(
       bestT = hit.t;
       blockedByWall = true;
       blockingWallLabel = wall.label;
-      // Pull back slightly before the wall surface so token/AoE remains on player side
       const pullBackT = Math.max(0, hit.t - 0.03);
       hitPoint = {
         x: start.x + (clampedEnd.x - start.x) * pullBackT,
@@ -149,9 +169,6 @@ export function clampLineToRangeAndWalls(
   };
 }
 
-/**
- * Checks whether `observer` has unobstructed Line of Sight to `target` within `sightDistanceFeet`.
- */
 export function hasLineOfSight(
   observer: VttPoint2D,
   target: VttPoint2D,
@@ -172,17 +189,13 @@ export function hasLineOfSight(
   return true;
 }
 
-/**
- * Computes a 360-degree visibility polygon in SVG coordinates (`x,y x,y ...`)
- * from `observer` out to `sightDistanceFeet`, clipped against all vision-blocking walls.
- */
 export function computeVisibilityPolygonSvgPoints(
   observer: VttPoint2D,
   sightDistanceFeet: number,
   walls: readonly VttWallSegmentVm[],
   rayCount = 96,
 ): string {
-  const maxWorldDist = sightDistanceFeet / FEET_PER_WORLD_UNIT;
+  const maxWorldDist = (sightDistanceFeet / 5) * currentGridScale;
   const pts: string[] = [];
 
   for (let i = 0; i < rayCount; i++) {
@@ -204,10 +217,6 @@ export function computeVisibilityPolygonSvgPoints(
   return pts.join(" ");
 }
 
-/**
- * Computes a grid-snapped movement preview path that follows the 5-ft grid,
- * stops at walls, and never exceeds `maxMoveFeet`.
- */
 export function computeClampedGridMovePath(
   start: VttPoint2D,
   desiredCursor: VttPoint2D,
@@ -228,7 +237,6 @@ export function computeClampedGridMovePath(
     true,
   );
   const snappedEnd = snapToFiveFootGrid(clampedLine.end);
-  // Verify the final snapped cell doesn't cross a wall from the start
   const snappedCheck = clampLineToRangeAndWalls(
     start,
     snappedEnd,
@@ -238,7 +246,6 @@ export function computeClampedGridMovePath(
   );
   const finalDest = snappedCheck.blockedByWall ? clampedLine.end : snappedEnd;
 
-  // Build intermediate 5-ft grid steps for visual grid path preview
   const waypoints: VttPoint2D[] = [start];
   const steps = Math.max(1, Math.round(distanceInFeet(start, finalDest) / 5));
   for (let i = 1; i <= steps; i++) {
@@ -262,10 +269,6 @@ export function computeClampedGridMovePath(
   };
 }
 
-/**
- * Finds the nearest token within `snapRadiusFeet` of `cursorPos` that is within
- * `maxRangeFeet` of `attackerPos` and has unobstructed Line of Sight.
- */
 export function findClosestSnapToken(
   attackerPos: VttPoint2D,
   cursorPos: VttPoint2D,
@@ -296,10 +299,6 @@ export function findClosestSnapToken(
   return bestToken;
 }
 
-/**
- * Returns all visible tokens whose body intersects or lies inside the SVG AoE circle
- * centered at `aoeCenter` with radius `aoeRadiusFeet`.
- */
 export function findTokensInAoe(
   aoeCenter: VttPoint2D,
   aoeRadiusFeet: number,

@@ -108,12 +108,18 @@ export class BestiaryPageComponent {
   constructor() {
     this.catalog.ensureLoaded();
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const search = params.get('search');
       const key = params.get('monster');
-      if (key) this.openMonster(key);
+      if (search) {
+        this.onSearch(search);
+      } else if (key && !key.startsWith('off-') && !key.startsWith('cm-')) {
+        this.onSearch(key.split('|')[0]);
+      }
+      if (key) {
+        this.openMonster(key);
+      }
     });
     effect(() => {
-      // Campaign switch or role change: drop any collection filter that belonged to the previous context
-      // and re-read the open monster's Loom history under the new campaign/role.
       this.store.activeCampaignId();
       this.campaign.isEffectiveGm();
       untracked(() => {

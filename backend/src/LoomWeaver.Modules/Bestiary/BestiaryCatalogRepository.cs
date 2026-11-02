@@ -108,12 +108,49 @@ public static class BestiaryCatalogRepository
             return seed is null ? null : BestiaryDetailFactory.FromRawJson(seed.Summary, seed.RawJson);
         }
 
-        if (!key.StartsWith("off-", StringComparison.OrdinalIgnoreCase) || !long.TryParse(key[4..], out var id)) return null;
+        if (key.StartsWith("off-", StringComparison.OrdinalIgnoreCase) && long.TryParse(key[4..], out var id))
+        {
+            try
+            {
+                await using var conn = await mysql.OpenConnectionAsync(ct);
+                await using var cmd = new MySqlCommand($"SELECT {SummaryColumns}, raw_json FROM dnd_monster_library WHERE {OfficialVisibility} AND id = @id LIMIT 1;", conn);
+                cmd.Parameters.AddWithValue("@id", id);
+                await using var r = await cmd.ExecuteReaderAsync(ct);
+                if (!await r.ReadAsync(ct)) return null;
+                var summary = ReadSummary(r);
+                return BestiaryDetailFactory.FromRawJson(summary, BestiaryPersistence.ReadString(r, "raw_json"));
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        var rawParts = key.Split('|', 2, StringSplitOptions.TrimEntries);
+        var lookupName = rawParts[0];
+        var lookupSource = rawParts.Length > 1 ? rawParts[1] : null;
+        if (string.IsNullOrWhiteSpace(lookupName)) return null;
+
         try
         {
             await using var conn = await mysql.OpenConnectionAsync(ct);
-            await using var cmd = new MySqlCommand($"SELECT {SummaryColumns}, raw_json FROM dnd_monster_library WHERE {OfficialVisibility} AND id = @id LIMIT 1;", conn);
-            cmd.Parameters.AddWithValue("@id", id);
+            await using var cmd = new MySqlCommand($"""
+                SELECT {SummaryColumns}, raw_json
+                FROM dnd_monster_library
+                WHERE {OfficialVisibility}
+                  AND LOWER(name) = LOWER(@name)
+                ORDER BY
+                  CASE
+                    WHEN @src IS NOT NULL AND @src <> '' AND LOWER(source_id) = LOWER(@src) THEN 0
+                    WHEN UPPER(source_id) = 'XMM' THEN 1
+                    WHEN UPPER(source_id) = 'MM' THEN 2
+                    ELSE 3
+                  END,
+                  id ASC
+                LIMIT 1;
+                """, conn);
+            cmd.Parameters.AddWithValue("@name", lookupName);
+            cmd.Parameters.AddWithValue("@src", (object?)lookupSource ?? DBNull.Value);
             await using var r = await cmd.ExecuteReaderAsync(ct);
             if (!await r.ReadAsync(ct)) return null;
             var summary = ReadSummary(r);
@@ -121,7 +158,8 @@ public static class BestiaryCatalogRepository
         }
         catch
         {
-            return null;
+            var seed = BestiarySeedCatalog.All.FirstOrDefault(s => s.Summary.Name.Equals(lookupName, StringComparison.OrdinalIgnoreCase));
+            return seed is null ? null : BestiaryDetailFactory.FromRawJson(seed.Summary, seed.RawJson);
         }
     }
 
@@ -162,7 +200,6 @@ public static class BestiaryCatalogRepository
                     "cr-desc" => $"{CrExpr} DESC, name ASC",
                     _ => "name ASC, source_id ASC"
                 };
-                // Page ids first so JSON_EXTRACT only runs for the rows on this page, not every match.
                 await using var cmd = new MySqlCommand(
                     $"SELECT {SummaryColumns} FROM dnd_monster_library m " +
                     $"JOIN (SELECT id FROM dnd_monster_library {whereSql} ORDER BY {order} LIMIT {take} OFFSET {offset}) p USING (id) " +

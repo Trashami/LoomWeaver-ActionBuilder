@@ -37,6 +37,7 @@ export interface LwBookNodeVm {
   readonly id: number;
   readonly source_id: string;
   readonly parent_id: number | null;
+  readonly root_chapter_id?: number | null;
   readonly seq: number;
   readonly node_type: string | null;
   readonly name: string | null;

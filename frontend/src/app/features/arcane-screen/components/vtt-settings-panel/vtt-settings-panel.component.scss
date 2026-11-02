@@ -1,17 +1,18 @@
 .lw-vtt-settings {
   display: flex; flex-direction: column; gap: 0.9rem; padding: 0.6rem;
-  color: #f3e8d0; font-size: 0.85rem;
+  color: #f3e8d0; font-size: 0.85rem; overflow-y: auto;
 }
 
 .lw-vtt-settings__group {
-  margin: 0; padding: 0.7rem 0.8rem; border-radius: 8px;
+  margin: 0; padding: 0.75rem 0.85rem; border-radius: 8px;
   border: 1px solid rgba(217, 183, 122, 0.25);
   background: rgba(9, 25, 19, 0.6);
+  display: flex; flex-direction: column; gap: 0.45rem;
   legend { padding: 0 0.3rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #d9b77a; }
   &--soon { opacity: 0.55; }
 }
 
-.lw-vtt-settings__hint { margin: 0.2rem 0 0.5rem; color: #9fb3aa; font-size: 0.78rem; }
+.lw-vtt-settings__hint { margin: 0.1rem 0 0.35rem; color: #9fb3aa; font-size: 0.76rem; line-height: 1.35; }
 
 .lw-vtt-settings__option {
   display: flex; align-items: flex-start; gap: 0.55rem; padding: 0.45rem 0.5rem;
@@ -25,4 +26,35 @@
   display: flex; flex-direction: column;
   strong { color: #f3e8d0; }
   small { color: #9fb3aa; font-size: 0.74rem; }
+}
+
+.lw-vtt-settings__calibrate-btn {
+  width: 100%; padding: 0.5rem 0.75rem; border-radius: 6px;
+  background: rgba(27, 94, 58, 0.35); border: 1px solid rgba(73, 232, 146, 0.45);
+  color: #e8f5ee; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s ease;
+  &:hover { background: rgba(46, 230, 107, 0.24); border-color: #49e892; }
+  &.active { background: rgba(217, 183, 122, 0.22); border-color: #d9b77a; color: #f3e8d0; }
+}
+
+.lw-vtt-settings__row-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.75rem; color: #c7d8d0; margin-top: 0.25rem;
+  strong { color: #49e892; }
+}
+
+.lw-vtt-settings__slider-row {
+  display: flex; align-items: center; gap: 0.4rem;
+  input[type='range'] { flex: 1; accent-color: #49e892; cursor: pointer; }
+}
+
+.lw-vtt-settings__step-btn, .lw-vtt-settings__reset-btn {
+  padding: 0.18rem 0.5rem; border-radius: 4px;
+  background: rgba(12, 30, 23, 0.9); border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e2eee8; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+  &:hover { border-color: #49e892; color: #49e892; }
+}
+
+.lw-vtt-settings__axis {
+  font-size: 0.7rem; font-weight: 700; color: #d9b77a;
 }
