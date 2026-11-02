@@ -104,15 +104,100 @@
   font-weight: 750;
   letter-spacing: 0.085em;
   text-transform: uppercase;
-  color: #9db3aa;
+  color: #dbc183;
 
   &:hover {
-    color: #e7cf9f;
+    color: #f3e0b5;
   }
   &:focus-visible {
     outline: 2px solid #49e892;
     outline-offset: -2px;
   }
+}
+
+.lw-sidebar__vtt-callout {
+  padding: 0.25rem 0.1rem 0.15rem;
+}
+
+.lw-vtt-feature-card {
+  display: flex;
+  align-items: center;
+  gap: 0.72rem;
+  padding: 0.62rem 0.78rem;
+  border-radius: 9px;
+  text-decoration: none;
+  border: 1px solid rgba(46, 230, 107, 0.48);
+  background:
+    radial-gradient(circle at 85% 90%, rgba(46, 230, 107, 0.22), transparent 62%),
+    linear-gradient(135deg, rgba(16, 48, 34, 0.88) 0%, rgba(8, 24, 18, 0.94) 100%);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(73, 232, 146, 0.22);
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease;
+
+  &:hover {
+    border-color: rgba(73, 232, 146, 0.82);
+    background:
+      radial-gradient(circle at 85% 90%, rgba(46, 230, 107, 0.32), transparent 62%),
+      linear-gradient(135deg, rgba(22, 62, 44, 0.94) 0%, rgba(10, 32, 23, 0.98) 100%);
+    box-shadow:
+      0 8px 22px rgba(10, 36, 24, 0.55),
+      0 0 14px rgba(46, 230, 107, 0.18),
+      inset 0 1px 0 rgba(73, 232, 146, 0.35);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #49e892;
+    outline-offset: 2px;
+  }
+
+  &--active {
+    border-color: #49e892;
+    box-shadow:
+      0 0 16px rgba(73, 232, 146, 0.28),
+      inset 3px 0 0 #49e892;
+  }
+}
+
+.lw-vtt-feature-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  color: #2ee66b;
+}
+
+.lw-vtt-feature-card__divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 28px;
+  background: rgba(73, 232, 146, 0.22);
+}
+
+.lw-vtt-feature-card__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.lw-vtt-feature-card__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.18;
+  color: #f4efe2;
+  letter-spacing: 0.01em;
+}
+
+.lw-vtt-feature-card__sub {
+  font-size: 0.71rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #9ec0b0;
 }
 .lw-sidebar__heading-chevron {
   margin-left: auto;

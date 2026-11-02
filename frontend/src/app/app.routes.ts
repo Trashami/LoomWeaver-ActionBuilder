@@ -194,6 +194,13 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('./features/sourcebooks/sourcebook.page').then((m) => m.SourceBookPageComponent),
   },
+  {
+    path: 'rules',
+    canActivate: [authGuard],
+    data: { defaultTab: 'core' },
+    loadComponent: () =>
+      import('./features/sourcebooks/sourcebook.page').then((m) => m.SourceBookPageComponent),
+  },
   { path: 'library', redirectTo: 'sources', pathMatch: 'full' },
   {
     path: 'sources/:code',

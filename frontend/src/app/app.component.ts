@@ -58,9 +58,9 @@ const DEFAULT_FAVORITES = ["session-log", "characters", "maps-scenes"] as const;
 
 const NAV_GROUPS: readonly StudioNavGroup[] = [
   {
-    id: "overview",
-    label: "Overview",
-    icon: "house",
+    id: "campaign",
+    label: "Campaign",
+    icon: "bookmark",
     items: [
       {
         id: "dashboard",
@@ -68,19 +68,6 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
         route: "/home",
         icon: "house",
         exact: true,
-      },
-    ],
-  },
-  {
-    id: "campaign",
-    label: "Campaign Management",
-    icon: "layers",
-    items: [
-      {
-        id: "library",
-        label: "Library",
-        route: "/sources",
-        icon: "book-open",
       },
       {
         id: "world-lore",
@@ -135,16 +122,29 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
     ],
   },
   {
-    id: "play",
-    label: "Play & Creation Tools",
-    icon: "gamepad-2",
+    id: "library",
+    label: "Library & Reference",
+    icon: "library",
     items: [
       {
-        id: "arcane-vtt",
-        label: "Arcane Screen (Live VTT)",
-        route: "/arcane-screen",
-        icon: "monitor-play",
+        id: "sourcebooks",
+        label: "Sourcebooks",
+        route: "/sources",
+        icon: "book-open",
       },
+      {
+        id: "rules-compendium",
+        label: "Rules & Compendium",
+        route: "/rules",
+        icon: "layers",
+      },
+    ],
+  },
+  {
+    id: "creation",
+    label: "Creation Tools",
+    icon: "wrench",
+    items: [
       {
         id: "dice-forge",
         label: "3D Dice Forge",
@@ -180,7 +180,7 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
         id: "store",
         label: "Store",
         route: "/store",
-        icon: "store",
+        icon: "shopping-cart",
       },
     ],
   },
@@ -234,7 +234,7 @@ export class AppComponent {
     this.navGroups.map((group) => ({
       ...group,
       items:
-        group.id === "play" && this.store.weaveEnabled()
+        group.id === "creation" && this.store.weaveEnabled()
           ? [
               ...group.items,
               {

@@ -4,7 +4,7 @@ import {
   OnDestroy, ViewChild, computed, effect, inject, signal, untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
 import { AdventureGuideService } from '../../core/services/adventure-guide.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
@@ -47,7 +47,7 @@ import { VttServerSyncService } from './services/vtt-server-sync.service';
   selector: 'lw-arcane-screen-page',
   standalone: true,
   imports: [
-    FormsModule, NgpButton, LwButtonComponent, LwContextSwitcherComponent, LwIconComponent, VttActionDockComponent,
+    FormsModule, RouterLink, NgpButton, LwButtonComponent, LwContextSwitcherComponent, LwIconComponent, VttActionDockComponent,
     VttGmRailComponent, VttGmGuidePanelComponent, VttGmTrackersPanelComponent,
     VttSettingsModalComponent, VttDmDrawersComponent, VttMapToolsComponent,
     VttSettingsPanelComponent, VttHandoutModalComponent,

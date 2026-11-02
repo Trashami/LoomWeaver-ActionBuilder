@@ -1,5 +1,6 @@
-import { resolveDefaultTokenFromLibrary } from './vtt-token-library-resolver';
+import { resolveDefaultTokenFromLibrary, is3dPreviewThumbnailUrl } from './vtt-token-library-resolver';
 import { resolveCharacterGlbUrl } from '../../characters/models/character-portrait-catalog.data';
+import { CharacterStudioService } from '../../characters/services/character-studio.service';
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -19,6 +20,7 @@ export class VttServerSyncService {
   private readonly store = inject(LoomWeaverStoreService);
   private readonly vtt = inject(VttCombatService);
   private readonly battle = inject(VttBattleStateService);
+  private readonly characterStudio = inject(CharacterStudioService);
   private readonly realtime = inject(TableRealtimeSyncService);
   private readonly alertify = inject(LwAlertifyService);
   private readonly destroyRef = inject(DestroyRef);
@@ -131,14 +133,31 @@ export class VttServerSyncService {
         firstValueFrom(this.http.get<CombatStateResponse>(`${base}/combat/state`)),
       ]);
       if (tokens.length === 0) return;
+      const sheets = this.characterStudio.sheets();
       const mapped = [...tokens]
         .map((t) => {
-          const def = resolveDefaultTokenFromLibrary(t);
+          const lowerName = (t.name || '').trim().toLowerCase();
+          const matchedSheet = sheets.find(
+            (s) =>
+              t.key.toLowerCase().includes(s.characterKey.toLowerCase()) ||
+              s.name.trim().toLowerCase() === lowerName,
+          );
+          const sheetPortrait =
+            matchedSheet?.portraitUrl && !is3dPreviewThumbnailUrl(matchedSheet.portraitUrl)
+              ? matchedSheet.portraitUrl
+              : undefined;
+          const preferred2dAvatar =
+            sheetPortrait ||
+            (t.avatarUrl && !is3dPreviewThumbnailUrl(t.avatarUrl) ? t.avatarUrl : undefined);
+          const def = resolveDefaultTokenFromLibrary({
+            ...t,
+            avatarUrl: preferred2dAvatar || t.avatarUrl,
+          });
           return {
             ...t,
             movementFeet: t.movementRemainingFeet,
             canControl: t.canControl === true,
-            avatarUrl: t.avatarUrl || def.avatarUrl,
+            avatarUrl: def.avatarUrl,
             glbUrl: t.glbUrl || def.glbUrl,
           };
         })

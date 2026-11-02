@@ -20,10 +20,12 @@ import {
 } from './effect-timeline.contract';
 import { TerrainMeshBuilder } from '../../maps/engine/terrain/terrain-mesh.builder';
 import { sampleTokenFootprintElevation } from './token-drag-controller';
+import { resolve2dTokenUrlFromLibrary } from '../../arcane-screen/services/vtt-token-library-resolver';
 
 export class BabylonTokenMeshBuilder {
   private readonly glbContainerCache = new Map<string, AssetContainer>();
   private readonly loadingGlbUrls = new Set<string>();
+  private readonly imageElementCache = new Map<string, HTMLImageElement>();
 
   clearCache(): void {
     this.glbContainerCache.forEach((c) => c.dispose());
@@ -340,46 +342,134 @@ export class BabylonTokenMeshBuilder {
   ): void {
     const disc = MeshBuilder.CreateDisc(
       `lw-token-puck-disc-${token.key}`,
-      { radius: 0.36 * effectiveScale, tessellation: 36, sideOrientation: Mesh.DOUBLESIDE },
+      { radius: 0.37 * effectiveScale, tessellation: 48, sideOrientation: Mesh.DOUBLESIDE },
       scene,
     );
     disc.parent = baseMesh;
-    disc.position.set(0, baseHeight / 2 + 0.004, 0);
+    disc.position.set(0, baseHeight / 2 + 0.006, 0);
     disc.rotation.x = Math.PI / 2;
     disc.isPickable = true;
     disc.metadata = { tokenKey: token.key };
 
     const discMat = new StandardMaterial(`lw-mat-puck-${token.key}`, scene);
-    discMat.maxSimultaneousLights = 8;
     discMat.backFaceCulling = false;
-    discMat.specularColor = new Color3(0.02, 0.02, 0.02);
-    if (token.avatarUrl) {
-      const tex = new Texture(token.avatarUrl, scene, false, false);
-      discMat.diffuseTexture = tex;
-      discMat.emissiveColor = new Color3(0.22, 0.22, 0.22);
-    } else {
-      const initials = (token.name || 'TK')
-        .split(/\s+/)
-        .map((w) => w[0] || '')
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
-      const dt = new DynamicTexture(`lw-dt-puck-${token.key}`, { width: 128, height: 128 }, scene, false);
-      const ctx = dt.getContext() as unknown as CanvasRenderingContext2D;
-      ctx.fillStyle = baseColorHex;
-      ctx.fillRect(0, 0, 128, 128);
-      ctx.fillStyle = '#e5ece8';
-      ctx.font = 'bold 52px Inter, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(initials, 64, 66);
+    discMat.disableLighting = true;
+    discMat.emissiveColor = Color3.White();
+    discMat.specularColor = Color3.Black();
+
+    const size = 256;
+    const dt = new DynamicTexture(
+      `lw-dt-puck-${token.key}`,
+      { width: size, height: size },
+      scene,
+      true,
+    );
+
+    const factionRingHex = isTargeted
+      ? '#ef4444'
+      : isAttacker
+        ? '#f59e0b'
+        : token.faction === 'party'
+          ? '#2ee66b'
+          : token.faction === 'hostile'
+            ? '#ef5d72'
+            : '#94a3b8';
+
+    const bgCenterHex =
+      token.faction === 'party'
+        ? '#1e5638'
+        : token.faction === 'hostile'
+          ? '#6b1d28'
+          : '#334155';
+    const bgEdgeHex =
+      token.faction === 'party'
+        ? '#0d2b1c'
+        : token.faction === 'hostile'
+          ? '#380d14'
+          : '#1e293b';
+
+    const initials = (token.name || 'TK')
+      .split(/\s+/)
+      .map((w) => w[0] || '')
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+
+    const drawBackdropAndFrame = (ctx: CanvasRenderingContext2D, img?: HTMLImageElement) => {
+      ctx.save();
+      ctx.clearRect(0, 0, size, size);
+
+      const grad = ctx.createRadialGradient(size / 2, size / 2, size * 0.08, size / 2, size / 2, size * 0.5);
+      grad.addColorStop(0, bgCenterHex);
+      grad.addColorStop(1, bgEdgeHex);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, size, size);
+
+      if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size * 0.44, 0, Math.PI * 2);
+        ctx.clip();
+
+        // Zoom slightly into the upper-center portrait area so character faces are clearly visible
+        const srcW = img.naturalWidth;
+        const srcH = img.naturalHeight;
+        const cropDim = Math.min(srcW, srcH) * 0.86;
+        const sx = (srcW - cropDim) / 2;
+        const sy = Math.max(0, (srcH - cropDim) * 0.14);
+        ctx.drawImage(img, sx, sy, cropDim, cropDim, 0, 0, size, size);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#f4efe2';
+        ctx.font = 'bold 88px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(initials, size / 2, size / 2 + 4);
+      }
+
+      // Crisp inner gold trim + outer faction border ring
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size * 0.44, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(242, 234, 215, 0.72)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size * 0.475, 0, Math.PI * 2);
+      ctx.strokeStyle = factionRingHex;
+      ctx.lineWidth = 12;
+      ctx.stroke();
+
+      ctx.restore();
       dt.update(false);
-      discMat.diffuseTexture = dt;
-      discMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.28);
+    };
+
+    const ctx = dt.getContext() as unknown as CanvasRenderingContext2D;
+    const portraitUrl = resolve2dTokenUrlFromLibrary(token);
+    const cachedImg = portraitUrl ? this.imageElementCache.get(portraitUrl) : undefined;
+
+    if (cachedImg && cachedImg.complete && cachedImg.naturalWidth > 0) {
+      drawBackdropAndFrame(ctx, cachedImg);
+    } else {
+      drawBackdropAndFrame(ctx);
+      if (portraitUrl && typeof Image !== 'undefined') {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          this.imageElementCache.set(portraitUrl, img);
+          if (!disc.isDisposed()) {
+            drawBackdropAndFrame(ctx, img);
+          }
+        };
+        img.src = portraitUrl;
+      }
     }
+
+    discMat.diffuseTexture = dt;
+    discMat.emissiveTexture = dt;
     disc.material = discMat;
 
-    this.attachRimOnly(scene, token.key, baseMesh, effectiveScale, baseHeight, isAttacker, isTargeted);
+    this.attachRimOnly(scene, token.key, baseMesh, effectiveScale, baseHeight, isAttacker, isTargeted, token.faction);
   }
 
   private attachRimOnly(
@@ -390,22 +480,31 @@ export class BabylonTokenMeshBuilder {
     baseHeight: number,
     isAttacker: boolean,
     isTargeted: boolean,
+    faction?: VttTokenVm['faction'],
   ): void {
     const rim = MeshBuilder.CreateTorus(
       `lw-token-puck-rim-${tokenKey}`,
-      { diameter: 0.78 * effectiveScale, thickness: 0.032 * effectiveScale, tessellation: 36 },
+      { diameter: 0.80 * effectiveScale, thickness: 0.044 * effectiveScale, tessellation: 40 },
       scene,
     );
     rim.parent = baseMesh;
-    rim.position.set(0, baseHeight / 2 + 0.005, 0);
+    rim.position.set(0, baseHeight / 2 + 0.008, 0);
     rim.metadata = { tokenKey };
 
     const rimMat = new StandardMaterial(`lw-mat-rim-${tokenKey}`, scene);
     rimMat.maxSimultaneousLights = 8;
-    const rimHex = isTargeted ? '#991b1b' : isAttacker ? '#c9a66b' : '#26302c';
+    const rimHex = isTargeted
+      ? '#ef4444'
+      : isAttacker
+        ? '#f59e0b'
+        : faction === 'party'
+          ? '#2ee66b'
+          : faction === 'hostile'
+            ? '#ef5d72'
+            : '#94a3b8';
     rimMat.diffuseColor = Color3.FromHexString(rimHex);
-    rimMat.specularColor = new Color3(0.03, 0.03, 0.03);
-    rimMat.emissiveColor = Color3.FromHexString(rimHex).scale(isTargeted || isAttacker ? 0.24 : 0.08);
+    rimMat.specularColor = new Color3(0.05, 0.05, 0.05);
+    rimMat.emissiveColor = Color3.FromHexString(rimHex).scale(isTargeted || isAttacker ? 0.55 : 0.38);
     rim.material = rimMat;
   }
 

@@ -1,18 +1,35 @@
 import type { GroundSampler, WaterProfile } from './water-profile';
 import { sampleWaterNetwork, WaterField } from './water-network-field';
 
-/** Extend into the carved bank and clip against its actual rendered height, not an assumed radius. */
-export function sampleWaterShoreline(profiles: readonly WaterProfile[], x: number, z: number,
-  ground?: GroundSampler): WaterField {
+const MAP_HALF_W = 18;
+const MAP_HALF_H = 13.5;
+
+/** Extend into the carved bank and clip cleanly against terrain height and map edges. */
+export function sampleWaterShoreline(
+  profiles: readonly WaterProfile[],
+  x: number,
+  z: number,
+  ground?: GroundSampler,
+): WaterField {
   const f = sampleWaterNetwork(profiles, x, z);
-  if (!ground) return f;
-  const bank = Math.max(.12, f.settings.bankWidth * f.settings.bankFeathering / 100);
+  const edgeDist = Math.min(MAP_HALF_W - Math.abs(x), MAP_HALF_H - Math.abs(z));
+  if (edgeDist < 0) {
+    return { ...f, coverage: edgeDist, depth: 0 };
+  }
+  if (!ground) {
+    return { ...f, coverage: Math.min(f.coverage, edgeDist) };
+  }
+  const bank = Math.max(0.12, (f.settings.bankWidth * f.settings.bankFeathering) / 100);
   const support = f.coverage + bank;
-  const bed = ground(x, z), depth = f.level - bed;
-  // Feather an open, low bank down to the ground instead of exposing a vertical blue skirt.
+  const bed = ground(x, z);
+  const depth = f.level - bed;
   const t = Math.max(0, Math.min(1, support / bank));
   const feather = t * t * (3 - 2 * t);
   const level = bed + Math.max(0, depth) * feather;
-  return { ...f, coverage: Math.min(support, depth), level,
-    depth: Math.max(0, Math.min(1, (level - bed) / Math.max(.15, f.settings.depth))) };
+  return {
+    ...f,
+    coverage: Math.min(support, depth, edgeDist),
+    level,
+    depth: Math.max(0, Math.min(1, (level - bed) / Math.max(0.15, f.settings.depth))),
+  };
 }

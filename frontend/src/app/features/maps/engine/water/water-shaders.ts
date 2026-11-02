@@ -26,11 +26,11 @@ varying vec4 vStyle;
 void main() {
   vec3 p = position;
   float wave = sin(p.x * waterStyle.z + time * .8) * cos(p.z * waterStyle.z * .72 - time * .65);
-  p.y += wave * waterStyle.w * waterData.x * (1.0 - waterData.y);
+  p.y += wave * waterStyle.w * waterData.x * (1.0 - waterData.y * 0.65);
   vWorld = (world * vec4(p, 1.0)).xyz;
   vNormal = normalize(mat3(world) * normal);
   vUV = uv; vWater = waterData;
-  vFlow=waterFlow;vShallow=waterShallow;vDeep=waterDeep;vStyle=waterStyle;
+  vFlow = waterFlow; vShallow = waterShallow; vDeep = waterDeep; vStyle = waterStyle;
   vClip = worldViewProjection * vec4(p, 1.0);
   gl_Position = vClip;
 }`;
@@ -60,7 +60,6 @@ uniform vec3 deepColor;
 uniform vec3 cameraPosition;
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
-uniform sampler2D sceneColor;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
 float noise(vec2 p) {
   vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
@@ -68,40 +67,46 @@ float noise(vec2 p) {
 }
 float waves(vec2 p) { return noise(p)*.57 + noise(p*2.17+7.1)*.28 + noise(p*4.31-3.2)*.15; }
 void main() {
-  float fall = vWater.y;
-  vec2 direction=normalize(vFlow.xy+vec2(.00001));
-  vec2 flowing=vec2(dot(vWorld.xz,vec2(-direction.y,direction.x)),dot(vWorld.xz,direction));
-  vec2 coord=mix(vWorld.xz,flowing,vWater.z);
-  float speed = vFlow.z * mix(1.0, 4.5, fall);
+  float fall = clamp(vWater.y, 0.0, 1.0);
+  vec2 direction = normalize(vFlow.xy + vec2(.00001));
+  vec2 flowing = vec2(dot(vWorld.xz, vec2(-direction.y, direction.x)), dot(vWorld.xz, direction));
+  vec2 coord = mix(vWorld.xz, flowing, vWater.z);
+  float speed = vFlow.z * mix(1.0, 5.2, fall);
   vec2 p = coord * vStyle.z;
   p.y -= time * speed;
-  p.x += sin(p.y*.6+time*.4) * vStyle.x*.15;
-  p.y *= mix(1.0,.45,fall);
-  float roughness = vStyle.x * (1.0 + fall * 1.8);
-  float n = waves(p), nx = waves(p+vec2(.07,0.)), nz = waves(p+vec2(0.,.07));
-  vec3 N = normalize(vNormal + vec3((n-nx)*roughness*4.0, 0., (n-nz)*roughness*4.0));
+  p.x += sin(p.y * .6 + time * .4) * vStyle.x * .15;
+  p.y *= mix(1.0, .38, fall);
+  float roughness = vStyle.x * (1.0 + fall * 2.1);
+  float n = waves(p), nx = waves(p + vec2(.07, 0.)), nz = waves(p + vec2(0., .07));
+  vec3 N = normalize(vNormal + vec3((n - nx) * roughness * 4.0, 0., (n - nz) * roughness * 4.0));
   vec3 V = normalize(cameraPosition - vWorld);
-  if (dot(N,V) < 0.) N = -N;
-  float fresnel = pow(1.0-max(dot(N,V),0.),4.0);
-  float depth = clamp(vWater.x,0.,1.);
-  vec3 water = mix(vShallow.rgb,vDeep.rgb,sqrt(depth)*.85);
-  vec2 screenUV = vClip.xy/vClip.w*.5+.5;
-  vec2 distortion = N.xz * vFlow.w * .025 * depth;
-  vec3 refracted = texture2D(sceneColor,clamp(screenUV+distortion,vec2(.002),vec2(.998))).rgb;
-  water = mix(water,refracted * mix(vec3(1.), vShallow.rgb*1.8,depth*.35), vFlow.w*2.0);
+  if (dot(N, V) < 0.) N = -N;
+  float fresnel = pow(1.0 - max(dot(N, V), 0.), 3.6);
+  float depth = clamp(vWater.x, 0., 1.);
+  vec3 water = mix(vShallow.rgb, vDeep.rgb, sqrt(depth) * .85);
+
+  // Procedural river-bed caustic refraction (never depends on secondary scene RenderTargetTexture)
+  float causticWave = waves(p * 1.45 + N.xz * 2.4);
+  vec3 bedRefracted = mix(vDeep.rgb * 0.78, vShallow.rgb * 1.32, smoothstep(0.32, 0.78, causticWave));
+  water = mix(water, bedRefracted, clamp(vFlow.w * 0.45 * (1.0 - depth * 0.35), 0.0, 0.55));
+
   vec3 L = normalize(lightDirection);
-  float diffuse = .45 + .55*max(dot(N,L),0.);
-  vec3 reflected = mix(vec3(.17,.29,.36),vec3(.56,.73,.8),clamp(N.y,0.,1.));
-  reflected *= max(vec3(.15),lightColor);
-  vec3 color = water * diffuse * max(vec3(.15),lightColor);
-  color = mix(color,reflected,vDeep.a*(.12+fresnel*.8));
-  float spec = pow(max(dot(N,normalize(L+V)),0.),mix(160.,32.,clamp(vStyle.x*.4,0.,1.)));
-  color += lightColor * spec * vDeep.a * 1.4;
-  float shore = (1.0-smoothstep(.02,.4,depth)) * (.12+.35*noise(coord*5.-time*.25));
-  float streak = smoothstep(.52,.85,waves(vec2(p.x*2.8,p.y*.25)));
-  float rapids = max(fall*.8,clamp(vStyle.x-1.,0.,1.)*.5)*streak;
-  float whitewater = clamp((shore + rapids)*vStyle.y,0.,.9);
-  color = mix(color,vec3(.82,.94,.96)*max(vec3(.35),lightColor),whitewater);
-  float edge = smoothstep(0.,.12,depth);
-  gl_FragColor = vec4(color,edge * clamp(vShallow.a + fresnel*.12 + whitewater*.1,.0,1.));
+  float diffuse = .52 + .48 * max(dot(N, L), 0.);
+  vec3 reflected = mix(vec3(.19, .34, .42), vec3(.62, .80, .88), clamp(N.y, 0., 1.));
+  reflected *= max(vec3(.35), lightColor);
+  vec3 color = water * diffuse * max(vec3(.45), lightColor);
+  color = mix(color, reflected, vDeep.a * (.14 + fresnel * .75));
+  float spec = pow(max(dot(N, normalize(L + V)), 0.), mix(160., 32., clamp(vStyle.x * .4, 0., 1.)));
+  color += lightColor * spec * vDeep.a * 1.35;
+
+  // Shoreline & Waterfall Curtain Whitewater
+  float shore = (1.0 - smoothstep(.02, .38, depth)) * (.14 + .36 * noise(coord * 5. - time * .25));
+  float streak = smoothstep(.44, .82, waves(vec2(p.x * 3.4, p.y * .22)));
+  float fallCurtain = fall * (0.42 + 0.58 * smoothstep(0.35, 0.78, waves(vec2(p.x * 4.5, p.y * 0.18 - time * 1.8))));
+  float rapids = max(fallCurtain, clamp(vStyle.x - 1., 0., 1.) * .5 * streak);
+  float whitewater = clamp((shore + rapids) * max(0.35, vStyle.y), 0., .94);
+  color = mix(color, vec3(.88, .96, .99) * max(vec3(.55), lightColor), whitewater);
+
+  float edge = smoothstep(0., .12, depth);
+  gl_FragColor = vec4(color, edge * clamp(vShallow.a + fresnel * .14 + whitewater * .15, .0, 1.));
 }`;

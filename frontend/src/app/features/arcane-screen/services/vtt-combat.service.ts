@@ -1,5 +1,6 @@
-import { resolveDefaultTokenFromLibrary } from './vtt-token-library-resolver';
+import { resolveDefaultTokenFromLibrary, is3dPreviewThumbnailUrl } from './vtt-token-library-resolver';
 import { resolveCharacterGlbUrl } from '../../characters/models/character-portrait-catalog.data';
+import { CharacterStudioService } from '../../characters/services/character-studio.service';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -57,6 +58,7 @@ export class VttCombatService {
   private readonly http = inject(HttpClient);
   private readonly store = inject(LoomWeaverStoreService);
   private readonly fullscreenDice = inject(FullscreenDiceOverlayService);
+  private readonly characterStudio = inject(CharacterStudioService);
 
   constructor() {
     if (this.tokens().length === 0 && this.encounterDetails().length > 0) {
@@ -192,27 +194,47 @@ export class VttCombatService {
     this.activeRound.set(1);
     this.activeTurnIndex.set(0);
 
+    const sheets = this.characterStudio.sheets();
     const partyTokens: VttTokenVm[] = enc.partyMembers
       .filter((p) => p.includedInEncounter)
-      .map((p, idx) => ({
-        key: p.compositeKey,
-        name: p.name,
-        roleLabel: `Party · ${p.classSummary}`,
-        faction: 'party' as const,
-        initiative: 20 - idx * 2,
-        currentHp: p.currentHp,
-        maxHp: p.maxHp,
-        armorClass: p.armorClass,
-        x: -6 + idx * 1.5,
-        z: -3 + (idx % 2) * 3,
-        colorHex: '#2ed39a',
-        actionUsed: false,
-        bonusUsed: false,
-        reactionUsed: false,
-        movementFeet: 30,
-        avatarUrl: resolveDefaultTokenFromLibrary({ name: p.name, roleLabel: p.classSummary, faction: 'party', avatarUrl: p.avatarUrl }).avatarUrl,
-        glbUrl: resolveDefaultTokenFromLibrary({ name: p.name, roleLabel: p.classSummary, faction: 'party', avatarUrl: p.avatarUrl }).glbUrl,
-      }));
+      .map((p, idx) => {
+        const lowerName = (p.name || '').trim().toLowerCase();
+        const matchedSheet = sheets.find(
+          (s) =>
+            p.compositeKey.toLowerCase().includes(s.characterKey.toLowerCase()) ||
+            s.name.trim().toLowerCase() === lowerName,
+        );
+        const assigned2dAvatar =
+          matchedSheet?.portraitUrl && !is3dPreviewThumbnailUrl(matchedSheet.portraitUrl)
+            ? matchedSheet.portraitUrl
+            : p.avatarUrl;
+        const resolved = resolveDefaultTokenFromLibrary({
+          name: p.name,
+          roleLabel: p.classSummary,
+          faction: 'party',
+          key: p.compositeKey,
+          avatarUrl: assigned2dAvatar,
+        });
+        return {
+          key: p.compositeKey,
+          name: p.name,
+          roleLabel: `Party · ${p.classSummary}`,
+          faction: 'party' as const,
+          initiative: 20 - idx * 2,
+          currentHp: p.currentHp,
+          maxHp: p.maxHp,
+          armorClass: p.armorClass,
+          x: -6 + idx * 1.5,
+          z: -3 + (idx % 2) * 3,
+          colorHex: '#2ed39a',
+          actionUsed: false,
+          bonusUsed: false,
+          reactionUsed: false,
+          movementFeet: 30,
+          avatarUrl: resolved.avatarUrl,
+          glbUrl: resolved.glbUrl,
+        };
+      });
 
     const npcTokens: VttTokenVm[] = enc.sessionNpcs
       .filter((n) => n.includedInEncounter)

@@ -32,7 +32,9 @@ export class SourceBookPageComponent {
   readonly code = this.route.snapshot.paramMap.get('code');
 
   readonly search = signal('');
-  readonly selectedTab = signal<LibraryCategoryTab>('all');
+  readonly selectedTab = signal<LibraryCategoryTab>(
+    (this.route.snapshot.data['defaultTab'] as LibraryCategoryTab) || 'all',
+  );
   readonly sources = signal<readonly LwSourceSummaryVm[]>([]);
   readonly source = signal<LwSourceDetailVm | null>(null);
   readonly loading = signal(false);

@@ -141,9 +141,28 @@ export class TerrainMeshBuilder {
     const stride = this.SUBDIV + 1;
     const expected = stride * stride;
     if (elevations && elevations.length === expected) {
+      if (this.customElevations && this.customElevations.length === expected) {
+        let changed = false;
+        for (let i = 0; i < expected; i++) {
+          if (Math.abs(this.customElevations[i] - elevations[i]) > 0.0005) {
+            changed = true;
+            break;
+          }
+        }
+        if (!changed) return;
+      }
       this.customElevations = new Float32Array(elevations);
       this.elevationVersion++;
     } else if (elevations === null || (elevations && elevations.length === 0)) {
+      if (!this.customElevations) return;
+      let hasNonZero = false;
+      for (let i = 0; i < this.customElevations.length; i++) {
+        if (Math.abs(this.customElevations[i]) > 0.0005) {
+          hasNonZero = true;
+          break;
+        }
+      }
+      if (!hasNonZero) return;
       this.customElevations = null;
       this.elevationVersion++;
     }
@@ -229,7 +248,8 @@ export class TerrainMeshBuilder {
     baseReliefScale = 24,
     waterSplineCount = 0,
   ): void {
-    const sig = `${this.elevationVersion}|${baseReliefScale}|${waterSplineCount}|${this.activeGridMode}`;
+    const waterSig = JSON.stringify(WaterChannelTerrain.getBodies(scene));
+    const sig = `${this.elevationVersion}|${baseReliefScale}|${waterSplineCount}|${waterSig}|${this.activeGridMode}`;
     if (this.appliedReliefSigByScene.get(scene) === sig) {
       return;
     }
@@ -270,15 +290,22 @@ export class TerrainMeshBuilder {
 
     WaterChannelTerrain.apply(scene, positions, this.GROUND_W, this.GROUND_H);
     ground.updateVerticesData('position', positions);
+    this.cachedPositionsByScene.set(scene, new Float32Array(positions));
     this.recomputeNormals(ground, positions);
     ground.refreshBoundingInfo();
   }
 
+  private static cachedPositionsByScene = new WeakMap<Scene, Float32Array>();
+
   static sampleElevationAt(scene: Scene, worldX: number, worldZ: number): number {
-    const ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
-    if (!ground) return 0;
-    const positions = ground.getVerticesData('position');
-    if (!positions) return 0;
+    let positions: Float32Array | number[] | null | undefined = this.cachedPositionsByScene.get(scene);
+    if (!positions) {
+      const ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
+      if (!ground) return 0;
+      positions = ground.getVerticesData('position');
+      if (!positions) return 0;
+      this.cachedPositionsByScene.set(scene, new Float32Array(positions));
+    }
 
     const cols = this.SUBDIV + 1;
     const u = Math.max(0, Math.min(1, (worldX + this.GROUND_W / 2) / this.GROUND_W));
