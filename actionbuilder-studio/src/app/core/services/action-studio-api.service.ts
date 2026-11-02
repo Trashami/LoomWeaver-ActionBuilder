@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 import {
   ActionStudioContext,
   ApplyCampaignRuleResponse,
@@ -32,7 +32,24 @@ export class ActionStudioApiService {
         headers: this.buildAuthHeaders(),
         withCredentials: true,
       })
-      .pipe(catchError(() => of(FALLBACK_STUDIO_CONTEXT)));
+      .pipe(
+        catchError(() =>
+          this.http
+            .get<{ coreRules?: CampaignActionRule[] }>(`${this.apiBase}/symbols`, {
+              withCredentials: true,
+            })
+            .pipe(
+              map((sym) => ({
+                ...FALLBACK_STUDIO_CONTEXT,
+                rules:
+                  sym.coreRules && sym.coreRules.length > 0
+                    ? sym.coreRules
+                    : FALLBACK_STUDIO_CONTEXT.rules,
+              })),
+              catchError(() => of(FALLBACK_STUDIO_CONTEXT))
+            )
+        )
+      );
   }
 
   applyRuleToCampaign(

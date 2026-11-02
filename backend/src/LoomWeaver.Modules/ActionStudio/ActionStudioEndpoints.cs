@@ -48,13 +48,19 @@ public static class ActionStudioEndpoints
             return Results.Ok(ctx);
         });
 
-        api.MapGet("/actions/symbols", () =>
-            Results.Ok(new
+        api.MapGet("/actions/symbols", async (LoomWeaverMySqlRepository mysql, CancellationToken ct) =>
+        {
+            var repo = new ActionStudioMySqlRepository(mysql);
+            await repo.EnsureSchemaAsync(ct);
+            var coreRules = await repo.LoadAllCoreRulesAsync(ct);
+            return Results.Ok(new
             {
                 clauseKeywords = ActionEngineSymbolCatalog.GetClauseKeywords(),
                 tokenSuggestions = ActionEngineSymbolCatalog.GetTokenSuggestions(),
-                engineSymbols = ActionEngineSymbolCatalog.GetEngineSymbols()
-            }));
+                engineSymbols = ActionEngineSymbolCatalog.GetEngineSymbols(),
+                coreRules
+            });
+        });
 
         api.MapPost("/actions/campaigns/{campaignId:int}/apply-rule", async (
             int campaignId,
