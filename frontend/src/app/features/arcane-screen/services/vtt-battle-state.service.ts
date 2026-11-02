@@ -141,7 +141,7 @@ export class VttBattleStateService {
   // Active observer token (the selected player token whose Line of Sight is evaluated)
   readonly activeObserverToken = computed<VttTokenVm>(() => {
     const selected = this.vtt.selectedAttacker();
-    if (selected && selected.faction === 'party' && this.canControlToken(selected)) {
+    if (selected && (this.store.viewerRole() === 'gm' || selected.faction === 'party') && this.canControlToken(selected)) {
       return selected;
     }
     const party = this.vtt.partyTokensInScene();
@@ -631,7 +631,7 @@ export class VttBattleStateService {
   handleTokenClick(token: VttTokenVm, shiftKey: boolean): void {
     const obs = this.activeObserverToken();
     if (
-      token.faction === 'party' &&
+      (token.faction === 'party' || this.store.viewerRole() === 'gm') &&
       !shiftKey &&
       !this.targetSelectionMode() &&
       !this.pendingAbility()

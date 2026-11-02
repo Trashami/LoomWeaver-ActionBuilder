@@ -6,6 +6,8 @@
     [sessions]="sessions()"
     [encounters]="encounters()"
     [activeCampaignId]="store.activeCampaignId()"
+    [selectedSessionId]="assignSessionId()"
+    [selectedEncounterId]="assignEncounterId()"
     (campaignChange)="store.setCampaign($event)"
     (createNewMap)="onCreateMapFromLanding($event)"
     (openExistingMap)="onOpenExistingMapFromLanding($event)"

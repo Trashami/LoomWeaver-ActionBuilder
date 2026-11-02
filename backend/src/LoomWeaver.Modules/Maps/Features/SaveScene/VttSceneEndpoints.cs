@@ -96,7 +96,27 @@ public static class VttSceneEndpoints
             var access = await CampaignAccessResolver.ResolveAsync(ctx, campaignId, null, ct);
             if (!access.IsMember) return Results.StatusCode(403);
 
-            var artFileName = string.IsNullOrWhiteSpace(artworkUrl) ? "" : Path.GetFileName(artworkUrl);
+            if (!string.IsNullOrWhiteSpace(sceneKey) && sceneKey != "current" && sceneKey != "active")
+            {
+                var storedBySceneKey = await MapSceneDocumentRepository.LoadAsync(mysql, campaignId, sceneKey, ct);
+                if (storedBySceneKey is not null && (access.IsEffectiveGm || storedBySceneKey.Visibility != "gm"))
+                {
+                    return Results.Ok(Project(sceneKey, storedBySceneKey, access.IsEffectiveGm));
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                var storedByTitle = await MapSceneDocumentRepository.LoadLatestAsync(mysql, campaignId, title, ct);
+                if (storedByTitle is not null && (access.IsEffectiveGm || storedByTitle.Value.Document.Visibility != "gm"))
+                {
+                    return Results.Ok(Project(storedByTitle.Value.SceneKey, storedByTitle.Value.Document, access.IsEffectiveGm));
+                }
+            }
+
+            var artFileName = string.IsNullOrWhiteSpace(artworkUrl) || artworkUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+                ? ""
+                : Path.GetFileName(artworkUrl);
             long.TryParse(sceneKey, out var numericId);
 
             await using var db = await mysql.OpenConnectionAsync(ct);

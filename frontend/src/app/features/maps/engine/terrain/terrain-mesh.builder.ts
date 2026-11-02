@@ -125,6 +125,43 @@ export class TerrainMeshBuilder {
     };
   }
 
+  static exportElevations(): readonly number[] | undefined {
+    if (!this.customElevations) return undefined;
+    let hasNonZero = false;
+    const out: number[] = new Array(this.customElevations.length);
+    for (let i = 0; i < this.customElevations.length; i++) {
+      const v = Math.round(this.customElevations[i] * 1000) / 1000;
+      out[i] = v;
+      if (Math.abs(v) > 0.001) hasNonZero = true;
+    }
+    return hasNonZero ? out : undefined;
+  }
+
+  static importElevations(elevations?: readonly number[] | null): void {
+    const stride = this.SUBDIV + 1;
+    const expected = stride * stride;
+    if (elevations && elevations.length === expected) {
+      this.customElevations = new Float32Array(elevations);
+      this.elevationVersion++;
+    } else if (elevations === null || (elevations && elevations.length === 0)) {
+      this.customElevations = null;
+      this.elevationVersion++;
+    }
+  }
+
+  static setPaintDabs(scene: Scene | null, dabs?: readonly MapFloorPaintDab[] | null): void {
+    const incoming = dabs ? [...dabs] : [];
+    if (incoming.length === this.paintDabs.length && incoming.length === 0) return;
+    this.paintDabs = incoming;
+    if (scene) {
+      this.appliedFloorSigByScene.delete(scene);
+      const ground = scene.getMeshByName('lw-terrain-ground') as Mesh | null;
+      if (ground) {
+        this.applyMaterialAndBump(scene, ground, '');
+      }
+    }
+  }
+
   static resetElevations(): void {
     this.customElevations = null;
     this.elevationVersion++;

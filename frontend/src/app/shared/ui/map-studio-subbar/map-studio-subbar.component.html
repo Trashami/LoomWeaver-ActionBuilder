@@ -55,8 +55,8 @@
       <span class="lw-subbar__binding-label">Campaign:</span>
       <select
         class="lw-subbar__binding-select"
-        [value]="activeCampaignId()"
-        (change)="onCampaignSelect($event)"
+        [ngModel]="activeCampaignId()"
+        (ngModelChange)="onCampaignSelect($event)"
         aria-label="Select Campaign"
       >
         @for (c of campaigns(); track c.id) {
@@ -69,8 +69,8 @@
       <span class="lw-subbar__binding-label">Session:</span>
       <select
         class="lw-subbar__binding-select"
-        [value]="selectedSessionId()"
-        (change)="onSessionSelect($event)"
+        [ngModel]="selectedSessionId()"
+        (ngModelChange)="onSessionSelect($event)"
         aria-label="Select Planned Session"
       >
         @for (s of sessions(); track s.id) {
@@ -83,8 +83,8 @@
       <span class="lw-subbar__binding-label">Encounter:</span>
       <select
         class="lw-subbar__binding-select"
-        [value]="selectedEncounterId()"
-        (change)="onEncounterSelect($event)"
+        [ngModel]="selectedEncounterId()"
+        (ngModelChange)="onEncounterSelect($event)"
         aria-label="Select Planned Encounter"
       >
         @for (e of encounters(); track e.id) {

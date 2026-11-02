@@ -29,6 +29,16 @@ import {
 } from './babylon-vtt-map-scene.builder';
 import { BabylonTokenMeshBuilder } from './babylon-token-mesh.builder';
 import { BabylonFxTrajectoryPlayer } from './babylon-fx-trajectory.player';
+import { MapSceneGraphState } from '../../maps/engine/map-scene-contract';
+import { GlbModelCache } from '../../maps/engine/rendering/glb-model-cache';
+import { TerrainMeshBuilder } from '../../maps/engine/terrain/terrain-mesh.builder';
+import { WaterChannelTerrain } from '../../maps/engine/water/water-channel-terrain';
+import { WaterSplineBuilder } from '../../maps/engine/water/water-spline.builder';
+import { SceneLightingController } from '../../maps/engine/lighting/scene-lighting.controller';
+import { SeededScatterEngine } from '../../maps/engine/scatter/seeded-scatter.engine';
+import { WallMeshBuilder } from '../../maps/engine/walls/wall-mesh.builder';
+import { PathRibbonEngine } from '../../maps/engine/paths/path-ribbon.engine';
+import { StampSceneBuilder } from '../../maps/engine/rendering/stamp-scene.builder';
 
 if (typeof window !== 'undefined') {
   MeshoptCompression.Configuration = {
@@ -52,6 +62,12 @@ export class BabylonEffectStageService {
   private gridLines: Mesh | null = null;
   private backdropUrl = '';
 
+  private latestSceneData: VttMapSceneDataPayload | MapSceneGraphState | string | null = null;
+  private latestBackdropUrl = '';
+  private last3dSceneState: MapSceneGraphState | null = null;
+  private resyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private latestGridVisible = false;
+
   private latestTokens: readonly VttTokenVm[] = [];
   private latestAttackerKey?: string;
   private latestTargetKey?: string;
@@ -67,6 +83,7 @@ export class BabylonEffectStageService {
   private isForcedTopDown = true;
 
   camera: ArcRotateCamera | null = null;
+  readonly has3dSceneLoaded = signal<boolean>(false);
   readonly zoomPercent = signal<number>(100);
   readonly activeKeyframeLabel = signal<string>('Ready');
   readonly reducedMotion = signal<boolean>(false);
@@ -81,7 +98,7 @@ export class BabylonEffectStageService {
     if (this.camera) {
       this.camera.radius = Math.max(
         this.camera.lowerRadiusLimit ?? 6,
-        Math.min(this.camera.upperRadiusLimit ?? 38, this.camera.radius + delta),
+        Math.min(this.camera.upperRadiusLimit ?? 58, this.camera.radius + delta),
       );
       this.updateZoomPercent();
     }
@@ -89,7 +106,7 @@ export class BabylonEffectStageService {
 
   resetCamera(): void {
     if (!this.camera) return;
-    this.camera.radius = 20;
+    this.camera.radius = this.has3dSceneLoaded() ? 26 : 20;
     this.camera.target.set(0, 0, 0);
     this.setForcedTopDown(this.isForcedTopDown);
     this.updateZoomPercent();
@@ -98,12 +115,14 @@ export class BabylonEffectStageService {
   private updateZoomPercent(): void {
     if (!this.camera) return;
     const minR = this.camera.lowerRadiusLimit ?? 6;
-    const maxR = this.camera.upperRadiusLimit ?? 38;
+    const maxR = this.camera.upperRadiusLimit ?? 58;
     const pct = Math.round(100 + ((maxR - this.camera.radius) / (maxR - minR)) * 250);
     this.zoomPercent.set(Math.max(100, Math.min(350, pct)));
   }
 
   setBackdrop(url: string): void {
+    this.latestBackdropUrl = url || '';
+    if (this.has3dSceneLoaded()) return;
     if (!this.scene || !this.ground || !this.groundMat || !url || url === this.backdropUrl) return;
     this.backdropUrl = url;
     const tex = new Texture(url, this.scene);
@@ -120,26 +139,183 @@ export class BabylonEffectStageService {
     this.groundMat.emissiveColor = new Color3(0.24, 0.24, 0.24);
   }
 
-  loadMapScene(sceneData?: VttMapSceneDataPayload | string | null, backdropUrl?: string): void {
-    if (backdropUrl) {
-      this.setBackdrop(backdropUrl);
+  private isMapSceneGraphState(obj: unknown): obj is MapSceneGraphState {
+    if (!obj || typeof obj !== 'object') return false;
+    const rec = obj as Record<string, unknown>;
+    if (typeof rec['biome'] === 'string' && typeof rec['terrainRelief'] === 'number') return true;
+    if (Array.isArray(rec['waterSplines']) || Array.isArray(rec['customElevations'])) return true;
+    if (typeof rec['floorAlbedoUrl'] === 'string') return true;
+    if (
+      Array.isArray(rec['walls']) &&
+      rec['walls'].some((w) => w && typeof w === 'object' && Array.isArray((w as Record<string, unknown>)['points']))
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  private schedule3dSceneResync(): void {
+    if (this.resyncTimer !== null) return;
+    this.resyncTimer = setTimeout(() => {
+      this.resyncTimer = null;
+      if (this.scene && this.last3dSceneState) {
+        this.sync3dSceneGraph(this.last3dSceneState);
+      }
+    }, 150);
+  }
+
+  private sync3dSceneGraph(state: MapSceneGraphState): void {
+    if (!this.scene) return;
+    this.last3dSceneState = state;
+    this.has3dSceneLoaded.set(true);
+
+    if (this.ground) {
+      this.ground.isVisible = false;
+      this.ground.isPickable = false;
+    }
+
+    GlbModelCache.ensureScene(this.scene);
+    TerrainMeshBuilder.importElevations(state.customElevations ?? null);
+    TerrainMeshBuilder.setPaintDabs(this.scene, state.floorPaintDabs ?? []);
+    WaterChannelTerrain.configure(this.scene, state.waterSplines ?? []);
+
+    const terrainGround = TerrainMeshBuilder.buildTerrainAndGrid(
+      this.scene,
+      state.biome || 'Abandoned Crypt',
+      state.terrainRelief ?? 0.35,
+    );
+    if (state.floorAlbedoUrl && state.floorNormalUrl) {
+      TerrainMeshBuilder.applyFloorBumpTexture(
+        this.scene,
+        state.floorAlbedoUrl,
+        state.floorNormalUrl,
+        state.floorTilingScale ?? 10,
+        state.floorHeightUrl,
+      );
+    }
+    TerrainMeshBuilder.configureFloorProperties(this.scene, {
+      albedoUrl: state.floorAlbedoUrl,
+      normalUrl: state.floorNormalUrl,
+      heightUrl: state.floorHeightUrl,
+      tilingScale: state.floorTilingScale,
+      bumpIntensity: state.floorBumpIntensity,
+      heightScale: state.floorHeightScale,
+      colorHex: state.floorColorHex,
+      colorStrength: state.floorColorStrength,
+      colorBlendMode: state.floorColorBlendMode,
+    });
+    TerrainMeshBuilder.syncReliefAndGridIfChanged(
+      this.scene,
+      terrainGround,
+      state.terrainRelief ?? 0.35,
+      state.waterSplines?.length ?? 0,
+    );
+
+    const terrainGrid = this.scene.getMeshByName('lw-terrain-grid');
+    if (terrainGrid) {
+      terrainGrid.isVisible = this.latestGridVisible;
+      terrainGrid.isPickable = false;
+    }
+
+    WaterSplineBuilder.rebuildWaterSplines(this.scene, state.waterSplines ?? []);
+    SceneLightingController.syncLights(this.scene, state.lights ?? []);
+    SeededScatterEngine.rebuildScatterInstances(
+      this.scene,
+      state.scatterSeed ?? 104729,
+      state.scatterDensity ?? 0,
+      state.scatterClusters,
+      () => this.schedule3dSceneResync(),
+    );
+    WallMeshBuilder.rebuildWallMeshes(
+      this.scene,
+      state.walls,
+      false,
+      () => this.schedule3dSceneResync(),
+    );
+    PathRibbonEngine.rebuildPathRibbonMeshes(this.scene, state.pathRibbons);
+    StampSceneBuilder.rebuild(
+      this.scene,
+      state.stamps ?? [],
+      false,
+      () => this.schedule3dSceneResync(),
+    );
+    SceneLightingController.refreshShadowCasters(this.scene);
+
+    if (this.latestTokens.length > 0) {
+      this.refreshTokens();
+    }
+  }
+
+  private clear3dSceneGraph(): void {
+    this.last3dSceneState = null;
+    this.has3dSceneLoaded.set(false);
+    TerrainMeshBuilder.resetElevations();
+    if (!this.scene) return;
+    StampSceneBuilder.evictScene(this.scene);
+    WallMeshBuilder.evictScene(this.scene);
+    this.scene.transformNodes
+      .filter((n) => /^lw-(stamp-node|wall-node|door-node|scatter-node)-/.test(n.name))
+      .forEach((n) => n.dispose(false, false));
+    this.scene.meshes
+      .filter((m) =>
+        /^lw-(terrain-ground|terrain-grid|water-|stamp-|wall-|portal-|door-|scatter-|path-)/.test(
+          m.name,
+        ),
+      )
+      .forEach((m) => m.dispose(false, false));
+    if (this.ground) {
+      this.ground.isVisible = true;
+      this.ground.isPickable = true;
+    }
+  }
+
+  loadMapScene(
+    sceneData?: VttMapSceneDataPayload | MapSceneGraphState | string | null,
+    backdropUrl?: string,
+  ): void {
+    this.latestSceneData = sceneData ?? null;
+    if (backdropUrl !== undefined) {
+      this.latestBackdropUrl = backdropUrl;
     }
     if (!this.scene) return;
+
+    let parsed: VttMapSceneDataPayload | MapSceneGraphState | null = null;
     if (sceneData) {
-      let parsed: VttMapSceneDataPayload | null = null;
       if (typeof sceneData === 'string') {
-        try { parsed = JSON.parse(sceneData); } catch {}
+        try {
+          parsed = JSON.parse(sceneData);
+        } catch {}
       } else {
         parsed = sceneData;
       }
-      if (parsed) {
-        this.mapSceneBuilder.buildScene(this.scene, parsed);
+    }
+
+    if (parsed && this.isMapSceneGraphState(parsed)) {
+      this.mapSceneBuilder.clear(this.scene);
+      if (this.gridLines) {
+        this.gridLines.dispose();
+        this.gridLines = null;
       }
+      this.sync3dSceneGraph(parsed);
+      return;
+    }
+
+    if (this.has3dSceneLoaded()) {
+      this.clear3dSceneGraph();
+    }
+    if (this.latestBackdropUrl) {
+      this.setBackdrop(this.latestBackdropUrl);
+    }
+    if (parsed) {
+      this.mapSceneBuilder.buildScene(this.scene, parsed as VttMapSceneDataPayload);
+    } else {
+      this.mapSceneBuilder.clear(this.scene);
     }
   }
 
   /**
    * Switches between forced top-down 2D camera (default) and free 3D perspective orbit camera.
+   * Both modes render the real 3D map scene when a 3D map is loaded.
    */
   setForcedTopDown(forced: boolean): void {
     const modeChanged = this.isForcedTopDown !== forced;
@@ -175,11 +351,20 @@ export class BabylonEffectStageService {
     gridOffsetX: number = 0.0,
     gridOffsetY: number = 0.0,
   ): void {
+    this.latestGridVisible = visible;
     this.latestGridScale = gridScale;
     if (!this.scene) return;
     if (this.gridLines) {
       this.gridLines.dispose();
       this.gridLines = null;
+    }
+    const terrainGrid = this.scene.getMeshByName('lw-terrain-grid');
+    if (this.has3dSceneLoaded()) {
+      if (terrainGrid) {
+        terrainGrid.isVisible = visible;
+        terrainGrid.isPickable = false;
+      }
+      return;
     }
     if (!visible) return;
     const step = Math.max(0.25, 1.0 * gridScale);
@@ -196,19 +381,24 @@ export class BabylonEffectStageService {
     const grid = MeshBuilder.CreateLineSystem('lw-vtt-grid', { lines }, this.scene);
     grid.color = Color3.FromHexString('#1e3d2f');
     grid.isVisible = true;
+    grid.isPickable = false;
     this.gridLines = grid;
   }
 
   setRotateHeld(_held: boolean): void {}
 
   pickGroundPoint(clientX: number, clientY: number): { x: number; z: number } | null {
-    if (!this.scene || !this.ground || !this.engine) return null;
+    if (!this.scene || !this.engine) return null;
     const canvas = this.engine.getRenderingCanvas();
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
-    const pick = this.scene.pick(x, y, (m) => m === this.ground);
+    const pick = this.scene.pick(
+      x,
+      y,
+      (m) => m === this.ground || m.name === 'lw-terrain-ground',
+    );
     if (pick?.hit && pick.pickedPoint) {
       return { x: pick.pickedPoint.x, z: pick.pickedPoint.z };
     }
@@ -220,7 +410,7 @@ export class BabylonEffectStageService {
     tokens: readonly VttTokenVm[],
     attackerKey?: string,
     targetKey?: string,
-    onTokenClicked?: (tokenKey: string) => void,
+    onTokenClicked?: (tokenKey: string, shiftKey?: boolean) => void,
   ): void {
     this.dispose();
 
@@ -228,6 +418,7 @@ export class BabylonEffectStageService {
       this.engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
       this.scene = new Scene(this.engine);
       this.scene.clearColor = new Color4(0.02, 0.05, 0.04, 1);
+      this.scene.shadowsEnabled = true;
 
       const preventContextMenu = (e: MouseEvent) => e.preventDefault();
       canvas.addEventListener('contextmenu', preventContextMenu);
@@ -237,12 +428,12 @@ export class BabylonEffectStageService {
         'lw-vtt-cam',
         -Math.PI / 2,
         0.0001,
-        20,
+        24,
         new Vector3(0, 0, 0),
         this.scene,
       );
-      camera.lowerRadiusLimit = 6;
-      camera.upperRadiusLimit = 38;
+      camera.lowerRadiusLimit = 5;
+      camera.upperRadiusLimit = 58;
       camera.panningSensibility = 80;
       camera.panningAxis = new Vector3(1, 0, 1);
       this.camera = camera;
@@ -287,18 +478,27 @@ export class BabylonEffectStageService {
           if (p) p.buttons = [0, 1, 2];
           this.setForcedTopDown(this.isForcedTopDown);
         },
+        onTokenSelected: (key, shiftKey) => {
+          onTokenClicked?.(key, shiftKey);
+        },
         onDragged: (placement) => this.draggedSubject.next(placement),
         onDropped: (placement) => this.droppedSubject.next(placement),
       });
       this.dragController.attach();
+
+      if (this.latestSceneData || this.latestBackdropUrl) {
+        this.loadMapScene(this.latestSceneData, this.latestBackdropUrl);
+      }
 
       this.syncTokens(tokens, attackerKey, targetKey, targetKey ? [targetKey] : []);
 
       this.scene.registerBeforeRender(() => {
         if (!this.scene) return;
         if (this.camera) {
-          this.camera.target.x = Math.max(-12, Math.min(12, this.camera.target.x));
-          this.camera.target.z = Math.max(-8, Math.min(8, this.camera.target.z));
+          const maxX = this.has3dSceneLoaded() ? 18 : 12;
+          const maxZ = this.has3dSceneLoaded() ? 13.5 : 8;
+          this.camera.target.x = Math.max(-maxX, Math.min(maxX, this.camera.target.x));
+          this.camera.target.z = Math.max(-maxZ, Math.min(maxZ, this.camera.target.z));
           this.camera.target.y = 0;
           this.updateZoomPercent();
         }
@@ -310,12 +510,6 @@ export class BabylonEffectStageService {
           }
         }
       });
-
-      this.scene.onPointerDown = (_evt, pickInfo) => {
-        if (pickInfo?.hit && pickInfo.pickedMesh?.metadata?.tokenKey && onTokenClicked) {
-          onTokenClicked(pickInfo.pickedMesh.metadata.tokenKey);
-        }
-      };
 
       this.engine.runRenderLoop(() => {
         this.scene?.render();
@@ -378,6 +572,10 @@ export class BabylonEffectStageService {
   }
 
   dispose(): void {
+    if (this.resyncTimer !== null) {
+      clearTimeout(this.resyncTimer);
+      this.resyncTimer = null;
+    }
     for (const h of this.cleanupHandlers) h();
     this.cleanupHandlers = [];
     this.fxPlayer.stop();
@@ -386,7 +584,13 @@ export class BabylonEffectStageService {
     this.fogPlane?.dispose();
     this.fogPlane = null;
     this.tokenBuilder.clearCache();
-    if (this.scene) this.mapSceneBuilder.clear(this.scene);
+    if (this.scene) {
+      this.mapSceneBuilder.clear(this.scene);
+      StampSceneBuilder.evictScene(this.scene);
+      WallMeshBuilder.evictScene(this.scene);
+    }
+    this.last3dSceneState = null;
+    this.has3dSceneLoaded.set(false);
     this.scene?.dispose();
     this.engine?.dispose();
     this.scene = null;

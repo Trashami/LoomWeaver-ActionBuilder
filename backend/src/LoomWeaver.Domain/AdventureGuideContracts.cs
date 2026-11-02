@@ -217,7 +217,9 @@ public sealed record AssignBattlemapToAdventureRequest(
     string SessionId,
     string LocationNodeId,
     string? ArtworkUrl,
-    string? Biome
+    string? Biome,
+    string? SessionTitle = null,
+    string? LocationTitle = null
 );
 
 public sealed record SessionAttachmentItemDto(

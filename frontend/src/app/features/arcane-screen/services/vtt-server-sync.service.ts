@@ -92,8 +92,9 @@ export class VttServerSyncService {
     const base = this.base();
     if (!base) return null;
     try {
-      const url = (title || artworkUrl)
-        ? `${base}/maps/active-scene?sceneKey=${encodeURIComponent(sceneKey || '')}&title=${encodeURIComponent(title || '')}&artworkUrl=${encodeURIComponent(artworkUrl || '')}`
+      const safeArt = artworkUrl && !artworkUrl.startsWith('data:') ? artworkUrl : '';
+      const url = (title || safeArt || !sceneKey || sceneKey === 'current' || sceneKey === 'active')
+        ? `${base}/maps/active-scene?sceneKey=${encodeURIComponent(sceneKey || '')}&title=${encodeURIComponent(title || '')}&artworkUrl=${encodeURIComponent(safeArt)}`
         : `${base}/maps/${encodeURIComponent(sceneKey)}/vtt-scene`;
 
       const scene = await firstValueFrom(this.http.get<VttSceneResponse>(url));

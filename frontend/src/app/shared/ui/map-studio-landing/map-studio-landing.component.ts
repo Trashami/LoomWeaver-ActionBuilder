@@ -3,6 +3,7 @@ import {
   Component,
   HostListener,
   computed,
+  effect,
   input,
   output,
   signal,
@@ -86,6 +87,8 @@ export class LwMapStudioLandingComponent {
   readonly sessions = input<readonly { id: string; label: string }[]>([]);
   readonly encounters = input<readonly { id: string; label: string }[]>([]);
   readonly activeCampaignId = input<number>(1);
+  readonly selectedSessionId = input<string>('');
+  readonly selectedEncounterId = input<string>('');
 
   readonly createNewMap = output<LwCreateMapLaunchIntent>();
   readonly openExistingMap = output<LwExistingMapSummary>();
@@ -99,9 +102,37 @@ export class LwMapStudioLandingComponent {
   readonly draftMapName = signal<string>('Untitled Map');
   readonly draftGridCols = signal<number>(50);
   readonly draftGridRows = signal<number>(50);
-  readonly draftSessionId = signal<string>('session-15');
-  readonly draftEncounterId = signal<string>('enc-cinth-masquerade');
+  readonly draftSessionId = signal<string>('');
+  readonly draftEncounterId = signal<string>('');
   readonly draftStarterFloorId = signal<string>('bump-worn-castle-flagstone');
+
+  constructor() {
+    effect(
+      () => {
+        const list = this.sessions();
+        const preferred = this.selectedSessionId();
+        const current = this.draftSessionId();
+        if (list.length > 0 && !list.some((s) => s.id === current)) {
+          const match = list.find((s) => s.id === preferred)?.id ?? list[0].id;
+          this.draftSessionId.set(match);
+        }
+      },
+      { allowSignalWrites: true },
+    );
+
+    effect(
+      () => {
+        const list = this.encounters();
+        const preferred = this.selectedEncounterId();
+        const current = this.draftEncounterId();
+        if (list.length > 0 && !list.some((e) => e.id === current)) {
+          const match = list.find((e) => e.id === preferred)?.id ?? list[0].id;
+          this.draftEncounterId.set(match);
+        }
+      },
+      { allowSignalWrites: true },
+    );
+  }
 
   readonly marketSearchQuery = signal<string>('');
   readonly marketFilterTab = signal<LwMarketFilterTab>('all');
@@ -154,11 +185,41 @@ export class LwMapStudioLandingComponent {
 
   openNewMapModal(defaultMode: LwMapDimensionMode = '3d'): void {
     this.selectedDimension.set(defaultMode);
+    const sList = this.sessions();
+    if (sList.length > 0 && !sList.some((s) => s.id === this.draftSessionId())) {
+      this.draftSessionId.set(
+        sList.find((s) => s.id === this.selectedSessionId())?.id ?? sList[0].id,
+      );
+    }
+    const eList = this.encounters();
+    if (eList.length > 0 && !eList.some((e) => e.id === this.draftEncounterId())) {
+      this.draftEncounterId.set(
+        eList.find((e) => e.id === this.selectedEncounterId())?.id ?? eList[0].id,
+      );
+    }
     this.showCreatePrompt.set(true);
   }
 
   openMarketplaceBrowser(): void {
     this.showMarketplaceModal.set(true);
+  }
+
+  private resolveValidSessionId(): string {
+    const sList = this.sessions();
+    const draft = this.draftSessionId();
+    if (sList.some((s) => s.id === draft)) return draft;
+    const pref = this.selectedSessionId();
+    if (sList.some((s) => s.id === pref)) return pref;
+    return sList[0]?.id ?? draft;
+  }
+
+  private resolveValidEncounterId(): string {
+    const eList = this.encounters();
+    const draft = this.draftEncounterId();
+    if (eList.some((e) => e.id === draft)) return draft;
+    const pref = this.selectedEncounterId();
+    if (eList.some((e) => e.id === pref)) return pref;
+    return eList[0]?.id ?? draft;
   }
 
   confirmCreateMap(): void {
@@ -169,14 +230,16 @@ export class LwMapStudioLandingComponent {
       gridCols: this.draftGridCols(),
       gridRows: this.draftGridRows(),
       campaignId: this.activeCampaignId(),
-      sessionId: this.draftSessionId(),
-      encounterId: this.draftEncounterId(),
+      sessionId: this.resolveValidSessionId(),
+      encounterId: this.resolveValidEncounterId(),
       starterFloorBumpId: this.draftStarterFloorId(),
     });
     this.showCreatePrompt.set(false);
   }
 
   onMarketAction(item: LwMarketplaceMapItem): void {
+    const sessionId = this.resolveValidSessionId();
+    const encounterId = this.resolveValidEncounterId();
     if (item.accessKind === 'paid') {
       const next = new Set(this.purchasedMarketIds());
       next.add(item.id);
@@ -190,8 +253,8 @@ export class LwMapStudioLandingComponent {
       this.applyMarketplaceMap.emit({
         marketMap: purchasedItem,
         campaignId: this.activeCampaignId(),
-        sessionId: this.draftSessionId(),
-        encounterId: this.draftEncounterId(),
+        sessionId,
+        encounterId,
       });
       this.showMarketplaceModal.set(false);
       return;
@@ -200,8 +263,8 @@ export class LwMapStudioLandingComponent {
     this.applyMarketplaceMap.emit({
       marketMap: item,
       campaignId: this.activeCampaignId(),
-      sessionId: this.draftSessionId(),
-      encounterId: this.draftEncounterId(),
+      sessionId,
+      encounterId,
     });
     this.showMarketplaceModal.set(false);
   }

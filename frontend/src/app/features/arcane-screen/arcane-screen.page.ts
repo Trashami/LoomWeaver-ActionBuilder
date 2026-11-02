@@ -110,7 +110,10 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   });
 
   readonly isHighPerformance2d = computed(
-    () => !this.battle.mapMode3D() && this.vttDisplay.mapQuality() === 'performance',
+    () =>
+      !this.battle.mapMode3D() &&
+      !this.stage.has3dSceneLoaded() &&
+      this.vttDisplay.mapQuality() === 'performance',
   );
 
   readonly activeSessionTitle = computed(() => {
@@ -254,13 +257,16 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
       this.stageMounted = true;
       this.stage.mountStage(
         canvas, this.vtt.tokens(), this.vtt.selectedAttackerKey(), this.vtt.selectedTargetKey(),
-        (k) => {
+        (k, shiftKey) => {
           const tok = this.vtt.tokens().find((t) => t.key === k);
-          if (tok) this.handleTokenSelectionOrCast(tok, false);
+          if (tok) this.handleTokenSelectionOrCast(tok, shiftKey === true);
         },
       );
       this.stage.setForcedTopDown(!this.battle.mapMode3D());
-      this.stage.setBackdrop(this.activeBattlemapBackdropUrl());
+      this.stage.loadMapScene(
+        this.serverSync.activeSceneResponse()?.sceneDataJson,
+        this.activeBattlemapBackdropUrl(),
+      );
       this.stage.setGridVisible(this.gridEnabled(), this.vttDisplay.gridScale(), this.vttDisplay.gridOffsetX(), this.vttDisplay.gridOffsetY());
       this.sync3dStage();
     }

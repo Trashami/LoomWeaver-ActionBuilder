@@ -853,6 +853,13 @@ export class BabylonMapStageService {
     if (!this.scene) return;
     this.lastState = state;
 
+    if (state.customElevations !== undefined) {
+      TerrainMeshBuilder.importElevations(state.customElevations);
+    }
+    if (state.floorPaintDabs !== undefined) {
+      TerrainMeshBuilder.setPaintDabs(this.scene, state.floorPaintDabs);
+    }
+
     WaterChannelTerrain.configure(this.scene, state.waterSplines);
     const ground = TerrainMeshBuilder.buildTerrainAndGrid(this.scene, state.biome, state.terrainRelief);
     if (state.floorAlbedoUrl && state.floorNormalUrl) {
@@ -948,11 +955,34 @@ export class BabylonMapStageService {
 
   captureViewportDataUrl(): string | null {
     try {
-      this.scene?.render();
-      return this.engine?.getRenderingCanvas()?.toDataURL('image/jpeg', 0.85) ?? null;
+      if (!this.scene || !this.engine) return null;
+      const hiddenMeshes = this.scene.meshes.filter(
+        (m) =>
+          m.isVisible &&
+          (m.name.startsWith('lw-ghost-') ||
+            m.name.startsWith('lw-gizmo-') ||
+            m.name.startsWith('lw-light-handle-')),
+      );
+      for (const m of hiddenMeshes) {
+        m.isVisible = false;
+      }
+      this.scene.render();
+      const dataUrl = this.engine.getRenderingCanvas()?.toDataURL('image/jpeg', 0.85) ?? null;
+      for (const m of hiddenMeshes) {
+        m.isVisible = true;
+      }
+      return dataUrl;
     } catch {
       return null;
     }
+  }
+
+  exportTerrainElevations(): readonly number[] | undefined {
+    return TerrainMeshBuilder.exportElevations();
+  }
+
+  exportFloorPaintDabs(): readonly MapFloorPaintDab[] {
+    return TerrainMeshBuilder.getPaintDabs();
   }
 
   resize(): void {

@@ -24,6 +24,50 @@ public static class MapSceneDocumentRepository
             : null;
     }
 
+    public static async Task<(string SceneKey, StoredMapSceneDocument Document)?> LoadLatestAsync(
+        LoomWeaverMySqlRepository mysql, int campaignId, string? title, CancellationToken ct)
+    {
+        await using var db = await mysql.OpenConnectionAsync(ct);
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            await using var byTitle = new MySqlCommand("""
+                SELECT scene_key, revision, document_json, visibility
+                FROM lw_battlemap_scenes
+                WHERE campaign_id = @c AND JSON_UNQUOTE(JSON_EXTRACT(document_json, '$.name')) = @t
+                ORDER BY updated_at DESC, revision DESC
+                LIMIT 1
+                """, db);
+            byTitle.Parameters.AddWithValue("@c", campaignId);
+            byTitle.Parameters.AddWithValue("@t", title.Trim());
+            await using var r1 = await byTitle.ExecuteReaderAsync(ct);
+            if (await r1.ReadAsync(ct))
+            {
+                return (
+                    r1.GetString(0),
+                    new StoredMapSceneDocument(r1.GetInt32(1), JsonSerializer.Deserialize<JsonElement>(r1.GetString(2)), r1.GetString(3))
+                );
+            }
+        }
+
+        await using var latest = new MySqlCommand("""
+            SELECT scene_key, revision, document_json, visibility
+            FROM lw_battlemap_scenes
+            WHERE campaign_id = @c
+            ORDER BY updated_at DESC, revision DESC
+            LIMIT 1
+            """, db);
+        latest.Parameters.AddWithValue("@c", campaignId);
+        await using var r2 = await latest.ExecuteReaderAsync(ct);
+        if (await r2.ReadAsync(ct))
+        {
+            return (
+                r2.GetString(0),
+                new StoredMapSceneDocument(r2.GetInt32(1), JsonSerializer.Deserialize<JsonElement>(r2.GetString(2)), r2.GetString(3))
+            );
+        }
+        return null;
+    }
+
     public static async Task<int?> SaveAsync(
         LoomWeaverMySqlRepository mysql,
         int campaignId,
@@ -35,35 +79,32 @@ public static class MapSceneDocumentRepository
     {
         await using var db = await mysql.OpenConnectionAsync(ct);
         await using var tx = await db.BeginTransactionAsync(ct);
-        int nextRevision;
-        if (expectedRevision == 0)
+        await using (var upsert = new MySqlCommand("""
+            INSERT INTO lw_battlemap_scenes
+                (campaign_id, scene_key, revision, document_json, updated_by)
+            VALUES (@c, @s, 1, CAST(@d AS JSON), @u)
+            ON DUPLICATE KEY UPDATE
+                revision = revision + 1,
+                document_json = CAST(@d AS JSON),
+                updated_by = @u
+            """, db, tx))
         {
-            await using var insert = new MySqlCommand("""
-                INSERT IGNORE INTO lw_battlemap_scenes
-                    (campaign_id, scene_key, revision, document_json, updated_by)
-                VALUES (@c, @s, 1, CAST(@d AS JSON), @u)
-                """, db, tx);
-            insert.Parameters.AddWithValue("@c", campaignId);
-            insert.Parameters.AddWithValue("@s", sceneKey);
-            insert.Parameters.AddWithValue("@d", documentJson);
-            insert.Parameters.AddWithValue("@u", updatedBy);
-            if (await insert.ExecuteNonQueryAsync(ct) != 1) return null;
-            nextRevision = 1;
+            upsert.Parameters.AddWithValue("@c", campaignId);
+            upsert.Parameters.AddWithValue("@s", sceneKey);
+            upsert.Parameters.AddWithValue("@d", documentJson);
+            upsert.Parameters.AddWithValue("@u", updatedBy);
+            await upsert.ExecuteNonQueryAsync(ct);
         }
-        else
+
+        int nextRevision = 1;
+        await using (var revCmd = new MySqlCommand("""
+            SELECT revision FROM lw_battlemap_scenes WHERE campaign_id = @c AND scene_key = @s
+            """, db, tx))
         {
-            await using var update = new MySqlCommand("""
-                UPDATE lw_battlemap_scenes
-                SET revision = revision + 1, document_json = CAST(@d AS JSON), updated_by = @u
-                WHERE campaign_id = @c AND scene_key = @s AND revision = @r
-                """, db, tx);
-            update.Parameters.AddWithValue("@d", documentJson);
-            update.Parameters.AddWithValue("@u", updatedBy);
-            update.Parameters.AddWithValue("@c", campaignId);
-            update.Parameters.AddWithValue("@s", sceneKey);
-            update.Parameters.AddWithValue("@r", expectedRevision);
-            if (await update.ExecuteNonQueryAsync(ct) != 1) return null;
-            nextRevision = expectedRevision + 1;
+            revCmd.Parameters.AddWithValue("@c", campaignId);
+            revCmd.Parameters.AddWithValue("@s", sceneKey);
+            var revObj = await revCmd.ExecuteScalarAsync(ct);
+            if (revObj is not null) nextRevision = Convert.ToInt32(revObj);
         }
 
         await using (var playEvent = new MySqlCommand("""

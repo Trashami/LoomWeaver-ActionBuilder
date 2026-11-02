@@ -160,7 +160,7 @@ public static class AdventureGuideStateStore
                         SessionId: sesId,
                         LocationNodeId: "",
                         ArtworkUrl: req.ArtworkUrl,
-                        Biome: item.Subtitle),
+                        Biome: item.Subtitle, SessionTitle: item.Summary),
                     campaignId);
             }
 
@@ -497,9 +497,9 @@ public static class AdventureGuideStateStore
                 SceneKey: req.SceneKey,
                 Title: string.IsNullOrWhiteSpace(req.SceneTitle) ? req.SceneKey : req.SceneTitle,
                 SessionId: sesId,
-                SessionTitle: "",
+                SessionTitle: !string.IsNullOrWhiteSpace(req.SessionTitle) ? req.SessionTitle.Trim() : sesId,
                 LocationNodeId: locNodeId,
-                LocationTitle: "",
+                LocationTitle: !string.IsNullOrWhiteSpace(req.LocationTitle) ? req.LocationTitle.Trim() : (!string.IsNullOrWhiteSpace(req.Biome) ? req.Biome.Trim() : "Campaign Battlemap"),
                 AreaKey: null,
                 ArtworkUrl: art,
                 RouteLink: $"/maps?scene={req.SceneKey}",

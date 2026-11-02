@@ -18,6 +18,7 @@ import {
   getDndSizeScale,
   getTokenBaseColorHex,
 } from './effect-timeline.contract';
+import { TerrainMeshBuilder } from '../../maps/engine/terrain/terrain-mesh.builder';
 
 export class BabylonTokenMeshBuilder {
   private readonly glbContainerCache = new Map<string, AssetContainer>();
@@ -48,6 +49,9 @@ export class BabylonTokenMeshBuilder {
           m.name === 'lw-tether-line',
       )
       .forEach((m) => m.dispose());
+    scene.transformNodes
+      .filter((n) => n.name.startsWith('lw-token-'))
+      .forEach((n) => n.dispose());
 
     const activeTargetSet = new Set<string>(
       targetedKeys.length > 0 ? targetedKeys : targetKey ? [targetKey] : [],
@@ -64,14 +68,29 @@ export class BabylonTokenMeshBuilder {
       const baseDiameter = 0.82 * effectiveScale;
       const baseHeight = isDead ? 0.014 : 0.02;
 
+      const groundY = TerrainMeshBuilder.sampleElevationAt(scene, t.x, t.z);
+
       const baseMesh = MeshBuilder.CreateCylinder(
         `lw-token-${t.key}`,
         { height: baseHeight, diameter: baseDiameter, tessellation: 36 },
         scene,
       );
-      baseMesh.position.set(t.x, baseHeight / 2, t.z);
-      baseMesh.metadata = { tokenKey: t.key };
+      baseMesh.position.set(t.x, groundY + baseHeight / 2, t.z);
+      baseMesh.metadata = { tokenKey: t.key, baseHeight };
+      baseMesh.isPickable = true;
       baseMesh.visibility = opacityByKey.get(t.key) ?? 1;
+
+      const hitboxHeight = isTopDown2D ? 0.35 : 1.15 * effectiveScale;
+      const hitbox = MeshBuilder.CreateCylinder(
+        `lw-token-hitbox-${t.key}`,
+        { height: hitboxHeight, diameter: 0.94 * effectiveScale, tessellation: 18 },
+        scene,
+      );
+      hitbox.parent = baseMesh;
+      hitbox.position.set(0, hitboxHeight / 2, 0);
+      hitbox.visibility = 0;
+      hitbox.isPickable = true;
+      hitbox.metadata = { tokenKey: t.key };
 
       const baseColorHex = getTokenBaseColorHex(t);
       const baseMat = new StandardMaterial(`lw-tmat-${t.key}`, scene);
@@ -108,25 +127,29 @@ export class BabylonTokenMeshBuilder {
       }
 
       if (isTargeted) {
-        this.createSpinningBaseTargetReticle(scene, t.key, t.x, t.z, effectiveScale);
+        this.createSpinningBaseTargetReticle(scene, t.key, t.x, groundY, t.z, effectiveScale);
       }
     }
 
     const src = tokens.find((t) => t.key === attackerKey);
     const dst = tokens.find((t) => t.key === targetKey);
     if (src && dst && src.key !== dst.key) {
+      const srcY = TerrainMeshBuilder.sampleElevationAt(scene, src.x, src.z);
+      const dstY = TerrainMeshBuilder.sampleElevationAt(scene, dst.x, dst.z);
+      const midY = Math.max(srcY, dstY) + (isTopDown2D ? 0.45 : 1.15);
       const tether = MeshBuilder.CreateLines(
         'lw-tether-line',
         {
           points: [
-            new Vector3(src.x, 0.35, src.z),
-            new Vector3((src.x + dst.x) / 2, isTopDown2D ? 0.45 : 1.15, (src.z + dst.z) / 2),
-            new Vector3(dst.x, 0.35, dst.z),
+            new Vector3(src.x, srcY + 0.35, src.z),
+            new Vector3((src.x + dst.x) / 2, midY, (src.z + dst.z) / 2),
+            new Vector3(dst.x, dstY + 0.35, dst.z),
           ],
         },
         scene,
       );
       tether.color = Color3.FromHexString('#2d8a56');
+      tether.isPickable = false;
     }
   }
 
@@ -311,19 +334,22 @@ export class BabylonTokenMeshBuilder {
   ): void {
     const disc = MeshBuilder.CreateDisc(
       `lw-token-puck-disc-${token.key}`,
-      { radius: 0.36 * effectiveScale, tessellation: 36 },
+      { radius: 0.36 * effectiveScale, tessellation: 36, sideOrientation: Mesh.DOUBLESIDE },
       scene,
     );
     disc.parent = baseMesh;
     disc.position.set(0, baseHeight / 2 + 0.002, 0);
     disc.rotation.x = Math.PI / 2;
+    disc.isPickable = true;
     disc.metadata = { tokenKey: token.key };
 
     const discMat = new StandardMaterial(`lw-mat-puck-${token.key}`, scene);
+    discMat.backFaceCulling = false;
     discMat.specularColor = new Color3(0.02, 0.02, 0.02);
     if (token.avatarUrl) {
-      discMat.diffuseTexture = new Texture(token.avatarUrl, scene);
-      discMat.emissiveColor = new Color3(0.08, 0.08, 0.08);
+      const tex = new Texture(token.avatarUrl, scene, false, false);
+      discMat.diffuseTexture = tex;
+      discMat.emissiveColor = new Color3(0.12, 0.12, 0.12);
     } else {
       const initials = (token.name || 'TK')
         .split(/\s+/)
@@ -340,9 +366,9 @@ export class BabylonTokenMeshBuilder {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(initials, 64, 66);
-      dt.update();
+      dt.update(false);
       discMat.diffuseTexture = dt;
-      discMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.12);
+      discMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.16);
     }
     disc.material = discMat;
 
@@ -379,11 +405,13 @@ export class BabylonTokenMeshBuilder {
     scene: Scene,
     tokenKey: string,
     x: number,
+    groundY: number,
     z: number,
     effectiveScale: number,
   ): void {
     const root = new Mesh(`lw-target-reticle-root-${tokenKey}`, scene);
-    root.position.set(x, 0.025, z);
+    root.position.set(x, groundY + 0.025, z);
+    root.isPickable = false;
 
     const reticleMat = new StandardMaterial(`lw-target-reticle-mat-${tokenKey}`, scene);
     reticleMat.diffuseColor = Color3.FromHexString('#881313');
@@ -398,6 +426,7 @@ export class BabylonTokenMeshBuilder {
     );
     outerRing.parent = root;
     outerRing.material = reticleMat;
+    outerRing.isPickable = false;
 
     const innerRing = MeshBuilder.CreateTorus(
       `lw-target-reticle-inner-${tokenKey}`,
@@ -406,5 +435,6 @@ export class BabylonTokenMeshBuilder {
     );
     innerRing.parent = root;
     innerRing.material = reticleMat;
+    innerRing.isPickable = false;
   }
 }

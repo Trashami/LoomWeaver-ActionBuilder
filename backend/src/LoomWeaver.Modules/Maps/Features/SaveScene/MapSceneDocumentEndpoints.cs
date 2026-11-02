@@ -47,11 +47,6 @@ public static class MapSceneDocumentEndpoints
             request.Document.ValueKind != JsonValueKind.Object)
             return Results.BadRequest(new { error = "A valid scene key, revision and scene document are required." });
 
-        if (!request.Document.TryGetProperty("sceneKey", out var key) ||
-            key.ValueKind != JsonValueKind.String ||
-            !string.Equals(key.GetString(), sceneKey, StringComparison.Ordinal))
-            return Results.BadRequest(new { error = "Scene document key must match the route." });
-
         var json = request.Document.GetRawText();
         if (json.Length > 10 * 1024 * 1024)
             return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);

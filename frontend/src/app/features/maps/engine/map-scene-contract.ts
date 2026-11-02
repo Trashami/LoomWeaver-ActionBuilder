@@ -216,6 +216,7 @@ export interface MapSceneGraphState {
   readonly scatterDensity: number;
   readonly scatterClusters?: readonly MapScatterClusterNode[];
   readonly terrainRelief: number;
+  readonly customElevations?: readonly number[];
   readonly stamps: readonly MapStampNode[];
   readonly waterSplines: readonly WaterSplineNode[];
   readonly lights: readonly LightSourceNode[];

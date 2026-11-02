@@ -61,25 +61,22 @@ export class LwMapStudioSubbarComponent {
     this.editingTitle.update((v) => !v);
   }
 
-  onCampaignSelect(event: Event): void {
-    const select = event.target as HTMLSelectElement | null;
-    const id = Number(select?.value ?? 1);
-    if (!Number.isNaN(id)) {
+  onCampaignSelect(idRaw: number | string): void {
+    const id = Number(idRaw);
+    if (!Number.isNaN(id) && id > 0) {
       this.campaignChanged.emit(id);
     }
   }
 
-  onSessionSelect(event: Event): void {
-    const select = event.target as HTMLSelectElement | null;
-    if (select?.value) {
-      this.sessionChanged.emit(select.value);
+  onSessionSelect(sessionId: string): void {
+    if (sessionId) {
+      this.sessionChanged.emit(sessionId);
     }
   }
 
-  onEncounterSelect(event: Event): void {
-    const select = event.target as HTMLSelectElement | null;
-    if (select?.value) {
-      this.encounterChanged.emit(select.value);
+  onEncounterSelect(encounterId: string): void {
+    if (encounterId) {
+      this.encounterChanged.emit(encounterId);
     }
   }
 

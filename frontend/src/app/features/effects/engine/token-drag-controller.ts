@@ -6,6 +6,7 @@ import {
   Scene,
 } from '@babylonjs/core';
 import { snapToFiveFootGrid } from '../../arcane-screen/engine/vtt-los-and-grid.engine';
+import { TerrainMeshBuilder } from '../../maps/engine/terrain/terrain-mesh.builder';
 
 export interface TokenPlacement {
   readonly key: string;
@@ -16,6 +17,7 @@ export interface TokenPlacement {
 export interface TokenDragHandlers {
   onDragStart(): void;
   onDragEnd(): void;
+  onTokenSelected?(key: string, shiftKey: boolean): void;
   onDragged(placement: TokenPlacement): void;
   onDropped(placement: TokenPlacement): void;
 }
@@ -29,8 +31,7 @@ interface ActiveDrag {
 }
 
 /**
- * Drags token meshes across the ground plane. Positions use the same world units as the 2D SVG
- * (snapped to the shared grid), so 2D and 3D clients agree on where a token stands.
+ * Selects and drags token meshes across the flat ground plane or sculpted 3D terrain.
  */
 export class TokenDragController {
   private active: ActiveDrag | null = null;
@@ -59,10 +60,29 @@ export class TokenDragController {
     this.active = null;
   }
 
+  private pickTokenKey(): string | null {
+    const pick = this.scene.pick(
+      this.scene.pointerX,
+      this.scene.pointerY,
+      (mesh) => mesh.isPickable && typeof mesh.metadata?.tokenKey === 'string',
+    );
+    if (pick?.hit && typeof pick.pickedMesh?.metadata?.tokenKey === 'string') {
+      return pick.pickedMesh.metadata.tokenKey;
+    }
+    return null;
+  }
+
   private handlePointerDown(info: PointerInfo): void {
-    if ((info.event as PointerEvent).button !== 0) return;
-    const key: unknown = info.pickInfo?.pickedMesh?.metadata?.tokenKey;
-    if (typeof key !== 'string') return;
+    const evt = info.event as PointerEvent;
+    if (evt.button !== 0) return;
+    const key =
+      (typeof info.pickInfo?.pickedMesh?.metadata?.tokenKey === 'string'
+        ? (info.pickInfo.pickedMesh.metadata.tokenKey as string)
+        : null) ?? this.pickTokenKey();
+    if (!key) return;
+
+    this.handlers.onTokenSelected?.(key, evt.shiftKey === true);
+
     const mesh = this.scene.getMeshByName(`lw-token-${key}`);
     if (!mesh) return;
     this.active = {
@@ -93,7 +113,7 @@ export class TokenDragController {
     if (!drag) return;
     this.active = null;
     this.handlers.onDragEnd();
-    if (drag.x === drag.startX && drag.z === drag.startZ) return;
+    if (Math.abs(drag.x - drag.startX) < 0.001 && Math.abs(drag.z - drag.startZ) < 0.001) return;
     this.handlers.onDropped({ key: drag.key, x: drag.x, z: drag.z });
   }
 
@@ -101,7 +121,7 @@ export class TokenDragController {
     const pick = this.scene.pick(
       this.scene.pointerX,
       this.scene.pointerY,
-      (mesh) => mesh === this.ground,
+      (mesh) => mesh === this.ground || mesh.name === 'lw-terrain-ground',
     );
     return pick?.hit && pick.pickedPoint
       ? { x: pick.pickedPoint.x, z: pick.pickedPoint.z }
@@ -109,9 +129,16 @@ export class TokenDragController {
   }
 
   private placeMeshes(key: string, x: number, z: number): void {
-    for (const name of [`lw-token-${key}`, `lw-target-reticle-root-${key}`]) {
-      const mesh = this.scene.getMeshByName(name);
-      if (mesh) mesh.position.set(x, mesh.position.y, z);
+    const groundY = TerrainMeshBuilder.sampleElevationAt(this.scene, x, z);
+    const tokenMesh = this.scene.getMeshByName(`lw-token-${key}`);
+    if (tokenMesh) {
+      const baseHeight =
+        typeof tokenMesh.metadata?.baseHeight === 'number' ? tokenMesh.metadata.baseHeight : 0.02;
+      tokenMesh.position.set(x, groundY + baseHeight / 2, z);
+    }
+    const reticle = this.scene.getMeshByName(`lw-target-reticle-root-${key}`);
+    if (reticle) {
+      reticle.position.set(x, groundY + 0.025, z);
     }
   }
 }

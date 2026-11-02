@@ -322,15 +322,28 @@ export class AdventureGuideService {
     sceneKey: string;
     sceneTitle: string;
     sessionId: string;
+    sessionTitle?: string;
     locationNodeId: string;
+    locationTitle?: string;
     artworkUrl?: string;
     biome?: string;
   }): void {
     const cid = this.store.activeCampaignId();
     const role = this.store.viewerRole();
     const art = params.artworkUrl || '/combat-caves.jpg';
+    const sessionFromStore = this.store
+      .sessions()
+      .find((s) => s.sessionId === params.sessionId);
+    const resolvedSessionTitle =
+      params.sessionTitle ||
+      sessionFromStore?.label ||
+      sessionFromStore?.title ||
+      this.store.activeSession()?.label ||
+      params.sessionId ||
+      'Current Session';
     const locTitle =
-      params.locationNodeId === 'node-room-c1-nave'
+      params.locationTitle ||
+      (params.locationNodeId === 'node-room-c1-nave'
         ? 'C1: The Shattered Nave'
         : params.locationNodeId === 'node-room-c2-courtyard'
           ? 'C2: Moonlit Cloister Courtyard'
@@ -338,17 +351,14 @@ export class AdventureGuideService {
             ? 'C3: Sealed Altar Crypt'
             : params.locationNodeId === 'node-loc-cinth-gala'
               ? 'Town Square'
-              : 'The Ruined Chapel (C1–C3)';
+              : params.biome || 'Campaign Battlemap');
 
     const updatedMap: AdventureAssignedBattlemapVm = {
       ...this.localAssignedMap(),
       sceneKey: params.sceneKey,
       title: params.sceneTitle,
       sessionId: params.sessionId,
-      sessionTitle:
-        params.sessionId === 'session-14'
-          ? 'Session 14 — Brass Gears & Velvet Fangs'
-          : 'Session 15 — The Ruined Chapel',
+      sessionTitle: resolvedSessionTitle,
       locationNodeId: params.locationNodeId,
       locationTitle: locTitle,
       artworkUrl: art,
@@ -375,18 +385,23 @@ export class AdventureGuideService {
     this.statusBanner.set(
       `Assigned Battlemap '${params.sceneTitle}' to ${updatedMap.sessionTitle} and ${locTitle}.`,
     );
-    this.refreshGuide(cid, role, this.activeScopeKind(), this.activeScopeId(), this.activeProgressFilter());
 
     this.http
       .post<ContextualAdventureGuideVm>(
         `/api/v2/campaigns/${cid}/adventure-guide/assign-map?role=${role}&scopeKind=${this.activeScopeKind()}&scopeId=${this.activeScopeId()}&filter=${this.activeProgressFilter()}`,
-        params,
+        {
+          ...params,
+          sessionTitle: resolvedSessionTitle,
+          locationTitle: locTitle,
+        },
       )
       .subscribe({
         next: (res) => {
           if (res) this.guide.set(res);
         },
-        error: () => {},
+        error: () => {
+          this.refreshGuide(cid, role, this.activeScopeKind(), this.activeScopeId(), this.activeProgressFilter());
+        },
       });
   }
 }

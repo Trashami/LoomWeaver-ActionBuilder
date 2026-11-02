@@ -136,7 +136,11 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     this.store.sessions().map((s) => ({ id: s.sessionId, label: s.label })),
   );
   readonly encounters = signal<readonly { id: string; label: string }[]>([]);
-  readonly assignSessionId = computed(() => this.store.activeSessionId());
+  readonly assignSessionId = computed(() => {
+    const raw = this.store.activeSessionId();
+    const list = this.sessions();
+    return list.find((s) => s.id === raw)?.id ?? list[0]?.id ?? raw ?? '';
+  });
   readonly assignEncounterId = signal<string>('');
   readonly assignLocationNodeId = signal<string>('');
 
@@ -152,7 +156,10 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
         next: (items) => {
           const options = (items ?? []).map((item) => ({ id: item.id, label: item.name }));
           this.encounters.set(options);
-          this.assignEncounterId.set(options[0]?.id ?? '');
+          const cur = this.assignEncounterId();
+          if (!options.some((o) => o.id === cur)) {
+            this.assignEncounterId.set(options[0]?.id ?? '');
+          }
         },
         error: () => this.alertify.notifyStatus('Map assignment', 'Encounters unavailable', 'Campaign encounters could not be loaded.', 'crimson'),
       });
@@ -425,9 +432,22 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
     this.studio.mapTitle.set(intent.name);
     this.gridCols.set(intent.gridCols);
     this.gridRows.set(intent.gridRows);
-    this.store.setCampaign(intent.campaignId);
-    this.store.setActiveSession(intent.sessionId);
-    this.assignEncounterId.set(intent.encounterId);
+    if (intent.campaignId !== this.store.activeCampaignId()) {
+      this.store.setCampaign(intent.campaignId);
+    }
+
+    const validSessionId =
+      this.sessions().find((s) => s.id === intent.sessionId)?.id ??
+      this.sessions()[0]?.id ??
+      intent.sessionId;
+    if (validSessionId) {
+      this.store.setActiveSession(validSessionId);
+    }
+    const validEncounterId =
+      this.encounters().find((e) => e.id === intent.encounterId)?.id ??
+      this.encounters()[0]?.id ??
+      intent.encounterId;
+    this.assignEncounterId.set(validEncounterId);
     this.dimensionMode.set(intent.dimensionMode);
     this.cameraView.set(intent.dimensionMode === '2d' ? 'real-2d' : 'isometric');
 
@@ -437,6 +457,7 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
 
     this.stage.resetTerrainElevations();
     const blank = createBlankSceneGraph(intent.name);
+    this.selectedSceneKey.set(blank.sceneKey);
     this.sceneGraph.set({
       ...blank,
       floorAlbedoUrl: starterFloor?.albedoUrl,
@@ -472,8 +493,8 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       dimensionMode: mkt.dimensionMode,
       campaignId: campaignObj.id,
       campaignName: campaignObj.name,
-      sessionLabel: sessionObj?.label ?? 'Unassigned session',
-      encounterLabel: encounterObj?.label ?? 'Unassigned encounter',
+      sessionLabel: sessionObj?.label ?? 'Current Session',
+      encounterLabel: encounterObj?.label ?? 'Campaign Battlemap',
       gridSummary: mkt.gridSummary,
       floorBumpName: mkt.floorBumpName,
       previewUrl: mkt.previewUrl,
@@ -489,8 +510,19 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
       summary,
       ...cur.filter((m) => m.sceneKey !== summary.sceneKey),
     ]);
-    this.store.setActiveSession(intent.sessionId);
-    this.assignEncounterId.set(intent.encounterId);
+
+    const validSessionId =
+      this.sessions().find((s) => s.id === intent.sessionId)?.id ??
+      this.sessions()[0]?.id ??
+      intent.sessionId;
+    if (validSessionId) {
+      this.store.setActiveSession(validSessionId);
+    }
+    const validEncounterId =
+      this.encounters().find((e) => e.id === intent.encounterId)?.id ??
+      this.encounters()[0]?.id ??
+      intent.encounterId;
+    this.assignEncounterId.set(validEncounterId);
     this.onOpenExistingMapFromLanding(summary);
     this.pngPipelineBanner.set(
       `Applied '${mkt.name}' (${mkt.creatorAccount}) to ${sessionObj?.label ?? 'current session'}.`,
@@ -1985,6 +2017,28 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   }
 
   saveSceneRevision(): void {
+    const key = this.selectedSceneKey() || this.sceneGraph().sceneKey || 'scene-untitled-map';
+    if (this.selectedSceneKey() !== key) {
+      this.selectedSceneKey.set(key);
+    }
+    const customElevations = this.stage.exportTerrainElevations();
+    const floorPaintDabs = this.stage.exportFloorPaintDabs();
+    const updatedGraph: MapSceneGraphState = {
+      ...this.sceneGraph(),
+      sceneKey: key,
+      name: this.mapTitle() || this.sceneGraph().name || 'Untitled Map',
+      customElevations,
+      floorPaintDabs,
+    };
+    this.sceneGraph.set(updatedGraph);
+    this.studio.saveAuthoritativeRevision(
+      this.store.activeCampaignId(),
+      key,
+      updatedGraph,
+    );
+  }
+
+  private legacySaveSceneRevisionUnused(): void {
     this.studio.saveAuthoritativeRevision(
       this.store.activeCampaignId(),
       this.selectedSceneKey(),
@@ -1993,6 +2047,81 @@ export class MapsPageComponent implements AfterViewInit, OnDestroy {
   }
 
   publishMapToCoreCampaign(): void {
+    const sessList = this.sessions();
+    const sessionObj =
+      sessList.find((s) => s.id === this.assignSessionId()) ?? sessList[0];
+    const sessionId = sessionObj?.id || this.store.activeSessionId() || 'session-1';
+    const sessLabel =
+      sessionObj?.label ||
+      this.store.activeSession()?.label ||
+      this.store.activeSession()?.title ||
+      'Current Session';
+
+    const encList = this.encounters();
+    const encounterObj =
+      encList.find((e) => e.id === this.assignEncounterId()) ?? encList[0];
+    if (encounterObj && this.assignEncounterId() !== encounterObj.id) {
+      this.assignEncounterId.set(encounterObj.id);
+    }
+    const encLabel = encounterObj?.label || 'Campaign Battlemap';
+
+    this.store.setActiveSession(sessionId);
+    this.saveSceneRevision();
+    const campName = this.store.activeCampaign().name;
+    const previewArt =
+      this.stage.captureViewportDataUrl() ??
+      this.sceneGraph().floorAlbedoUrl ??
+      '/battlemap-showcase.jpg';
+    const sceneKey = this.selectedSceneKey();
+
+    this.adventureGuide.assignBattlemapToSessionAndPlace({
+      sceneKey,
+      sceneTitle: this.mapTitle(),
+      sessionId,
+      sessionTitle: sessLabel,
+      locationNodeId: this.assignLocationNodeId() || encounterObj?.id || '',
+      locationTitle: encLabel,
+      artworkUrl: previewArt,
+      biome: this.activeTheme(),
+    });
+    this.store.attachElementToSession({
+      sessionId,
+      elementKind: 'Map',
+      targetKey: sceneKey,
+      title: this.mapTitle(),
+      subtitle: `${this.dimensionMode().toUpperCase()} Battlemap · ${this.activeTheme()}`,
+      summary: `${sessLabel} · ${encLabel}`,
+      routeLink: `/arcane-screen?scene=${sceneKey}`,
+      visibility: 'players',
+      artworkUrl: previewArt,
+    });
+    this.existingMaps.update((cur) => {
+      const updatedSummary: LwExistingMapSummary = {
+        sceneKey,
+        name: this.mapTitle(),
+        dimensionMode: this.dimensionMode(),
+        campaignId: this.store.activeCampaignId(),
+        campaignName: campName,
+        sessionLabel: sessLabel,
+        encounterLabel: encLabel,
+        gridSummary: `${this.gridCols()}x${this.gridRows()} (5ft sq)`,
+        floorBumpName: this.activeTheme(),
+        previewUrl: previewArt,
+        updatedLabel: 'Published just now',
+        revision: this.sceneGraph().revision,
+        creatorAccount: 'GM Studio',
+        popularityRating: 'Active Table Map',
+        priceLabel: 'Campaign Map',
+        accessKind: 'owned',
+      };
+      return [updatedSummary, ...cur.filter((m) => m.sceneKey !== sceneKey)];
+    });
+    this.pngPipelineBanner.set(
+      `Published '${this.mapTitle()}' (${this.dimensionMode().toUpperCase()}) -> ${campName} · ${sessLabel} · ${encLabel}`,
+    );
+  }
+
+  private legacyPublishMapToCoreCampaignUnused(): void {
     const sessionId = this.assignSessionId() || this.sessions()[0]?.id || 'session-1';
     this.store.setActiveSession(sessionId);
     this.saveSceneRevision();
