@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css?family=Nunito+Sans:400,700,900&display=swap');
+
+:host {
+  display: block;
+  min-height: 100%;
+  width: 100%;
+}
+
+.error-stage {
+  align-items: center;
+  display: flex;
+  isolation: isolate;
+  justify-content: center;
+  min-height: calc(100vh - 3.75rem);
+  background: #000;
+  overflow: hidden;
+  padding: clamp(1.5rem, 4vw, 3rem) 1.25rem;
+  position: relative;
+  width: 100%;
+
+  &::before {
+    background: #000;
+    content: '';
+    inset: 0;
+    position: absolute;
+    z-index: -2;
+  }
+}
+
+.error-card {
+  animation: card-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  display: block;
+  max-width: 39rem;
+  position: relative;
+  width: 100%;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: 16px;
+  background: #000;
+  border: 1px solid rgba(0, 232, 137, 0.14);
+  box-shadow: 0 0 3rem rgba(0, 232, 137, 0.045);
+}
+
+.error-content {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Nunito Sans', 'Helvetica Neue', sans-serif;
+  padding: clamp(0.35rem, 2vw, 1.25rem);
+  text-align: center;
+}
+
+.error-intro {
+  min-height: 5.15rem;
+}
+
+.error-section--visible {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+h1 {
+  color: #88b04b;
+  font-family: 'Nunito Sans', 'Helvetica Neue', sans-serif;
+  font-size: clamp(2.4rem, 7vw, 3.25rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0 0 0.45rem;
+  opacity: 0;
+  transform: translateY(-0.45rem);
+  transition:
+    opacity 0.34s ease,
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  visibility: hidden;
+  text-shadow: 0 0 1.75rem rgba(136, 176, 75, 0.2);
+}
+
+.happened {
+  color: #aab5bf;
+  font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+  margin: 0;
+  opacity: 0;
+  transform: translateY(-0.3rem);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  visibility: hidden;
+}
+
+.error-line--visible {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.error-die {
+  aspect-ratio: 8 / 7;
+  background: #000;
+  display: block;
+  margin: 0.9rem auto 0.35rem;
+  max-width: min(25rem, 88vw);
+  position: relative;
+  width: 100%;
+}
+
+.error-die__frame {
+  height: 100%;
+  inset: 0;
+  object-fit: contain;
+  position: absolute;
+  width: 100%;
+}
+
+.error-die__frame--landed {
+  opacity: 0;
+}
+
+.error-die__frame--visible {
+  opacity: 1;
+}
+
+.error-die__frame--hidden {
+  opacity: 0;
+}
+
+.error-detail {
+  border-top: 1px solid transparent;
+  max-width: 32rem;
+  opacity: 0;
+  padding-top: 1.25rem;
+  transform: translateY(0.65rem);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.55s ease;
+  visibility: hidden;
+  width: 100%;
+}
+
+.error-detail.error-section--visible {
+  border-color: rgba(138, 165, 170, 0.17);
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.error-status {
+  color: #6ee7b7;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  margin: 0 0 0.65rem;
+  text-transform: uppercase;
+}
+
+.error-message {
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.error-submessage {
+  color: #8997a5;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  margin: 0.45rem 0 0;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+  min-height: 2.75rem;
+  opacity: 0;
+  transform: translateY(0.65rem);
+  transition:
+    opacity 0.55s 0.12s ease,
+    transform 0.55s 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  visibility: hidden;
+  width: 100%;
+}
+
+.error-actions.error-section--visible {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 40rem) {
+  .error-stage {
+    align-items: flex-start;
+  }
+  .error-card {
+    padding: 1.25rem;
+  }
+  .error-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .error-actions lw-button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .error-card {
+    animation: none;
+  }
+  h1,
+  .happened,
+  .error-detail,
+  .error-actions {
+    transition: none;
+  }
+}

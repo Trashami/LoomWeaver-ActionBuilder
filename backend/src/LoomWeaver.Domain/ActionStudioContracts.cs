@@ -33,6 +33,44 @@ public sealed record ActionScalingTierDto(
     string Summary
 );
 
+public sealed record ActionEffectItemDto(
+    string Id,
+    string ActionVerb,
+    string TargetRecipient,
+    string FormulaOrValue,
+    string DamageOrEffectType
+);
+
+public sealed record ActionResolutionStepDto(
+    string Id,
+    int Order,
+    string StepType,
+    string Title,
+    string Subtitle,
+    string CheckMode = "ALL",
+    IReadOnlyList<string>? Requirements = null,
+    string PromptTarget = "Target(s)",
+    string PromptTrigger = "On a hit",
+    string PromptMessage = "",
+    string ContinueMode = "After responses or timeout",
+    IReadOnlyList<string>? PromptOptions = null,
+    string RollActor = "Caster / Attacker",
+    string RollType = "Attack Roll vs Target AC",
+    string RollFormula = "d20 + attack modifier vs. target AC",
+    string IfCondition = "On Hit (Attack >= Target AC)",
+    IReadOnlyList<ActionEffectItemDto>? ThenEffects = null,
+    string ElseCondition = "On Miss",
+    IReadOnlyList<ActionEffectItemDto>? ElseEffects = null,
+    string SpawnTokenName = "",
+    string SpawnPlacementMode = "Prompt caster to place token within spell range",
+    string SpawnRange = "Within Spell Range",
+    string SpawnController = "Caster / Attacker",
+    string TransformSubject = "Caster / Attacker",
+    string TransformFormName = "",
+    string TransformSize = "Match new form size",
+    string TransformHpMode = "Grant form's HP as Temporary HP (revert at 0 HP)"
+);
+
 public sealed record CampaignActionRuleDto(
     string Id,
     string RuleCode,
@@ -65,7 +103,8 @@ public sealed record CampaignActionRuleDto(
     bool IsCoreEngineRule = true,
     string? BypassesCoreRuleId = null,
     string? BypassedByRuleId = null,
-    string? BypassedByRuleName = null
+    string? BypassedByRuleName = null,
+    IReadOnlyList<ActionResolutionStepDto>? ResolutionSteps = null
 );
 
 public sealed record DmCampaignOptionDto(
@@ -215,7 +254,8 @@ public sealed record EncounterAttackStepRequest(
     bool TargetIsConcentrating = false,
     string? SelectedReactionRuleId = null,
     bool ReactionDecisionMade = false,
-    string RollMode = "auto"
+    string RollMode = "auto",
+    string? RuleId = null
 );
 
 public sealed record EncounterAttackStepResponse(
@@ -232,5 +272,8 @@ public sealed record EncounterAttackStepResponse(
     bool ConcentrationCheckTriggered,
     int ConcentrationDc,
     IReadOnlyList<string> StepByStepLog,
-    string SummaryBanner
+    string SummaryBanner,
+    IReadOnlyList<ActionResolutionStepDto>? ExecutedResolutionSteps = null,
+    string? TokenSpawnSummary = null,
+    string? TokenTransformSummary = null
 );

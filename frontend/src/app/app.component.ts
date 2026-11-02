@@ -41,7 +41,8 @@ import { LwScrollAreaComponent } from "./shared/ui/scroll-area/scroll-area.compo
 interface StudioNavItem {
   readonly id: string;
   readonly label: string;
-  readonly route: string;
+  readonly route?: string;
+  readonly externalUrl?: string;
   readonly icon: string;
   readonly exact?: boolean;
 }
@@ -158,10 +159,16 @@ const NAV_GROUPS: readonly StudioNavGroup[] = [
         icon: "table-chart",
       },
       {
-        id: "effects-rules",
-        label: "Actions & FX Studio",
-        route: "/effects",
+        id: "effect-builder",
+        label: "Effect Builder",
+        externalUrl: "https://effectbuilder.loom-weaver.com",
         icon: "wand",
+      },
+      {
+        id: "action-builder",
+        label: "Action Builder",
+        externalUrl: "https://actionbuilder.loom-weaver.com",
+        icon: "swords",
       },
     ],
   },

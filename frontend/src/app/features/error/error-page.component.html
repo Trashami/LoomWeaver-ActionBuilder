@@ -1,0 +1,54 @@
+<main class="error-stage" [attr.data-error-type]="errorType">
+  <section class="error-card" [attr.aria-label]="statusLabel">
+    <article class="error-content">
+      <div class="error-intro">
+        <h1 [class.error-line--visible]="showTitle()">Well, Fuck!</h1>
+        <p class="happened" [class.error-line--visible]="showSubtitle()">That happened.</p>
+      </div>
+
+      <div class="error-die" role="img" aria-label="A green and gold twenty-sided die landing on one">
+        <img
+          class="error-die__frame error-die__frame--landed"
+          [class.error-die__frame--visible]="diceLanded()"
+          src="/error-d20-landed.png"
+          width="400"
+          height="350"
+          alt=""
+        />
+        <img
+          class="error-die__frame error-die__frame--rolling"
+          [class.error-die__frame--hidden]="diceLanded()"
+          src="/error-d20.gif"
+          width="400"
+          height="350"
+          alt=""
+        />
+      </div>
+
+      <div class="error-detail" [class.error-section--visible]="showBottomCopy()">
+        <p class="error-status">{{ statusLabel }}</p>
+        <p class="error-message">{{ message }}</p>
+        <p class="error-submessage">{{ secondaryMessage }}</p>
+      </div>
+
+      <div class="error-actions" [class.error-section--visible]="showBottomCopy()">
+        <lw-button
+          [label]="auth.isAuthenticated() ? 'Return to Dashboard' : 'Return to Home'"
+          icon="arrow-left"
+          variant="emerald"
+          size="lg"
+          (pressed)="goHome()"
+        />
+        @if (errorType === '403' && !auth.isAuthenticated()) {
+          <lw-button
+            label="Sign In with Account"
+            icon="user"
+            variant="secondary"
+            size="lg"
+            (pressed)="openSignIn()"
+          />
+        }
+      </div>
+    </article>
+  </section>
+</main>

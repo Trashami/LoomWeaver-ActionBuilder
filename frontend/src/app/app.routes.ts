@@ -132,12 +132,6 @@ export const APP_ROUTES: Routes = [
       import('./features/dice/dice.page').then((m) => m.DicePageComponent),
   },
   {
-    path: 'effects',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/effects/effects.page').then((m) => m.EffectsPageComponent),
-  },
-  {
     path: 'handouts',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -269,7 +263,18 @@ export const APP_ROUTES: Routes = [
   { path: 'locations', redirectTo: 'weave', pathMatch: 'full' },
   { path: 'npcs', redirectTo: 'campaigns', pathMatch: 'full' },
   { path: 'monsters', redirectTo: 'bestiary', pathMatch: 'full' },
-  { path: 'spells', redirectTo: 'effects', pathMatch: 'full' },
+  { path: 'spells', redirectTo: 'rules', pathMatch: 'full' },
   { path: 'items', canActivate: [authGuard], loadComponent: () => import('./features/items/items.page').then(m => m.ItemsPageComponent) },
-  { path: '**', redirectTo: '' },
+  {
+    path: '404',
+    data: { type: '404' },
+    loadComponent: () =>
+      import('./features/error/error-page.component').then((m) => m.ErrorPageComponent),
+  },
+  {
+    path: '**',
+    data: { type: '404' },
+    loadComponent: () =>
+      import('./features/error/error-page.component').then((m) => m.ErrorPageComponent),
+  },
 ];

@@ -103,20 +103,33 @@
                     <div class="lw-sidebar__nav-list">
                       @for (item of group.items; track item.id) {
                         <div class="lw-sidebar__nav-row">
-                          <a
-                            ngpButton
-                            class="lw-nav-link"
-                            [routerLink]="item.route"
-                            routerLinkActive="lw-nav-link--active"
-                            [routerLinkActiveOptions]="{
-                              exact: item.exact ?? false,
-                            }"
-                          >
-                            <lw-icon [name]="item.icon" [size]="16" />
-                            <span class="lw-nav-link__label">{{
-                              item.label
-                            }}</span>
-                          </a>
+                          @if (item.externalUrl) {
+                            <a
+                              ngpButton
+                              class="lw-nav-link"
+                              [href]="item.externalUrl"
+                            >
+                              <lw-icon [name]="item.icon" [size]="16" />
+                              <span class="lw-nav-link__label">{{
+                                item.label
+                              }}</span>
+                            </a>
+                          } @else {
+                            <a
+                              ngpButton
+                              class="lw-nav-link"
+                              [routerLink]="item.route"
+                              routerLinkActive="lw-nav-link--active"
+                              [routerLinkActiveOptions]="{
+                                exact: item.exact ?? false,
+                              }"
+                            >
+                              <lw-icon [name]="item.icon" [size]="16" />
+                              <span class="lw-nav-link__label">{{
+                                item.label
+                              }}</span>
+                            </a>
+                          }
                         </div>
                       }
                     </div>
