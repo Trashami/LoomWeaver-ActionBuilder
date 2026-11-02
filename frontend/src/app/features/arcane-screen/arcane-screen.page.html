@@ -103,18 +103,18 @@
     } @else {
       <!-- Edge-to-Edge Battlefield Viewport -->
       <section class="lw-vtt-map-stage" [class.lw-vtt-map-stage--3d]="battle.mapMode3D()" (wheel)="onMapWheel($event)" (mousedown)="onMapMouseDown($event)" (mousemove)="onMapMouseMove($event)" (mouseup)="onMapMouseUp()" (mouseleave)="onMapMouseUp()" aria-label="Interactive Encounter Battle Map">
-      <canvas #vttCanvas class="lw-vtt-babylon-canvas" [class.lw-vtt-babylon-canvas--active]="battle.mapMode3D()"></canvas>
+      <canvas #vttCanvas class="lw-vtt-babylon-canvas" [class.lw-vtt-babylon-canvas--active]="!isHighPerformance2d()"></canvas>
 
-      <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="battle.mapMode3D()" [style.transform]="view2d.transform()" [style.transformOrigin]="'center center'">
+      <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="!isHighPerformance2d()" [style.transform]="view2d.transform()" [style.transformOrigin]="'center center'">
         <div class="lw-vtt-map-backdrop" [style.backgroundImage]="'url(' + activeBattlemapBackdropUrl() + ')'"></div>
 
         <svg #battleSvg class="lw-vtt-svg" [class.lw-vtt-svg--targeting]="battle.pendingAbility() || battle.measureEnabled() || battle.targetSelectionMode()" viewBox="0 0 1200 800" preserveAspectRatio="none" (mousemove)="onBattleMapPointerMove($event)" (mouseup)="onBattleMapMouseUp()" (click)="onBattleMapClick($event)">
         @if (gridEnabled()) {
           <g class="lw-vtt-svg__grid">
-            @for (gx of gridVerticalLines; track gx) {
+            @for (gx of gridVerticalLines(); track gx) {
               <line [attr.x1]="gx" y1="0" [attr.x2]="gx" y2="800" />
             }
-            @for (gy of gridHorizontalLines; track gy) {
+            @for (gy of gridHorizontalLines(); track gy) {
               <line x1="0" [attr.y1]="gy" x2="1200" [attr.y2]="gy" />
             }
           </g>
@@ -190,12 +190,12 @@
 
             <defs>
               <clipPath [attr.id]="'token-clip-' + token.key">
-                <circle r="21" cx="0" cy="0" />
+                <circle [attr.r]="getTokenAvatarRadius2D(token)" cx="0" cy="0" />
               </clipPath>
             </defs>
-            <circle r="23" [attr.fill]="battle.isTokenTargetedWithReticle(token.key) ? '#2b070c' : '#071510'" [attr.stroke]="battle.isTokenTargetedWithReticle(token.key) ? '#ff2438' : (token.faction === 'hostile' ? '#ef5d72' : '#49e892')" stroke-width="3" />
+            <circle [attr.r]="getTokenRadius2D(token)" [attr.fill]="battle.isTokenTargetedWithReticle(token.key) ? '#2b070c' : '#071510'" [attr.stroke]="getTokenBaseStroke(token)" stroke-width="3" />
             @if (token.avatarUrl) {
-              <image [attr.href]="token.avatarUrl" x="-21" y="-21" width="42" height="42" preserveAspectRatio="xMidYMid slice" [attr.clip-path]="'url(#token-clip-' + token.key + ')'" />
+              <image [attr.href]="token.avatarUrl" [attr.x]="-getTokenAvatarRadius2D(token)" [attr.y]="-getTokenAvatarRadius2D(token)" [attr.width]="getTokenAvatarRadius2D(token) * 2" [attr.height]="getTokenAvatarRadius2D(token) * 2" preserveAspectRatio="xMidYMid slice" [attr.clip-path]="'url(#token-clip-' + token.key + ')'" />
             } @else {
               <text x="0" y="4" text-anchor="middle" fill="#f3e8d0" font-size="12" font-weight="700">{{ token.name.slice(0, 2).toUpperCase() }}</text>
             }

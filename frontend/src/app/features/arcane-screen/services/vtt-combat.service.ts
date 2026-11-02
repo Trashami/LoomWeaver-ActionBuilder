@@ -11,6 +11,8 @@ import {
   ActionRuleVm,
   CombatResolutionLogVm,
   EffectTimelinePresetVm,
+  DndSizeCategory,
+  DND_SIZE_ORDER,
   VttTokenVm,
 } from '../../effects/engine/effect-timeline.contract';
 import {
@@ -316,6 +318,27 @@ export class VttCombatService {
           ? { ...t, currentHp: Math.max(0, Math.min(t.maxHp, t.currentHp + delta)) }
           : t,
       ),
+    );
+  }
+
+  setTokenSizeCategory(tokenKey: string, sizeCategory: DndSizeCategory): void {
+    this.tokens.update((list) =>
+      list.map((t) => (t.key === tokenKey ? { ...t, sizeCategory } : t)),
+    );
+  }
+
+  cycleTokenSize(tokenKey: string, direction: 'increase' | 'decrease'): void {
+    this.tokens.update((list) =>
+      list.map((t) => {
+        if (t.key !== tokenKey) return t;
+        const current = (t.sizeCategory || 'medium') as DndSizeCategory;
+        const idx = DND_SIZE_ORDER.indexOf(current);
+        const nextIdx =
+          direction === 'increase'
+            ? Math.min(DND_SIZE_ORDER.length - 1, (idx >= 0 ? idx : 2) + 1)
+            : Math.max(0, (idx >= 0 ? idx : 2) - 1);
+        return { ...t, sizeCategory: DND_SIZE_ORDER[nextIdx] };
+      }),
     );
   }
 

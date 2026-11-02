@@ -22,6 +22,7 @@ const QUALITY_SUFFIX: Readonly<Record<VttMapQuality, string>> = {
 };
 
 const STORAGE_KEY = 'lw.vtt.mapQuality';
+const GRID_SCALE_STORAGE_KEY = 'lw.vtt.gridScale';
 
 /** Inserts a quality suffix before the file extension, keeping any query string. */
 export function mapVariantUrl(baseUrl: string, suffix: string): string {
@@ -32,6 +33,17 @@ export function mapVariantUrl(baseUrl: string, suffix: string): string {
 @Injectable({ providedIn: 'root' })
 export class VttDisplaySettingsService {
   readonly mapQuality = signal<VttMapQuality>(readStoredQuality());
+  readonly gridScale = signal<number>(readStoredGridScale());
+
+  setGridScale(scale: number): void {
+    const clamped = Math.max(0.4, Math.min(2.5, Math.round(scale * 100) / 100));
+    this.gridScale.set(clamped);
+    try {
+      localStorage.setItem(GRID_SCALE_STORAGE_KEY, clamped.toString());
+    } catch {
+      // storage unavailable
+    }
+  }
 
   /** Variant URLs that failed to load; those fall back to the base image. */
   private readonly failedVariants = signal<ReadonlySet<string>>(new Set());
@@ -71,5 +83,14 @@ function readStoredQuality(): VttMapQuality {
     return VTT_MAP_QUALITY_OPTIONS.some((o) => o.id === raw) ? (raw as VttMapQuality) : 'balanced';
   } catch {
     return 'balanced';
+  }
+}
+
+function readStoredGridScale(): number {
+  try {
+    const raw = parseFloat(localStorage.getItem(GRID_SCALE_STORAGE_KEY) || '1.0');
+    return isFinite(raw) && raw >= 0.4 && raw <= 2.5 ? raw : 1.0;
+  } catch {
+    return 1.0;
   }
 }

@@ -25,6 +25,7 @@ export class VttServerSyncService {
 
   readonly scenes = signal<readonly VttSceneListItem[]>([]);
   readonly activeSceneKey = signal('');
+  readonly activeSceneResponse = signal<VttSceneResponse | null>(null);
 
   constructor() {
     effect(() => {
@@ -86,24 +87,33 @@ export class VttServerSyncService {
     }
   }
 
-  /** Replaces the built-in demo walls with the saved map's walls. */
-  async loadScene(sceneKey: string): Promise<void> {
+  /** Loads the saved map scene with 3D lights, walls, and atmosphere. */
+  async loadScene(sceneKey: string, title?: string, artworkUrl?: string): Promise<VttSceneResponse | null> {
     const base = this.base();
-    if (!base || !sceneKey) return;
+    if (!base) return null;
     try {
-      const scene = await firstValueFrom(
-        this.http.get<VttSceneResponse>(`${base}/maps/${encodeURIComponent(sceneKey)}/vtt-scene`),
-      );
-      this.battle.walls.set(
-        scene.walls.map((w) => ({
-          id: w.id, label: w.label, x1: w.x1, z1: w.z1, x2: w.x2, z2: w.z2,
-          blocksVision: w.blocksVision, blocksMovement: w.blocksMovement,
-        })),
-      );
-      this.activeSceneKey.set(sceneKey);
+      const url = (title || artworkUrl)
+        ? `${base}/maps/active-scene?sceneKey=${encodeURIComponent(sceneKey || '')}&title=${encodeURIComponent(title || '')}&artworkUrl=${encodeURIComponent(artworkUrl || '')}`
+        : `${base}/maps/${encodeURIComponent(sceneKey)}/vtt-scene`;
+
+      const scene = await firstValueFrom(this.http.get<VttSceneResponse>(url));
+      if (scene) {
+        if (scene.walls) {
+          this.battle.walls.set(
+            scene.walls.map((w) => ({
+              id: w.id, label: w.label, x1: w.x1, z1: w.z1, x2: w.x2, z2: w.z2,
+              blocksVision: w.blocksVision, blocksMovement: w.blocksMovement,
+            })),
+          );
+        }
+        this.activeSceneKey.set(scene.sceneKey);
+        this.activeSceneResponse.set(scene);
+        return scene;
+      }
     } catch {
       this.alertify.notifyStatus('Scene', 'Not loaded', 'That saved map could not be loaded.', 'crimson');
     }
+    return null;
   }
 
   private base(): string | null {

@@ -24,9 +24,15 @@ import '@babylonjs/loaders/glTF';
 import {
   EffectTimelinePresetVm,
   VttTokenVm,
+  getDndSizeScale,
+  getTokenBaseColorHex,
 } from './effect-timeline.contract';
 import { TokenDragController, TokenPlacement } from './token-drag-controller';
 import { BabylonFogPlane } from './babylon-fog-plane';
+import {
+  BabylonVttMapSceneBuilder,
+  VttMapSceneDataPayload,
+} from './babylon-vtt-map-scene.builder';
 
 if (typeof window !== 'undefined') {
   MeshoptCompression.Configuration = {
@@ -57,6 +63,7 @@ export class BabylonEffectStageService {
   private latestTargetKey?: string;
   private latestTargetedKeys: readonly string[] = [];
   private latestOpacityByKey: ReadonlyMap<string, number> = new Map();
+  private latestGridScale = 1.0;
   camera: ArcRotateCamera | null = null;
 
   readonly zoomPercent = signal<number>(100);
@@ -92,6 +99,9 @@ export class BabylonEffectStageService {
     this.zoomPercent.set(Math.max(100, Math.min(350, pct)));
   }
 
+  private readonly mapSceneBuilder = new BabylonVttMapSceneBuilder();
+  private isForcedTopDown = false;
+
   /** Paints the battlemap artwork onto the ground plane, keeping its aspect ratio. */
   setBackdrop(url: string): void {
     if (!this.scene || !this.ground || !this.groundMat || !url || url === this.backdropUrl) return;
@@ -109,8 +119,71 @@ export class BabylonEffectStageService {
     this.groundMat.emissiveColor = new Color3(0.22, 0.22, 0.22);
   }
 
-  setGridVisible(visible: boolean): void {
-    if (this.gridLines) this.gridLines.isVisible = visible;
+  /** Loads full 3D map scene (dynamic flickering lights, 3D walls, ambient lighting). */
+  loadMapScene(sceneData?: VttMapSceneDataPayload | string | null, backdropUrl?: string): void {
+    if (backdropUrl) {
+      this.setBackdrop(backdropUrl);
+    }
+    if (!this.scene) return;
+    if (sceneData) {
+      let parsed: VttMapSceneDataPayload | null = null;
+      if (typeof sceneData === 'string') {
+        try { parsed = JSON.parse(sceneData); } catch {}
+      } else {
+        parsed = sceneData;
+      }
+      if (parsed) {
+        this.mapSceneBuilder.buildScene(this.scene, parsed);
+      }
+    }
+  }
+
+  /**
+   * Switches between forced top-down 2D camera (with live 3D lights, shadows, and AO)
+   * and free 3D perspective orbit camera.
+   */
+  setForcedTopDown(forced: boolean): void {
+    if (!this.camera) return;
+    this.isForcedTopDown = forced;
+    if (forced) {
+      this.camera.lowerAlphaLimit = -Math.PI / 2;
+      this.camera.upperAlphaLimit = -Math.PI / 2;
+      this.camera.lowerBetaLimit = 0.0001;
+      this.camera.upperBetaLimit = 0.0001;
+      this.camera.alpha = -Math.PI / 2;
+      this.camera.beta = 0.0001;
+      this.camera.panningAxis = new Vector3(1, 0, 1);
+    } else {
+      this.camera.lowerAlphaLimit = null;
+      this.camera.upperAlphaLimit = null;
+      this.camera.lowerBetaLimit = 0.1;
+      this.camera.upperBetaLimit = Math.PI / 2.05;
+      this.camera.alpha = -Math.PI / 2.2;
+      this.camera.beta = 0.82;
+      this.camera.panningAxis = new Vector3(1, 0, 1);
+    }
+  }
+
+  setGridVisible(visible: boolean, gridScale: number = 1.0): void {
+    this.latestGridScale = gridScale;
+    if (!this.scene) return;
+    if (this.gridLines) {
+      this.gridLines.dispose();
+      this.gridLines = null;
+    }
+    if (!visible) return;
+    const step = Math.max(0.5, 2 * gridScale);
+    const lines: Vector3[][] = [];
+    for (let x = -14; x <= 14.001; x += step) {
+      lines.push([new Vector3(x, 0.03, -10), new Vector3(x, 0.03, 10)]);
+    }
+    for (let z = -10; z <= 10.001; z += step) {
+      lines.push([new Vector3(-14, 0.03, z), new Vector3(14, 0.03, z)]);
+    }
+    const grid = MeshBuilder.CreateLineSystem('lw-vtt-grid', { lines }, this.scene);
+    grid.color = Color3.FromHexString('#264035');
+    grid.isVisible = true;
+    this.gridLines = grid;
   }
 
   /** Direct mouse drag orbits/pans camera; Spacebar held compatibility preserved. */
@@ -228,6 +301,8 @@ export class BabylonEffectStageService {
           this.updateZoomPercent();
         }
 
+        this.mapSceneBuilder.updateLightFlicker(performance.now(), this.reducedMotion());
+
         if (this.reducedMotion()) return;
         for (const m of this.scene.meshes) {
           if (m.name.startsWith('lw-target-reticle-root-')) {
@@ -261,12 +336,14 @@ export class BabylonEffectStageService {
     targetKey?: string,
     targetedKeys: readonly string[] = [],
     opacityByKey: ReadonlyMap<string, number> = new Map(),
+    gridScale: number = 1.0,
   ): void {
     this.latestTokens = tokens;
     this.latestAttackerKey = attackerKey;
     this.latestTargetKey = targetKey;
     this.latestTargetedKeys = targetedKeys;
     this.latestOpacityByKey = opacityByKey;
+    this.latestGridScale = gridScale;
 
     if (!this.scene) return;
     this.scene.meshes
@@ -286,37 +363,45 @@ export class BabylonEffectStageService {
       const isDead = t.currentHp <= 0;
       const isTargeted = activeTargetSet.has(t.key);
 
+      const sizeScale = getDndSizeScale(t.sizeCategory);
+      const effectiveScale = gridScale * sizeScale;
+      const baseDiameter = 1.5 * effectiveScale;
+      // Bases are 90% less thick than former 0.22 (0.022 thin miniature disc)
+      const baseHeight = isDead ? 0.015 : 0.022;
+
       // Base miniature pedestal / puck
       const baseMesh = MeshBuilder.CreateCylinder(
         `lw-token-${t.key}`,
-        { height: isDead ? 0.12 : 0.22, diameter: 1.5, tessellation: 36 },
+        { height: baseHeight, diameter: baseDiameter, tessellation: 36 },
         this.scene,
       );
-      baseMesh.position.set(t.x, isDead ? 0.06 : 0.11, t.z);
+      baseMesh.position.set(t.x, baseHeight / 2, t.z);
       baseMesh.metadata = { tokenKey: t.key };
       baseMesh.visibility = opacityByKey.get(t.key) ?? 1;
 
+      // Token base color: Players green, hostile/monsters/emotes red, NPCs grey unless hostile, DM override
+      const baseColorHex = getTokenBaseColorHex(t);
       const baseMat = new StandardMaterial(`lw-tmat-${t.key}`, this.scene);
-      baseMat.diffuseColor = isTargeted
-        ? Color3.FromHexString('#ff2438')
-        : Color3.FromHexString(t.colorHex);
-      baseMat.specularColor = new Color3(0.25, 0.25, 0.25);
+      baseMat.diffuseColor = Color3.FromHexString(baseColorHex);
+      baseMat.specularColor = new Color3(0.2, 0.2, 0.2);
       if (isTargeted) {
-        baseMat.emissiveColor = Color3.FromHexString('#ff2438').scale(0.65);
+        baseMat.emissiveColor = Color3.FromHexString('#ff2438').scale(0.5);
       } else if (t.key === attackerKey) {
-        baseMat.emissiveColor = Color3.FromHexString('#49e892').scale(0.5);
+        baseMat.emissiveColor = Color3.FromHexString('#49e892').scale(0.35);
+      } else {
+        baseMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.18);
       }
       baseMesh.material = baseMat;
 
       // Real 3D GLB Miniature Model vs Basic Token Puck
       if (t.glbUrl) {
-        this.attachGlbMiniature(t, baseMesh, isDead);
+        this.attachGlbMiniature(t, baseMesh, isDead, effectiveScale, baseHeight);
       } else {
-        this.attachBasicPuckFace(t, baseMesh);
+        this.attachBasicPuckFace(t, baseMesh, effectiveScale, baseHeight);
       }
 
       if (isTargeted) {
-        this.createSpinningBaseTargetReticle(t.key, t.x, t.z);
+        this.createSpinningBaseTargetReticle(t.key, t.x, t.z, effectiveScale);
       }
     }
 
@@ -339,17 +424,30 @@ export class BabylonEffectStageService {
   }
 
   /** Attaches a real 3D miniature GLB model onto the token pedestal. */
-  private attachGlbMiniature(token: VttTokenVm, baseMesh: Mesh, isDead: boolean): void {
+  private attachGlbMiniature(
+    token: VttTokenVm,
+    baseMesh: Mesh,
+    isDead: boolean,
+    effectiveScale: number,
+    baseHeight: number,
+  ): void {
     if (!this.scene || !token.glbUrl) return;
     const glbUrl = token.glbUrl;
 
     if (this.glbContainerCache.has(glbUrl)) {
-      this.instantiateGlbToToken(this.glbContainerCache.get(glbUrl)!, token, baseMesh, isDead);
+      this.instantiateGlbToToken(
+        this.glbContainerCache.get(glbUrl)!,
+        token,
+        baseMesh,
+        isDead,
+        effectiveScale,
+        baseHeight,
+      );
       return;
     }
 
     // Fall back immediately to basic puck face while GLB loads asynchronously
-    this.attachBasicPuckFace(token, baseMesh);
+    this.attachBasicPuckFace(token, baseMesh, effectiveScale, baseHeight);
 
     if (this.loadingGlbUrls.has(glbUrl)) return;
     this.loadingGlbUrls.add(glbUrl);
@@ -369,6 +467,7 @@ export class BabylonEffectStageService {
           this.latestTargetKey,
           this.latestTargetedKeys,
           this.latestOpacityByKey,
+          this.latestGridScale,
         );
       })
       .catch(() => {
@@ -382,6 +481,8 @@ export class BabylonEffectStageService {
     token: VttTokenVm,
     baseMesh: Mesh,
     isDead: boolean,
+    effectiveScale: number,
+    baseHeight: number,
   ): void {
     if (!this.scene) return;
     try {
@@ -390,8 +491,8 @@ export class BabylonEffectStageService {
         false,
       );
       const rootNode = new TransformNode(`lw-token-root-${token.key}`, this.scene);
-      rootNode.parent = baseMesh;
-      rootNode.position.set(0, 0.11, 0);
+      rootNode.position.set(0, 0, 0);
+      rootNode.scaling.set(1, 1, 1);
 
       instance.rootNodes.forEach((node) => {
         node.parent = rootNode;
@@ -402,26 +503,44 @@ export class BabylonEffectStageService {
         if (node instanceof AbstractMesh) node.computeWorldMatrix(true);
       });
 
-      // Normalize size to miniature scale (~1.8 units tall, 5-ft scale)
+      // Collect all meshes in the instantiated model hierarchy
+      const allMeshes: AbstractMesh[] = [];
+      instance.rootNodes.forEach((node) => {
+        if (node instanceof AbstractMesh) allMeshes.push(node);
+        allMeshes.push(...node.getChildMeshes());
+      });
+
+      // Normalize size and align lowest vertex (feet) precisely to top of base
       let min = new Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
       let max = new Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
       let foundBounds = false;
 
-      for (const m of instance.rootNodes) {
-        if (m instanceof AbstractMesh) {
-          const b = m.getHierarchyBoundingVectors(true);
-          min = Vector3.Minimize(min, b.min);
-          max = Vector3.Maximize(max, b.max);
-          foundBounds = true;
-        }
+      for (const m of allMeshes) {
+        m.computeWorldMatrix(true);
+        const b = m.getBoundingInfo().boundingBox;
+        min = Vector3.Minimize(min, b.minimumWorld);
+        max = Vector3.Maximize(max, b.maximumWorld);
+        foundBounds = true;
       }
 
+      const targetHeight = 1.75 * effectiveScale;
+      const sizeY = foundBounds ? Math.max(0.01, max.y - min.y) : 1.75;
+      const scale = targetHeight / sizeY;
+
+      rootNode.parent = baseMesh;
+      rootNode.scaling.set(scale, scale, scale);
+
       if (foundBounds) {
-        const sizeY = Math.max(0.01, max.y - min.y);
-        const targetHeight = 1.75;
-        const scale = targetHeight / sizeY;
-        rootNode.scaling.set(scale, scale, scale);
-        rootNode.position.y = 0.11;
+        const centerX = (min.x + max.x) / 2;
+        const centerZ = (min.z + max.z) / 2;
+        // Lowest vertex (feet) sits exactly on the top face of the base (baseHeight / 2)
+        rootNode.position.set(
+          -centerX * scale,
+          baseHeight / 2 - min.y * scale,
+          -centerZ * scale,
+        );
+      } else {
+        rootNode.position.set(0, baseHeight / 2, 0);
       }
 
       // Propagate tokenKey metadata to all meshes for interaction & dragging
@@ -436,26 +555,31 @@ export class BabylonEffectStageService {
 
       if (isDead) {
         rootNode.rotation.z = Math.PI / 2.2;
-        rootNode.position.y = 0.15;
+        rootNode.position.y = baseHeight / 2 + 0.04 * effectiveScale;
       }
     } catch {
       // Fall back safely if instantiation fails
-      this.attachBasicPuckFace(token, baseMesh);
+      this.attachBasicPuckFace(token, baseMesh, effectiveScale, baseHeight);
     }
   }
 
-  /** Attaches a 2.5D miniature puck face (character portrait or faction ring) to the basic token. */
-  private attachBasicPuckFace(token: VttTokenVm, baseMesh: Mesh): void {
+  /** Attaches a 2.5D miniature puck face to the basic token. */
+  private attachBasicPuckFace(
+    token: VttTokenVm,
+    baseMesh: Mesh,
+    effectiveScale: number = 1.0,
+    baseHeight: number = 0.022,
+  ): void {
     if (!this.scene) return;
 
     if (token.avatarUrl) {
       const disc = MeshBuilder.CreateDisc(
         `lw-token-puck-disc-${token.key}`,
-        { radius: 0.68, tessellation: 36 },
+        { radius: 0.68 * effectiveScale, tessellation: 36 },
         this.scene,
       );
       disc.parent = baseMesh;
-      disc.position.y = 0.115;
+      disc.position.set(0, baseHeight / 2 + 0.002, 0);
       disc.rotation.x = Math.PI / 2;
       disc.metadata = { tokenKey: token.key };
 
@@ -467,23 +591,28 @@ export class BabylonEffectStageService {
 
     const rim = MeshBuilder.CreateTorus(
       `lw-token-puck-rim-${token.key}`,
-      { diameter: 1.48, thickness: 0.05, tessellation: 36 },
+      { diameter: 1.46 * effectiveScale, thickness: 0.02 * effectiveScale, tessellation: 36 },
       this.scene,
     );
     rim.parent = baseMesh;
-    rim.position.y = 0.11;
+    rim.position.set(0, baseHeight / 2 + 0.001, 0);
     rim.metadata = { tokenKey: token.key };
 
     const rimMat = new StandardMaterial(`lw-mat-rim-${token.key}`, this.scene);
-    rimMat.diffuseColor = Color3.FromHexString(token.colorHex);
-    rimMat.emissiveColor = Color3.FromHexString(token.colorHex).scale(0.35);
+    rimMat.diffuseColor = Color3.FromHexString('#5a5f66');
+    rimMat.specularColor = new Color3(0.2, 0.2, 0.2);
     rim.material = rimMat;
   }
 
-  private createSpinningBaseTargetReticle(tokenKey: string, x: number, z: number): void {
+  private createSpinningBaseTargetReticle(
+    tokenKey: string,
+    x: number,
+    z: number,
+    effectiveScale: number = 1.0,
+  ): void {
     if (!this.scene) return;
     const root = new Mesh(`lw-target-reticle-root-${tokenKey}`, this.scene);
-    root.position.set(x, 0.06, z);
+    root.position.set(x, 0.03, z);
 
     const reticleMat = new StandardMaterial(`lw-target-reticle-mat-${tokenKey}`, this.scene);
     reticleMat.diffuseColor = Color3.FromHexString('#ff2438');
@@ -493,7 +622,7 @@ export class BabylonEffectStageService {
 
     const outerRing = MeshBuilder.CreateTorus(
       `lw-target-reticle-outer-${tokenKey}`,
-      { diameter: 2.35, thickness: 0.11, tessellation: 36 },
+      { diameter: 2.35 * effectiveScale, thickness: 0.08 * effectiveScale, tessellation: 36 },
       this.scene,
     );
     outerRing.parent = root;
@@ -501,7 +630,7 @@ export class BabylonEffectStageService {
 
     const innerRing = MeshBuilder.CreateTorus(
       `lw-target-reticle-inner-${tokenKey}`,
-      { diameter: 0.95, thickness: 0.1, tessellation: 28 },
+      { diameter: 0.95 * effectiveScale, thickness: 0.06 * effectiveScale, tessellation: 28 },
       this.scene,
     );
     innerRing.parent = root;
@@ -509,7 +638,7 @@ export class BabylonEffectStageService {
 
     const crossH = MeshBuilder.CreateBox(
       `lw-target-reticle-ch-${tokenKey}`,
-      { width: 3.1, height: 0.04, depth: 0.1 },
+      { width: 3.1 * effectiveScale, height: 0.02, depth: 0.06 * effectiveScale },
       this.scene,
     );
     crossH.parent = root;
@@ -517,7 +646,7 @@ export class BabylonEffectStageService {
 
     const crossV = MeshBuilder.CreateBox(
       `lw-target-reticle-cv-${tokenKey}`,
-      { width: 0.1, height: 0.04, depth: 3.1 },
+      { width: 0.06 * effectiveScale, height: 0.02, depth: 3.1 * effectiveScale },
       this.scene,
     );
     crossV.parent = root;
@@ -646,6 +775,7 @@ export class BabylonEffectStageService {
     this.glbContainerCache.forEach((c) => c.dispose());
     this.glbContainerCache.clear();
     this.loadingGlbUrls.clear();
+    if (this.scene) this.mapSceneBuilder.clear(this.scene);
     this.scene?.dispose();
     this.engine?.dispose();
     this.scene = null;

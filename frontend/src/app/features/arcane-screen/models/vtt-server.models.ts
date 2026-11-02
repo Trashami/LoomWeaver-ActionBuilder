@@ -18,6 +18,10 @@ export interface VttSceneResponse {
     readonly blocksVision: boolean;
     readonly blocksMovement: boolean;
   }[];
+  readonly sceneDataJson?: string | null;
+  readonly imageUrl?: string | null;
+  readonly gridSizePx?: number;
+  readonly ambientLight?: string | null;
 }
 
 export interface CombatStateResponse {

@@ -10,7 +10,7 @@ import { LwButtonComponent } from '../../shared/ui/public-api';
 import { WebAudioAmbienceService } from '../assets/engine/web-audio-ambience.service';
 import { FullscreenDiceOverlayService } from '../dice/engine/fullscreen-dice-overlay.service';
 import { BabylonEffectStageService } from '../effects/engine/babylon-effect-stage.service';
-import { VttTokenVm } from '../effects/engine/effect-timeline.contract';
+import { getDndSizeScale, getTokenBaseColorHex, VttTokenVm } from '../effects/engine/effect-timeline.contract';
 import { feetToSvgPx, svgToWorldPoint, worldToSvgX, worldToSvgY } from './engine/vtt-los-and-grid.engine';
 import { VttRightTabId, VttTacticalAbilityVm } from './models/vtt-battle.models';
 import { VttHandoutService } from './services/vtt-handout.service';
@@ -83,6 +83,10 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
     return !!(art || (sceneKey && sceneKey.length > 0));
   });
 
+  readonly isHighPerformance2d = computed(
+    () => !this.battle.mapMode3D() && this.vttDisplay.mapQuality() === 'performance',
+  );
+
   readonly activeSessionTitle = computed(() => {
     const activeId = this.store.activeSessionId();
     const sess = this.store.sessions().find((s) => s.sessionId === activeId);
@@ -115,18 +119,37 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
     });
     effect(() => {
       if (!this.hasConfiguredMap()) return;
+      const is3d = this.battle.mapMode3D();
+      const isPerf = this.isHighPerformance2d();
+      untracked(() => {
+        if (!isPerf) {
+          this.stage.setForcedTopDown(!is3d);
+        }
+      });
+    });
+    effect(() => {
+      if (!this.hasConfiguredMap()) return;
       const url = this.activeBattlemapBackdropUrl();
       const visible = this.gridEnabled();
-      untracked(() => { this.stage.setBackdrop(url); this.stage.setGridVisible(visible); });
+      const scale = this.vttDisplay.gridScale();
+      const sceneResp = this.serverSync.activeSceneResponse();
+      untracked(() => {
+        this.stage.loadMapScene(sceneResp?.sceneDataJson, url);
+        this.stage.setGridVisible(visible, scale);
+        this.sync3dStage();
+      });
     });
     effect(() => {
       if (!this.hasConfiguredMap()) return;
       const sceneFromQuery = this.route.snapshot.queryParamMap.get('scene');
       const assignedScene = this.adventureGuide.guide().assignedBattlemap?.sceneKey;
       const targetScene = sceneFromQuery || assignedScene || '';
-      if (targetScene && targetScene !== this.lastLoadedSceneKey) {
-        this.lastLoadedSceneKey = targetScene;
-        untracked(() => void this.serverSync.loadScene(targetScene));
+      const title = this.activeBattlemapTitle();
+      const artUrl = this.activeBattlemapBackdropUrl();
+      const loadKey = `${targetScene}:${title}:${artUrl}`;
+      if (loadKey !== this.lastLoadedSceneKey) {
+        this.lastLoadedSceneKey = loadKey;
+        untracked(() => void this.serverSync.loadScene(targetScene, title, artUrl));
       }
     });
     this.stage.tokenDropped.pipe(takeUntilDestroyed()).subscribe((p) => {
@@ -144,20 +167,27 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   private dragMoved = false;
 
   readonly selectedDiceFormula = signal<string>('1d20');
-  readonly zoomLevel = computed(() => (this.battle.mapMode3D() ? this.stage.zoomPercent() : this.view2d.zoom()));
+  readonly zoomLevel = computed(() => (!this.isHighPerformance2d() ? this.stage.zoomPercent() : this.view2d.zoom()));
   readonly dmToolReadout = signal<string>('');
   onMapWheel(event: WheelEvent): void {
     event.preventDefault();
-    if (this.battle.mapMode3D()) this.stage.zoomCamera(event.deltaY * 0.05);
+    if (!this.isHighPerformance2d()) this.stage.zoomCamera(event.deltaY * 0.05);
     else this.view2d.wheel(event.deltaY);
   }
 
-  onMapMouseDown(event: MouseEvent): void { if (!this.battle.mapMode3D()) this.view2d.start(event); }
-  onMapMouseMove(event: MouseEvent): void { if (!this.battle.mapMode3D()) this.view2d.move(event); }
-  onMapMouseUp(): void { this.view2d.end(); }
+  onMapMouseDown(event: MouseEvent): void { if (this.isHighPerformance2d()) this.view2d.start(event); }
+  onMapMouseMove(event: MouseEvent): void { if (this.isHighPerformance2d()) this.view2d.move(event); }
+  onMapMouseUp(): void { if (this.isHighPerformance2d()) this.view2d.end(); }
 
-  changeZoom(amount: number): void { if (this.battle.mapMode3D()) this.stage.zoomCamera(-amount * 0.4); else this.view2d.zoomBy(amount); }
-  resetZoom(): void { if (this.battle.mapMode3D()) this.stage.resetCamera(); else this.view2d.reset(); }
+  changeZoom(amount: number): void { if (!this.isHighPerformance2d()) this.stage.zoomCamera(-amount * 0.4); else this.view2d.zoomBy(amount); }
+  resetZoom(): void { if (!this.isHighPerformance2d()) this.stage.resetCamera(); else this.view2d.reset(); }
+
+  getTokenBaseStroke(token: VttTokenVm): string {
+    if (this.battle.isTokenTargetedWithReticle(token.key)) {
+      return '#ff2438';
+    }
+    return getTokenBaseColorHex(token);
+  }
   readonly gmRailOpen = signal<boolean>(false);
 
   // Quick-Add Monster & NPC Form State
@@ -176,8 +206,30 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   readonly toSvgY = worldToSvgY;
   readonly toSvgPx = feetToSvgPx;
 
-  readonly gridVerticalLines = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100];
-  readonly gridHorizontalLines = [100, 200, 300, 400, 500, 600, 700];
+  readonly gridVerticalLines = computed(() => {
+    const step = Math.max(30, Math.round(100 * this.vttDisplay.gridScale()));
+    const lines: number[] = [];
+    for (let x = step; x < 1200; x += step) lines.push(x);
+    return lines;
+  });
+
+  readonly gridHorizontalLines = computed(() => {
+    const step = Math.max(30, Math.round(100 * this.vttDisplay.gridScale()));
+    const lines: number[] = [];
+    for (let y = step; y < 800; y += step) lines.push(y);
+    return lines;
+  });
+
+  getTokenRadius2D(token: VttTokenVm): number {
+    const scale = this.vttDisplay.gridScale() * getDndSizeScale(token.sizeCategory);
+    return Math.max(12, Math.round(23 * scale));
+  }
+
+  getTokenAvatarRadius2D(token: VttTokenVm): number {
+    const scale = this.vttDisplay.gridScale() * getDndSizeScale(token.sizeCategory);
+    return Math.max(10, Math.round(21 * scale));
+  }
+
 
   readonly isObserverActiveTurn = computed(() => this.battle.activeInitiativeToken()?.key === this.battle.activeObserverToken()?.key);
   readonly dockHp = (token: DockToken): number => token.hp ?? 0;
@@ -197,7 +249,7 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
         if (tok) this.handleTokenSelectionOrCast(tok, false);
       });
       this.stage.setBackdrop(this.activeBattlemapBackdropUrl());
-      this.stage.setGridVisible(this.gridEnabled());
+      this.stage.setGridVisible(this.gridEnabled(), this.vttDisplay.gridScale());
       this.sync3dStage();
     }
   }
@@ -217,12 +269,13 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
 
   setMapMode(is3d: boolean): void {
     this.battle.mapMode3D.set(is3d);
-    if (is3d) {
-      setTimeout(() => {
-        this.stage.resize();
-        this.sync3dStage();
-      }, 50);
+    if (!this.isHighPerformance2d()) {
+      this.stage.setForcedTopDown(!is3d);
     }
+    setTimeout(() => {
+      this.stage.resize();
+      this.sync3dStage();
+    }, 50);
   }
 
   toggleMapMode(): void {
@@ -236,6 +289,7 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
       this.vtt.selectedTargetKey(),
       this.battle.allReticleTargetKeys(),
       this.fog.opacityByKey(),
+      this.vttDisplay.gridScale(),
     );
     this.stage.syncFog(this.fog.layer());
   }

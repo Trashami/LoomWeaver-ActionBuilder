@@ -180,6 +180,50 @@
             <span class="flyout-item-text">Encounter Roster</span>
           </button>
         </div>
+        @if (isGm() && vtt.tokens().length > 0) {
+          <div class="flyout-divider"></div>
+          <div class="token-size-control-panel">
+            <div class="token-size-header">
+              <span class="section-label">Token Size (D&D Rules)</span>
+              <span class="token-size-current-badge">{{ activeTokenSize().toUpperCase() }}</span>
+            </div>
+            @if (vtt.tokens().length > 1) {
+              <div class="token-picker-row">
+                <label>Target:</label>
+                <select [ngModel]="activeTokenForSize()?.key" (ngModelChange)="selectTokenForSize($event)" class="token-select-input">
+                  @for (tok of vtt.tokens(); track tok.key) {
+                    <option [value]="tok.key">{{ tok.name }} ({{ tok.sizeCategory || 'medium' }})</option>
+                  }
+                </select>
+              </div>
+            }
+            <div class="token-size-stepper-row">
+              <button ngpButton type="button" class="stepper-btn" (click)="decreaseActiveTokenSize()" title="Decrease Size (D&D rules)">
+                <lw-icon name="minus" [size]="13" />
+                <span>Decrease</span>
+              </button>
+              <button ngpButton type="button" class="stepper-btn" (click)="increaseActiveTokenSize()" title="Increase Size (D&D rules)">
+                <lw-icon name="plus" [size]="13" />
+                <span>Increase</span>
+              </button>
+            </div>
+            <div class="token-size-chips-grid">
+              @for (sz of dndSizes; track sz.id) {
+                <button
+                  ngpButton
+                  type="button"
+                  class="size-chip-btn"
+                  [class.active]="activeTokenSize() === sz.id"
+                  (click)="setTokenSize(sz.id)"
+                  [title]="sz.label + ': ' + sz.space + ' (' + sz.squares + ')'"
+                >
+                  <span class="chip-label">{{ sz.label }}</span>
+                  <span class="chip-space">{{ sz.space }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
         <div class="flyout-divider"></div>
         <div class="tokens-summary-counts">
           <span><strong>{{ partyCount() }}</strong> Party</span>
@@ -212,6 +256,42 @@
                   <option [value]="scene.sceneKey">{{ scene.name }}</option>
                 }
               </select>
+            </div>
+          }
+
+          @if (isGm()) {
+            <div class="flyout-divider"></div>
+            <div class="grid-scale-control-panel">
+              <div class="scale-panel-header">
+                <span class="section-label">Grid Scale</span>
+                <span class="scale-value-badge">{{ gridScalePercent() }}%</span>
+              </div>
+              <p class="scale-hint">Fits tokens within 1 5-ft square (D&D 5e).</p>
+              <div class="scale-slider-row">
+                <button ngpButton type="button" class="mini-scale-btn" (click)="decreaseGridScale()" title="Decrease Grid Scale">
+                  <lw-icon name="minus" [size]="12" />
+                </button>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.05"
+                  [value]="gridScale()"
+                  (input)="onGridScaleInput($event)"
+                  class="scale-range-slider"
+                  title="Grid Scale"
+                />
+                <button ngpButton type="button" class="mini-scale-btn" (click)="increaseGridScale()" title="Increase Grid Scale">
+                  <lw-icon name="plus" [size]="12" />
+                </button>
+              </div>
+              <div class="scale-presets-row">
+                <button ngpButton type="button" class="preset-chip" [class.active]="gridScale() === 0.5" (click)="setGridScale(0.5)">50%</button>
+                <button ngpButton type="button" class="preset-chip" [class.active]="gridScale() === 0.75" (click)="setGridScale(0.75)">75%</button>
+                <button ngpButton type="button" class="preset-chip" [class.active]="gridScale() === 1.0" (click)="setGridScale(1.0)">100%</button>
+                <button ngpButton type="button" class="preset-chip" [class.active]="gridScale() === 1.25" (click)="setGridScale(1.25)">125%</button>
+                <button ngpButton type="button" class="preset-chip" [class.active]="gridScale() === 1.5" (click)="setGridScale(1.5)">150%</button>
+              </div>
             </div>
           }
         </div>
