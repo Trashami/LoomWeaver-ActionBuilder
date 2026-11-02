@@ -1,3 +1,4 @@
+import { resolveCharacterGlbUrl } from '../../characters/models/character-portrait-catalog.data';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -53,6 +54,12 @@ export class VttCombatService {
   private readonly http = inject(HttpClient);
   private readonly store = inject(LoomWeaverStoreService);
   private readonly fullscreenDice = inject(FullscreenDiceOverlayService);
+
+  constructor() {
+    if (this.tokens().length === 0 && this.encounterDetails().length > 0) {
+      this.launchEncounterIntoVtt(this.activeEncounterId());
+    }
+  }
 
   readonly activeRound = signal<number>(2);
   readonly activeTurnIndex = signal<number>(0);
@@ -200,6 +207,8 @@ export class VttCombatService {
         bonusUsed: false,
         reactionUsed: false,
         movementFeet: 30,
+        avatarUrl: p.avatarUrl,
+        glbUrl: resolveCharacterGlbUrl(p.avatarUrl) || undefined,
       }));
 
     const npcTokens: VttTokenVm[] = enc.sessionNpcs
@@ -220,6 +229,8 @@ export class VttCombatService {
         bonusUsed: false,
         reactionUsed: false,
         movementFeet: 30,
+        avatarUrl: n.avatarUrl,
+        glbUrl: resolveCharacterGlbUrl(n.avatarUrl) || undefined,
       }));
 
     const monsterTokens: VttTokenVm[] = [];
@@ -243,6 +254,8 @@ export class VttCombatService {
           bonusUsed: false,
           reactionUsed: false,
           movementFeet: slot.speedFeet,
+          avatarUrl: slot.tokenPreviewUrl,
+          glbUrl: slot.tokenGlbUrl || resolveCharacterGlbUrl(slot.tokenPreviewUrl) || undefined,
         });
       }
     });

@@ -43,6 +43,8 @@ export interface ServerVttToken {
   readonly reactionUsed: boolean;
   readonly movementRemainingFeet: number;
   readonly canControl?: boolean;
+  readonly avatarUrl?: string;
+  readonly glbUrl?: string;
 }
 
 /** Server-authoritative combat responses; the API rolls dice and applies damage. */

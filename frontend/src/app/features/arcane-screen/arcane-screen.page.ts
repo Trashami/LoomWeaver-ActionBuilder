@@ -102,7 +102,7 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   private dragMoved = false;
 
   readonly selectedDiceFormula = signal<string>('1d20');
-  readonly zoomLevel = this.view2d.zoom;
+  readonly zoomLevel = computed(() => (this.battle.mapMode3D() ? this.stage.zoomPercent() : this.view2d.zoom()));
   readonly dmToolReadout = signal<string>('');
   onMapWheel(event: WheelEvent): void {
     event.preventDefault();
@@ -114,8 +114,8 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   onMapMouseMove(event: MouseEvent): void { if (!this.battle.mapMode3D()) this.view2d.move(event); }
   onMapMouseUp(): void { this.view2d.end(); }
 
-  changeZoom(amount: number): void { this.view2d.zoomBy(amount); }
-  resetZoom(): void { this.view2d.reset(); }
+  changeZoom(amount: number): void { if (this.battle.mapMode3D()) this.stage.zoomCamera(-amount * 0.4); else this.view2d.zoomBy(amount); }
+  resetZoom(): void { if (this.battle.mapMode3D()) this.stage.resetCamera(); else this.view2d.reset(); }
   readonly gmRailOpen = signal<boolean>(false);
 
   // Quick-Add Monster & NPC Form State
@@ -146,6 +146,9 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
   readonly dockInitiativeTokenId = computed<number>(() => toDockToken(this.battle.activeInitiativeToken(), this.vtt.tokens()).id);
 
   ngAfterViewInit(): void {
+    if (this.vtt.tokens().length === 0 && this.vtt.encounterDetails().length > 0) {
+      this.vtt.launchEncounterIntoVtt(this.vtt.activeEncounterId());
+    }
     const canvas = this.vttCanvasRef?.nativeElement;
     if (canvas) {
       this.stage.mountStage(canvas, this.vtt.tokens(), this.vtt.selectedAttackerKey(), this.vtt.selectedTargetKey(), (k) => {

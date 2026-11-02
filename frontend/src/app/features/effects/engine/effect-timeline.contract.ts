@@ -52,6 +52,10 @@ export interface VttTokenVm {
   readonly darkvisionFeet?: number;
   /** True when the signed-in viewer may move or act with this token. The GM controls every token. */
   readonly canControl?: boolean;
+  /** Avatar portrait image URL for 2D token faces and basic 3D miniature pucks. */
+  readonly avatarUrl?: string;
+  /** Real 3D GLB miniature model URL. */
+  readonly glbUrl?: string;
 }
 
 export interface CombatResolutionLogVm {

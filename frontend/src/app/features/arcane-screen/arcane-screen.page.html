@@ -80,7 +80,7 @@
       <div class="lw-vtt-2d-viewport" [class.lw-vtt-2d-viewport--hidden]="battle.mapMode3D()" [style.transform]="view2d.transform()" [style.transformOrigin]="'center center'">
         <div class="lw-vtt-map-backdrop" [style.backgroundImage]="'url(' + activeBattlemapBackdropUrl() + ')'"></div>
 
-        <svg #battleSvg class="lw-vtt-svg" viewBox="0 0 1200 800" preserveAspectRatio="none" (mousemove)="onBattleMapPointerMove($event)" (mouseup)="onBattleMapMouseUp()" (click)="onBattleMapClick($event)">
+        <svg #battleSvg class="lw-vtt-svg" [class.lw-vtt-svg--targeting]="battle.pendingAbility() || battle.measureEnabled() || battle.targetSelectionMode()" viewBox="0 0 1200 800" preserveAspectRatio="none" (mousemove)="onBattleMapPointerMove($event)" (mouseup)="onBattleMapMouseUp()" (click)="onBattleMapClick($event)">
         @if (gridEnabled()) {
           <g class="lw-vtt-svg__grid">
             @for (gx of gridVerticalLines; track gx) {
@@ -160,8 +160,17 @@
               <circle r="30" fill="rgba(255, 36, 56, 0.28)" stroke="#ff2438" stroke-width="2.5" />
             }
 
+            <defs>
+              <clipPath [attr.id]="'token-clip-' + token.key">
+                <circle r="21" cx="0" cy="0" />
+              </clipPath>
+            </defs>
             <circle r="23" [attr.fill]="battle.isTokenTargetedWithReticle(token.key) ? '#2b070c' : '#071510'" [attr.stroke]="battle.isTokenTargetedWithReticle(token.key) ? '#ff2438' : (token.faction === 'hostile' ? '#ef5d72' : '#49e892')" stroke-width="3" />
-            <text x="0" y="4" text-anchor="middle" fill="#f3e8d0" font-size="12" font-weight="700">{{ token.name.slice(0, 2).toUpperCase() }}</text>
+            @if (token.avatarUrl) {
+              <image [attr.href]="token.avatarUrl" x="-21" y="-21" width="42" height="42" preserveAspectRatio="xMidYMid slice" [attr.clip-path]="'url(#token-clip-' + token.key + ')'" />
+            } @else {
+              <text x="0" y="4" text-anchor="middle" fill="#f3e8d0" font-size="12" font-weight="700">{{ token.name.slice(0, 2).toUpperCase() }}</text>
+            }
 
             @if (battle.isTokenTargetedWithReticle(token.key)) {
               <g class="lw-vtt-target-reticle">

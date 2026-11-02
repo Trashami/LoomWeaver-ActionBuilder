@@ -1,26 +1,40 @@
 import { Injectable, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import {
+  AbstractMesh,
   ArcRotateCamera,
   ArcRotateCameraPointersInput,
+  AssetContainer,
   Color3,
   Color4,
   Engine,
   HemisphericLight,
   Mesh,
   MeshBuilder,
+  MeshoptCompression,
   PointLight,
   Scene,
+  SceneLoader,
   StandardMaterial,
   Texture,
+  TransformNode,
   Vector3,
 } from '@babylonjs/core';
+import '@babylonjs/loaders/glTF';
 import {
   EffectTimelinePresetVm,
   VttTokenVm,
 } from './effect-timeline.contract';
 import { TokenDragController, TokenPlacement } from './token-drag-controller';
 import { BabylonFogPlane } from './babylon-fog-plane';
+
+if (typeof window !== 'undefined') {
+  MeshoptCompression.Configuration = {
+    decoder: {
+      url: '/assets/object-library/meshopt_decoder.js',
+    },
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class BabylonEffectStageService {
@@ -36,7 +50,16 @@ export class BabylonEffectStageService {
   private groundMat: StandardMaterial | null = null;
   private gridLines: Mesh | null = null;
   private backdropUrl = '';
+  private readonly glbContainerCache = new Map<string, AssetContainer>();
+  private readonly loadingGlbUrls = new Set<string>();
+  private latestTokens: readonly VttTokenVm[] = [];
+  private latestAttackerKey?: string;
+  private latestTargetKey?: string;
+  private latestTargetedKeys: readonly string[] = [];
+  private latestOpacityByKey: ReadonlyMap<string, number> = new Map();
   camera: ArcRotateCamera | null = null;
+
+  readonly zoomPercent = signal<number>(100);
 
   resize(): void {
     this.engine?.resize();
@@ -45,10 +68,28 @@ export class BabylonEffectStageService {
   zoomCamera(delta: number): void {
     if (this.camera) {
       this.camera.radius = Math.max(
-        this.camera.lowerRadiusLimit ?? 5,
-        Math.min(this.camera.upperRadiusLimit ?? 100, this.camera.radius + delta),
+        this.camera.lowerRadiusLimit ?? 6,
+        Math.min(this.camera.upperRadiusLimit ?? 38, this.camera.radius + delta),
       );
+      this.updateZoomPercent();
     }
+  }
+
+  resetCamera(): void {
+    if (!this.camera) return;
+    this.camera.radius = 22;
+    this.camera.alpha = -Math.PI / 2.2;
+    this.camera.beta = 0.82;
+    this.camera.target.set(0, 0, 0);
+    this.updateZoomPercent();
+  }
+
+  private updateZoomPercent(): void {
+    if (!this.camera) return;
+    const minR = this.camera.lowerRadiusLimit ?? 6;
+    const maxR = this.camera.upperRadiusLimit ?? 38;
+    const pct = Math.round(100 + ((maxR - this.camera.radius) / (maxR - minR)) * 250);
+    this.zoomPercent.set(Math.max(100, Math.min(350, pct)));
   }
 
   /** Paints the battlemap artwork onto the ground plane, keeping its aspect ratio. */
@@ -72,10 +113,9 @@ export class BabylonEffectStageService {
     if (this.gridLines) this.gridLines.isVisible = visible;
   }
 
-  /** Left-drag orbits the camera only while Space is held; otherwise it is reserved for tokens. */
-  setRotateHeld(held: boolean): void {
-    const pointers = this.camera?.inputs.attached['pointers'] as ArcRotateCameraPointersInput | undefined;
-    if (pointers) pointers.buttons = held ? [0] : [];
+  /** Direct mouse drag orbits/pans camera; Spacebar held compatibility preserved. */
+  setRotateHeld(_held: boolean): void {
+    // Both left-drag (orbit) and right/middle-drag (pan) are always active on the 3D stage
   }
 
   readonly activeKeyframeLabel = signal<string>('Ready');
@@ -99,27 +139,42 @@ export class BabylonEffectStageService {
       this.scene = new Scene(this.engine);
       this.scene.clearColor = new Color4(0.03, 0.06, 0.05, 1);
 
+      // Prevent browser context menu on 3D canvas so right-drag pan is smooth
+      const preventContextMenu = (e: MouseEvent) => e.preventDefault();
+      canvas.addEventListener('contextmenu', preventContextMenu);
+      this.cleanupHandlers.push(() => canvas.removeEventListener('contextmenu', preventContextMenu));
+
       const camera = new ArcRotateCamera(
         'lw-vtt-cam',
         -Math.PI / 2.2,
-        0.78,
-        24,
-        Vector3.Zero(),
+        0.82,
+        22,
+        new Vector3(0, 0, 0),
         this.scene,
       );
-      camera.lowerRadiusLimit = 10;
-      camera.upperRadiusLimit = 44;
+      camera.lowerRadiusLimit = 6;
+      camera.upperRadiusLimit = 38; // Clamped to battlemap extent
+      camera.lowerBetaLimit = 0.1; // Prevent flipping upside down
+      camera.upperBetaLimit = Math.PI / 2.05; // Prevent clipping beneath ground plane
+      camera.panningSensibility = 80; // Smooth right-click & middle-click panning
+      camera.panningAxis = new Vector3(1, 0, 1); // Pan strictly on horizontal X-Z ground plane
       this.camera = camera;
       camera.attachControl(canvas, true);
+
+      // Configure pointer buttons: Left = orbit, Middle = pan, Right = pan
+      const pointers = camera.inputs.attached['pointers'] as ArcRotateCameraPointersInput | undefined;
+      if (pointers) pointers.buttons = [0, 1, 2];
+
       camera.inputs.removeByType('ArcRotateCameraMouseWheelInput');
-      this.setRotateHeld(false);
+      this.updateZoomPercent();
 
       const hemi = new HemisphericLight('lw-vtt-hemi', new Vector3(0, 1, 0), this.scene);
-      hemi.intensity = 0.65;
+      hemi.intensity = 0.85;
+      hemi.diffuse = new Color3(0.95, 0.98, 0.95);
       hemi.groundColor = Color3.FromHexString('#091410');
 
-      const pt = new PointLight('lw-vtt-pt', new Vector3(0, 7, 0), this.scene);
-      pt.intensity = 1.25;
+      const pt = new PointLight('lw-vtt-pt', new Vector3(0, 8, 0), this.scene);
+      pt.intensity = 1.35;
       pt.diffuse = Color3.FromHexString('#ffcf75');
 
       const ground = MeshBuilder.CreateGround(
@@ -150,7 +205,11 @@ export class BabylonEffectStageService {
 
       this.dragController = new TokenDragController(this.scene, ground, {
         onDragStart: () => camera.detachControl(),
-        onDragEnd: () => camera.attachControl(canvas, true),
+        onDragEnd: () => {
+          camera.attachControl(canvas, true);
+          const p = camera.inputs.attached['pointers'] as ArcRotateCameraPointersInput | undefined;
+          if (p) p.buttons = [0, 1, 2];
+        },
         onDragged: (placement) => this.draggedSubject.next(placement),
         onDropped: (placement) => this.droppedSubject.next(placement),
       });
@@ -159,7 +218,17 @@ export class BabylonEffectStageService {
       this.syncTokens(tokens, attackerKey, targetKey, targetKey ? [targetKey] : []);
 
       this.scene.registerBeforeRender(() => {
-        if (!this.scene || this.reducedMotion()) return;
+        if (!this.scene) return;
+
+        // Clamp camera target so the view stays anchored to the map extent
+        if (this.camera) {
+          this.camera.target.x = Math.max(-14, Math.min(14, this.camera.target.x));
+          this.camera.target.z = Math.max(-10, Math.min(10, this.camera.target.z));
+          this.camera.target.y = 0;
+          this.updateZoomPercent();
+        }
+
+        if (this.reducedMotion()) return;
         for (const m of this.scene.meshes) {
           if (m.name.startsWith('lw-target-reticle-root-')) {
             m.rotation.y += 0.026;
@@ -193,6 +262,12 @@ export class BabylonEffectStageService {
     targetedKeys: readonly string[] = [],
     opacityByKey: ReadonlyMap<string, number> = new Map(),
   ): void {
+    this.latestTokens = tokens;
+    this.latestAttackerKey = attackerKey;
+    this.latestTargetKey = targetKey;
+    this.latestTargetedKeys = targetedKeys;
+    this.latestOpacityByKey = opacityByKey;
+
     if (!this.scene) return;
     this.scene.meshes
       .filter(
@@ -210,25 +285,35 @@ export class BabylonEffectStageService {
     for (const t of tokens) {
       const isDead = t.currentHp <= 0;
       const isTargeted = activeTargetSet.has(t.key);
-      const cyl = MeshBuilder.CreateCylinder(
+
+      // Base miniature pedestal / puck
+      const baseMesh = MeshBuilder.CreateCylinder(
         `lw-token-${t.key}`,
-        { height: isDead ? 0.2 : 0.9, diameter: 1.5, tessellation: 24 },
+        { height: isDead ? 0.12 : 0.22, diameter: 1.5, tessellation: 36 },
         this.scene,
       );
-      cyl.position.set(t.x, isDead ? 0.12 : 0.45, t.z);
-      cyl.metadata = { tokenKey: t.key };
-      cyl.visibility = opacityByKey.get(t.key) ?? 1;
+      baseMesh.position.set(t.x, isDead ? 0.06 : 0.11, t.z);
+      baseMesh.metadata = { tokenKey: t.key };
+      baseMesh.visibility = opacityByKey.get(t.key) ?? 1;
 
-      const mat = new StandardMaterial(`lw-tmat-${t.key}`, this.scene);
-      mat.diffuseColor = isTargeted
+      const baseMat = new StandardMaterial(`lw-tmat-${t.key}`, this.scene);
+      baseMat.diffuseColor = isTargeted
         ? Color3.FromHexString('#ff2438')
         : Color3.FromHexString(t.colorHex);
+      baseMat.specularColor = new Color3(0.25, 0.25, 0.25);
       if (isTargeted) {
-        mat.emissiveColor = Color3.FromHexString('#ff2438').scale(0.65);
+        baseMat.emissiveColor = Color3.FromHexString('#ff2438').scale(0.65);
       } else if (t.key === attackerKey) {
-        mat.emissiveColor = Color3.FromHexString('#49e892').scale(0.5);
+        baseMat.emissiveColor = Color3.FromHexString('#49e892').scale(0.5);
       }
-      cyl.material = mat;
+      baseMesh.material = baseMat;
+
+      // Real 3D GLB Miniature Model vs Basic Token Puck
+      if (t.glbUrl) {
+        this.attachGlbMiniature(t, baseMesh, isDead);
+      } else {
+        this.attachBasicPuckFace(t, baseMesh);
+      }
 
       if (isTargeted) {
         this.createSpinningBaseTargetReticle(t.key, t.x, t.z);
@@ -251,6 +336,148 @@ export class BabylonEffectStageService {
       );
       tether.color = Color3.FromHexString('#49e892');
     }
+  }
+
+  /** Attaches a real 3D miniature GLB model onto the token pedestal. */
+  private attachGlbMiniature(token: VttTokenVm, baseMesh: Mesh, isDead: boolean): void {
+    if (!this.scene || !token.glbUrl) return;
+    const glbUrl = token.glbUrl;
+
+    if (this.glbContainerCache.has(glbUrl)) {
+      this.instantiateGlbToToken(this.glbContainerCache.get(glbUrl)!, token, baseMesh, isDead);
+      return;
+    }
+
+    // Fall back immediately to basic puck face while GLB loads asynchronously
+    this.attachBasicPuckFace(token, baseMesh);
+
+    if (this.loadingGlbUrls.has(glbUrl)) return;
+    this.loadingGlbUrls.add(glbUrl);
+
+    const lastSlash = glbUrl.lastIndexOf('/');
+    const rootUrl = lastSlash >= 0 ? glbUrl.slice(0, lastSlash + 1) : '';
+    const fileName = lastSlash >= 0 ? glbUrl.slice(lastSlash + 1) : glbUrl;
+
+    SceneLoader.LoadAssetContainerAsync(rootUrl, fileName, this.scene)
+      .then((container) => {
+        this.glbContainerCache.set(glbUrl, container);
+        this.loadingGlbUrls.delete(glbUrl);
+        // Refresh token meshes now that model is cached
+        this.syncTokens(
+          this.latestTokens,
+          this.latestAttackerKey,
+          this.latestTargetKey,
+          this.latestTargetedKeys,
+          this.latestOpacityByKey,
+        );
+      })
+      .catch(() => {
+        this.loadingGlbUrls.delete(glbUrl);
+        // Failed to load GLB (e.g. offline/missing model): basic puck remains
+      });
+  }
+
+  private instantiateGlbToToken(
+    container: AssetContainer,
+    token: VttTokenVm,
+    baseMesh: Mesh,
+    isDead: boolean,
+  ): void {
+    if (!this.scene) return;
+    try {
+      const instance = container.instantiateModelsToScene(
+        (name) => `lw-token-mini-${token.key}-${name}`,
+        false,
+      );
+      const rootNode = new TransformNode(`lw-token-root-${token.key}`, this.scene);
+      rootNode.parent = baseMesh;
+      rootNode.position.set(0, 0.11, 0);
+
+      instance.rootNodes.forEach((node) => {
+        node.parent = rootNode;
+      });
+
+      rootNode.computeWorldMatrix(true);
+      instance.rootNodes.forEach((node) => {
+        if (node instanceof AbstractMesh) node.computeWorldMatrix(true);
+      });
+
+      // Normalize size to miniature scale (~1.8 units tall, 5-ft scale)
+      let min = new Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+      let max = new Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
+      let foundBounds = false;
+
+      for (const m of instance.rootNodes) {
+        if (m instanceof AbstractMesh) {
+          const b = m.getHierarchyBoundingVectors(true);
+          min = Vector3.Minimize(min, b.min);
+          max = Vector3.Maximize(max, b.max);
+          foundBounds = true;
+        }
+      }
+
+      if (foundBounds) {
+        const sizeY = Math.max(0.01, max.y - min.y);
+        const targetHeight = 1.75;
+        const scale = targetHeight / sizeY;
+        rootNode.scaling.set(scale, scale, scale);
+        rootNode.position.y = 0.11;
+      }
+
+      // Propagate tokenKey metadata to all meshes for interaction & dragging
+      const tagMesh = (m: AbstractMesh) => {
+        m.metadata = { tokenKey: token.key };
+        m.name = `lw-token-part-${token.key}-${m.name}`;
+        m.getChildMeshes().forEach(tagMesh);
+      };
+      instance.rootNodes.forEach((node) => {
+        if (node instanceof AbstractMesh) tagMesh(node);
+      });
+
+      if (isDead) {
+        rootNode.rotation.z = Math.PI / 2.2;
+        rootNode.position.y = 0.15;
+      }
+    } catch {
+      // Fall back safely if instantiation fails
+      this.attachBasicPuckFace(token, baseMesh);
+    }
+  }
+
+  /** Attaches a 2.5D miniature puck face (character portrait or faction ring) to the basic token. */
+  private attachBasicPuckFace(token: VttTokenVm, baseMesh: Mesh): void {
+    if (!this.scene) return;
+
+    if (token.avatarUrl) {
+      const disc = MeshBuilder.CreateDisc(
+        `lw-token-puck-disc-${token.key}`,
+        { radius: 0.68, tessellation: 36 },
+        this.scene,
+      );
+      disc.parent = baseMesh;
+      disc.position.y = 0.115;
+      disc.rotation.x = Math.PI / 2;
+      disc.metadata = { tokenKey: token.key };
+
+      const discMat = new StandardMaterial(`lw-mat-puck-${token.key}`, this.scene);
+      discMat.diffuseTexture = new Texture(token.avatarUrl, this.scene);
+      discMat.specularColor = new Color3(0.15, 0.15, 0.15);
+      disc.material = discMat;
+    }
+
+    const rim = MeshBuilder.CreateTorus(
+      `lw-token-puck-rim-${token.key}`,
+      { diameter: 1.48, thickness: 0.05, tessellation: 36 },
+      this.scene,
+    );
+    rim.parent = baseMesh;
+    rim.position.y = 0.11;
+    rim.metadata = { tokenKey: token.key };
+
+    const rimMat = new StandardMaterial(`lw-mat-rim-${token.key}`, this.scene);
+    rimMat.diffuseColor = Color3.FromHexString(token.colorHex);
+    rimMat.emissiveColor = Color3.FromHexString(token.colorHex).scale(0.35);
+    rim.material = rimMat;
   }
 
   private createSpinningBaseTargetReticle(tokenKey: string, x: number, z: number): void {
@@ -405,8 +632,8 @@ export class BabylonEffectStageService {
     this.animHandle = requestAnimationFrame(step);
   }
 
-  dispose(): void {
-    for (const h of this.cleanupHandlers) h();
+  dispose(): void {
+    for (const h of this.cleanupHandlers) h();
     this.cleanupHandlers = [];
     if (this.animHandle !== null) {
       cancelAnimationFrame(this.animHandle);
@@ -416,6 +643,9 @@ export class BabylonEffectStageService {
     this.dragController = null;
     this.fogPlane?.dispose();
     this.fogPlane = null;
+    this.glbContainerCache.forEach((c) => c.dispose());
+    this.glbContainerCache.clear();
+    this.loadingGlbUrls.clear();
     this.scene?.dispose();
     this.engine?.dispose();
     this.scene = null;
