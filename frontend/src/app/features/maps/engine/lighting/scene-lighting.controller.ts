@@ -23,7 +23,7 @@ export interface CelestialLightConfig {
 }
 
 export class SceneLightingController {
-  private static shadowGen: ShadowGenerator | null = null;
+  private static readonly shadowGenByScene = new WeakMap<Scene, ShadowGenerator>();
   private static currentCelestial: CelestialLightConfig = {
     mode: 'sun',
     azimuthDeg: 135,
@@ -47,18 +47,19 @@ export class SceneLightingController {
 
   static syncCelestialDirectionalLight(scene: Scene, config: CelestialLightConfig): void {
     this.currentCelestial = config;
+    scene.shadowsEnabled = true;
 
     let hemi = scene.getLightByName('lw-hemi-light') as HemisphericLight | null;
     if (!hemi) {
       hemi = new HemisphericLight('lw-hemi-light', new Vector3(0, 1, 0), scene);
     }
-    hemi.intensity = config.mode === 'sun' ? 0.52 : 0.28;
+    hemi.intensity = config.mode === 'sun' ? 0.52 : 0.32;
     hemi.diffuse = Color3.FromHexString(config.mode === 'sun' ? '#f6efe2' : '#89b4f8');
     hemi.groundColor = Color3.FromHexString(config.mode === 'sun' ? '#13241c' : '#060d14');
 
     const azRad = (config.azimuthDeg * Math.PI) / 180;
-    const altRad = (Math.max(8, Math.min(88, config.altitudeDeg)) * Math.PI) / 180;
-    const orbitRadius = 26;
+    const altRad = (Math.max(12, Math.min(82, config.altitudeDeg)) * Math.PI) / 180;
+    const orbitRadius = 28;
     const lx = Math.cos(altRad) * Math.cos(azRad) * orbitRadius;
     const ly = Math.sin(altRad) * orbitRadius;
     const lz = Math.cos(altRad) * Math.sin(azRad) * orbitRadius;
@@ -67,23 +68,34 @@ export class SceneLightingController {
     const lightDir = lightPos.scale(-1).normalize();
 
     let dirLight = scene.getLightByName('lw-celestial-dir') as DirectionalLight | null;
-    if (!dirLight) {
-      dirLight = new DirectionalLight('lw-celestial-dir', lightDir, scene);
-      this.shadowGen = new ShadowGenerator(1024, dirLight);
-      this.shadowGen.useBlurExponentialShadowMap = true;
-      this.shadowGen.blurKernel = 12;
+    let shadowGen = this.shadowGenByScene.get(scene) ?? null;
+    if (!dirLight || !shadowGen) {
+      if (!dirLight) {
+        dirLight = new DirectionalLight('lw-celestial-dir', lightDir, scene);
+      } else {
+        dirLight.direction.copyFrom(lightDir);
+      }
+      dirLight.autoUpdateExtends = true;
+      dirLight.autoCalcShadowZBounds = true;
+      dirLight.shadowMinZ = 1;
+      dirLight.shadowMaxZ = 65;
+
+      shadowGen = new ShadowGenerator(2048, dirLight);
+      shadowGen.usePercentageCloserFiltering = true;
+      shadowGen.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+      shadowGen.bias = 0.0012;
+      shadowGen.normalBias = 0.015;
+      this.shadowGenByScene.set(scene, shadowGen);
     } else {
       dirLight.direction.copyFrom(lightDir);
     }
 
     dirLight.position.copyFrom(lightPos);
-    dirLight.intensity = config.mode === 'sun' ? 1.45 : 0.88;
+    dirLight.intensity = config.mode === 'sun' ? 1.45 : 0.95;
     dirLight.diffuse = Color3.FromHexString(config.mode === 'sun' ? '#ffefd2' : '#9cc5ff');
     dirLight.specular = Color3.FromHexString(config.mode === 'sun' ? '#ffe0a3' : '#6c9be0');
 
-    if (this.shadowGen) {
-      this.shadowGen.darkness = Math.max(0, Math.min(0.95, (100 - config.shadowDarkness) / 100));
-    }
+    shadowGen.darkness = Math.max(0.08, Math.min(0.88, (100 - config.shadowDarkness) / 100));
 
     let skyOrb = scene.getMeshByName('lw-celestial-sky-orb') as Mesh | null;
     if (!skyOrb) {
@@ -110,16 +122,37 @@ export class SceneLightingController {
 
   static refreshShadowCasters(scene: Scene): void {
     LightFixtureBuilder.refreshCasters(scene);
-    if (!this.shadowGen) return;
-    const shadowMap = this.shadowGen.getShadowMap();
+    const shadowGen = this.shadowGenByScene.get(scene);
+    if (!shadowGen) return;
+    const shadowMap = shadowGen.getShadowMap();
     if (!shadowMap) return;
+
+    const terrainGround = scene.getMeshByName('lw-terrain-ground');
+    if (terrainGround) {
+      terrainGround.receiveShadows = true;
+      if (terrainGround.material instanceof StandardMaterial) {
+        terrainGround.material.maxSimultaneousLights = 8;
+      }
+    }
+    const vttGround = scene.getMeshByName('lw-vtt-ground');
+    if (vttGround) {
+      vttGround.receiveShadows = true;
+      if (vttGround.material instanceof StandardMaterial) {
+        vttGround.material.maxSimultaneousLights = 8;
+      }
+    }
+
     shadowMap.renderList = [];
     for (const mesh of scene.meshes) {
       if (isScatterMesh(mesh)) continue;
+      if (mesh.name.startsWith('lw-token-hitbox-') || mesh.name.startsWith('lw-target-reticle-')) {
+        continue;
+      }
       if (
         mesh.name.startsWith('lw-wall-') ||
         mesh.name.startsWith('lw-door-') ||
         mesh.name.startsWith('lw-stamp-') ||
+        mesh.name.startsWith('lw-token-') ||
         (Boolean(mesh.metadata?.lwNodeName) && !mesh.name.startsWith('lw-light-'))
       ) {
         shadowMap.renderList.push(mesh);

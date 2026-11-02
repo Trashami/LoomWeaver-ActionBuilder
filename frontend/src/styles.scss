@@ -36,6 +36,27 @@ input,
 select,
 textarea {
   font: inherit;
+  color-scheme: dark;
+}
+
+select {
+  background-color: #081611;
+  color: #f4e8cd;
+  border: 1px solid rgba(217, 183, 122, 0.34);
+  border-radius: 6px;
+}
+
+select option,
+select optgroup {
+  background-color: #081611 !important;
+  color: #f4e8cd !important;
+}
+
+select option:checked,
+select option:hover,
+select option:focus {
+  background-color: #143628 !important;
+  color: #49e892 !important;
 }
 
 :focus-visible {

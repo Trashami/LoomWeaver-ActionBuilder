@@ -1,0 +1,92 @@
+<div
+  class="lw-context-switcher"
+  [class.lw-context-switcher--emerald]="tone() === 'emerald'"
+  [class.lw-context-switcher--pill]="variant() === 'pill'"
+  [class.lw-context-switcher--open]="open()"
+>
+  <button
+    ngpButton
+    type="button"
+    class="lw-context-switcher__trigger"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="listbox"
+    [attr.aria-label]="ariaLabel()"
+    (click)="toggleOpen($event)"
+  >
+    @if (variant() !== 'pill' && kicker()) {
+      <span class="lw-context-switcher__kicker">{{ kicker() }}</span>
+    }
+    <span class="lw-context-switcher__main-row">
+      <span class="lw-context-switcher__title" [title]="title()">{{ title() }}</span>
+      <lw-icon
+        class="lw-context-switcher__chevron"
+        [name]="open() ? 'chevron-up' : 'chevron-down'"
+        [size]="variant() === 'pill' ? 12 : 14"
+      />
+    </span>
+  </button>
+
+  @if (open()) {
+    <div
+      class="lw-context-switcher__popover"
+      role="listbox"
+      [attr.aria-label]="panelTitle() || ariaLabel()"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="lw-context-switcher__head">
+        <span class="lw-context-switcher__head-title">{{ panelTitle() }}</span>
+        @if (countLabel()) {
+          <lw-badge [tone]="tone() === 'emerald' ? 'emerald' : 'gold'" [label]="countLabel()" />
+        }
+      </div>
+
+      <lw-scroll-area
+        [tone]="tone() === 'emerald' ? 'emerald' : 'gold'"
+        maxHeight="280px"
+        padding="0.45rem"
+      >
+        <div class="lw-context-switcher__list">
+          @for (opt of options(); track opt.id) {
+            <button
+              ngpButton
+              type="button"
+              class="lw-context-switcher__option"
+              [class.lw-context-switcher__option--active]="opt.active"
+              role="option"
+              [attr.aria-selected]="opt.active"
+              (click)="selectOption(opt.id, $event)"
+            >
+              <span class="lw-context-switcher__option-copy">
+                <strong class="lw-context-switcher__option-title">{{ opt.title }}</strong>
+                @if (opt.subtitle) {
+                  <span class="lw-context-switcher__option-sub">{{ opt.subtitle }}</span>
+                }
+              </span>
+              <lw-badge
+                class="lw-context-switcher__option-badge"
+                [tone]="opt.badgeTone || (opt.active ? 'emerald' : 'neutral')"
+                [label]="opt.badgeLabel"
+              />
+            </button>
+          }
+        </div>
+      </lw-scroll-area>
+
+      @if (footerActions().length > 0) {
+        <div class="lw-context-switcher__foot">
+          @for (act of footerActions(); track act.id) {
+            <lw-button
+              class="lw-context-switcher__foot-action"
+              size="sm"
+              [variant]="act.variant || 'secondary'"
+              [fullWidth]="true"
+              (pressed)="triggerAction(act.id)"
+            >
+              {{ act.label }}
+            </lw-button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

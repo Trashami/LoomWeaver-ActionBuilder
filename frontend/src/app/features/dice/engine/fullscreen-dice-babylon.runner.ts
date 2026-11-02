@@ -106,7 +106,13 @@ export class FullscreenDiceBabylonRunner {
       this.glowLayer.customEmissiveColorSelector = (_mesh, _subMesh, material, result) => diceHaloColor(material, result);
       this.glowLayer.intensity = 0.45;
 
-      void preloadDiceSurfaceAssets().then(() => { this.assetsLoaded = true; });
+      void preloadDiceSurfaceAssets()
+        .then(() => {
+          this.assetsLoaded = true;
+        })
+        .catch(() => {
+          this.assetsLoaded = true;
+        });
 
       const startClock = performance.now();
       this.engine.runRenderLoop(() => {
@@ -138,10 +144,15 @@ export class FullscreenDiceBabylonRunner {
 
     if (!this.assetsLoaded) {
       const scene = this.scene;
-      void preloadDiceSurfaceAssets().then(() => {
-        this.assetsLoaded = true;
-        if (scene === this.scene) this.runRoll(entries, req, onSettled);
-      });
+      void preloadDiceSurfaceAssets()
+        .then(() => {
+          this.assetsLoaded = true;
+          if (scene === this.scene) this.runRoll(entries, req, onSettled);
+        })
+        .catch(() => {
+          this.assetsLoaded = true;
+          if (scene === this.scene) this.runRoll(entries, req, onSettled);
+        });
       return;
     }
 
@@ -163,79 +174,112 @@ export class FullscreenDiceBabylonRunner {
     }
 
     this.ngZone.runOutsideAngular(() => {
-      this.engine?.resize();
-      this.critEffectsRunner.clearActiveEffects();
-      this.clearMeshes();
+      try {
+        this.engine?.resize();
+        this.critEffectsRunner.clearActiveEffects();
+        this.clearMeshes();
 
-      for (let i = 0; i < entries.length; i++) {
-        const entry = entries[i];
-        const built = buildBabylonPolyhedralDie(
-          `lw-fs-die-${i}`,
-          entry.dieType,
-          skin,
-          custom,
-          model,
-          this.scene!
+        for (let i = 0; i < entries.length; i++) {
+          const entry = entries[i];
+          const built = buildBabylonPolyhedralDie(
+            `lw-fs-die-${i}`,
+            entry.dieType,
+            skin,
+            custom,
+            model,
+            this.scene!
+          );
+
+          const shadowDisc = createDieContactShadowDisc(i, sizeScale, this.scene!);
+
+          this.activeDice.push(built);
+          this.activeShadows.push(shadowDisc);
+        }
+
+        const aspect = Math.max(
+          0.5,
+          (this.engine!.getRenderWidth() || 1280) / Math.max(1, this.engine!.getRenderHeight() || 720)
+        );
+        const plans: DiePhysicsTrajectoryPlan[] = createPhysicsBoxTrajectoryPlans(
+          entries.map((entry, i) => ({
+            dieType: entry.dieType,
+            targetValue: entry.value,
+            collisionVertices: Array.from(this.activeDice[i].builtGeometry.vertexData.positions!),
+          })),
+          sizeScale,
+          viewportTray(custom.physics, this.scene!.activeCamera, aspect)
+        );
+        this.activeDice.forEach((die, i) => {
+          die.mesh.position.copyFrom(plans[i].startPos);
+          die.mesh.rotationQuaternion = plans[i].startQuat.clone();
+        });
+        this.soundService.playRollStartClatter(custom.soundProfileId, entries.length);
+        const startTime = performance.now();
+        const totalDuration = Math.max(
+          0,
+          ...plans.map(plan => (plan.durationMs ?? 2000) + (plan.delayMs ?? 0))
         );
 
-        const shadowDisc = createDieContactShadowDisc(i, sizeScale, this.scene!);
+        const step = () => {
+          if (!this.scene) {
+            return;
+          }
+          try {
+            const elapsed = performance.now() - startTime;
 
-        this.activeDice.push(built);
-        this.activeShadows.push(shadowDisc);
-      }
+            for (let i = 0; i < this.activeDice.length; i++) {
+              const t = Math.max(
+                0,
+                Math.min(1, (elapsed - (plans[i].delayMs ?? 0)) / (plans[i].durationMs ?? 2000))
+              );
+              const pose = evaluateDieTrajectoryStep(plans[i], t, sizeScale, intensity => {
+                if (i <= 2) {
+                  this.soundService.playBounceImpact(custom.soundProfileId, intensity);
+                }
+              });
+              const dieMesh = this.activeDice[i].mesh;
+              if (i === 0 && t < 1) {
+                const previous = dieMesh.rotationQuaternion;
+                const q = pose.rotationQuaternion;
+                const dot = previous
+                  ? Math.abs(
+                      previous.x * q.x + previous.y * q.y + previous.z * q.z + previous.w * q.w
+                    )
+                  : 1;
+                this.soundService.playTumbleResonance(
+                  custom.soundProfileId,
+                  (2 * Math.acos(Math.min(1, dot))) / 0.016
+                );
+              }
+              dieMesh.position.copyFrom(pose.position);
+              dieMesh.rotationQuaternion = pose.rotationQuaternion;
 
-      const plans: DiePhysicsTrajectoryPlan[] = createPhysicsBoxTrajectoryPlans(entries.map((entry, i) => ({
-        dieType: entry.dieType, targetValue: entry.value,
-        collisionVertices: Array.from(this.activeDice[i].builtGeometry.vertexData.positions!),
-      })), sizeScale, viewportTray(custom.physics, this.scene!.activeCamera, this.engine!.getRenderWidth() / this.engine!.getRenderHeight()));
-      this.activeDice.forEach((die, i) => {
-        die.mesh.position.copyFrom(plans[i].startPos); die.mesh.rotationQuaternion = plans[i].startQuat.clone();
-      });
-      this.soundService.playRollStartClatter(custom.soundProfileId, entries.length);
-      const startTime = performance.now();
-      const totalDuration = Math.max(0, ...plans.map(plan => (plan.durationMs ?? 2000) + (plan.delayMs ?? 0)));
-
-      const step = () => {
-        if (!this.scene) {
-          return;
-        }
-        const elapsed = performance.now() - startTime;
-
-        for (let i = 0; i < this.activeDice.length; i++) {
-          const t = Math.max(0, Math.min(1, (elapsed - (plans[i].delayMs ?? 0)) / (plans[i].durationMs ?? 2000)));
-          const pose = evaluateDieTrajectoryStep(plans[i], t, sizeScale, intensity => {
-            if (i <= 2) {
-              this.soundService.playBounceImpact(custom.soundProfileId, intensity);
+              const shadow = this.activeShadows[i];
+              if (shadow) {
+                const heightAboveFloor = Math.max(0, pose.position.y - plans[i].endPos.y);
+                shadow.position.x = pose.position.x + 0.12 + heightAboveFloor * 0.08;
+                shadow.position.z = pose.position.z - 0.12 - heightAboveFloor * 0.08;
+                const shadowScale = 1 + heightAboveFloor * 0.18;
+                shadow.scaling.set(shadowScale, 1, shadowScale);
+              }
             }
-          });
-          const dieMesh = this.activeDice[i].mesh;
-          if (i === 0 && t < 1) {
-            const previous = dieMesh.rotationQuaternion, q = pose.rotationQuaternion;
-            const dot = previous ? Math.abs(previous.x*q.x + previous.y*q.y + previous.z*q.z + previous.w*q.w) : 1;
-            this.soundService.playTumbleResonance(custom.soundProfileId, 2 * Math.acos(Math.min(1, dot)) / 0.016);
+
+            if (elapsed < totalDuration) {
+              this.rollStepTimer = window.requestAnimationFrame(step);
+            } else {
+              this.rollStepTimer = null;
+              this.finalizeStop(entries, Boolean(req.isNat20), Boolean(req.isCritFail), onSettled);
+            }
+          } catch {
+            this.rollStepTimer = null;
+            onSettled();
           }
-          dieMesh.position.copyFrom(pose.position);
-          dieMesh.rotationQuaternion = pose.rotationQuaternion;
+        };
 
-          const shadow = this.activeShadows[i];
-          if (shadow) {
-            const heightAboveFloor = Math.max(0, pose.position.y - plans[i].endPos.y);
-            shadow.position.x = pose.position.x + 0.12 + heightAboveFloor * 0.08;
-            shadow.position.z = pose.position.z - 0.12 - heightAboveFloor * 0.08;
-            const shadowScale = 1 + heightAboveFloor * 0.18;
-            shadow.scaling.set(shadowScale, 1, shadowScale);
-          }
-        }
-
-        if (elapsed < totalDuration) {
-          this.rollStepTimer = window.requestAnimationFrame(step);
-        } else {
-          this.rollStepTimer = null;
-          this.finalizeStop(entries, Boolean(req.isNat20), Boolean(req.isCritFail), onSettled);
-        }
-      };
-
-      step();
+        step();
+      } catch {
+        onSettled();
+      }
     });
   }
 
@@ -275,7 +319,8 @@ export class FullscreenDiceBabylonRunner {
           targetPos,
           this.scene,
           this.glowLayer,
-          0.55 * (custom.critBurstIntensity ?? 1), custom.nat20Customization
+          0.55 * (custom.critBurstIntensity ?? 1),
+          custom.nat20Customization
         );
       } else if (isCritFail) {
         this.soundService.playCriticalFailureFracture();
@@ -284,7 +329,8 @@ export class FullscreenDiceBabylonRunner {
           targetPos,
           this.scene,
           this.glowLayer,
-          0.45 * (custom.critBurstIntensity ?? 1), custom.critFailCustomization
+          0.45 * (custom.critBurstIntensity ?? 1),
+          custom.critFailCustomization
         );
       }
     }
@@ -304,5 +350,14 @@ export class FullscreenDiceBabylonRunner {
       shadow.dispose();
     }
     this.activeShadows = [];
+
+    if (this.scene && this.engine) {
+      try {
+        this.scene.render();
+        this.engine.clear(new Color4(0, 0, 0, 0), true, true, true);
+      } catch {
+        // Ignore clear errors during teardown
+      }
+    }
   }
 }

@@ -1,9 +1,7 @@
 <div
   class="lw-fs-dice-overlay"
   [class.lw-fs-dice-overlay--active]="overlay.overlayPhase() !== 'hidden'"
-  [class.lw-fs-dice-overlay--interactive]="
-    overlay.overlayPhase() === 'rolling' || overlay.overlayPhase() === 'settled'
-  "
+  [class.lw-fs-dice-overlay--interactive]="overlay.overlayPhase() !== 'hidden'"
   [attr.aria-hidden]="overlay.overlayPhase() === 'hidden'"
   (click)="onBackdropClick()"
 >

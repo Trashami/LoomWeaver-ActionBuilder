@@ -10,7 +10,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FullscreenDiceOverlayService } from '../dice/engine/fullscreen-dice-overlay.service';
+import {
+  FullscreenDiceOverlayService,
+  FullscreenDieEntry,
+} from '../dice/engine/fullscreen-dice-overlay.service';
+import type { DicePolyhedronType } from '../dice/engine/models';
 import { LwIconComponent } from '../../shared/ui/icon/icon.component';
 import { LwModalComponent } from '../../shared/ui/modal/modal.component';
 import { renderEntries, renderInlineTags } from './book-entry-html';
@@ -275,8 +279,12 @@ export class SourceBookReaderPageComponent {
     if (rollBtn) {
       event.preventDefault();
       const diceExpr = rollBtn.getAttribute('data-dice') || '1d20';
-      const tableId = rollBtn.getAttribute('data-table-id');
-      const caption = rollBtn.getAttribute('data-caption') || undefined;
+      const tableWrapper = rollBtn.closest<HTMLElement>('.book-table-wrapper');
+      const tableId = rollBtn.getAttribute('data-table-id') || tableWrapper?.id || null;
+      const caption =
+        rollBtn.getAttribute('data-caption') ||
+        tableWrapper?.querySelector('caption')?.textContent?.trim() ||
+        undefined;
       this.rollDice(diceExpr, tableId, caption);
       return;
     }
@@ -289,32 +297,79 @@ export class SourceBookReaderPageComponent {
   }
 
   rollDice(diceExpr: string, tableId: string | null, caption?: string): void {
-    const match = /(\d*)d(\d+)/i.exec(diceExpr);
-    const count = match && match[1] ? Math.max(1, parseInt(match[1], 10)) : 1;
-    const sides = match && match[2] ? parseInt(match[2], 10) : 20;
-
+    const normalizedExpr = diceExpr.trim().replace(/d%/gi, '1d100');
+    const diceEntries: FullscreenDieEntry[] = [];
     const diceValues: number[] = [];
     let total = 0;
-    for (let i = 0; i < count; i++) {
-      const val = Math.floor(Math.random() * sides) + 1;
-      diceValues.push(val);
-      total += val;
+    let modifier = 0;
+
+    const resolvePolyhedronType = (sides: number): DicePolyhedronType => {
+      if (sides === 4) return 'd4';
+      if (sides === 6) return 'd6';
+      if (sides === 8) return 'd8';
+      if (sides === 10) return 'd10';
+      if (sides === 12) return 'd12';
+      if (sides === 100) return 'd100';
+      return 'd20';
+    };
+
+    const dieRegex = /([+-]?)\s*(\d*)d(\d+)/gi;
+    let dieMatch: RegExpExecArray | null;
+    while ((dieMatch = dieRegex.exec(normalizedExpr)) !== null) {
+      const sign = dieMatch[1] === '-' ? -1 : 1;
+      const count = dieMatch[2] ? Math.max(1, parseInt(dieMatch[2], 10)) : 1;
+      const sides = Math.max(2, parseInt(dieMatch[3], 10) || 20);
+      const dieType = resolvePolyhedronType(sides);
+
+      for (let i = 0; i < count; i++) {
+        const val = Math.floor(Math.random() * sides) + 1;
+        diceValues.push(val);
+        total += sign * val;
+
+        if (sides === 100) {
+          const normalized100 = val === 100 ? 0 : val;
+          const tensFace = Math.floor(normalized100 / 10) * 10;
+          const onesFace = normalized100 % 10 === 0 ? 10 : normalized100 % 10;
+          diceEntries.push({ dieType: 'd100', value: tensFace });
+          diceEntries.push({ dieType: 'd10', value: onesFace });
+        } else {
+          diceEntries.push({ dieType, value: val });
+        }
+      }
     }
 
-    const rollLabel = caption || `${diceExpr.toUpperCase()} Roll`;
+    const strippedMod = normalizedExpr.replace(/([+-]?)\s*(\d*)d(\d+)/gi, '');
+    const modRegex = /([+-])\s*(\d+)/g;
+    let modMatch: RegExpExecArray | null;
+    while ((modMatch = modRegex.exec(strippedMod)) !== null) {
+      const sign = modMatch[1] === '-' ? -1 : 1;
+      const modVal = parseInt(modMatch[2], 10) || 0;
+      modifier += sign * modVal;
+      total += sign * modVal;
+    }
+
+    if (diceValues.length === 0) {
+      const val = Math.floor(Math.random() * 20) + 1;
+      diceValues.push(val);
+      diceEntries.push({ dieType: 'd20', value: val });
+      total = val;
+    }
+
+    const rollLabel = caption || `${normalizedExpr.toUpperCase()} Roll`;
 
     this.diceOverlay.triggerFullScreenRoll({
       label: rollLabel,
-      expression: diceExpr,
+      expression: normalizedExpr,
       diceValues,
+      diceEntries,
       total,
       alert: {
         whoRolled: this.source()?.name || 'Tome Library',
         rollType: rollLabel,
-        formula: diceExpr,
+        formula: normalizedExpr.toUpperCase(),
         naturalDie: diceValues[0] ?? total,
         rawRolls: diceValues,
-        modifier: 0,
+        modifier,
         adjustedTotal: total,
       },
       onComplete: () => {

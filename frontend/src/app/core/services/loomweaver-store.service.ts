@@ -223,7 +223,7 @@ export class LoomWeaverStoreService {
           const sid = r.sessionId ?? r.id ?? `session-${r.sessionNumber || idx + 1}`;
           const num = r.sessionNumber || idx + 1;
           const title = r.title || `Session ${num}`;
-          const loc = r.locationName || 'Campaign Frontier';
+          const loc = this.formatSessionLocationLabel(r.locationName, title);
           const statusLabel = idx === 0 ? 'Current / Upcoming' : (r.dateLabel || 'Chronicled');
           return {
             sessionId: sid, sessionNumber: num, title,
@@ -244,6 +244,34 @@ export class LoomWeaverStoreService {
         this.resolveInitialActiveSession(campaignId, list);
       },
     });
+  }
+
+  formatSessionLocationLabel(raw: string | undefined, sessionTitle = ''): string {
+    const trimmed = (raw ?? '').trim();
+    if (!trimmed) return sessionTitle || 'Campaign Frontier';
+    const lower = trimmed.toLowerCase();
+    const knownSeedLocations: Record<string, string> = {
+      'sotm-seed-loc-grove': 'The Whispering Grove',
+      'sotm-seed-ch09': 'Cinth · The Guild of Scars',
+      'sotm-seed-ch07': 'The Plains of Red',
+      'sotm-seed-ch05': 'The Well of Life',
+      'sotm-seed-ch04': 'Vandia · The Knot & Knife',
+      'sotm-seed-ch01': 'Edhellain · High Court',
+    };
+    if (knownSeedLocations[lower]) {
+      return knownSeedLocations[lower];
+    }
+    if (/^[a-z0-9]+-(seed|node|loc|ch)-/i.test(trimmed)) {
+      const cleaned = trimmed
+        .replace(/^[a-z0-9]+-(seed|node)-(loc-|ch\d*-?)?/i, '')
+        .replace(/[-_]+/g, ' ')
+        .trim();
+      if (!cleaned || /^ch\d+$/i.test(cleaned)) {
+        return sessionTitle || 'Campaign Frontier';
+      }
+      return cleaned.replace(/\b\w/g, (ch) => ch.toUpperCase());
+    }
+    return trimmed;
   }
 
   private buildFallbackSessions(campaignId: number): CampaignSessionVm[] {

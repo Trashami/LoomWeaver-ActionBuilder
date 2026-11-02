@@ -1,75 +1,149 @@
-@if (store.loomDrawerOpen()) {
-  <section class="lw-loom-drawer" aria-label="The Loom Campaign Memory Assistant">
-    <header class="lw-loom-drawer__header">
-      <div class="lw-loom-drawer__brand">
-        <div>
-          <h3 class="lw-loom-drawer__title">The Loom · Campaign Memory</h3>
-          <span class="lw-loom-drawer__subtitle">
-            Strict zero-generation recall · Scoped to {{ store.viewerRole() === 'gm' ? 'GM Canon + Secrets' : 'Player-Safe Canon' }}
-          </span>
-        </div>
+<lw-modal
+  [open]="store.loomDrawerOpen()"
+  (openChange)="store.toggleLoomDrawer($event)"
+  (closed)="store.toggleLoomDrawer(false)"
+  size="lg"
+  [draggable]="true"
+  ariaLabel="The Loom Campaign Memory Chatbot"
+>
+  <div modalHeader class="lw-loom-chat__modal-head">
+    <div class="lw-loom-chat__title-row">
+      <h3 class="lw-loom-chat__title">The Loom · Campaign Memory Assistant</h3>
+      <lw-badge
+        [label]="store.viewerRole() === 'gm' ? 'GM Canon + Secrets' : 'Player-Safe Canon'"
+        [tone]="store.viewerRole() === 'gm' ? 'gm' : 'emerald'"
+      />
+    </div>
+    <p class="lw-loom-chat__subtitle">
+      Zero-generation campaign recall — answers are synthesized strictly from your established sessions, lore, quests, and notes with direct links to every reference used.
+    </p>
+  </div>
+
+  <div class="lw-loom-chat__body">
+    <div class="lw-loom-chat__toolbar">
+      <div class="lw-loom-chat__prompts" role="group" aria-label="Suggested questions for The Loom">
+        @for (prompt of quickPrompts; track prompt) {
+          <button
+            ngpButton
+            type="button"
+            class="lw-loom-chat__prompt-chip"
+            (click)="askQuickPrompt(prompt)"
+          >
+            {{ prompt }}
+          </button>
+        }
       </div>
-      <div class="lw-loom-drawer__header-actions">
-        <a class="lw-loom-drawer__full-link" routerLink="/loom" (click)="store.toggleLoomDrawer(false)">
-          Full Workspace
+      <div class="lw-loom-chat__toolbar-actions">
+        @if (chatTurns().length > 0) {
+          <button
+            ngpButton
+            type="button"
+            class="lw-loom-chat__util-btn"
+            (click)="clearHistory()"
+          >
+            Clear Chat
+          </button>
+        }
+        <a
+          class="lw-loom-chat__util-link"
+          routerLink="/loom"
+          (click)="store.toggleLoomDrawer(false)"
+        >
+          Full Loom Workspace
         </a>
-        <lw-button variant="ghost" size="sm" icon="x" (pressed)="store.toggleLoomDrawer(false)">
-          Close
-        </lw-button>
-      </div>
-    </header>
-
-    <div class="lw-loom-drawer__search">
-      <input
-        ngpInput
-        type="text"
-        class="lw-loom-drawer__input"
-        [ngModel]="store.loomQuery()"
-        (ngModelChange)="store.loomQuery.set($event)"
-        placeholder="Ask The Loom about sessions, NPCs, locations, clues, or quests..." />
-      <div class="lw-loom-drawer__chips">
-        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Campaign')">
-          Campaign Summary
-        </button>
-        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Sessions')">
-          Recent Sessions
-        </button>
-        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Quests')">
-          Open Quests
-        </button>
-        <button ngpButton type="button" class="lw-loom-drawer__chip" (click)="setPrompt('Artificers')">
-          Artificers Guild
-        </button>
       </div>
     </div>
 
-    <div class="lw-loom-drawer__results">
-      @for (cit of store.loomCitations(); track cit.compositeKey) {
-        <article class="lw-loom-drawer__citation">
-          <div class="lw-loom-drawer__citation-top">
-            <strong>{{ cit.title }}</strong>
-            <div class="lw-loom-drawer__citation-badges">
-              <lw-badge [label]="cit.entityType" tone="neutral" />
-              <lw-badge [label]="cit.visibility" [tone]="cit.visibility === 'gm' ? 'gm' : 'emerald'" />
+    <lw-scroll-area
+      tone="emerald"
+      maxHeight="420px"
+      padding="0.65rem"
+    >
+      <div class="lw-loom-chat__thread" role="log" aria-live="polite">
+        @for (turn of effectiveTurns(); track turn.id) {
+          <article class="lw-loom-chat__turn">
+            <!-- User Question Bubble -->
+            <div class="lw-loom-chat__question-row">
+              <div class="lw-loom-chat__question-bubble">
+                <div class="lw-loom-chat__bubble-meta">
+                  <span>You ({{ store.viewerRole() === 'gm' ? 'GM' : 'Player' }})</span>
+                  <span>{{ turn.timestampLabel }}</span>
+                </div>
+                <p class="lw-loom-chat__question-text">{{ turn.question }}</p>
+              </div>
             </div>
-          </div>
-          <p class="lw-loom-drawer__excerpt">{{ cit.excerpt }}</p>
-          <div class="lw-loom-drawer__citation-actions">
-            <button
-              type="button"
-              class="lw-loom-drawer__cite-btn"
-              (click)="store.inspectEntity(cit.compositeKey)">
-              Inspect Graph Node
-            </button>
-            <a
-              class="lw-loom-drawer__cite-link"
-              [routerLink]="cit.routeLink"
-              (click)="store.toggleLoomDrawer(false)">
-              Open in {{ cit.routeLink }}
-            </a>
-          </div>
-        </article>
-      }
-    </div>
-  </section>
-}
+
+            <!-- The Loom Answer + Reference Links -->
+            <div class="lw-loom-chat__answer-card">
+              <div class="lw-loom-chat__answer-head">
+                <strong class="lw-loom-chat__answer-author">The Loom</strong>
+                <lw-badge [label]="turn.scopeLabel" tone="gold" />
+              </div>
+
+              <p class="lw-loom-chat__answer-text">{{ turn.answer }}</p>
+
+              @if (turn.references.length > 0) {
+                <div class="lw-loom-chat__refs">
+                  <span class="lw-loom-chat__refs-heading">
+                    References Used ({{ turn.references.length }})
+                  </span>
+                  <div class="lw-loom-chat__refs-grid">
+                    @for (ref of turn.references; track ref.compositeKey) {
+                      <div class="lw-loom-chat__ref-card">
+                        <div class="lw-loom-chat__ref-top">
+                          <strong class="lw-loom-chat__ref-title">{{ ref.title }}</strong>
+                          <div class="lw-loom-chat__ref-badges">
+                            <lw-badge [label]="ref.entityType" tone="neutral" />
+                            <lw-badge
+                              [label]="ref.visibility === 'gm' ? 'GM' : 'Canon'"
+                              [tone]="ref.visibility === 'gm' ? 'gm' : 'emerald'"
+                            />
+                          </div>
+                        </div>
+                        <p class="lw-loom-chat__ref-excerpt">{{ ref.excerpt }}</p>
+                        <div class="lw-loom-chat__ref-actions">
+                          <button
+                            ngpButton
+                            type="button"
+                            class="lw-loom-chat__ref-btn"
+                            (click)="openReferenceLink(ref)"
+                          >
+                            Open in {{ ref.routeLabel }}
+                          </button>
+                          <button
+                            ngpButton
+                            type="button"
+                            class="lw-loom-chat__ref-btn lw-loom-chat__ref-btn--gold"
+                            (click)="inspectReference(ref)"
+                          >
+                            Inspect Reference
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </lw-scroll-area>
+  </div>
+
+  <form modalFooter class="lw-loom-chat__composer" (ngSubmit)="submitQuestion()">
+    <input
+      ngpInput
+      type="text"
+      class="lw-loom-chat__input"
+      name="loomQuestionInput"
+      aria-label="Ask The Loom a question"
+      [ngModel]="draftQuestion()"
+      (ngModelChange)="draftQuestion.set($event)"
+      placeholder="Ask The Loom about sessions, NPCs, locations, quests, or campaign lore..."
+    />
+    <lw-button variant="emerald" type="submit" (pressed)="submitQuestion()">
+      Ask The Loom
+    </lw-button>
+  </form>
+</lw-modal>

@@ -30,6 +30,20 @@ interface ActiveDrag {
   z: number;
 }
 
+export function sampleTokenFootprintElevation(
+  scene: Scene,
+  x: number,
+  z: number,
+  radius: number = 0.34,
+): number {
+  const c = TerrainMeshBuilder.sampleElevationAt(scene, x, z);
+  const n = TerrainMeshBuilder.sampleElevationAt(scene, x, z - radius);
+  const s = TerrainMeshBuilder.sampleElevationAt(scene, x, z + radius);
+  const e = TerrainMeshBuilder.sampleElevationAt(scene, x + radius, z);
+  const w = TerrainMeshBuilder.sampleElevationAt(scene, x - radius, z);
+  return Math.max(c, n, s, e, w);
+}
+
 /**
  * Selects and drags token meshes across the flat ground plane or sculpted 3D terrain.
  */
@@ -43,13 +57,21 @@ export class TokenDragController {
     private readonly handlers: TokenDragHandlers,
   ) {}
 
+  isDragging(): boolean {
+    return this.active !== null;
+  }
+
   attach(): void {
     this.detach();
-    this.observer = this.scene.onPointerObservable.add((info) => {
-      if (info.type === PointerEventTypes.POINTERDOWN) this.handlePointerDown(info);
-      else if (info.type === PointerEventTypes.POINTERMOVE) this.handlePointerMove();
-      else if (info.type === PointerEventTypes.POINTERUP) this.handlePointerUp();
-    });
+    this.observer = this.scene.onPointerObservable.add(
+      (info) => {
+        if (info.type === PointerEventTypes.POINTERDOWN) this.handlePointerDown(info);
+        else if (info.type === PointerEventTypes.POINTERMOVE) this.handlePointerMove();
+        else if (info.type === PointerEventTypes.POINTERUP) this.handlePointerUp();
+      },
+      undefined,
+      true,
+    );
   }
 
   detach(): void {
@@ -129,16 +151,20 @@ export class TokenDragController {
   }
 
   private placeMeshes(key: string, x: number, z: number): void {
-    const groundY = TerrainMeshBuilder.sampleElevationAt(this.scene, x, z);
     const tokenMesh = this.scene.getMeshByName(`lw-token-${key}`);
+    const radius =
+      typeof tokenMesh?.metadata?.footprintRadius === 'number'
+        ? tokenMesh.metadata.footprintRadius
+        : 0.34;
+    const groundY = sampleTokenFootprintElevation(this.scene, x, z, radius);
     if (tokenMesh) {
       const baseHeight =
-        typeof tokenMesh.metadata?.baseHeight === 'number' ? tokenMesh.metadata.baseHeight : 0.02;
-      tokenMesh.position.set(x, groundY + baseHeight / 2, z);
+        typeof tokenMesh.metadata?.baseHeight === 'number' ? tokenMesh.metadata.baseHeight : 0.06;
+      tokenMesh.position.set(x, groundY + baseHeight / 2 + 0.01, z);
     }
     const reticle = this.scene.getMeshByName(`lw-target-reticle-root-${key}`);
     if (reticle) {
-      reticle.position.set(x, groundY + 0.025, z);
+      reticle.position.set(x, groundY + 0.035, z);
     }
   }
 }

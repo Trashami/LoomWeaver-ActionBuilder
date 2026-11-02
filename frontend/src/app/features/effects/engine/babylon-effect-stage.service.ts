@@ -11,6 +11,7 @@ import {
   MeshBuilder,
   MeshoptCompression,
   PointLight,
+  PointerEventTypes,
   Scene,
   StandardMaterial,
   Texture,
@@ -174,6 +175,9 @@ export class BabylonEffectStageService {
       this.ground.isPickable = false;
     }
 
+    this.scene.getLightByName('lw-vtt-hemi')?.setEnabled(false);
+    this.scene.getLightByName('lw-vtt-pt')?.setEnabled(false);
+
     GlbModelCache.ensureScene(this.scene);
     TerrainMeshBuilder.importElevations(state.customElevations ?? null);
     TerrainMeshBuilder.setPaintDabs(this.scene, state.floorPaintDabs ?? []);
@@ -267,6 +271,8 @@ export class BabylonEffectStageService {
       this.ground.isVisible = true;
       this.ground.isPickable = true;
     }
+    this.scene.getLightByName('lw-vtt-hemi')?.setEnabled(true);
+    this.scene.getLightByName('lw-vtt-pt')?.setEnabled(true);
   }
 
   loadMapScene(
@@ -311,6 +317,14 @@ export class BabylonEffectStageService {
     } else {
       this.mapSceneBuilder.clear(this.scene);
     }
+    SceneLightingController.syncCelestialDirectionalLight(this.scene, {
+      mode: 'sun',
+      azimuthDeg: 135,
+      altitudeDeg: 42,
+      shadowDarkness: 72,
+      showSkyOrb: false,
+    });
+    SceneLightingController.refreshShadowCasters(this.scene);
   }
 
   /**
@@ -321,6 +335,10 @@ export class BabylonEffectStageService {
     const modeChanged = this.isForcedTopDown !== forced;
     this.isForcedTopDown = forced;
     if (!this.camera) return;
+    this.camera.inertialAlphaOffset = 0;
+    this.camera.inertialBetaOffset = 0;
+    this.camera.inertialPanningX = 0;
+    this.camera.inertialPanningY = 0;
     if (forced) {
       this.camera.lowerAlphaLimit = -Math.PI / 2;
       this.camera.upperAlphaLimit = -Math.PI / 2;
@@ -328,16 +346,18 @@ export class BabylonEffectStageService {
       this.camera.upperBetaLimit = 0.0001;
       this.camera.alpha = -Math.PI / 2;
       this.camera.beta = 0.0001;
-      this.camera.panningAxis = new Vector3(1, 0, 1);
+      this.camera.panningAxis = new Vector3(1, 1, 0);
       (this.camera as unknown as { _panningMouseButton: number })._panningMouseButton = 0;
     } else {
       this.camera.lowerAlphaLimit = null;
       this.camera.upperAlphaLimit = null;
       this.camera.lowerBetaLimit = 0.1;
       this.camera.upperBetaLimit = Math.PI / 2.05;
-      this.camera.alpha = -Math.PI / 2.2;
-      this.camera.beta = 0.82;
-      this.camera.panningAxis = new Vector3(1, 0, 1);
+      if (modeChanged) {
+        this.camera.alpha = -Math.PI / 2.2;
+        this.camera.beta = 0.82;
+      }
+      this.camera.panningAxis = new Vector3(1, 1, 0);
       (this.camera as unknown as { _panningMouseButton: number })._panningMouseButton = 2;
     }
     if (modeChanged && this.scene && this.latestTokens.length > 0) {
@@ -434,8 +454,9 @@ export class BabylonEffectStageService {
       );
       camera.lowerRadiusLimit = 5;
       camera.upperRadiusLimit = 58;
-      camera.panningSensibility = 80;
-      camera.panningAxis = new Vector3(1, 0, 1);
+      camera.panningSensibility = 65;
+      camera.panningInertia = 0.15;
+      camera.panningAxis = new Vector3(1, 1, 0);
       this.camera = camera;
       camera.attachControl(canvas, true);
 
@@ -447,12 +468,12 @@ export class BabylonEffectStageService {
       this.updateZoomPercent();
 
       const hemi = new HemisphericLight('lw-vtt-hemi', new Vector3(0, 1, 0), this.scene);
-      hemi.intensity = 0.92;
+      hemi.intensity = 0.68;
       hemi.diffuse = new Color3(0.94, 0.96, 0.94);
       hemi.groundColor = Color3.FromHexString('#091410');
 
       const pt = new PointLight('lw-vtt-pt', new Vector3(0, 8, 0), this.scene);
-      pt.intensity = 1.05;
+      pt.intensity = 0.65;
       pt.diffuse = Color3.FromHexString('#e4c283');
 
       const ground = MeshBuilder.CreateGround(
@@ -460,7 +481,9 @@ export class BabylonEffectStageService {
         { width: 24, height: 16, subdivisions: 16 },
         this.scene,
       );
+      ground.receiveShadows = true;
       const gMat = new StandardMaterial('lw-vtt-gmat', this.scene);
+      gMat.maxSimultaneousLights = 8;
       gMat.diffuseColor = Color3.FromHexString('#0d1914');
       gMat.specularColor = Color3.Black();
       ground.material = gMat;
@@ -470,13 +493,51 @@ export class BabylonEffectStageService {
       this.backdropUrl = '';
       this.fogPlane = new BabylonFogPlane(this.scene);
 
+      let savedAlpha = camera.alpha;
+      let savedBeta = camera.beta;
+
       this.dragController = new TokenDragController(this.scene, ground, {
-        onDragStart: () => camera.detachControl(),
+        onDragStart: () => {
+          savedAlpha = camera.alpha;
+          savedBeta = camera.beta;
+          camera.inertialAlphaOffset = 0;
+          camera.inertialBetaOffset = 0;
+          camera.inertialPanningX = 0;
+          camera.inertialPanningY = 0;
+          camera.lowerAlphaLimit = savedAlpha;
+          camera.upperAlphaLimit = savedAlpha;
+          camera.lowerBetaLimit = savedBeta;
+          camera.upperBetaLimit = savedBeta;
+          camera.detachControl();
+        },
         onDragEnd: () => {
-          camera.attachControl(canvas, true);
-          const p = camera.inputs.attached['pointers'] as ArcRotateCameraPointersInput | undefined;
-          if (p) p.buttons = [0, 1, 2];
-          this.setForcedTopDown(this.isForcedTopDown);
+          camera.inertialAlphaOffset = 0;
+          camera.inertialBetaOffset = 0;
+          camera.inertialPanningX = 0;
+          camera.inertialPanningY = 0;
+          camera.alpha = savedAlpha;
+          camera.beta = savedBeta;
+          setTimeout(() => {
+            if (!this.camera || this.camera !== camera) return;
+            camera.inertialAlphaOffset = 0;
+            camera.inertialBetaOffset = 0;
+            camera.alpha = savedAlpha;
+            camera.beta = savedBeta;
+            if (this.isForcedTopDown) {
+              camera.lowerAlphaLimit = -Math.PI / 2;
+              camera.upperAlphaLimit = -Math.PI / 2;
+              camera.lowerBetaLimit = 0.0001;
+              camera.upperBetaLimit = 0.0001;
+            } else {
+              camera.lowerAlphaLimit = null;
+              camera.upperAlphaLimit = null;
+              camera.lowerBetaLimit = 0.1;
+              camera.upperBetaLimit = Math.PI / 2.05;
+            }
+            camera.attachControl(canvas, true);
+            const p = camera.inputs.attached['pointers'] as ArcRotateCameraPointersInput | undefined;
+            if (p) p.buttons = [0, 1, 2];
+          }, 0);
         },
         onTokenSelected: (key, shiftKey) => {
           onTokenClicked?.(key, shiftKey);
@@ -485,6 +546,47 @@ export class BabylonEffectStageService {
         onDropped: (placement) => this.droppedSubject.next(placement),
       });
       this.dragController.attach();
+
+      let pan2dActive = false;
+      let panLastClientX = 0;
+      let panLastClientY = 0;
+      const panObserver = this.scene.onPointerObservable.add((info) => {
+        if (!this.isForcedTopDown || !this.camera || !this.engine) return;
+        const evt = info.event as PointerEvent;
+        if (info.type === PointerEventTypes.POINTERDOWN) {
+          if (evt.button !== 0 || this.dragController?.isDragging()) {
+            pan2dActive = false;
+            return;
+          }
+          pan2dActive = true;
+          panLastClientX = evt.clientX;
+          panLastClientY = evt.clientY;
+        } else if (info.type === PointerEventTypes.POINTERMOVE) {
+          if (!pan2dActive || this.dragController?.isDragging()) {
+            pan2dActive = false;
+            return;
+          }
+          if ((evt.buttons & 1) === 0) {
+            pan2dActive = false;
+            return;
+          }
+          const dx = evt.clientX - panLastClientX;
+          const dy = evt.clientY - panLastClientY;
+          panLastClientX = evt.clientX;
+          panLastClientY = evt.clientY;
+          const renderH = Math.max(240, this.engine.getRenderHeight());
+          const worldPerPx = (2 * this.camera.radius * Math.tan(this.camera.fov / 2)) / renderH;
+          this.camera.target.x -= dx * worldPerPx;
+          this.camera.target.z += dy * worldPerPx;
+          this.camera.inertialPanningX = 0;
+          this.camera.inertialPanningY = 0;
+        } else if (info.type === PointerEventTypes.POINTERUP) {
+          pan2dActive = false;
+        }
+      });
+      this.cleanupHandlers.push(() => {
+        if (panObserver) this.scene?.onPointerObservable.remove(panObserver);
+      });
 
       if (this.latestSceneData || this.latestBackdropUrl) {
         this.loadMapScene(this.latestSceneData, this.latestBackdropUrl);
@@ -553,6 +655,7 @@ export class BabylonEffectStageService {
       this.latestGridScale,
       () => this.refreshTokens(),
     );
+    SceneLightingController.refreshShadowCasters(this.scene);
   }
 
   playTrajectoryEffect(

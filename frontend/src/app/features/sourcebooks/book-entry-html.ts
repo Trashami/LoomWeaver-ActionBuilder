@@ -265,19 +265,23 @@ function parseRollRange(cell: unknown): { min: number; max: number } | null {
     if ('roll' in obj && obj['roll'] && typeof obj['roll'] === 'object') {
       const roll = obj['roll'] as { exact?: number; min?: number; max?: number };
       if (typeof roll.exact === 'number') {
-        return { min: roll.exact, max: roll.exact };
+        const exactVal = roll.exact === 0 ? 100 : roll.exact;
+        return { min: exactVal, max: exactVal };
       }
       if (typeof roll.min === 'number' && typeof roll.max === 'number') {
-        return { min: roll.min, max: roll.max };
+        const maxVal = roll.max === 0 && roll.min > 0 ? 100 : roll.max;
+        return { min: roll.min, max: maxVal };
       }
     }
   }
   if (typeof cell === 'string') {
-    const trimmed = cell.trim();
-    const rangeMatch = /^(\d+)\s*(?:-|–|to)\s*(\d+)$/i.exec(trimmed);
+    const trimmed = cell.replace(/\{@[^}]+\}/g, '').trim();
+    const rangeMatch = /^(\d+)\s*(?:-|–|—|to)\s*(\d+)$/i.exec(trimmed);
     if (rangeMatch) {
-      const min = parseInt(rangeMatch[1], 10);
-      const max = parseInt(rangeMatch[2], 10);
+      let min = parseInt(rangeMatch[1], 10);
+      let max = parseInt(rangeMatch[2], 10);
+      if (rangeMatch[1] === '00') min = 100;
+      if (rangeMatch[2] === '00' || (max === 0 && min > 0)) max = 100;
       if (!isNaN(min) && !isNaN(max)) return { min, max };
     }
     const exactMatch = /^(\d+)$/.exec(trimmed);
@@ -288,9 +292,35 @@ function parseRollRange(cell: unknown): { min: number; max: number } | null {
     }
   }
   if (typeof cell === 'number') {
-    return { min: cell, max: cell };
+    const val = cell === 0 ? 100 : cell;
+    return { min: val, max: val };
   }
   return null;
+}
+
+function extractTableDiceExpression(rawText: string): string {
+  const cleaned = rawText.trim();
+  if (!cleaned) return '';
+
+  // 1. Explicit {@dice ...} tag
+  const diceTagMatch = /\{@dice\s+([^|}]+)(?:\|[^}]*)?\}/i.exec(cleaned);
+  if (diceTagMatch?.[1]) {
+    const formula = diceTagMatch[1].trim().replace(/\s+/g, '');
+    if (/^d\d+/i.test(formula)) return `1${formula.toLowerCase()}`;
+    if (/^d%/i.test(formula)) return '1d100';
+    return formula.toLowerCase();
+  }
+
+  // 2. Plain text d% or compound dice formula (e.g. 1d12 + 1d8, 2d6, d100, d8)
+  if (/d%/i.test(cleaned)) {
+    return '1d100';
+  }
+  const compoundMatch = /\b(\d*d\d+(?:\s*[+-]\s*\d*d?\d+)*)\b/i.exec(cleaned);
+  if (compoundMatch?.[1]) {
+    const normalized = compoundMatch[1].replace(/\s+/g, '').toLowerCase();
+    return normalized.startsWith('d') ? `1${normalized}` : normalized;
+  }
+  return '';
 }
 
 function renderTable(node: Record<string, unknown>): string {
@@ -300,18 +330,12 @@ function renderTable(node: Record<string, unknown>): string {
   const labels = (node['colLabels'] as unknown[] | undefined) ?? [];
 
   let diceExpr = '';
-  if (labels.length > 0) {
-    const firstLabel = String(labels[0]).trim();
-    const dMatch = /(?:d%|\b(\d*d\d+)\b)/i.exec(firstLabel);
-    if (dMatch) {
-      diceExpr = dMatch[0].toLowerCase() === 'd%' ? '1d100' : (dMatch[1] ? (dMatch[1].startsWith('d') ? `1${dMatch[1]}` : dMatch[1]) : '1d20');
-    }
+  for (const label of labels) {
+    diceExpr = extractTableDiceExpression(String(label ?? ''));
+    if (diceExpr) break;
   }
   if (!diceExpr && rawCaption) {
-    const capMatch = /(?:d%|\b(\d*d\d+)\b)/i.exec(rawCaption);
-    if (capMatch) {
-      diceExpr = capMatch[0].toLowerCase() === 'd%' ? '1d100' : (capMatch[1] ? (capMatch[1].startsWith('d') ? `1${capMatch[1]}` : capMatch[1]) : '1d20');
-    }
+    diceExpr = extractTableDiceExpression(rawCaption);
   }
 
   const rawRows = (node['rows'] as unknown[][] | undefined) ?? [];

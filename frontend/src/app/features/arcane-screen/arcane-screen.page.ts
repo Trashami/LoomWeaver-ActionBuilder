@@ -9,7 +9,11 @@ import { NgpButton } from 'ng-primitives/button';
 import { AdventureGuideService } from '../../core/services/adventure-guide.service';
 import { LoomWeaverStoreService } from '../../core/services/loomweaver-store.service';
 import { VttReturnRouteService } from '../../core/services/vtt-return-route.service';
-import { LwButtonComponent } from '../../shared/ui/public-api';
+import {
+  LwButtonComponent,
+  LwContextSwitcherComponent,
+  LwContextSwitcherOption,
+} from '../../shared/ui/public-api';
 import { LwIconComponent } from '../../shared/ui/icon/icon.component';
 import { WebAudioAmbienceService } from '../assets/engine/web-audio-ambience.service';
 import { FullscreenDiceOverlayService } from '../dice/engine/fullscreen-dice-overlay.service';
@@ -43,7 +47,7 @@ import { VttServerSyncService } from './services/vtt-server-sync.service';
   selector: 'lw-arcane-screen-page',
   standalone: true,
   imports: [
-    FormsModule, NgpButton, LwButtonComponent, LwIconComponent, VttActionDockComponent,
+    FormsModule, NgpButton, LwButtonComponent, LwContextSwitcherComponent, LwIconComponent, VttActionDockComponent,
     VttGmRailComponent, VttGmGuidePanelComponent, VttGmTrackersPanelComponent,
     VttSettingsModalComponent, VttDmDrawersComponent, VttMapToolsComponent,
     VttSettingsPanelComponent, VttHandoutModalComponent,
@@ -123,6 +127,28 @@ export class ArcaneScreenPageComponent implements AfterViewInit, OnDestroy {
       ? `Session ${sess.sessionNumber} · ${sess.title}`
       : this.adventureGuide.guide().headerTitle || 'Current Session';
   });
+
+  readonly sessionSwitcherOptions = computed<LwContextSwitcherOption[]>(() => {
+    const activeId = this.store.activeSessionId();
+    return this.store.sessions().map((session) => {
+      const isSelected = session.sessionId === activeId;
+      const isCurrent = session.status === 'upcoming';
+      return {
+        id: session.sessionId,
+        title: `Session ${session.sessionNumber} — ${session.title}`,
+        subtitle: `${this.store.formatSessionLocationLabel(session.locationLabel, session.title)} · ${
+          isCurrent ? 'Current / Upcoming' : `Session ${session.sessionNumber}`
+        }`,
+        badgeLabel: isSelected ? 'SELECTED' : isCurrent ? 'CURRENT' : 'Switch',
+        badgeTone: isSelected ? 'emerald' : isCurrent ? 'gold' : 'neutral',
+        active: isSelected,
+      };
+    });
+  });
+
+  onSwitchVttSession(sessionId: string): void {
+    this.store.setActiveSession(sessionId);
+  }
 
   readonly activeBattlemapTitle = computed(
     () => this.adventureGuide.guide().assignedBattlemap?.title || this.vtt.activeLiveEncounter()?.name || 'Battlefield',

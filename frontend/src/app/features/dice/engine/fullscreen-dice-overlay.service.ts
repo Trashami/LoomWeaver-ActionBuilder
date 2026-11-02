@@ -31,7 +31,7 @@ export interface FullscreenDiceRollRequest {
   isCritFail?: boolean;
   /** Bottom-right result toast, shown once the dice have settled. */
   alert?: LwRollNotifyParams;
-  /** Runs once the 3D dice are cleared from the screen (about 8s in). */
+  /** Runs once the 3D dice settle or clear from the screen. */
   onComplete?: () => void;
 }
 
@@ -63,57 +63,59 @@ export class FullscreenDiceOverlayService {
     // Step 1: Semi-opaque background and 3D dice appear immediately
     this.overlayPhase.set('rolling');
 
-    void this.ensureRunner().then(runner => {
-      if (this.canvas) {
-        runner.mountCanvas(this.canvas);
+    // Hard failsafe timer so dice can never get stuck on screen even if WebGL or asset load stalls
+    this.schedule(6500, () => {
+      if (this.overlayPhase() !== 'hidden') {
+        req.onComplete?.();
+        this.clearResultsNow();
       }
-      runner.runRoll(entries, req, () => {
-        // Step 2: Dice have completely stopped — show the single bottom-right result toast
-        this.ngZone.run(() => {
-          this.overlayPhase.set('settled');
-          if (req.alert) {
-            this.alertify.notifyRoll(req.alert);
-          }
-        });
-
-        // Step 3: Wait 2 seconds (2000ms), then fade away the opaque bg over 2.5 seconds (2500ms)
-        this.schedule(2000, () => {
-          this.overlayPhase.set('bg-fading');
-        });
-
-        // Step 4: Once the bg finishes its 2.5s fade (at 4500ms), leave the dice on screen for another 2 seconds (2000ms)
-        this.schedule(4500, () => {
-          this.overlayPhase.set('dice-hold');
-        });
-
-        // Step 5: After those 2 seconds on the clear screen (at 6500ms), fade out the dice over 1.5 seconds (1500ms)
-        this.schedule(6500, () => {
-          this.overlayPhase.set('dice-fading');
-        });
-
-        // Step 6: Once the dice finish fading out (at 8000ms), clear the 3D dice meshes and keep the bottom-right Alertify/result popup up for 5 more seconds (5000ms)
-        this.schedule(8000, () => {
-          this.runner?.clearAll();
-          this.overlayPhase.set('alert-hold');
-          req.onComplete?.();
-        });
-
-        // Step 7: After 5 seconds (at 13000ms), fade out the bottom-right popup (900ms) and reset to hidden
-        this.schedule(13000, () => {
-          this.overlayPhase.set('alert-fading');
-        });
-
-        this.schedule(13900, () => {
-          this.clearResultsNow();
-        });
-      });
     });
+
+    void this.ensureRunner()
+      .then((runner) => {
+        if (this.canvas) {
+          runner.mountCanvas(this.canvas);
+        }
+        let settledHandled = false;
+        runner.runRoll(entries, req, () => {
+          if (settledHandled) return;
+          settledHandled = true;
+
+          // Step 2: Dice have stopped — show the bottom-right result toast and invoke table highlight
+          this.ngZone.run(() => {
+            this.overlayPhase.set('settled');
+            if (req.alert) {
+              this.alertify.notifyRoll(req.alert);
+            }
+            req.onComplete?.();
+          });
+
+          // Step 3: Hold settled dice briefly (900ms), then fade backdrop
+          this.schedule(900, () => {
+            this.overlayPhase.set('bg-fading');
+          });
+
+          // Step 4: Fade out the 3D dice (at 1800ms)
+          this.schedule(1800, () => {
+            this.overlayPhase.set('dice-fading');
+          });
+
+          // Step 5: Clear 3D dice meshes completely and reset overlay to hidden (at 2800ms)
+          this.schedule(2800, () => {
+            this.clearResultsNow();
+          });
+        });
+      })
+      .catch(() => {
+        req.onComplete?.();
+        this.clearResultsNow();
+      });
   }
 
   clearResultsNow(): void {
     this.clearTimers();
-    this.overlayPhase.set('hidden');
     this.runner?.clearAll();
+    this.overlayPhase.set('hidden');
   }
 
   private schedule(delayMs: number, fn: () => void): void {
@@ -131,7 +133,7 @@ export class FullscreenDiceOverlayService {
       this.runnerPromise = Promise.all([
         import('./fullscreen-dice-babylon.runner'),
         import('./audio'),
-        import('./babylon-dice-stage.service')
+        import('./babylon-dice-stage.service'),
       ]).then(([runnerMod, audioMod, stageMod]) => {
         const soundService = this.injector.get(audioMod.DiceSoundService);
         const stageService = this.injector.get(stageMod.BabylonDiceStageService);
@@ -141,8 +143,14 @@ export class FullscreenDiceOverlayService {
           stageService,
           () => {
             const p = this.overlayPhase();
-            return p === 'rolling' || p === 'settled' || p === 'bg-fading' || p === 'dice-hold' || p === 'dice-fading';
-          }
+            return (
+              p === 'rolling' ||
+              p === 'settled' ||
+              p === 'bg-fading' ||
+              p === 'dice-hold' ||
+              p === 'dice-fading'
+            );
+          },
         );
         if (this.canvas) {
           instance.mountCanvas(this.canvas);
@@ -158,18 +166,54 @@ export class FullscreenDiceOverlayService {
     if (req.diceEntries && req.diceEntries.length > 0) {
       return req.diceEntries;
     }
-    const dieType = this.parseDieType(req.expression);
-    const values = req.diceValues.length > 0 ? req.diceValues : [Math.max(1, req.total - (req.modifier ?? 0))];
-    return values.map(v => ({ dieType, value: v }));
+
+    const expr = (req.expression || '1d20').trim();
+    if (/d(100|%)/i.test(expr)) {
+      const pctVal = Math.max(1, Math.min(100, req.diceValues[0] ?? req.total ?? 100));
+      const tensVal = pctVal === 100 ? 0 : Math.floor(pctVal / 10) * 10;
+      const onesVal = pctVal % 10 === 0 ? 10 : pctVal % 10;
+      return [
+        { dieType: 'd100', value: tensVal },
+        { dieType: 'd10', value: onesVal },
+      ];
+    }
+
+    const termRegex = /(\d*)d(20|12|10|8|6|4)\b/gi;
+    const expandedTypes: DicePolyhedronType[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = termRegex.exec(expr)) !== null) {
+      const count = match[1] ? Math.max(1, Math.min(12, parseInt(match[1], 10))) : 1;
+      const dt = `d${match[2]}` as DicePolyhedronType;
+      for (let i = 0; i < count; i++) {
+        expandedTypes.push(dt);
+      }
+    }
+
+    const fallbackType = this.parseDieType(expr);
+    const values =
+      req.diceValues.length > 0
+        ? req.diceValues
+        : [Math.max(1, req.total - (req.modifier ?? 0))];
+
+    if (expandedTypes.length > 0) {
+      return expandedTypes.map((dieType, idx) => ({
+        dieType,
+        value: values[idx] ?? values[0] ?? 1,
+      }));
+    }
+
+    return values.map((v) => ({ dieType: fallbackType, value: v }));
   }
 
   private parseDieType(expression: string): DicePolyhedronType {
-    const match = /d(100|20|12|10|8|6|4)\b/i.exec(expression || '1d20');
+    if (/d(100|%)/i.test(expression || '')) {
+      return 'd100';
+    }
+    const match = /d(20|12|10|8|6|4)\b/i.exec(expression || '1d20');
     if (!match) {
       return 'd20';
     }
-    const raw = `d${match[1]}`;
-    return (raw === 'd100' ? 'd10' : raw) as DicePolyhedronType;
+    return `d${match[1]}` as DicePolyhedronType;
   }
 
   private clearTimers(): void {

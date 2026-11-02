@@ -13,6 +13,7 @@ export * from './character-creator-wizard/character-creator-wizard.component';
 export * from './character-portrait-picker/character-portrait-picker.component';
 export * from './character-sheet-view/character-sheet-view.component';
 export * from './compendium-importer/compendium-importer.component';
+export * from './context-switcher/context-switcher.component';
 export * from './creator-module-card/creator-module-card.component';
 export * from './creature-card/creature-card.component';
 export * from './dashboard-alerts-card/dashboard-alerts-card.component';

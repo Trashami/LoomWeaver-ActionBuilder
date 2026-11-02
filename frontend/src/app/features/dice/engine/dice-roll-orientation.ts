@@ -5,6 +5,7 @@ import { getPolyhedronRawTable } from './models/polyhedra-tables.model';
 interface ShapeFace { value: number; vertices: Vector3[]; normal: Vector3; center: Vector3; }
 const shapeCache = new Map<DicePolyhedronType, { vertices: Vector3[]; faces: ShapeFace[] }>();
 const symmetryCache = new Map<string, Quaternion>();
+
 export function rollShape(type: DicePolyhedronType) {
   const cached = shapeCache.get(type);
   if (cached) return cached;
@@ -18,22 +19,44 @@ export function rollShape(type: DicePolyhedronType) {
     if (Vector3.Dot(normal, center) < 0) normal.scaleInPlace(-1);
     return { value: face.at(-1)!, vertices: points, normal, center };
   });
-  const shape = { vertices, faces }; shapeCache.set(type, shape); return shape;
+  const shape = { vertices, faces };
+  shapeCache.set(type, shape);
+  return shape;
 }
+
 export function resultFace(type: DicePolyhedronType, value: number): number {
-  if (type === 'd100') return value === 0 || value === 100 ? 10 : Math.max(1, Math.min(10, Math.round(value / 10)));
-  return type === 'd10' && value === 0 ? 10 : value;
+  if (type === 'd100') {
+    if (value === 0 || value === 100) return 10;
+    const tens = value >= 10 ? Math.floor(value / 10) : value;
+    return Math.max(1, Math.min(10, tens <= 0 ? 10 : tens));
+  }
+  if (type === 'd10') {
+    if (value === 0 || value === 10) return 10;
+    const ones = value > 10 ? value % 10 : value;
+    return Math.max(1, Math.min(10, ones <= 0 ? 10 : ones));
+  }
+  const maxFace =
+    type === 'd4' ? 4 : type === 'd6' ? 6 : type === 'd8' ? 8 : type === 'd12' ? 12 : 20;
+  const normalized = Number.isFinite(value) ? Math.round(value) : 1;
+  return Math.max(1, Math.min(maxFace, normalized));
 }
+
 export function closestRestPose(type: DicePolyhedronType, orientation: Quaternion) {
   const axis = type === 'd4' ? Vector3.Down() : Vector3.Up();
   let best = rollShape(type).faces[0], bestDot = -Infinity;
   for (const face of rollShape(type).faces) {
-    const normal = new Vector3(); face.normal.rotateByQuaternionToRef(orientation, normal);
+    const normal = new Vector3();
+    face.normal.rotateByQuaternionToRef(orientation, normal);
     const dot = Vector3.Dot(normal, axis);
-    if (dot > bestDot) { bestDot = dot; best = face; }
+    if (dot > bestDot) {
+      bestDot = dot;
+      best = face;
+    }
   }
-  const normal = new Vector3(); best.normal.rotateByQuaternionToRef(orientation, normal);
-  const tilt = new Quaternion(); Quaternion.FromUnitVectorsToRef(normal, axis, tilt);
+  const normal = new Vector3();
+  best.normal.rotateByQuaternionToRef(orientation, normal);
+  const tilt = new Quaternion();
+  Quaternion.FromUnitVectorsToRef(normal, axis, tilt);
   const rotation = tilt.multiply(orientation).normalize();
   if (Quaternion.Dot(rotation, orientation) < 0) rotation.scaleInPlace(-1);
   return { rotation, face: best.value };
@@ -44,21 +67,32 @@ export function resultSymmetry(type: DicePolyhedronType, naturalFace: number, va
   const target = resultFace(type, value);
   if (target === naturalFace) return Quaternion.Identity();
   const key = `${type}:${naturalFace}:${target}`;
-  const cached = symmetryCache.get(key); if (cached) return cached;
+  const cached = symmetryCache.get(key);
+  if (cached) return cached;
   const shape = rollShape(type);
-  const from = shape.faces.find(face => face.value === target)!;
-  const to = shape.faces.find(face => face.value === naturalFace)!;
-  const align = new Quaternion(); Quaternion.FromUnitVectorsToRef(from.normal, to.normal, align);
-  const a = new Vector3(); from.vertices[0].subtract(from.center).rotateByQuaternionToRef(align, a); a.normalize();
+  const from = shape.faces.find(face => face.value === target) ?? shape.faces[0];
+  const to = shape.faces.find(face => face.value === naturalFace) ?? shape.faces[0];
+  if (!from || !to) return Quaternion.Identity();
+  const align = new Quaternion();
+  Quaternion.FromUnitVectorsToRef(from.normal, to.normal, align);
+  const a = new Vector3();
+  from.vertices[0].subtract(from.center).rotateByQuaternionToRef(align, a);
+  a.normalize();
   for (const vertex of to.vertices) {
     const b = vertex.subtract(to.center).normalize();
     const angle = Math.atan2(Vector3.Dot(to.normal, Vector3.Cross(a, b)), Vector3.Dot(a, b));
     const candidate = Quaternion.RotationAxis(to.normal, angle).multiply(align).normalize();
-    const preservesSolid = shape.vertices.every(vertex => {
-      const transformed = new Vector3(); vertex.rotateByQuaternionToRef(candidate, transformed);
-      return shape.vertices.some(other => Vector3.DistanceSquared(other, transformed) < 1e-8);
+    const preservesSolid = shape.vertices.every(v => {
+      const transformed = new Vector3();
+      v.rotateByQuaternionToRef(candidate, transformed);
+      return shape.vertices.some(other => Vector3.DistanceSquared(other, transformed) < 1e-6);
     });
-    if (preservesSolid) { symmetryCache.set(key, candidate); return candidate; }
+    if (preservesSolid) {
+      symmetryCache.set(key, candidate);
+      return candidate;
+    }
   }
-  throw new Error(`No rotational dice symmetry for ${key}`);
+  const fallback = align.normalize();
+  symmetryCache.set(key, fallback);
+  return fallback;
 }

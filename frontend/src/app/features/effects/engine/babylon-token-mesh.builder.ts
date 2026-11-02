@@ -19,6 +19,7 @@ import {
   getTokenBaseColorHex,
 } from './effect-timeline.contract';
 import { TerrainMeshBuilder } from '../../maps/engine/terrain/terrain-mesh.builder';
+import { sampleTokenFootprintElevation } from './token-drag-controller';
 
 export class BabylonTokenMeshBuilder {
   private readonly glbContainerCache = new Map<string, AssetContainer>();
@@ -66,18 +67,20 @@ export class BabylonTokenMeshBuilder {
       // 1 grid square = 1.0 * gridScale world units; 0.82 diameter leaves a clean margin inside the cell
       const effectiveScale = Math.max(0.25, gridScale) * sizeScale;
       const baseDiameter = 0.82 * effectiveScale;
-      const baseHeight = isDead ? 0.014 : 0.02;
+      const baseHeight = isDead ? 0.028 : 0.06;
+      const footprintRadius = baseDiameter * 0.42;
 
-      const groundY = TerrainMeshBuilder.sampleElevationAt(scene, t.x, t.z);
+      const groundY = sampleTokenFootprintElevation(scene, t.x, t.z, footprintRadius);
 
       const baseMesh = MeshBuilder.CreateCylinder(
         `lw-token-${t.key}`,
         { height: baseHeight, diameter: baseDiameter, tessellation: 36 },
         scene,
       );
-      baseMesh.position.set(t.x, groundY + baseHeight / 2, t.z);
-      baseMesh.metadata = { tokenKey: t.key, baseHeight };
+      baseMesh.position.set(t.x, groundY + baseHeight / 2 + 0.01, t.z);
+      baseMesh.metadata = { tokenKey: t.key, baseHeight, footprintRadius };
       baseMesh.isPickable = true;
+      baseMesh.receiveShadows = true;
       baseMesh.visibility = opacityByKey.get(t.key) ?? 1;
 
       const hitboxHeight = isTopDown2D ? 0.35 : 1.15 * effectiveScale;
@@ -94,11 +97,12 @@ export class BabylonTokenMeshBuilder {
 
       const baseColorHex = getTokenBaseColorHex(t);
       const baseMat = new StandardMaterial(`lw-tmat-${t.key}`, scene);
+      baseMat.maxSimultaneousLights = 8;
       baseMat.diffuseColor = Color3.FromHexString(baseColorHex);
       // True matte finish: near-zero specular shine and subtle self-illumination that preserves the deep theme color
       baseMat.specularColor = new Color3(0.02, 0.02, 0.02);
       baseMat.specularPower = 2;
-      baseMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.08);
+      baseMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.16);
       baseMesh.material = baseMat;
 
       if (!isTopDown2D && t.glbUrl) {
@@ -303,6 +307,7 @@ export class BabylonTokenMeshBuilder {
     const mat = mesh.material;
     if (!mat) return;
     if (mat instanceof PBRMaterial) {
+      mat.maxSimultaneousLights = 8;
       mat.roughness = Math.max(0.88, mat.roughness ?? 0.92);
       mat.metallic = Math.min(0.06, mat.metallic ?? 0.02);
       if (!mat.albedoTexture && mat.albedoColor) {
@@ -312,6 +317,7 @@ export class BabylonTokenMeshBuilder {
         }
       }
     } else if (mat instanceof StandardMaterial) {
+      mat.maxSimultaneousLights = 8;
       mat.specularColor = new Color3(0.03, 0.03, 0.03);
       if (!mat.diffuseTexture && mat.diffuseColor) {
         const c = mat.diffuseColor;
@@ -338,18 +344,19 @@ export class BabylonTokenMeshBuilder {
       scene,
     );
     disc.parent = baseMesh;
-    disc.position.set(0, baseHeight / 2 + 0.002, 0);
+    disc.position.set(0, baseHeight / 2 + 0.004, 0);
     disc.rotation.x = Math.PI / 2;
     disc.isPickable = true;
     disc.metadata = { tokenKey: token.key };
 
     const discMat = new StandardMaterial(`lw-mat-puck-${token.key}`, scene);
+    discMat.maxSimultaneousLights = 8;
     discMat.backFaceCulling = false;
     discMat.specularColor = new Color3(0.02, 0.02, 0.02);
     if (token.avatarUrl) {
       const tex = new Texture(token.avatarUrl, scene, false, false);
       discMat.diffuseTexture = tex;
-      discMat.emissiveColor = new Color3(0.12, 0.12, 0.12);
+      discMat.emissiveColor = new Color3(0.22, 0.22, 0.22);
     } else {
       const initials = (token.name || 'TK')
         .split(/\s+/)
@@ -368,7 +375,7 @@ export class BabylonTokenMeshBuilder {
       ctx.fillText(initials, 64, 66);
       dt.update(false);
       discMat.diffuseTexture = dt;
-      discMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.16);
+      discMat.emissiveColor = Color3.FromHexString(baseColorHex).scale(0.28);
     }
     disc.material = discMat;
 
@@ -390,14 +397,15 @@ export class BabylonTokenMeshBuilder {
       scene,
     );
     rim.parent = baseMesh;
-    rim.position.set(0, baseHeight / 2 + 0.003, 0);
+    rim.position.set(0, baseHeight / 2 + 0.005, 0);
     rim.metadata = { tokenKey };
 
     const rimMat = new StandardMaterial(`lw-mat-rim-${tokenKey}`, scene);
+    rimMat.maxSimultaneousLights = 8;
     const rimHex = isTargeted ? '#991b1b' : isAttacker ? '#c9a66b' : '#26302c';
     rimMat.diffuseColor = Color3.FromHexString(rimHex);
     rimMat.specularColor = new Color3(0.03, 0.03, 0.03);
-    rimMat.emissiveColor = Color3.FromHexString(rimHex).scale(isTargeted || isAttacker ? 0.18 : 0.04);
+    rimMat.emissiveColor = Color3.FromHexString(rimHex).scale(isTargeted || isAttacker ? 0.24 : 0.08);
     rim.material = rimMat;
   }
 

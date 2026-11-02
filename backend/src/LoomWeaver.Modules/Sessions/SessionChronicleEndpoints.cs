@@ -42,15 +42,17 @@ public static class SessionChronicleEndpoints
             var highlights = reader.IsDBNull(5)
                 ? Array.Empty<string>()
                 : JsonSerializer.Deserialize<string[]>(reader.GetString(5)) ?? [];
-            var location = reader.IsDBNull(6) ? string.Empty : reader.GetString(6);
-            var links = string.IsNullOrWhiteSpace(location)
+            var rawLocation = reader.IsDBNull(6) ? string.Empty : reader.GetString(6);
+            var title = reader.GetString(2);
+            var location = FormatLocationLabel(rawLocation, title);
+            var links = string.IsNullOrWhiteSpace(rawLocation)
                 ? Array.Empty<SessionDeepLinkContract>()
-                : [new SessionDeepLinkContract("Session location", "/maps", location)];
+                : [new SessionDeepLinkContract("Session location", "/maps", rawLocation)];
             sessions.Add(new SessionRecapContract(
                 reader.GetString(0),
                 campaignId,
                 reader.GetInt32(1),
-                reader.GetString(2),
+                title,
                 location,
                 reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
                 Convert.ToInt32(reader.GetInt64(7)),
@@ -60,6 +62,23 @@ public static class SessionChronicleEndpoints
         }
 
         return Results.Ok(sessions);
+    }
+
+    private static string FormatLocationLabel(string rawLocation, string sessionTitle)
+    {
+        if (string.IsNullOrWhiteSpace(rawLocation)) return string.Empty;
+        return rawLocation.Trim().ToLowerInvariant() switch
+        {
+            "sotm-seed-loc-grove" => "The Whispering Grove",
+            "sotm-seed-ch09" => "Cinth · The Guild of Scars",
+            "sotm-seed-ch07" => "The Plains of Red",
+            "sotm-seed-ch05" => "The Well of Life",
+            "sotm-seed-ch04" => "Vandia · The Knot & Knife",
+            "sotm-seed-ch01" => "Edhellain · High Court",
+            _ => rawLocation.Contains("-seed-", StringComparison.OrdinalIgnoreCase)
+                ? sessionTitle
+                : rawLocation
+        };
     }
 
     private static async Task<IResult> CreateSessionAsync(

@@ -13,10 +13,14 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgpButton } from 'ng-primitives/button';
-import { NgpInput } from 'ng-primitives/input';
 import { NgpToolbar } from 'ng-primitives/toolbar';
 import { CampaignSessionVm, CampaignVm, ViewerRole } from '../../../core/models/loomweaver.models';
 import { LoomWeaverStoreService, LwExperienceMode } from '../../../core/services/loomweaver-store.service';
+import {
+  LwContextSwitcherAction,
+  LwContextSwitcherComponent,
+  LwContextSwitcherOption,
+} from '../context-switcher/context-switcher.component';
 import { LwIconComponent } from '../icon/icon.component';
 import { LwUserMenuComponent } from '../user-menu/user-menu.component';
 
@@ -27,8 +31,8 @@ import { LwUserMenuComponent } from '../user-menu/user-menu.component';
     FormsModule,
     RouterLink,
     NgpButton,
-    NgpInput,
     NgpToolbar,
+    LwContextSwitcherComponent,
     LwIconComponent,
     LwUserMenuComponent,
   ],
@@ -100,24 +104,84 @@ export class LwAppHeaderBarComponent {
   readonly resolvedCampaigns = computed<readonly CampaignVm[]>(() => {
     const inputList = this.campaigns();
     const storeList = this.store?.campaigns() ?? [];
-    const list = inputList.length > 0 ? inputList : storeList;
-    return list;
+    return inputList.length > 0 ? inputList : storeList;
   });
 
   readonly resolvedSessions = computed<readonly CampaignSessionVm[]>(() => {
     return this.store?.sessions() ?? [];
   });
 
-  toggleCampaignDropdown(event: Event): void {
-    event.stopPropagation();
-    event.preventDefault();
-    const next = !this.campaignDropdownOpen();
-    this.sessionDropdownOpen.set(false);
-    this.campaignDropdownOpen.set(next);
+  readonly campaignCountLabel = computed<string>(() => {
+    const count = this.resolvedCampaigns().length;
+    return `${count} Campaign${count === 1 ? '' : 's'}`;
+  });
+
+  readonly sessionCountLabel = computed<string>(() => {
+    const count = this.resolvedSessions().length;
+    return `${count} Session${count === 1 ? '' : 's'}`;
+  });
+
+  readonly campaignSwitcherOptions = computed<readonly LwContextSwitcherOption[]>(() => {
+    const activeId = this.activeCampaignId() || this.store?.activeCampaignId() || 0;
+    return this.resolvedCampaigns().map((camp) => {
+      const active = camp.id === activeId;
+      const roleLabel = camp.myRole === 'player' ? 'Player' : 'DM / GM';
+      return {
+        id: String(camp.id),
+        title: camp.name,
+        subtitle: `${camp.systemLabel || 'D&D 5e'} · ${roleLabel} · ${camp.currentAct || 'Act II'}`,
+        badgeLabel: active ? 'ACTIVE' : 'Select',
+        badgeTone: active ? 'emerald' : 'neutral',
+        active,
+      };
+    });
+  });
+
+  readonly campaignFooterActions: readonly LwContextSwitcherAction[] = [
+    { id: 'manage-campaigns', label: 'Manage Campaigns & Quests', variant: 'secondary' },
+  ];
+
+  readonly sessionSwitcherOptions = computed<readonly LwContextSwitcherOption[]>(() => {
+    const activeId = this.store?.activeSessionId() ?? '';
+    return this.resolvedSessions().map((sess) => {
+      const active = sess.sessionId === activeId;
+      const formattedTitle = sess.title.toLowerCase().startsWith('session')
+        ? sess.title
+        : `Session ${sess.sessionNumber} — ${sess.title}`;
+      const subParts = [sess.locationLabel, sess.statusLabel].filter(Boolean);
+      return {
+        id: sess.sessionId,
+        title: formattedTitle,
+        subtitle: subParts.join(' · '),
+        badgeLabel: active ? 'CURRENT' : 'Switch',
+        badgeTone: active ? 'emerald' : 'neutral',
+        active,
+      };
+    });
+  });
+
+  readonly sessionFooterActions: readonly LwContextSwitcherAction[] = [
+    { id: 'open-sessions', label: 'Open Sessions Planner', variant: 'secondary' },
+    { id: 'open-guide', label: 'Session Adventure Guide', variant: 'emerald' },
+  ];
+
+  onCampaignOpenChange(isOpen: boolean): void {
+    if (isOpen) {
+      this.sessionDropdownOpen.set(false);
+    }
+    this.campaignDropdownOpen.set(isOpen);
   }
 
-  selectCampaignOption(campaignId: number, event: Event): void {
-    event.stopPropagation();
+  onSessionOpenChange(isOpen: boolean): void {
+    if (isOpen) {
+      this.campaignDropdownOpen.set(false);
+    }
+    this.sessionDropdownOpen.set(isOpen);
+  }
+
+  onCampaignOptionSelected(campaignIdRaw: string): void {
+    const campaignId = Number(campaignIdRaw);
+    if (!Number.isFinite(campaignId) || campaignId <= 0) return;
     this.campaignDropdownOpen.set(false);
     this.campaignSelected.emit(campaignId);
     if (this.store && this.store.activeCampaignId() !== campaignId) {
@@ -125,31 +189,25 @@ export class LwAppHeaderBarComponent {
     }
   }
 
-  toggleSessionDropdown(event: Event): void {
-    event.stopPropagation();
-    event.preventDefault();
-    const next = !this.sessionDropdownOpen();
+  onCampaignActionSelected(actionId: string): void {
     this.campaignDropdownOpen.set(false);
-    this.sessionDropdownOpen.set(next);
+    if (actionId === 'manage-campaigns') {
+      void this.router?.navigateByUrl('/campaigns');
+    }
   }
 
-  selectSessionOption(sessionId: string, event: Event): void {
-    event.stopPropagation();
+  onSessionOptionSelected(sessionId: string): void {
     this.sessionDropdownOpen.set(false);
     this.store?.setActiveSession(sessionId);
   }
 
-  navigateAndClose(route: string, event: MouseEvent): void {
-    event.stopPropagation();
-    this.campaignDropdownOpen.set(false);
+  onSessionActionSelected(actionId: string): void {
     this.sessionDropdownOpen.set(false);
-    void this.router?.navigateByUrl(route);
-  }
-
-  openAdventureGuideFromDropdown(scope: 'session' | 'adventure', event: MouseEvent): void {
-    event.stopPropagation();
-    this.sessionDropdownOpen.set(false);
-    this.store?.openAdventureGuideModal(scope);
+    if (actionId === 'open-sessions') {
+      void this.router?.navigateByUrl('/sessions');
+    } else if (actionId === 'open-guide') {
+      this.store?.openAdventureGuideModal('session');
+    }
   }
 
   onSubmitSearch(): void {

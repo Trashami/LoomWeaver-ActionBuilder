@@ -13,17 +13,16 @@
       </span>
 
       <div class="top-bar-session-status">
-        <select
-          class="btn-top-action"
-          [ngModel]="store.activeSessionId()"
-          (ngModelChange)="store.setActiveSession($event)"
-          aria-label="Current Active Session"
-          title="Switch Current Session (Loads Assigned Session Battlemap & Guide)"
-          style="max-width: 220px;">
-          @for (sess of store.sessions(); track sess.sessionId) {
-            <option [ngValue]="sess.sessionId">Session {{ sess.sessionNumber }} · {{ sess.title }}</option>
-          }
-        </select>
+        <lw-context-switcher
+          variant="pill"
+          tone="emerald"
+          [title]="activeSessionTitle()"
+          panelTitle="SELECT ACTIVE SESSION"
+          [countLabel]="store.sessions().length + ' Sessions'"
+          ariaLabel="Current Active Session"
+          [options]="sessionSwitcherOptions()"
+          (optionSelected)="onSwitchVttSession($event)"
+        />
 
         <span class="session-status-pill live" title="Battle Encounter is LIVE for all players">
           <span class="live-pulse"></span>
@@ -31,7 +30,7 @@
         </span>
 
         <button ngpButton type="button" class="btn-top-action" (click)="store.openAdventureGuideModal('session')" title="Open Adventure Guide (Current Session or Whole Guide)"><lw-icon name="book-open" [size]="12" /> <span>Adventure Guide</span></button>
-        <button ngpButton type="button" class="btn-top-action" (click)="timer.toggle()" [title]="timer.running() ? 'Pause Stopwatch' : 'Resume Stopwatch'"><lw-icon [name]="timer.running() ? 'pause' : 'play'" [size]="12" /> <span>{{ timer.formatted() }}</span></button>
+        <button ngpButton type="button" class="btn-top-action" (click)="timer.toggle()" [title]="timer.running() ? 'Pause Stopwatch' : 'Resume Stopwatch'" [attr.aria-label]="timer.running() ? 'Pause Stopwatch' : 'Resume Stopwatch'"><lw-icon [name]="timer.running() ? 'pause' : 'play'" [size]="12" /> <span>{{ timer.formatted() }}</span></button>
         <button ngpButton type="button" class="btn-top-action" (click)="toggleMapMode()" title="Toggle 2D / 3D View"><lw-icon [name]="battle.mapMode3D() ? 'layers' : 'view_in_ar'" [size]="12" /> <span>{{ battle.mapMode3D() ? '3D View' : '2D Map' }}</span></button>
         <button ngpButton type="button" class="btn-top-action" (click)="store.toggleLoomDrawer()" title="The Loom Campaign Memory"><lw-icon name="history_edu" [size]="12" /> <span>The Loom</span></button>
 
@@ -46,15 +45,15 @@
         <button ngpButton type="button" class="btn-top-action btn-top-handout" (click)="openHandoutModal()" title="Reveal a handout to every player"><lw-icon name="scroll" [size]="12" /> <span>Reveal Handout</span></button>
       }
       <button ngpButton type="button" class="btn-top-action" [class.active]="battle.measureEnabled()" [disabled]="!battle.canMeasure()" (click)="battle.toggleMeasureTool()" [title]="battle.canMeasure() ? 'Measure privately' : 'Measuring is locked during your turn'"><lw-icon name="target" [size]="12" /> <span>Measure</span></button>
-      <button ngpButton type="button" class="btn-top-action" (click)="changeZoom(-10)" title="Zoom out"><lw-icon name="minus" [size]="12" /></button>
-      <span class="top-bar-zoom">{{ zoomLevel() }}%</span>
-      <button ngpButton type="button" class="btn-top-action" (click)="changeZoom(10)" title="Zoom in"><lw-icon name="plus" [size]="12" /></button>
-      <button ngpButton type="button" class="btn-top-action" (click)="resetZoom()" title="Reset zoom">Reset</button>
+      <button ngpButton type="button" class="btn-top-action" (click)="changeZoom(-10)" title="Zoom out" aria-label="Zoom out"><lw-icon name="minus" [size]="12" /></button>
+      <span class="top-bar-zoom" aria-live="polite">{{ zoomLevel() }}%</span>
+      <button ngpButton type="button" class="btn-top-action" (click)="changeZoom(10)" title="Zoom in" aria-label="Zoom in"><lw-icon name="plus" [size]="12" /></button>
+      <button ngpButton type="button" class="btn-top-action" (click)="resetZoom()" title="Reset zoom" aria-label="Reset zoom">Reset</button>
     </div>
 
     <div class="top-bar-right">
-      <button ngpButton type="button" class="top-menu-btn" (click)="showShortcuts.set(!showShortcuts())" title="Tabletop Hotkeys & Controls"><lw-icon name="note" [size]="16" /></button>
-      <button ngpButton type="button" class="top-menu-btn" (click)="battle.rightPanelCollapsed.set(!battle.rightPanelCollapsed())" [title]="battle.rightPanelCollapsed() ? 'Open Right Sidebar' : 'Collapse Right Sidebar'"><lw-icon [name]="battle.rightPanelCollapsed() ? 'panel-right-open' : 'panel-right-close'" [size]="16" /></button>
+      <button ngpButton type="button" class="top-menu-btn" (click)="showShortcuts.set(!showShortcuts())" title="Tabletop Hotkeys & Controls" aria-label="Tabletop Hotkeys and Controls"><lw-icon name="note" [size]="16" /></button>
+      <button ngpButton type="button" class="top-menu-btn" (click)="battle.rightPanelCollapsed.set(!battle.rightPanelCollapsed())" [title]="battle.rightPanelCollapsed() ? 'Open Right Sidebar' : 'Collapse Right Sidebar'" [attr.aria-label]="battle.rightPanelCollapsed() ? 'Open Right Sidebar' : 'Collapse Right Sidebar'"><lw-icon [name]="battle.rightPanelCollapsed() ? 'panel-right-open' : 'panel-right-close'" [size]="16" /></button>
     </div>
   </header>
 

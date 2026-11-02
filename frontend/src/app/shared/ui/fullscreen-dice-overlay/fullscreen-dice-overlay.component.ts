@@ -3,8 +3,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  HostListener,
   inject,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { FullscreenDiceOverlayService } from '../../../features/dice/engine/fullscreen-dice-overlay.service';
 
@@ -13,7 +14,7 @@ import { FullscreenDiceOverlayService } from '../../../features/dice/engine/full
   standalone: true,
   templateUrl: './fullscreen-dice-overlay.component.html',
   styleUrl: './fullscreen-dice-overlay.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LwFullscreenDiceOverlayComponent implements AfterViewInit {
   readonly overlay = inject(FullscreenDiceOverlayService);
@@ -28,7 +29,14 @@ export class LwFullscreenDiceOverlayComponent implements AfterViewInit {
 
   onBackdropClick(): void {
     const phase = this.overlay.overlayPhase();
-    if (phase !== 'hidden' && phase !== 'rolling') {
+    if (phase !== 'hidden') {
+      this.overlay.clearResultsNow();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.overlay.overlayPhase() !== 'hidden') {
       this.overlay.clearResultsNow();
     }
   }
